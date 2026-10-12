@@ -1,12 +1,24 @@
 // Service worker do Diário de Cargas.
-// Arquivos do próprio app: rede primeiro (sempre a versão nova quando há sinal), cache como reserva offline.
-// Bibliotecas externas (Tailwind, Chart.js, fontes): cache primeiro. Troque VERSION só se mudar essas bibliotecas.
-const VERSION = 'v1';
+// App 100% local (Tailwind e Chart.js empacotados em /vendor) — funciona offline na academia.
+// Estratégia: rede primeiro para os arquivos do app (sempre a versão nova quando há sinal),
+// cache como reserva offline. Troque VERSION ao mudar bibliotecas locais.
+const VERSION = 'v2';
 const CACHE = 'berzerker-' + VERSION;
-const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+const CORE = [
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './icon-192.png',
+  './icon-512.png',
+  './apple-touch-icon.png',
+  './vendor/tailwind.css',
+  './vendor/chart.umd.js',
+  './js/catalogo.js',
+  './js/gamificacao.js',
+  './js/app.js'
+];
 const EXTERNAL = [
-  'https://cdn.tailwindcss.com/3.4.17',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js'
+  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Oswald:wght@500;600;700&family=Teko:wght@500;600;700&display=swap'
 ];
 
 self.addEventListener('install', e => {

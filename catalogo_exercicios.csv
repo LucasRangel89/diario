@@ -1,0 +1,61 @@
+﻿nome;grupo;equipamento;tipo;faixa_min;faixa_max;descanso_s
+Supino Reto com Barra;Peito;Barra;carga_total;6;10;120
+Supino Inclinado com Barra;Peito;Barra;carga_total;6;10;120
+Supino Reto com Halteres;Peito;Halteres;halter_par;8;12;90
+Supino Inclinado c/ Halteres;Peito;Halteres;halter_par;8;12;90
+Crucifixo na Máquina;Peito;Máquina;carga_total;10;15;60
+Crossover na Polia;Peito;Polia;carga_total;10;15;60
+Peck Deck;Peito;Máquina;carga_total;10;15;60
+Flexão de Braço;Peito;Peso corporal;peso_corporal;8;20;60
+Paralelas (foco peito);Peito;Peso corporal;peso_corporal;6;15;90
+Barra Fixa (Pull-up);Costas;Peso corporal;peso_corporal;5;12;120
+Puxada Frontal na Polia;Costas;Polia;carga_total;8;12;90
+Remada Curvada com Barra;Costas;Barra;carga_total;6;10;120
+Remada Unilateral c/ Halter;Costas;Halter;halter_uni;8;12;90
+Remada Baixa na Polia;Costas;Polia;carga_total;8;12;90
+Levantamento Terra;Costas;Barra;carga_total;3;8;150
+Pulldown na Polia;Costas;Polia;carga_total;8;12;90
+Remada Cavalinho;Costas;Máquina;carga_total;8;12;90
+Agachamento Livre;Pernas;Barra;carga_total;5;10;150
+Agachamento Hack;Pernas;Máquina;carga_total;8;12;120
+Leg Press 45°;Pernas;Máquina;carga_total;8;15;120
+Cadeira Extensora;Pernas;Máquina;carga_total;10;15;60
+Mesa Flexora;Pernas;Máquina;carga_total;10;15;60
+Stiff com Barra;Pernas;Barra;carga_total;6;10;120
+Afundo c/ Halteres;Pernas;Halteres;halter_uni;8;12;90
+Agachamento Búlgaro;Pernas;Halter;halter_uni;8;12;90
+Elevação Pélvica (Hip Thrust);Pernas;Barra;carga_total;8;12;90
+Panturrilha em Pé;Pernas;Máquina;carga_total;12;20;60
+Panturrilha Sentado;Pernas;Máquina;carga_total;12;20;60
+Desenvolvimento Militar;Ombros;Barra;carga_total;6;10;120
+Desenvolvimento c/ Halteres;Ombros;Halteres;halter_par;8;12;90
+Elevação Lateral c/ Halter;Ombros;Halter;halter_uni;12;20;60
+Elevação Frontal c/ Halter;Ombros;Halter;halter_uni;10;15;60
+Remada Alta na Polia;Ombros;Polia;carga_total;8;12;90
+Face Pull;Ombros;Polia;carga_total;12;20;60
+Encolhimento de Ombros;Ombros;Halteres;halter_par;10;15;60
+Rosca Direta com Barra;Bíceps;Barra;carga_total;8;12;60
+Rosca Alternada c/ Halteres;Bíceps;Halteres;halter_uni;8;12;60
+Rosca Martelo;Bíceps;Halteres;halter_uni;8;12;60
+Rosca Scott;Bíceps;Barra W;carga_total;8;12;60
+Rosca na Polia Baixa;Bíceps;Polia;carga_total;10;15;60
+Rosca Concentrada;Bíceps;Halter;halter_uni;10;15;60
+Tríceps Polia Alta;Tríceps;Polia;carga_total;10;15;60
+Tríceps Testa com Barra W;Tríceps;Barra W;carga_total;8;12;60
+Tríceps Corda na Polia;Tríceps;Polia;carga_total;10;15;60
+Tríceps Francês c/ Halter;Tríceps;Halter;carga_total;8;12;60
+Paralelas (foco tríceps);Tríceps;Peso corporal;peso_corporal;6;15;90
+Supino Reto Pegada Fechada;Tríceps;Barra;carga_total;6;10;90
+Prancha Isométrica;Abdômen;Peso corporal;isometria;20;90;45
+Prancha Lateral;Abdômen;Peso corporal;isometria;15;60;45
+Abdominal Supra no Solo;Abdômen;Peso corporal;peso_corporal;15;30;45
+Abdominal na Polia Alta;Abdômen;Polia;carga_total;12;20;45
+Elevação de Pernas;Abdômen;Peso corporal;peso_corporal;10;20;45
+Abdominal Bicicleta;Abdômen;Peso corporal;peso_corporal;15;30;45
+Russian Twist;Abdômen;Peso corporal;peso_corporal;15;30;45
+Ab Wheel;Abdômen;Roda;peso_corporal;8;15;60
+Corrida (Esteira);Cardio;Esteira;corrida;0;0;0
+Corrida (Rua);Cardio;Livre;corrida;0;0;0
+Bike / Ergométrico;Cardio;Bike;corrida;0;0;0
+Elíptico;Cardio;Elíptico;corrida;0;0;0
+Remo (Ergômetro);Cardio;Remo;corrida;0;0;0
