@@ -126,23 +126,26 @@
             </div>
 
             <!-- NAVIGATION TABS -->
-            <nav class="hidden md:flex items-center gap-1 bg-berzerker-dark p-1.5 rounded-xl border border-berzerker-border text-xs font-bold uppercase tracking-wider">
-                <button onclick="switchTab('diario')" id="nav-diario" class="px-4 py-2 rounded-lg bg-berzerker-600 text-white transition-all">
-                    ⚡ Diário & Treino
+            <nav class="hidden md:flex items-center gap-1 bg-berzerker-dark p-1.5 rounded-xl border border-berzerker-border text-xs font-bold uppercase tracking-wider min-w-0 overflow-x-auto">
+                <button onclick="switchTab('diario')" id="nav-diario" class="px-3 py-2 rounded-lg bg-berzerker-600 text-white transition-all whitespace-nowrap">
+                    ⚡ Diário
                 </button>
-                <button onclick="switchTab('boss')" id="nav-boss" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all">
-                    ⚔️ Boss Battle
+                <button onclick="switchTab('busca')" id="nav-busca" class="px-3 py-2 rounded-lg text-gray-400 hover:text-white transition-all whitespace-nowrap">
+                    🔎 Buscar
                 </button>
-                <button onclick="switchTab('story')" id="nav-story" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all">
-                    📸 Story Card
+                <button onclick="switchTab('boss')" id="nav-boss" class="px-3 py-2 rounded-lg text-gray-400 hover:text-white transition-all whitespace-nowrap">
+                    ⚔️ Boss
                 </button>
-                <button onclick="switchTab('stats')" id="nav-stats" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all">
-                    📊 Stats & Streak
+                <button onclick="switchTab('story')" id="nav-story" class="px-3 py-2 rounded-lg text-gray-400 hover:text-white transition-all whitespace-nowrap">
+                    📸 Story
                 </button>
-                <button onclick="switchTab('calcs')" id="nav-calcs" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all">
+                <button onclick="switchTab('stats')" id="nav-stats" class="px-3 py-2 rounded-lg text-gray-400 hover:text-white transition-all whitespace-nowrap">
+                    📊 Stats
+                </button>
+                <button onclick="switchTab('calcs')" id="nav-calcs" class="px-3 py-2 rounded-lg text-gray-400 hover:text-white transition-all whitespace-nowrap">
                     🧮 Calcs
                 </button>
-                <button onclick="switchTab('config')" id="nav-config" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all">
+                <button onclick="switchTab('config')" id="nav-config" class="px-3 py-2 rounded-lg text-gray-400 hover:text-white transition-all whitespace-nowrap">
                     ⚙️ Config
                 </button>
             </nav>
@@ -157,6 +160,7 @@
         <!-- MOBILE NAVIGATION BAR -->
         <div class="md:hidden flex overflow-x-auto gap-2 p-2 bg-berzerker-dark border-t border-berzerker-border text-[11px] font-bold uppercase tracking-wider">
             <button onclick="switchTab('diario')" id="m-nav-diario" class="px-3 py-1.5 rounded-lg bg-berzerker-600 text-white whitespace-nowrap">⚡ Treino</button>
+            <button onclick="switchTab('busca')" id="m-nav-busca" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">🔎 Buscar</button>
             <button onclick="switchTab('boss')" id="m-nav-boss" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">⚔️ Boss</button>
             <button onclick="switchTab('story')" id="m-nav-story" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">📸 Story</button>
             <button onclick="switchTab('stats')" id="m-nav-stats" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">📊 Stats</button>
@@ -294,7 +298,7 @@
             </div>
 
             <!-- CRIAR TREINO: BUILDER + TREINOS SALVOS -->
-            <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-5">
+            <div id="builder-card-container" class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-5">
                 <div class="border-b border-berzerker-border pb-3">
                     <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
                         <span class="text-berzerker-500">🎯</span> Criar Treino
@@ -333,9 +337,13 @@
                         </div>
                         <div class="col-span-2">
                             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Exercício</label>
-                            <input type="text" id="wb-exercise" list="wb-exercise-suggestions" oninput="onWbExerciseChange()" placeholder="Ex: Supino Reto com Barra" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                            <div class="flex gap-1.5">
+                                <input type="text" id="wb-exercise" list="wb-exercise-suggestions" oninput="onWbExerciseChange()" placeholder="Ex: Supino Reto com Barra" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                                <button type="button" onclick="openExercisePicker('wb')" title="Buscar por tags e filtros" class="shrink-0 px-2.5 bg-berzerker-border hover:bg-berzerker-600 text-white text-xs font-bold rounded-lg transition-colors">🔎</button>
+                            </div>
                             <datalist id="wb-exercise-suggestions"></datalist>
                             <div id="wb-type-hint" class="text-[10px] text-amber-400/90 font-mono mt-0.5">Escolha do catálogo para preencher grupo, tipo de carga e faixa de reps.</div>
+                            <div id="wb-tags" class="flex flex-wrap gap-1 mt-1"></div>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Carga Alvo</label>
@@ -412,7 +420,11 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Nome do Exercício</label>
-                            <input type="text" id="log-exercise" list="wb-exercise-suggestions" oninput="onLogExerciseChange()" placeholder="Ex: Supino Reto com Barra" required class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
+                            <div class="flex gap-1.5">
+                                <input type="text" id="log-exercise" list="wb-exercise-suggestions" oninput="onLogExerciseChange()" placeholder="Ex: Supino Reto com Barra" required class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
+                                <button type="button" onclick="openExercisePicker('log')" title="Buscar por tags e filtros" class="shrink-0 px-3 bg-berzerker-border hover:bg-berzerker-600 text-white text-sm font-bold rounded-lg transition-colors">🔎</button>
+                            </div>
+                            <div id="log-tags" class="flex flex-wrap gap-1 mt-1.5"></div>
                         </div>
                     </div>
 
@@ -461,6 +473,103 @@
                 </div>
 
                 <div id="logs-container" class="space-y-3"></div>
+            </div>
+
+        </section>
+
+        <!-- TAB: BUSCA & FILTROS (Fase 1 — tags acumulativas) -->
+        <section id="tab-content-busca" class="hidden space-y-6">
+
+            <!-- BUSCAR EXERCÍCIO -->
+            <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-berzerker-border pb-3">
+                    <div>
+                        <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <span class="text-berzerker-500">🔎</span> Buscar Exercício
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                            Nome, apelido (<span class="font-mono text-gray-300">bench press</span>, <span class="font-mono text-gray-300">rdl</span>) ou tag — e combine as tags acumulativas.
+                            <span id="cat-count" class="font-mono text-gray-500"></span>
+                        </p>
+                    </div>
+                    <button type="button" onclick="clearSearchFilters()" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap">✕ Limpar filtros</button>
+                </div>
+
+                <!-- atalhos de filtro -->
+                <div id="cat-presets" class="flex flex-wrap gap-1.5 mb-3"></div>
+
+                <!-- busca textual + filtros -->
+                <div class="grid grid-cols-2 lg:grid-cols-6 gap-2.5 mb-3">
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Buscar</label>
+                        <input type="search" id="cat-q" oninput="setSearchQuery(this.value)" placeholder="Ex: supino, remada, polia, halter..." class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grupo muscular</label>
+                        <select id="cat-grupo" onchange="setSearchField('grupo', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Equipamento</label>
+                        <select id="cat-equip" onchange="setSearchField('equipamento', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tipo de carga</label>
+                        <select id="cat-tipo" onchange="setSearchField('tipo', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Ordenar por</label>
+                        <select id="cat-sort" onchange="setSearchField('sort', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
+                    </div>
+                </div>
+
+                <!-- tags acumulativas -->
+                <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3 mb-4 space-y-2.5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <span class="text-[11px] font-bold text-gray-300 uppercase tracking-wider">🏷️ Tags acumulativas <span id="cat-tags-active" class="font-mono text-gray-500 normal-case tracking-normal"></span></span>
+                        <div id="cat-tagmode" class="flex items-center gap-1"></div>
+                    </div>
+                    <div id="cat-tags" class="space-y-2"></div>
+                </div>
+
+                <!-- resultados do catálogo -->
+                <div id="cat-results" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            </div>
+
+            <!-- BUSCAR NO HISTÓRICO -->
+            <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-berzerker-border pb-3">
+                    <div>
+                        <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <span class="text-cyan-400">📚</span> Buscar no Histórico
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Todos os seus registros, filtrados por texto, grupo, período e pelas mesmas tags.</p>
+                    </div>
+                    <span id="hist-summary" class="text-[11px] font-mono text-gray-400"></span>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3">
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Buscar (exercício, obs, técnica, data)</label>
+                        <input type="search" id="hist-q" oninput="setHistoryField('histQ', this.value)" placeholder="Ex: dor no ombro, drop-set, supino..." class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grupo muscular</label>
+                        <select id="hist-muscle" onchange="setHistoryField('histMuscle', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Período</label>
+                        <select id="hist-period" onchange="setHistoryField('histPeriod', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                            <option value="todos">Todo o histórico</option>
+                            <option value="7">Últimos 7 dias</option>
+                            <option value="30">Últimos 30 dias</option>
+                            <option value="90">Últimos 90 dias</option>
+                            <option value="365">Últimos 12 meses</option>
+                        </select>
+                    </div>
+                </div>
+
+                <p class="text-[11px] text-gray-500 mb-3">🏷️ As tags marcadas acima também valem aqui — com o mesmo modo <b>OU</b>/<b>E</b>.</p>
+                <div id="hist-results" class="space-y-2"></div>
             </div>
 
         </section>
@@ -830,6 +939,7 @@
     <!-- App (offline-first: catálogo → gamificação → núcleo) -->
     <script src="js/catalogo.js"></script>
     <script src="js/gamificacao.js"></script>
+    <script src="js/busca.js"></script>
     <script src="js/app.js"></script>
     <script>
         // PWA: registra o service worker (só em http/https) e pede armazenamento persistente

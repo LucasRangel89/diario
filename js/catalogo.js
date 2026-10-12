@@ -112,6 +112,323 @@ const EXERCISE_CATALOG = (() => {
     return m;
 })();
 
+// ============================================================
+// FASE 1 — TAGS ACUMULATIVAS + BUSCA/FILTROS
+// ------------------------------------------------------------
+// Cada exercício ACUMULA várias tags (padrão de movimento, equipamento,
+// objetivo, cadeia, nível e contexto). As tags são a base da tela de
+// busca/filtros e do seletor rápido usado no registro diário.
+// As tags são DERIVADAS por regra (nome + grupo + equipamento + tipo),
+// com reforços pontuais em TAG_OVERRIDES — assim o catálogo inteiro fica
+// etiquetado sem listas manuais, e exercícios digitados à mão (fora do
+// catálogo) também ganham tags por inferência.
+// ============================================================
+
+const TAG_CATEGORIAS = [
+    { id: 'padrao',      label: 'Padrão de movimento', icon: '🏋️' },
+    { id: 'equipamento', label: 'Equipamento',         icon: '🔩' },
+    { id: 'objetivo',    label: 'Objetivo / estímulo', icon: '🎯' },
+    { id: 'cadeia',      label: 'Cadeia / região',     icon: '🧭' },
+    { id: 'nivel',       label: 'Nível',               icon: '📶' },
+    { id: 'contexto',    label: 'Contexto',            icon: '📍' }
+];
+
+// Pool de tags (25). `cat` = categoria; `desc` = tooltip na tela de filtros.
+const TAG_DEFS = {
+    // ---- padrão de movimento ----
+    empurrar:      { label: 'Empurrar',        icon: '↗️',  cat: 'padrao',      desc: 'Empurra a carga para longe do corpo: supinos, desenvolvimentos, tríceps.' },
+    puxar:         { label: 'Puxar',           icon: '↙️',  cat: 'padrao',      desc: 'Traz a carga em direção ao corpo: remadas, puxadas, roscas.' },
+    agachar:       { label: 'Agachar',         icon: '⬇️',  cat: 'padrao',      desc: 'Dominante de joelho: agachamentos, leg press, afundo, hack.' },
+    dobradica:     { label: 'Dobradiça',       icon: '📐', cat: 'padrao',      desc: 'Dominante de quadril: terra, stiff, elevação pélvica, flexora.' },
+    composto:      { label: 'Composto',        icon: '🏋️', cat: 'padrao',      desc: 'Multiarticular — recruta várias articulações e grupos.' },
+    isolado:       { label: 'Isolado',         icon: '🔬', cat: 'padrao',      desc: 'Monoarticular — foca um músculo só.' },
+    unilateral:    { label: 'Unilateral',      icon: '↔️',  cat: 'padrao',      desc: 'Um lado por vez (reps por lado) — corrige assimetrias.' },
+    // ---- equipamento ----
+    barra:         { label: 'Barra',           icon: '🔩', cat: 'equipamento', desc: 'Barra reta ou barra W.' },
+    halter:        { label: 'Halteres',        icon: '💪', cat: 'equipamento', desc: 'Halter ou par de halteres.' },
+    polia:         { label: 'Polia / cabo',    icon: '🔗', cat: 'equipamento', desc: 'Cabo, polia alta ou baixa.' },
+    maquina:       { label: 'Máquina',         icon: '⚙️',  cat: 'equipamento', desc: 'Máquina articulada ou guiada (inclusive esteira/bike).' },
+    'peso-corporal': { label: 'Peso corporal', icon: '🤸', cat: 'equipamento', desc: 'Só o corpo (carga extra opcional).' },
+    // ---- objetivo / estímulo ----
+    forca:         { label: 'Força',           icon: '🦍', cat: 'objetivo',    desc: 'Faixa pesada de reps (até ~10 com mínimo baixo) — carga alta.' },
+    hipertrofia:   { label: 'Hipertrofia',     icon: '📈', cat: 'objetivo',    desc: 'Faixa clássica de crescimento muscular.' },
+    resistencia:   { label: 'Resistência',     icon: '🔥', cat: 'objetivo',    desc: 'Reps altas, isometria ou pump (12+).' },
+    condicionamento: { label: 'Condicionamento', icon: '🏃', cat: 'objetivo',  desc: 'Cardio / capacidade aeróbica.' },
+    // ---- cadeia / região ----
+    core:          { label: 'Core',            icon: '🧱', cat: 'cadeia',      desc: 'Abdômen, lombar e estabilização do tronco.' },
+    posterior:     { label: 'Cadeia posterior', icon: '🍑', cat: 'cadeia',     desc: 'Costas, glúteos, posteriores de coxa e panturrilha.' },
+    anterior:      { label: 'Cadeia anterior',  icon: '🦵', cat: 'cadeia',     desc: 'Peito, quadríceps, abdômen e deltoide frontal.' },
+    // ---- nível ----
+    iniciante:     { label: 'Iniciante',       icon: '🟢', cat: 'nivel',       desc: 'Execução simples e guiada — bom para começar.' },
+    intermediario: { label: 'Intermediário',   icon: '🟡', cat: 'nivel',       desc: 'Exige técnica e alguma base de treino.' },
+    avancado:      { label: 'Avançado',        icon: '🔴', cat: 'nivel',       desc: 'Técnica exigente ou carga alta — atenção à execução.' },
+    // ---- contexto ----
+    academia:      { label: 'Academia',        icon: '🏢', cat: 'contexto',    desc: 'Precisa de estrutura de academia.' },
+    casa:          { label: 'Em casa',         icon: '🏠', cat: 'contexto',    desc: 'Dá para fazer em casa (corpo, halteres ou elástico).' },
+    'ar-livre':    { label: 'Ao ar livre',     icon: '🌳', cat: 'contexto',    desc: 'Rua, parque, pista — sem equipamento.' }
+};
+
+// Equipamento do catálogo → família de equipamento
+const EQUIP_KIND = {
+    'Barra': 'barra', 'Barra W': 'barra',
+    'Halter': 'halter', 'Halteres': 'halter',
+    'Polia': 'polia',
+    'Máquina': 'maquina', 'Esteira': 'maquina', 'Elíptico': 'maquina', 'Remo': 'maquina',
+    'Bike': 'maquina',
+    'Peso corporal': 'peso-corporal', 'Roda': 'peso-corporal',
+    'Livre': 'ar-livre'
+};
+
+// Família → tags de equipamento + contexto (vale p/ catálogo e p/ nome inferido)
+const KIND_TAGS = {
+    'barra':          ['barra', 'academia'],
+    'halter':         ['halter', 'academia', 'casa'],
+    'polia':          ['polia', 'academia'],
+    'maquina':        ['maquina', 'academia'],
+    'peso-corporal':  ['peso-corporal', 'academia', 'casa'],
+    'ar-livre':       ['ar-livre']
+};
+
+// Sem equipamento informado (exercício digitado à mão) → família pelo nome.
+// A ordem importa: "barra fixa" é peso corporal, não barra.
+const KIND_FROM_NAME = [
+    [/halter|dumbbell|serrote/, 'halter'],
+    [/prancha|plank|flexao de braco|push ?up|barra fixa|pull ?up|chin ?up|paralela|dips|abdominal|crunch|elevacao de pernas|russian twist|ab wheel|rodinha|ponte|superman/, 'peso-corporal'],
+    [/polia|cabo|cable|crossover|pulldown|puxada|corda|face pull/, 'polia'],
+    [/maquina|machine|smith|cadeira|mesa flexora|leg press|hack|esteira|treadmill|bike|eliptico|ergometro|erg/, 'maquina'],
+    [/barra|barbell|barra w/, 'barra']
+];
+
+// Padrões de nome (texto normalizado, sem acento) → tags
+const P_EMPURRAR   = /supino|desenvolviment|flexao de braco|paralela|triceps|elevacao lateral|elevacao frontal|crucifixo|peck deck|crossover/;
+const P_PUXAR      = /puxada|remada|barra fixa|pull ?up|pulldown|face pull|rosca|biceps|encolhimento|levantamento terra/;
+const P_AGACHAR    = /agachamento|leg press|afundo|passada|bulgaro|cadeira extensora|hack/;
+const P_DOBRADICA  = /terra|stiff|elevacao pelvica|hip thrust|mesa flexora|good morning/;
+const P_CORE       = /prancha|abdominal|elevacao de pernas|russian twist|ab wheel|rodinha/;
+const P_COMPOSTO   = /supino|desenvolviment|agachamento|leg press|hack|terra|stiff|remada|puxada|pulldown|barra fixa|pull ?up|paralela|elevacao pelvica|hip thrust|afundo|bulgaro|passada|ab wheel|levantamento|remo \(|flexao de braco/;
+const P_UNI        = /unilateral|alternada|concentrada|martelo|bulgaro|afundo|passada|elevacao lateral|elevacao frontal|prancha lateral/;
+const P_POSTERIOR  = /terra|stiff|flexora|elevacao pelvica|hip thrust|gluteo|panturrilha|face pull|encolhimento|good morning/;
+const P_ANTERIOR   = /supino|crucifixo|peck deck|crossover|flexao de braco|agachamento|leg press|cadeira extensora|hack|afundo|bulgaro|passada|abdominal|prancha|elevacao de pernas|russian twist|ab wheel|desenvolviment|elevacao frontal/;
+const P_AVANCADO   = /terra|agachamento livre|bulgaro|paralela|barra fixa|pull ?up|ab wheel|desenvolvimento militar|remada curvada|stiff|elevacao pelvica|hip thrust|hack|remo \(erg/;
+const P_BASICO     = /prancha|abdominal|elevacao de pernas|russian twist|bicicleta|flexao de braco|panturrilha|encolhimento|face pull|puxada frontal|triceps polia|triceps corda|rosca na polia|crucifixo|peck deck|crossover|cadeira extensora|mesa flexora/;
+
+// Reforços pontuais (tags extras que a regra não pega)
+const TAG_OVERRIDES = {
+    'Prancha Lateral':            ['unilateral', 'core'],
+    'Ab Wheel':                   ['avancado', 'core'],
+    'Levantamento Terra':         ['forca', 'avancado'],
+    'Agachamento Livre':          ['forca'],
+    'Corrida (Rua)':              ['ar-livre'],
+    'Remo (Ergômetro)':           ['puxar', 'composto'],
+    'Elevação Pélvica (Hip Thrust)': ['posterior', 'agachar'],
+    'Flexão de Braço':            ['casa', 'anterior']
+};
+
+// Sinônimos comuns — entram no índice de busca (pt/en e apelidos)
+const SINONIMOS = {
+    'Supino Reto com Barra': 'bench press supino reto barra',
+    'Supino Inclinado com Barra': 'incline bench press supino inclinado',
+    'Supino Reto com Halteres': 'dumbbell bench press supino halteres',
+    'Crucifixo na Máquina': 'fly machine voador peck',
+    'Crossover na Polia': 'cable fly crossover cabo',
+    'Flexão de Braço': 'push up flexao de braco apoio',
+    'Paralelas (foco peito)': 'dips paralela mergulho',
+    'Paralelas (foco tríceps)': 'dips paralela mergulho',
+    'Barra Fixa (Pull-up)': 'pull up chin up barra fixa',
+    'Puxada Frontal na Polia': 'lat pulldown puxada frente',
+    'Remada Curvada com Barra': 'bent over row remada curvada',
+    'Remada Unilateral c/ Halter': 'serrote one arm row remada serrote',
+    'Levantamento Terra': 'deadlift terra dl',
+    'Agachamento Livre': 'squat agachamento costas',
+    'Agachamento Hack': 'hack squat hack maquina',
+    'Leg Press 45°': 'leg press prensa 45',
+    'Cadeira Extensora': 'leg extension extensora quadriceps',
+    'Mesa Flexora': 'leg curl flexora posterior',
+    'Stiff com Barra': 'romanian deadlift stiff rdl',
+    'Afundo c/ Halteres': 'lunge afundo passada',
+    'Agachamento Búlgaro': 'bulgarian split squat bulgaro',
+    'Elevação Pélvica (Hip Thrust)': 'hip thrust elevacao pelvica gluteo ponte',
+    'Panturrilha em Pé': 'calf raise panturrilha pe',
+    'Desenvolvimento Militar': 'overhead press militar ombros press',
+    'Desenvolvimento c/ Halteres': 'dumbbell press desenvolvimento halteres',
+    'Elevação Lateral c/ Halter': 'lateral raise elevacao lateral ombro',
+    'Face Pull': 'face pull rear delt deltoide posterior',
+    'Encolhimento de Ombros': 'shrug encolhimento trapezio',
+    'Rosca Direta com Barra': 'barbell curl rosca direta biceps',
+    'Rosca Martelo': 'hammer curl martelo',
+    'Rosca Scott': 'preacher curl scott',
+    'Tríceps Polia Alta': 'triceps pushdown polia corda',
+    'Tríceps Testa com Barra W': 'skull crusher testa frances',
+    'Tríceps Francês c/ Halter': 'overhead extension frances',
+    'Prancha Isométrica': 'plank prancha isometria',
+    'Abdominal Supra no Solo': 'crunch abdominal supra solo',
+    'Abdominal na Polia Alta': 'cable crunch abdominal polia',
+    'Ab Wheel': 'ab wheel rodinha abdominal',
+    'Corrida (Esteira)': 'running corrida esteira treadmill',
+    'Bike / Ergométrico': 'bike cycling ergometrica pedal',
+    'Remo (Ergômetro)': 'rowing remo ergometro'
+};
+
+// Texto sem acento/caixa — usado em TODA a busca (tolera "supino inclinado halter")
+function normalizeText(s) {
+    return String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// Índice normalizado (sem acento nem caixa) → entrada do catálogo
+const CATALOG_BY_SEARCH = {};
+EXERCISE_CATALOG_FULL.forEach(e => { CATALOG_BY_SEARCH[normalizeText(e.nome)] = e; });
+
+const TAG_IDS = Object.keys(TAG_DEFS);
+const TAG_BY_CATEGORY = TAG_CATEGORIAS.map(c => ({
+    ...c, tags: TAG_IDS.filter(id => TAG_DEFS[id].cat === c.id).map(id => ({ id, ...TAG_DEFS[id] }))
+}));
+
+// Deriva as tags acumulativas de um exercício (do catálogo ou digitado à mão)
+function deriveTags(entry) {
+    const e = entry || {};
+    const n = normalizeText(e.nome || e.exercise || '');
+    const tags = new Set();
+    const tipo = e.tipo || inferExerciseType(e.nome || e.exercise, e.grupo);
+    const ref = CATALOG_BY_SEARCH[n] || null;
+    const grupo = e.grupo || (ref ? ref.grupo : '');
+    const equip = e.equipamento || (ref ? ref.equipamento : '');
+
+    // equipamento + contexto (família vem do catálogo ou é inferida pelo nome)
+    let kind = EQUIP_KIND[equip] || '';
+    if (!kind) {
+        const hit = KIND_FROM_NAME.find(([re]) => re.test(n));
+        if (hit) kind = hit[1];
+    }
+    if (tipo === 'peso_corporal') kind = kind || 'peso-corporal';
+    (KIND_TAGS[kind] || []).forEach(t => tags.add(t));
+    if (kind === 'peso-corporal') { tags.add('casa'); tags.add('academia'); }
+
+    // padrão de movimento
+    if (tipo === 'corrida') {
+        tags.add('condicionamento'); tags.add('resistencia');
+    } else {
+        if (P_CORE.test(n) || grupo === 'Abdômen') tags.add('core');
+        if (tipo === 'halter_uni' || P_UNI.test(n)) tags.add('unilateral');
+        if (tipo !== 'isometria') {           // isometria = tempo sob tensão, sem padrão articular
+            if (P_EMPURRAR.test(n)) tags.add('empurrar');
+            if (P_PUXAR.test(n)) tags.add('puxar');
+            if (P_AGACHAR.test(n)) tags.add('agachar');
+            if (P_DOBRADICA.test(n)) tags.add('dobradica');
+            if (P_COMPOSTO.test(n)) tags.add('composto'); else tags.add('isolado');
+        }
+    }
+
+    // cadeia / região
+    if (grupo === 'Costas' || P_POSTERIOR.test(n)) tags.add('posterior');
+    if (grupo === 'Peito' || P_ANTERIOR.test(n)) tags.add('anterior');
+
+    // objetivo / estímulo (pela faixa de reps do catálogo)
+    if (tipo !== 'corrida') {
+        const faixa = e.faixa || (ref ? ref.faixa : null) || [0, 0];
+        const min = Number(faixa[0]) || 0, max = Number(faixa[1]) || 0;
+        if (max > 0 && max <= 10 && min <= 6) tags.add('forca');   // faixa pesada (6–10 ou menos)
+        if (min >= 12 || tipo === 'isometria') tags.add('resistencia');
+        if (tipo !== 'isometria') tags.add('hipertrofia');
+    }
+
+    // nível
+    if (P_AVANCADO.test(n)) tags.add('avancado');
+    else if (P_BASICO.test(n) || kind === 'maquina' || kind === 'polia') tags.add('iniciante');
+    else tags.add('intermediario');
+
+    // reforços manuais
+    (TAG_OVERRIDES[e.nome || e.exercise] || []).forEach(t => tags.add(t));
+
+    return TAG_IDS.filter(id => tags.has(id)); // ordem estável = ordem do pool
+}
+
+// Anexa tags + índice de busca a cada entrada do catálogo (uma vez, no load)
+EXERCISE_CATALOG_FULL.forEach(e => {
+    e.tags = deriveTags(e);
+    e.busca = normalizeText([
+        e.nome, e.grupo, e.equipamento,
+        (CATALOG_TIPOS[e.tipo] || {}).label || '',
+        SINONIMOS[e.nome] || '',
+        e.tags.map(t => `${t} ${TAG_DEFS[t] ? TAG_DEFS[t].label : ''}`).join(' ')
+    ].join(' '));
+});
+
+// Tags de qualquer exercício (inclusive fora do catálogo — inferidas pelo nome)
+function exerciseTags(name) {
+    const cat = catalogInfo(name);
+    if (cat && cat.tags && cat.tags.length) return cat.tags;
+    return deriveTags({ nome: name, tipo: inferExerciseType(name), grupo: '', equipamento: '' });
+}
+
+// Facetas (contagem) para a tela de filtros — mostra quantos exercícios sobram por tag
+function catalogFacets(list) {
+    const src = Array.isArray(list) ? list : EXERCISE_CATALOG_FULL;
+    const f = { tags: {}, grupo: {}, equipamento: {}, tipo: {} };
+    src.forEach(e => {
+        (e.tags || []).forEach(t => { f.tags[t] = (f.tags[t] || 0) + 1; });
+        if (e.grupo) f.grupo[e.grupo] = (f.grupo[e.grupo] || 0) + 1;
+        if (e.equipamento) f.equipamento[e.equipamento] = (f.equipamento[e.equipamento] || 0) + 1;
+        if (e.tipo) f.tipo[e.tipo] = (f.tipo[e.tipo] || 0) + 1;
+    });
+    return f;
+}
+
+// Busca/filtro do catálogo — 1 função pura usada pela tela, pelo seletor e pelos testes
+function searchCatalog(opts = {}) {
+    const tokens = normalizeText(opts.q || '').split(' ').filter(Boolean);
+    const tags = (opts.tags || []).filter(t => TAG_DEFS[t]);
+    const tagMode = opts.tagMode === 'all' ? 'all' : 'any';
+    const grupo = opts.grupo || '';
+    const equipamento = opts.equipamento || '';
+    const tipo = opts.tipo || '';
+    const usage = opts.usage || {};        // { nomeExercicio: vezes registradas }
+    const lastUsed = opts.lastUsed || {};  // { nomeExercicio: 'AAAA-MM-DD' }
+    const onlyUsed = !!opts.onlyUsed;
+    const onlyNew = !!opts.onlyNew;
+
+    const list = EXERCISE_CATALOG_FULL.filter(e => {
+        if (grupo && grupo !== 'Todos' && e.grupo !== grupo) return false;
+        if (equipamento && e.equipamento !== equipamento) return false;
+        if (tipo && e.tipo !== tipo) return false;
+        if (tags.length) {
+            const hits = tags.filter(t => (e.tags || []).includes(t)).length;
+            if (tagMode === 'all' ? hits < tags.length : hits === 0) return false;
+        }
+        if (tokens.length && !tokens.every(t => (e.busca || '').includes(t))) return false;
+        const uses = usage[e.nome] || 0;
+        if (onlyUsed && uses === 0) return false;
+        if (onlyNew && uses > 0) return false;
+        return true;
+    });
+
+    const ordemGrupo = m => ((MUSCLE_META[m] || {}).ordem || 99);
+    const sort = opts.sort || 'uso';
+    list.sort((a, b) => {
+        if (sort === 'nome') return a.nome.localeCompare(b.nome, 'pt-BR');
+        if (sort === 'grupo') return ordemGrupo(a.grupo) - ordemGrupo(b.grupo) || a.nome.localeCompare(b.nome, 'pt-BR');
+        if (sort === 'recentes') return String(lastUsed[b.nome] || '').localeCompare(String(lastUsed[a.nome] || '')) || a.nome.localeCompare(b.nome, 'pt-BR');
+        // 'uso': o que você mais faz primeiro; nunca usados vão por nome
+        return (usage[b.nome] || 0) - (usage[a.nome] || 0) || a.nome.localeCompare(b.nome, 'pt-BR');
+    });
+
+    const limit = Number(opts.limit) || 0;
+    return limit > 0 ? list.slice(0, limit) : list;
+}
+
+// Um exercício bate com um conjunto de tags? (usado no histórico)
+function matchesTags(itemTags, wanted, tagMode = 'any') {
+    if (!wanted || wanted.length === 0) return true;
+    const hits = wanted.filter(t => (itemTags || []).includes(t)).length;
+    return tagMode === 'all' ? hits === wanted.length : hits > 0;
+}
+
+function matchesQuery(text, q) {
+    const tokens = normalizeText(q || '').split(' ').filter(Boolean);
+    if (!tokens.length) return true;
+    const hay = normalizeText(text);
+    return tokens.every(t => hay.includes(t));
+}
+
 // ---------- Recuperação muscular (mapa de fadiga) ----------
 // recoveryH = horas até 100% com volume moderado; +2h por série acima de 8 na sessão
 const MUSCLE_META = {
@@ -151,7 +468,10 @@ function inferExerciseType(exerciseName, muscle) {
 }
 
 function catalogInfo(exerciseName) {
-    return CATALOG_BY_NAME[String(exerciseName || '').toLowerCase()] || null;
+    const raw = String(exerciseName || '');
+    return CATALOG_BY_NAME[raw.toLowerCase()]
+        || (typeof CATALOG_BY_SEARCH !== 'undefined' ? CATALOG_BY_SEARCH[normalizeText(raw)] : null)
+        || null;
 }
 
 // ============================================================
