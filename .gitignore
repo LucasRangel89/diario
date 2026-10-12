@@ -1,0 +1,12 @@
+# Dependências de build (só o Tailwind CLI e o jsdom dos testes de UI)
+node_modules/
+npm-debug.log*
+
+# Build/servidores locais
+dist/
+.cache/
+*.local
+
+# Sistema
+.DS_Store
+Thumbs.db

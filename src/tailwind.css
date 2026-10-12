@@ -1,0 +1,5 @@
+/* Fonte do Tailwind — o CSS final vai para /vendor/tailwind.css (build local, app offline).
+   Regenerar: npm run build:css  (depois de mudar classes em index.html ou js/*.js) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

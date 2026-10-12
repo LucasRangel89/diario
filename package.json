@@ -1,0 +1,18 @@
+{
+  "name": "diario-de-cargas",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Diário de Cargas — Berzerker Mode (PWA 100% local, sem build em produção)",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i src/tailwind.css -o vendor/tailwind.css --minify",
+    "watch:css": "tailwindcss -c tailwind.config.js -i src/tailwind.css -o vendor/tailwind.css --watch",
+    "serve": "python3 -m http.server 8080 --bind 0.0.0.0",
+    "test": "node test_engine.js && node test_ui.js",
+    "test:engine": "node test_engine.js",
+    "test:ui": "node test_ui.js"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "tailwindcss": "3.4.17"
+  }
+}

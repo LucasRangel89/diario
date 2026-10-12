@@ -339,20 +339,21 @@ function showRanksModal(themeId) {
 
 // ============================ TABS ============================
 function switchTab(tab) {
-    ['diario', 'boss', 'story', 'stats', 'calcs', 'config'].forEach(t => {
+    ['diario', 'busca', 'boss', 'story', 'stats', 'calcs', 'config'].forEach(t => {
         const el = document.getElementById(`tab-content-${t}`);
         const btnDesktop = document.getElementById(`nav-${t}`);
         const btnMobile = document.getElementById(`m-nav-${t}`);
         if (t === tab) {
             el.classList.remove('hidden');
-            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg bg-berzerker-600 text-white transition-all';
+            if (btnDesktop) btnDesktop.className = 'px-3 py-2 rounded-lg bg-berzerker-600 text-white transition-all whitespace-nowrap';
             if (btnMobile) btnMobile.className = 'px-3 py-1.5 rounded-lg bg-berzerker-600 text-white whitespace-nowrap';
         } else {
             el.classList.add('hidden');
-            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all';
+            if (btnDesktop) btnDesktop.className = 'px-3 py-2 rounded-lg text-gray-400 hover:text-white transition-all whitespace-nowrap';
             if (btnMobile) btnMobile.className = 'px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap';
         }
     });
+    if (tab === 'busca' && typeof renderSearchScreen === 'function') renderSearchScreen();
     if (tab === 'boss') { renderBossBattleUI(); renderMissions(); renderSeason(); }
     if (tab === 'story') generateStoryCard();
     if (tab === 'stats') { renderBadgesAndStreak(); initVolumeChart(); renderExerciseChart(); renderWeeklySetsChart(); renderTests(); }
@@ -442,6 +443,7 @@ function onLogExerciseChange() {
         if (typeSel) typeSel.value = cat.tipo;
     }
     onTypeChange('');
+    if (typeof renderExerciseTagLine === 'function') renderExerciseTagLine('log-tags', exName);
 }
 
 function toggleSetMode(prefix) {
@@ -778,6 +780,7 @@ function renderLogsTable() {
                 <h3 class="font-bold text-white text-base mt-1">${l.biset ? '🔗 ' : ''}${escapeHtml(l.exercise)}${l.biset ? ' <span class="text-[10px] font-bold text-cyan-400 border border-cyan-500/40 rounded px-1.5 py-0.5 align-middle">BI-SET</span>' : ''}<button onclick="editLog(${l.id})" title="Editar" class="ml-2 px-2 py-0.5 text-xs text-gray-400 hover:text-cyan-400 align-middle">✏️ Editar</button></h3>
                 ${l.notes ? `<p class="text-[11px] text-gray-400 mt-1 italic">📝 ${escapeHtml(l.notes)}</p>` : ''}
                 <div class="text-xs text-gray-400 mt-1 font-mono">${detalhe}</div>
+                ${typeof exerciseTagChipsHTML === 'function' ? exerciseTagChipsHTML(l.exercise, { max: 5, className: 'mt-1.5' }) : ''}
             </div>
             <button onclick="deleteLog(${l.id})" class="self-end sm:self-center p-2 text-gray-500 hover:text-red-400 transition-colors" title="Excluir">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -1269,6 +1272,7 @@ function onWbExerciseChange() {
     } else if (hint) {
         hint.textContent = 'Fora do catálogo — o tipo fica como "carga total".';
     }
+    if (typeof renderExerciseTagLine === 'function') renderExerciseTagLine('wb-tags', exName);
 }
 
 function addExerciseToDraft(forceBiset) {
@@ -2672,6 +2676,9 @@ function refreshAll() {
     initVolumeChart();
     updateExerciseSuggestions();
     if (document.getElementById('tests-container')) renderTests();
+    // só redesenha a busca se a aba estiver aberta (switchTab('busca') já renderiza ao entrar)
+    const buscaTab = document.getElementById('tab-content-busca');
+    if (buscaTab && !buscaTab.classList.contains('hidden') && typeof renderSearchScreen === 'function') renderSearchScreen();
 }
 
 // ============================ BOOT ============================

@@ -17,12 +17,16 @@ global.Chart = undefined;
 // ---- Carrega os módulos ----
 const load = (p) => new Function(fs.readFileSync(p, 'utf8'))();
 // catalogo e gamificacao rodam soltos; app.js precisa do escopo compartilhado
-const src = fs.readFileSync('js/catalogo.js', 'utf8') + '\n' + fs.readFileSync('js/gamificacao.js', 'utf8') + '\n' + fs.readFileSync('js/app.js', 'utf8');
+const src = fs.readFileSync('js/catalogo.js', 'utf8') + '\n' + fs.readFileSync('js/gamificacao.js', 'utf8') + '\n' + fs.readFileSync('js/busca.js', 'utf8') + '\n' + fs.readFileSync('js/app.js', 'utf8');
 const api = new Function(src + `
   return {
     logVolumeKg, logTstSeconds, logEst1RM, effectiveLoadKg, effectiveReps,
     formatLoadText, formatRepsText, duplaProgressao, detectAutoPR, recoveryState,
     formatPlates, inferExerciseType, catalogInfo,
+    TAG_DEFS, TAG_CATEGORIAS, TAG_BY_CATEGORY, EXERCISE_CATALOG_FULL,
+    normalizeText, exerciseTags, searchCatalog, catalogFacets, matchesTags, matchesQuery, deriveTags,
+    usageStats, searchHistoryLogs, renderSearchScreen, repsAlvoSugeridas,
+    get SEARCH() { return searchState; },
     computeXP, computeBossProgress, logDamageKg, missionsState, isoWeekKey, isoWeekRange,
     weeklyStreakInfo, seasonState, completeSeason, migrateLog,
     get STATE() { return { logs, settings, userBodyweight }; },
@@ -139,6 +143,82 @@ const recPerna = api.recoveryState('Pernas', [{ date: api.isoWeekRange('2026-10-
 check('perna com 72 h de janela', recPerna.hoursNeed >= 72, recPerna.hoursNeed);
 const recSem = api.recoveryState('Peito', [], Date.now());
 check('grupo sem registro', recSem.label === 'SEM REGISTRO');
+
+
+console.log('\n== 13. Tags acumulativas (Fase 1) ==');
+const tagIds = Object.keys(api.TAG_DEFS);
+check('pool com pelo menos 20 tags', tagIds.length >= 20, tagIds.length);
+check('todas as tags têm categoria válida', tagIds.every(id => api.TAG_DEFS[id].cat && api.TAG_CATEGORIAS.some(c => c.id === api.TAG_DEFS[id].cat)));
+check('categorias agrupam todas as tags', api.TAG_BY_CATEGORY.reduce((a, c) => a + c.tags.length, 0) === tagIds.length);
+check('catálogo inteiro etiquetado (>= 4 tags)', api.EXERCISE_CATALOG_FULL.every(e => Array.isArray(e.tags) && e.tags.length >= 4),
+    api.EXERCISE_CATALOG_FULL.filter(e => !e.tags || e.tags.length < 4).map(e => e.nome));
+check('nenhuma tag inválida no catálogo', api.EXERCISE_CATALOG_FULL.every(e => e.tags.every(t => api.TAG_DEFS[t])));
+const tTerra = api.exerciseTags('Levantamento Terra');
+check('terra: dobradiça + força + avançado + posterior', ['dobradica', 'forca', 'avancado', 'posterior'].every(t => tTerra.includes(t)), tTerra);
+const tSupino = api.exerciseTags('Supino Reto com Barra');
+check('supino barra: empurrar + composto + barra + anterior', ['empurrar', 'composto', 'barra', 'anterior'].every(t => tSupino.includes(t)), tSupino);
+const tPrancha = api.exerciseTags('Prancha Isométrica');
+check('prancha: core + resistência + peso corporal + casa', ['core', 'resistencia', 'peso-corporal', 'casa'].every(t => tPrancha.includes(t)), tPrancha);
+check('isometria não ganha padrão articular (composto/isolado)', !tPrancha.includes('composto') && !tPrancha.includes('isolado'), tPrancha);
+const tCorrida = api.exerciseTags('Corrida (Rua)');
+check('corrida na rua: condicionamento + ar livre', ['condicionamento', 'ar-livre'].every(t => tCorrida.includes(t)), tCorrida);
+const tFora = api.exerciseTags('Agachamento Búlgaro c/ Halteres');
+check('fora do catálogo também ganha tags por inferência', tFora.includes('unilateral') && tFora.includes('halter'), tFora);
+
+console.log('\n== 14. Busca e filtros ==');
+check('normalizeText tira acento e caixa', api.normalizeText('Supino Inclinação  W') === 'supino inclinacao w', api.normalizeText('Supino Inclinação  W'));
+const r1 = api.searchCatalog({ q: 'supino halteres inclinado' });
+check('busca por tokens em qualquer ordem', r1.length === 1 && r1[0].nome === 'Supino Inclinado c/ Halteres', r1.map(e => e.nome));
+check('busca sem acento acha o exercício', api.searchCatalog({ q: 'elevacao pelvica' }).some(e => e.nome === 'Elevação Pélvica (Hip Thrust)'));
+check('sinônimo em inglês (bench press)', api.searchCatalog({ q: 'bench press' }).length >= 2);
+check('busca por tag escrita (casa)', api.searchCatalog({ q: 'casa' }).length > 5);
+const casa = api.searchCatalog({ tags: ['casa'] });
+check('filtro por tag casa', casa.length > 0 && casa.every(e => e.tags.includes('casa')));
+const anyMode = api.searchCatalog({ tags: ['casa', 'barra'], tagMode: 'any' });
+const allMode = api.searchCatalog({ tags: ['casa', 'barra'], tagMode: 'all' });
+check('tag OU é mais largo que tag E', anyMode.length > allMode.length, [anyMode.length, allMode.length]);
+check('tag E exige todas as tags', allMode.every(e => e.tags.includes('casa') && e.tags.includes('barra')));
+check('combina grupo + tag', api.searchCatalog({ grupo: 'Pernas', tags: ['agachar'] }).every(e => e.grupo === 'Pernas' && e.tags.includes('agachar')));
+check('combina equipamento + tipo', api.searchCatalog({ equipamento: 'Polia', tipo: 'carga_total' }).every(e => e.equipamento === 'Polia' && e.tipo === 'carga_total'));
+check('filtro vazio devolve o catálogo inteiro', api.searchCatalog({}).length === api.EXERCISE_CATALOG_FULL.length);
+const uso = { 'Supino Reto com Barra': 9, 'Agachamento Livre': 3 };
+const ult = { 'Supino Reto com Barra': '2026-10-10', 'Agachamento Livre': '2026-10-11' };
+check('ordem "uso" põe o mais registrado primeiro', api.searchCatalog({ usage: uso, sort: 'uso' })[0].nome === 'Supino Reto com Barra');
+check('ordem "recentes" põe o último usado primeiro', api.searchCatalog({ lastUsed: ult, sort: 'recentes' })[0].nome === 'Agachamento Livre');
+check('ordem "nome" é alfabética', api.searchCatalog({ sort: 'nome' })[0].nome.localeCompare(api.searchCatalog({ sort: 'nome' }).slice(-1)[0].nome, 'pt-BR') < 0);
+check('onlyUsed: só o que já foi registrado', api.searchCatalog({ usage: uso, onlyUsed: true }).length === 2);
+check('onlyNew: esconde o que já foi registrado', api.searchCatalog({ usage: uso, onlyNew: true }).every(e => !uso[e.nome]));
+check('limit corta a lista', api.searchCatalog({ limit: 5 }).length === 5);
+const fac = api.catalogFacets(api.EXERCISE_CATALOG_FULL);
+check('facetas contam as tags', fac.tags.empurrar === api.EXERCISE_CATALOG_FULL.filter(e => e.tags.includes('empurrar')).length);
+check('matchesTags OU/E', api.matchesTags(['a', 'b'], ['b', 'c'], 'any') === true && api.matchesTags(['a', 'b'], ['b', 'c'], 'all') === false);
+check('matchesQuery AND de tokens', api.matchesQuery('Supino Reto com Barra', 'barra supino') === true && api.matchesQuery('Supino Reto', 'supino terra') === false);
+
+console.log('\n== 15. Tela de busca + histórico filtrado ==');
+api.setLogs([
+    { id: 1, date: '2026-10-12', kind: 'peso', muscle: 'Peito', exercise: 'Supino Reto com Barra', type: 'carga_total', weight: 100, reps: [8, 8, 8], notes: 'ombro ok' },
+    { id: 2, date: '2026-10-11', kind: 'peso', muscle: 'Abdômen', exercise: 'Prancha Isométrica', type: 'isometria', weight: 0, reps: [60, 45] },
+    { id: 3, date: '2026-09-01', kind: 'corrida', muscle: 'Cardio', exercise: 'Corrida (Rua)', distanceKm: 5, durationMin: 28 }
+]);
+const us = api.usageStats();
+check('usageStats conta registros', us.usage['Supino Reto com Barra'] === 1 && us.lastUsed['Supino Reto com Barra'] === '2026-10-12', us);
+check('usageStats calcula melhor 1RM (100×8 = 126,7)', us.best1RM['Supino Reto com Barra'] === 126.7, us.best1RM);
+api.SEARCH.tags = ['core']; api.SEARCH.tagMode = 'any'; api.SEARCH.histPeriod = 'todos'; api.SEARCH.histQ = ''; api.SEARCH.histMuscle = '';
+const histCore = api.searchHistoryLogs();
+check('histórico filtrado por tag core', histCore.length === 1 && histCore[0].exercise === 'Prancha Isométrica', histCore.map(l => l.exercise));
+api.SEARCH.tags = []; api.SEARCH.histQ = 'ombro';
+check('histórico filtrado por texto nas observações', api.searchHistoryLogs().length === 1);
+api.SEARCH.histQ = ''; api.SEARCH.histMuscle = 'Cardio';
+check('histórico filtrado por grupo', api.searchHistoryLogs().map(l => l.exercise).join() === 'Corrida (Rua)');
+api.SEARCH.histMuscle = ''; api.SEARCH.histPeriod = '7';
+check('histórico filtrado por período (7 dias)', api.searchHistoryLogs().every(l => l.date >= '2026-01-01') && api.searchHistoryLogs().length <= 3);
+api.SEARCH.histPeriod = 'todos';
+check('reps alvo sugeridas respeitam a faixa', api.repsAlvoSugeridas(api.catalogInfo('Supino Reto com Barra')) === '10, 10, 8', api.repsAlvoSugeridas(api.catalogInfo('Supino Reto com Barra')));
+check('reps alvo de isometria em segundos', api.repsAlvoSugeridas(api.catalogInfo('Prancha Isométrica')) === '90, 20');
+check('reps alvo de corrida vazia', api.repsAlvoSugeridas(api.catalogInfo('Corrida (Rua)')) === '');
+let renderOk = true;
+try { api.renderSearchScreen(); } catch (e) { renderOk = false; console.log('   erro:', e.message); }
+check('renderSearchScreen não quebra sem DOM', renderOk);
 
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);
