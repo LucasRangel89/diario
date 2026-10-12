@@ -1,0 +1,2582 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diário de Cargas // Berzerker Mode</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#08080a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Berzerker">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <!-- Chart.js for Statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Oswald:wght@500;600;700&family=Teko:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        berzerker: {
+                            50: '#fff1f1',
+                            100: '#ffe1e1',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                            dark: '#08080a',
+                            card: '#121216',
+                            border: '#272730'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        oswald: ['Oswald', 'sans-serif'],
+                        teko: ['Teko', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #08080a;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* PR Shake Microinteraction Keyframes */
+        @keyframes pr-shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-4px, 2px) rotate(-1deg); }
+            40% { transform: translate(4px, -2px) rotate(1deg); }
+            60% { transform: translate(-3px, 1px) rotate(-0.5deg); }
+            80% { transform: translate(3px, -1px) rotate(0.5deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        .animate-pr-shake {
+            animation: pr-shake 0.4s ease-in-out;
+            border-color: #10b981 !important;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Canvas Preview Responsive Container */
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 380px;
+            aspect-ratio: 9 / 16;
+            margin: 0 auto;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+        }
+        #story-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121216;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #272730;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-berzerker-dark text-gray-100 pb-20 antialiased">
+
+    <header class="border-b border-berzerker-border bg-berzerker-card/90 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-10 bg-berzerker-600 rounded-sm"></div>
+                <div>
+                    <h1 class="font-oswald text-2xl sm:text-3xl font-bold tracking-wider text-white uppercase leading-none">
+                        Diário de Cargas
+                    </h1>
+                    <span class="font-teko text-berzerker-500 text-lg sm:text-xl tracking-widest uppercase block -mt-1">
+                        // BERZERKER MODE
+                    </span>
+                </div>
+            </div>
+
+            <!-- NAVIGATION TABS -->
+            <nav class="hidden md:flex items-center gap-1 bg-berzerker-dark p-1.5 rounded-xl border border-berzerker-border text-xs font-bold uppercase tracking-wider">
+                <button onclick="switchTab('diario')" id="nav-diario" class="px-4 py-2 rounded-lg bg-berzerker-600 text-white transition-all">
+                    ⚡ Diário & Treino
+                </button>
+                <button onclick="switchTab('boss')" id="nav-boss" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all">
+                    ⚔️ Boss Battle
+                </button>
+                <button onclick="switchTab('story')" id="nav-story" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all">
+                    📸 Story Card
+                </button>
+                <button onclick="switchTab('stats')" id="nav-stats" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all">
+                    📊 Stats & Streak
+                </button>
+                <button onclick="switchTab('calcs')" id="nav-calcs" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all">
+                    🧮 1RM & Aquecimento
+                </button>
+                <button onclick="switchTab('config')" id="nav-config" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all">
+                    ⚙️ Config / JSON
+                </button>
+            </nav>
+
+            <div class="flex items-center gap-3">
+                <span id="header-today-date" class="px-3 py-1 bg-berzerker-border text-gray-300 text-xs font-mono rounded-md">
+                    --
+                </span>
+            </div>
+        </div>
+
+        <!-- MOBILE NAVIGATION BAR -->
+        <div class="md:hidden flex overflow-x-auto gap-2 p-2 bg-berzerker-dark border-t border-berzerker-border text-[11px] font-bold uppercase tracking-wider">
+            <button onclick="switchTab('diario')" id="m-nav-diario" class="px-3 py-1.5 rounded-lg bg-berzerker-600 text-white whitespace-nowrap">⚡ Treino</button>
+            <button onclick="switchTab('boss')" id="m-nav-boss" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">⚔️ Boss</button>
+            <button onclick="switchTab('story')" id="m-nav-story" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">📸 Story</button>
+            <button onclick="switchTab('stats')" id="m-nav-stats" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">📊 Stats</button>
+            <button onclick="switchTab('calcs')" id="m-nav-calcs" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">🧮 Calcs</button>
+            <button onclick="switchTab('config')" id="m-nav-config" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">⚙️ Config</button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        
+        <!-- TOP SUMMARY METRICS BAR -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-berzerker-card border border-berzerker-border p-4 rounded-xl">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Volume Sessão</span>
+                <div id="stat-tonnage" class="font-oswald text-2xl sm:text-3xl font-bold text-berzerker-500 mt-1">0.00 TON</div>
+            </div>
+            <div class="bg-berzerker-card border border-berzerker-border p-4 rounded-xl">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Relativo ao Corpo</span>
+                <div id="stat-relative" class="font-oswald text-2xl sm:text-3xl font-bold text-cyan-400 mt-1">0.0× BW</div>
+            </div>
+            <div class="bg-berzerker-card border border-berzerker-border p-4 rounded-xl">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Dano ao Boss Hoje</span>
+                <div id="stat-boss-dmg" class="font-oswald text-2xl sm:text-3xl font-bold text-amber-400 mt-1">0 DMG</div>
+            </div>
+            <div class="bg-berzerker-card border border-berzerker-border p-4 rounded-xl">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Patente <button onclick="showRanksModal()" class="ml-1 normal-case text-cyan-400 hover:underline">📜 ver todas</button></span>
+                <div id="stat-rank" class="font-oswald text-lg sm:text-xl font-bold text-amber-400 mt-1 truncate">
+                    🐜 Formiga Atômica
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: DIÁRIO E REGISTRO -->
+        <section id="tab-content-diario" class="space-y-6">
+            
+            <!-- MODO TREINO EM ANDAMENTO (SESSÃO ATIVA) -->
+            <div id="active-session-card" class="hidden bg-berzerker-card border-2 border-berzerker-600 rounded-2xl p-6 shadow-xl shadow-berzerker-600/10 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-berzerker-border pb-3">
+                    <div>
+                        <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2 flex-wrap">
+                            <span class="text-berzerker-500">⚔️</span> Treino em Andamento:
+                            <span id="session-title" class="text-berzerker-500"></span>
+                        </h2>
+                        <p class="text-xs text-gray-400">Cargas pré-preenchidas com suas metas — ajuste o que realmente fez e toque em ✔ Registrar.</p>
+                    </div>
+                    <button onclick="endSession()" class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap">
+                        ⏹ Finalizar Treino
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- PROGRESSO DA SESSÃO -->
+                    <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3.5">
+                        <div class="flex justify-between text-[10px] font-bold uppercase text-gray-400 mb-1.5">
+                            <span>Progresso da Sessão</span>
+                            <span id="session-progress-text" class="text-white">0 / 0 exercícios</span>
+                        </div>
+                        <div class="w-full h-2.5 bg-berzerker-border rounded-full overflow-hidden">
+                            <div id="session-progress-bar" class="h-full bg-gradient-to-r from-berzerker-600 to-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <div id="session-volume-text" class="text-[10px] text-gray-500 font-mono mt-1.5">0 kg movidos na sessão</div>
+                    </div>
+
+                    <!-- CRONÔMETRO DE DESCANSO -->
+                    <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3.5 flex items-center justify-between gap-3">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase text-gray-400 block">⏱️ Descanso</span>
+                            <span id="session-timer-display" class="font-oswald text-3xl font-bold text-white leading-none">00:00</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1 justify-center">
+                            <button onclick="addSessionTimer(30)" title="Somar 30 s" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+30</button>
+                            <button onclick="addSessionTimer(60)" title="Somar 60 s" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+60</button>
+                            <button onclick="addSessionTimer(90)" title="Somar 90 s" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+90</button>
+                            <button onclick="addSessionTimer(120)" title="Somar 120 s" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+120</button>
+                            <button onclick="stopSessionTimer()" title="Zerar" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border rounded-md hover:bg-red-900/60 transition-colors">↺</button>
+                        </div>
+                        <button onclick="toggleSessionTimer()" id="session-timer-btn" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">Iniciar</button>
+                    </div>
+                </div>
+
+                <!-- CHECKLIST DE EXERCÍCIOS DA SESSÃO -->
+                <div id="session-exercises-list" class="space-y-3"></div>
+            </div>
+
+            <!-- MAPA DE FADIGA MUSCULAR (BOXES COM INDICADORES VISUAIS) -->
+            <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-berzerker-border pb-3">
+                    <div>
+                        <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <span class="text-emerald-400">🧬</span> Mapa de Fadiga Muscular
+                        </h2>
+                        <p class="text-xs text-gray-400">Cores calculadas pela data do último treino de cada grupo — ao virar o dia, os boxes mudam sozinhos. Clique num box para registrar aquele grupo.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold uppercase">
+                        <span class="flex items-center gap-1 text-red-400"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Exausto (hoje)</span>
+                        <span class="flex items-center gap-1 text-amber-400"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Recuperando (ontem)</span>
+                        <span class="flex items-center gap-1 text-emerald-400"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 100% (48h+)</span>
+                    </div>
+                </div>
+
+                <div id="recovery-status-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <!-- Boxes gerados via JS (renderRecoveryMap) -->
+                </div>
+            </div>
+
+            <!-- CRIAR TREINO: BUILDER + TREINOS SALVOS -->
+            <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-5">
+                <div class="border-b border-berzerker-border pb-3">
+                    <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <span class="text-berzerker-500">🎯</span> Criar Treino
+                    </h2>
+                    <p class="text-xs text-gray-400 mt-0.5">Escolha os exercícios e as metas, salve o treino e reutilize para registrar as cargas rapidinho durante o treino.</p>
+                </div>
+
+                <!-- NOME DO TREINO + AÇÕES -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Nome do Treino</label>
+                        <input type="text" id="workout-name" placeholder="Ex: Treino A — Peito & Tríceps" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <button onclick="saveWorkout()" id="btn-save-workout" class="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors shadow-lg shadow-emerald-600/20">💾 Salvar Treino</button>
+                        <button type="button" onclick="clearDraft()" class="px-4 py-2.5 bg-berzerker-border hover:bg-gray-700 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">🗑 Descartar</button>
+                    </div>
+                </div>
+
+                <!-- ADICIONAR EXERCÍCIO AO TREINO -->
+                <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-4 space-y-3">
+                    <span class="text-[11px] font-bold text-berzerker-500 uppercase tracking-wider block">➕ Adicionar Exercício ao Treino</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grupo Muscular</label>
+                            <select id="wb-muscle" onchange="updateExerciseSuggestions()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                                <option value="Peito">Peito</option>
+                                <option value="Costas">Costas</option>
+                                <option value="Pernas">Pernas</option>
+                                <option value="Ombros">Ombros</option>
+                                <option value="Bíceps">Bíceps</option>
+                                <option value="Tríceps">Tríceps</option>
+                                <option value="Abdômen">Abdômen</option>
+                                <option value="Geral">Outros / Geral</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Exercício</label>
+                            <input type="text" id="wb-exercise" list="wb-exercise-suggestions" placeholder="Ex: Supino Reto com Barra" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                            <datalist id="wb-exercise-suggestions"></datalist>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Carga Alvo (kg)</label>
+                            <input type="number" id="wb-weight" step="0.5" min="0" placeholder="Ex: 100" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Reps Alvo</label>
+                            <input type="text" id="wb-reps" placeholder="Ex: 12, 10, 8" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Técnica</label>
+                            <select id="wb-technique" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                                <option value="Convencional">Convencional</option>
+                                <option value="Rest-Pause">Rest-Pause</option>
+                                <option value="Drop-Set">Drop-Set</option>
+                                <option value="Cluster">Cluster Set</option>
+                                <option value="Isometria">Isometria Focus</option>
+                                <option value="Excêntrica Lenta">Excêntrica Lenta</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <p class="text-[10px] text-gray-500">💡 Sugestões automáticas do catálogo e do seu histórico ao selecionar o grupo.</p>
+                        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto"><button type="button" onclick="addExerciseToDraft()" class="w-full sm:w-auto px-5 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors shadow-lg shadow-berzerker-600/30 whitespace-nowrap">+ Adicionar Exercício</button><button type="button" id="wb-biset-btn" onclick="addExerciseToDraft(true)" class="w-full sm:w-auto px-5 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap disabled:cursor-not-allowed">🔗 + Bi-set com o anterior</button></div>
+                    </div>
+                </div>
+
+                <!-- RASCUNHO DO TREINO -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider mb-2 flex items-center gap-2">
+                        📋 Exercícios do Treino
+                        <span id="draft-count" class="px-1.5 py-0.5 bg-berzerker-border rounded text-[10px] text-gray-300">0</span>
+                    </h3>
+                    <div id="draft-exercises-list" class="space-y-2"></div>
+                </div>
+
+                <!-- TREINOS SALVOS -->
+                <div class="border-t border-berzerker-border pt-4 space-y-3">
+                    <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <span class="text-cyan-400">💾</span> Treinos Salvos
+                    </h3>
+                    <div id="saved-workouts-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+                </div>
+            </div>
+
+            <!-- LOG FORM CARD -->
+            <div id="form-card-container" class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between mb-5 border-b border-berzerker-border pb-3">
+                    <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <span class="text-berzerker-500">⚡</span> Registrar Novo Exercício
+                    </h2>
+                    <span class="text-xs text-gray-400">Preencha e adicione à sessão</span>
+                </div>
+
+                <form id="workout-form" onsubmit="handleAddLog(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Data da Sessão</label>
+                            <input type="date" id="log-date" required class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Grupo Muscular</label>
+                            <select id="log-muscle" required class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
+                                <option value="Peito">Peito</option>
+                                <option value="Costas">Costas</option>
+                                <option value="Pernas">Pernas</option>
+                                <option value="Ombros">Ombros</option>
+                                <option value="Bíceps">Bíceps</option>
+                                <option value="Tríceps">Tríceps</option>
+                                <option value="Abdômen">Abdômen</option>
+                                <option value="Geral">Outros / Geral</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Nome do Exercício</label>
+                            <input type="text" id="log-exercise" placeholder="Ex: Supino Reto com Barra" required class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider">Carga Alvo (kg)</label>
+                                <button type="button" onclick="calculateWarmupFromForm()" class="text-[10px] text-berzerker-500 hover:underline uppercase font-bold">🔥 Ver Aquecimento</button>
+                            </div>
+                            <input type="number" id="log-weight" step="0.5" min="0" placeholder="Ex: 100" required class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
+                        </div>
+                    </div>
+
+                    <!-- WARMUP PREVIEW QUICK BOX -->
+                    <div id="warmup-quick-box" class="hidden bg-berzerker-dark/80 border border-amber-500/30 rounded-xl p-3 text-xs space-y-1">
+                        <div class="font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                            <span>🔥 Protocolo Sugerido de Aquecimento</span>
+                            <button type="button" onclick="document.getElementById('warmup-quick-box').classList.add('hidden')" class="text-gray-400 hover:text-white">✕</button>
+                        </div>
+                        <div id="warmup-quick-content" class="font-mono text-gray-300"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Reps por Série</label>
+                            <input type="text" id="log-reps" placeholder="Ex: 12, 10, 8, 6" required class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Técnica Avançada</label>
+                            <select id="log-technique" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
+                                <option value="Convencional">Convencional</option>
+                                <option value="Rest-Pause">Rest-Pause</option>
+                                <option value="Drop-Set">Drop-Set</option>
+                                <option value="Cluster">Cluster Set</option>
+                                <option value="Isometria">Isometria Focus</option>
+                                <option value="Excêntrica Lenta">Excêntrica Lenta</option>
+                            </select>
+                        </div>
+                        <!-- FEEDBACK RÁPIDO PARA A PRÓXIMA -->
+                        <div>
+                            <label class="block text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">💡 Meta Próximo Treino</label>
+                            <select id="log-next-goal" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500">
+                                <option value="📈 Aumentar Carga">📈 Aumentar Carga (+kg)</option>
+                                <option value="➕ Aumentar Reps">➕ Mais Repetições</option>
+                                <option value="⚖️ Manter Carga">⚖️ Manter Carga</option>
+                                <option value="🎯 Ajustar Execução">🎯 Ajustar Técnica</option>
+                                <option value="📉 Reduzir Carga">📉 Reduzir Peso</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Observações</label>
+                        <textarea id="log-notes" rows="2" placeholder="Ex: ajuste do banco, dor, sensação, regulagem da máquina..." class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500"></textarea>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2">
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="log-is-pr" onchange="triggerPrShakeEffect(this)" class="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-berzerker-dark border-berzerker-border">
+                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">🏆 Novo Recorde Pessoal (PR)</span>
+                        </label>
+
+                        <button type="submit" class="px-6 py-2.5 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors shadow-lg shadow-berzerker-600/30">
+                            Adicionar Exercício
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- REGISTERED EXERCISES TABLE -->
+            <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-berzerker-border pb-3">
+                    <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <span class="text-berzerker-500">📋</span> Exercícios Registrados Na Data
+                    </h2>
+                    
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs text-gray-400 uppercase font-bold">Filtrar Data:</label>
+                        <input type="date" id="filter-date" onchange="handleFilterDateChange(this.value)" class="bg-berzerker-dark border border-berzerker-border rounded-md px-2 py-1 text-xs text-white">
+                    </div>
+                </div>
+
+                <div id="logs-container" class="space-y-3">
+                    <!-- Dynamic Logs Inserted Here -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- TAB: BOSS BATTLE MODE (RESTORED & ENHANCED) -->
+        <section id="tab-content-boss" class="hidden space-y-6">
+            <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                <div class="border-b border-berzerker-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-oswald text-2xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <span class="text-red-500">⚔️</span> <span id="arena-title">Arena de Batalha de Chefão</span>
+                        </h2>
+                        <p class="text-xs text-gray-400">Cada 1 kg movido no seu treino causa <span class="text-amber-400 font-bold">1 Ponto de Dano (1 DMG)</span> ao Chefão ativo!</p>
+                    </div>
+
+                    <div class="bg-berzerker-dark px-4 py-2 rounded-xl border border-berzerker-border text-right">
+                        <span class="text-[10px] text-gray-400 font-bold uppercase block">Dano Causado Hoje</span>
+                        <span id="boss-today-dmg-display" class="font-oswald text-2xl font-bold text-amber-400">0 DMG</span>
+                    </div>
+                </div>
+
+                <!-- ACTIVE BOSS CARD -->
+                <div id="active-boss-card" class="mt-6 bg-gradient-to-br from-berzerker-dark to-berzerker-card border border-red-900/50 p-6 rounded-2xl space-y-5">
+                    <!-- Populated dynamically by JS -->
+                </div>
+
+                <!-- ALL BOSSES STAGE SELECTOR -->
+                <div class="mt-6 space-y-3">
+                    <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">👹 Lista de Titans & Bosses</h3>
+                    <div id="bosses-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: STORY CARD CANVAS & VIBE CUSTOMIZATION -->
+        <section id="tab-content-story" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- STORY CARD CONTROLS -->
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-5">
+                        <div class="border-b border-berzerker-border pb-3">
+                            <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                <span class="text-berzerker-500">🎨</span> Personalizar Card do Story
+                            </h2>
+                            <p class="text-xs text-gray-400 mt-0.5">Ajuste o tema, plano de fundo e a vibe da sessão.</p>
+                        </div>
+
+                        <!-- THEME SELECTOR -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Tema Visual</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="setTheme('berzerker')" id="btn-theme-berzerker" class="py-2 px-2 text-xs font-bold uppercase rounded-lg border bg-berzerker-600 border-berzerker-500 text-white">
+                                    Berzerker Red
+                                </button>
+                                <button onclick="setTheme('cyberpunk')" id="btn-theme-cyberpunk" class="py-2 px-2 text-xs font-bold uppercase rounded-lg border bg-berzerker-dark border-berzerker-border text-gray-400">
+                                    Cyberpunk
+                                </button>
+                                <button onclick="setTheme('minimal')" id="btn-theme-minimal" class="py-2 px-2 text-xs font-bold uppercase rounded-lg border bg-berzerker-dark border-berzerker-border text-gray-400">
+                                    Minimalist
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- CUSTOM BACKGROUND IMAGE UPLOAD -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider">Foto de Fundo Personalizada (Opcional)</label>
+                            <input type="file" id="bg-image-input" accept="image/*" onchange="handleBgImageUpload(event)" class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-berzerker-border file:text-white hover:file:bg-berzerker-600 transition-colors">
+                            
+                            <div class="flex items-center gap-4 pt-1">
+                                <label class="text-xs text-gray-400 uppercase font-bold">Escurecimento Foto:</label>
+                                <input type="range" id="bg-overlay-opacity" min="0.1" max="0.9" step="0.05" value="0.6" oninput="generateStoryCard()" class="flex-1 accent-berzerker-500">
+                                <button type="button" onclick="removeBgImage()" class="text-xs text-red-400 hover:underline">Remover Foto</button>
+                            </div>
+                        </div>
+
+                        <!-- VIBE INTEGRATION (MUSIC & WEATHER) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-berzerker-border">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">🎵 Trilha Sonora / Música</label>
+                                <input type="text" id="vibe-music" placeholder="Ex: Rammstein - Deutschland" oninput="generateStoryCard()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">🌩️ Clima / Temperatura</label>
+                                <input type="text" id="vibe-weather" placeholder="Ex: 12°C Chuvoso" oninput="generateStoryCard()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-xs">
+                            </div>
+                        </div>
+
+                        <!-- DOWNLOAD BUTTON -->
+                        <button onclick="downloadStoryCard()" class="w-full py-3.5 bg-gradient-to-r from-berzerker-600 to-berzerker-800 hover:from-berzerker-500 hover:to-berzerker-700 text-white font-bold text-sm uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-berzerker-600/30 flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Baixar Card em Alta Resolução (1080x1920)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CANVAS DISPLAY -->
+                <div class="lg:col-span-6 flex flex-col items-center">
+                    <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-4 w-full max-w-[420px] text-center space-y-3">
+                        <span class="text-xs text-berzerker-500 font-bold uppercase tracking-wider block">Pré-visualização ao Vivo</span>
+                        <div class="canvas-container">
+                            <canvas id="story-canvas" width="1080" height="1920"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 3: ESTATÍSTICAS, GRÁFICOS & STREAK -->
+        <section id="tab-content-stats" class="hidden space-y-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-berzerker-card border border-berzerker-border p-5 rounded-2xl flex items-center gap-4">
+                    <div class="text-4xl">🔥</div>
+                    <div>
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Sequência (Streak)</span>
+                        <div id="stat-streak-days" class="font-oswald text-3xl font-bold text-amber-400">0 Dias</div>
+                        <span class="text-[11px] text-gray-500">Ofensiva em dia</span>
+                    </div>
+                </div>
+
+                <div class="bg-berzerker-card border border-berzerker-border p-5 rounded-2xl flex items-center gap-4">
+                    <div class="text-4xl">🏋️</div>
+                    <div>
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Total Histórico</span>
+                        <div id="stat-total-tonnage" class="font-oswald text-3xl font-bold text-berzerker-500">0.0 TON</div>
+                        <span class="text-[11px] text-gray-500">Volume acumulado</span>
+                    </div>
+                </div>
+
+                <div class="bg-berzerker-card border border-berzerker-border p-5 rounded-2xl flex items-center gap-4">
+                    <div class="text-4xl">🏆</div>
+                    <div>
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Conquistas / Badges</span>
+                        <div id="stat-unlocked-badges" class="font-oswald text-3xl font-bold text-emerald-400">0 / 6</div>
+                        <span class="text-[11px] text-gray-500">Desbloqueadas</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHART CARD -->
+            <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-4">
+                <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <span class="text-berzerker-500">📈</span> Progressão de Volume (Últimas Sessões)
+                </h2>
+                <div class="h-64 sm:h-80 w-full relative">
+                    <canvas id="volumeChart"></canvas>
+                </div>
+            </div>
+
+            <!-- BADGES CONTAINER -->
+            <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-4">
+                <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <span class="text-amber-400">🎖️</span> Conquistas Berzerker
+                </h2>
+                <div id="badges-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <!-- Badges rendered via JS -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- TAB 4: CALCULADORAS (1RM & AQUECIMENTO) -->
+        <section id="tab-content-calcs" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- 1RM CALCULATOR -->
+                <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-4">
+                    <div class="border-b border-berzerker-border pb-3">
+                        <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <span class="text-berzerker-500">🎯</span> Calculadora de 1RM (Epley / Brzycki)
+                        </h2>
+                        <p class="text-xs text-gray-400">Estime sua repetição máxima teórica.</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Carga Utilizada (kg)</label>
+                            <input type="number" id="calc-1rm-weight" placeholder="Ex: 100" oninput="calculate1RM()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Repetições Feitas</label>
+                            <input type="number" id="calc-1rm-reps" placeholder="Ex: 5" oninput="calculate1RM()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-sm">
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-berzerker-dark rounded-xl border border-berzerker-border text-center">
+                        <span class="text-xs text-gray-400 font-bold uppercase tracking-wider block">1RM Estimada (Máximo)</span>
+                        <div id="calc-1rm-result" class="font-oswald text-4xl font-bold text-berzerker-500 mt-1">0 kg</div>
+                    </div>
+
+                    <!-- PERCENTAGES BREAKDOWN TABLE -->
+                    <div>
+                        <span class="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Tabela de Percentuais de Intensidade</span>
+                        <div id="calc-1rm-table" class="grid grid-cols-4 gap-2 text-xs font-mono">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WARMUP SETS CALCULATOR -->
+                <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-4">
+                    <div class="border-b border-berzerker-border pb-3">
+                        <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <span class="text-amber-500">🔥</span> Calculadora de Aquecimento & Preparação
+                        </h2>
+                        <p class="text-xs text-gray-400">Monte pirâmide de aquecimento para evitar lesões em séries pesadas.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Carga Alvo de Trabalho (kg)</label>
+                        <input type="number" id="calc-warmup-target" placeholder="Ex: 120" oninput="renderWarmupCalculator()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm">
+                    </div>
+
+                    <div id="warmup-results-container" class="space-y-2">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 5: CONFIGURAÇÕES E BACKUP JSON -->
+        <section id="tab-content-config" class="hidden space-y-6">
+            <div class="max-w-2xl mx-auto bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-6">
+                
+                <div class="border-b border-berzerker-border pb-3">
+                    <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <span class="text-berzerker-500">⚙️</span> Configurações de Perfil
+                    </h2>
+                    <p class="text-xs text-gray-400">Defina seu peso corporal para cálculo relativo de força.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Seu Peso Corporal Atual (kg)</label>
+                    <div class="flex gap-3">
+                        <input type="number" id="user-bodyweight" step="0.5" placeholder="Ex: 80" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm">
+                        <button onclick="saveBodyweight()" class="px-5 py-2.5 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase rounded-lg">Salvar</button>
+                    </div>
+                </div>
+
+                <div class="border-t border-berzerker-border pt-6 space-y-3">
+                    <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">🎭 Tema da Gamificação</h3>
+                    <p class="text-xs text-gray-400">Muda as patentes e os chefões. O progresso é mantido ao trocar de tema.</p>
+                    <select id="game-theme-select" onchange="changeGameTheme(this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm">
+                        <option value="classico">🦍 Berzerker (clássico)</option>
+                        <option value="zodiaco">♈ Cavaleiros do Zodíaco</option>
+                        <option value="hercules">🦁 12 Trabalhos de Hércules</option>
+                        <option value="acao">🎬 Filmes de Ação</option>
+                    </select>
+                    <p id="game-theme-desc" class="text-[11px] text-gray-500"></p>
+                </div>
+
+                <div class="border-t border-berzerker-border pt-6 space-y-4">
+                    <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">💾 Backup & Restauração JSON</h3>
+                    <p class="text-xs text-gray-400">Exporte seus dados para não perder nada ao trocar de celular ou navegador.</p>
+
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button onclick="exportJSONBackup()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2">
+                            <span>📥</span> Exportar Backup (.json)
+                        </button>
+
+                        <label class="flex-1 py-3 bg-berzerker-border hover:bg-gray-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer text-center">
+                            <span>📤</span> Importar Backup (.json)
+                            <input type="file" id="import-json-file" accept=".json" onchange="importJSONBackup(event)" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="border-t border-berzerker-border pt-6">
+                    <button onclick="clearAllData()" class="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-wider">
+                        ⚠️ Apagar Todo o Histórico
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // GLOBAL APP STATE
+        let logs = [];
+        let userBodyweight = 80; // default in kg
+        let customBgImageData = null;
+        let selectedStoryTheme = 'berzerker';
+        let volumeChartInstance = null;
+
+        // Estado do "Criar Treino" / Treino do Dia
+        let savedWorkouts = [];    // treinos salvos pelo usuário
+        let draftExercises = [];   // rascunho em edição no builder
+        let editingWorkoutId = null;
+        let activeSession = null;  // treino em andamento (sessão ativa)
+
+        // Cronômetro de descanso da sessão
+        let sessionTimerSeconds = 0;
+        let sessionTimerInterval = null;
+
+        // Vigia a virada do dia para atualizar o mapa de fadiga
+        let lastKnownTodayISO = null;
+
+        const STORAGE_KEY_LOGS = 'berzerker_diario_cargas_logs_v2';
+        const STORAGE_KEY_BW = 'berzerker_user_bodyweight';
+        const STORAGE_KEY_WORKOUTS = 'berzerker_saved_workouts_v1';
+        const STORAGE_KEY_SEEDED = 'berzerker_seeded_v2';
+
+        // localStorage seguro (não quebra em contextos onde storage é bloqueado, ex: preview em iframe)
+        const safeStorage = {
+            get(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } },
+            set(key, val) { try { window.localStorage.setItem(key, val); } catch (e) { /* sem persistência neste contexto */ } }
+        };
+
+        const TECHNIQUES = [['Convencional','Convencional'],['Rest-Pause','Rest-Pause'],['Drop-Set','Drop-Set'],['Cluster','Cluster Set'],['Isometria','Isometria Focus'],['Excêntrica Lenta','Excêntrica Lenta']];
+        const NEXT_GOALS = [['','— sem meta —'],['📈 Aumentar Carga','📈 Aumentar Carga (+kg)'],['➕ Aumentar Reps','➕ Mais Repetições'],['⚖️ Manter Carga','⚖️ Manter Carga'],['🎯 Ajustar Execução','🎯 Ajustar Técnica'],['📉 Reduzir Carga','📉 Reduzir Peso']];
+        const INP = 'w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm focus:outline-none focus:border-berzerker-500';
+        const LBL = 'block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1';
+
+        // Catálogo de sugestões por grupo (usado no "Criar Treino")
+        const EXERCISE_CATALOG = {
+            'Peito': ['Supino Reto com Barra', 'Supino Inclinado com Barra', 'Supino Reto com Halteres', 'Supino Inclinado c/ Halteres', 'Crucifixo na Máquina', 'Crossover na Polia', 'Peck Deck', 'Flexão de Braço', 'Paralelas (foco peito)'],
+            'Costas': ['Barra Fixa (Pull-up)', 'Puxada Frontal na Polia', 'Remada Curvada com Barra', 'Remada Unilateral c/ Halter', 'Remada Baixa na Polia', 'Levantamento Terra', 'Pulldown na Polia', 'Remada Cavalinho'],
+            'Pernas': ['Agachamento Livre', 'Agachamento Hack', 'Leg Press 45°', 'Cadeira Extensora', 'Mesa Flexora', 'Stiff com Barra', 'Afundo c/ Halteres', 'Elevação Pélvica (Hip Thrust)', 'Panturrilha em Pé', 'Panturrilha Sentado'],
+            'Ombros': ['Desenvolvimento Militar', 'Desenvolvimento c/ Halteres', 'Elevação Lateral c/ Halter', 'Elevação Frontal c/ Halter', 'Remada Alta na Polia', 'Face Pull', 'Encolhimento de Ombros'],
+            'Bíceps': ['Rosca Direta com Barra', 'Rosca Alternada c/ Halteres', 'Rosca Martelo', 'Rosca Scott', 'Rosca na Polia Baixa', 'Rosca Concentrada'],
+            'Tríceps': ['Tríceps Polia Alta', 'Tríceps Testa com Barra W', 'Tríceps Corda na Polia', 'Tríceps Francês c/ Halter', 'Paralelas (foco tríceps)', 'Supino Reto Pegada Fechada'],
+            'Abdômen': ['Prancha Isométrica', 'Abdominal Supra no Solo', 'Abdominal na Polia Alta', 'Elevação de Pernas', 'Abdominal Bicicleta', 'Russian Twist', 'Ab Wheel'],
+            'Geral': []
+        };
+
+        // BOSS DEFINITIONS (1 kg = 1 DMG)
+        const BOSSES_CLASSIC = [
+            { id: 'boss1', name: "Golem de Anilhas", icon: "🗿", maxHp: 8000, desc: "Monstro de Ferro das Forjas Primordiais." },
+            { id: 'boss2', name: "Hydra de Titânio", icon: "🐉", maxHp: 20000, desc: "Serpente Mítica de Aço temperado." },
+            { id: 'boss3', name: "Mecagorila Berzerker", icon: "🦍", maxHp: 45000, desc: "Titan Biomecânico de Alta Pressão." },
+            { id: 'boss4', name: "Behemoth Devastador", icon: "👹", maxHp: 100000, desc: "O Guardião Supremo das Cargas Pesadas." }
+        ];
+
+        // ANIMAL RANK DEFINITIONS
+        const RANKS_CLASSIC = [
+            { minRatio: 0, level: 1, name: "Formiga Atômica", icon: "🐜" },
+            { minRatio: 15, level: 2, name: "Lobo Solitário", icon: "🐺" },
+            { minRatio: 35, level: 3, name: "Urso do Ártico", icon: "🐻" },
+            { minRatio: 65, level: 4, name: "Gorila de Lombo Prateado", icon: "🦍" },
+            { minRatio: 100, level: 5, name: "Rinoceronte Blindado", icon: "🦏" },
+            { minRatio: 150, level: 6, name: "Elefante de Guerra", icon: "🐘" },
+            { minRatio: 220, level: 7, name: "T-Rex Devastador", icon: "🦖" },
+            { minRatio: 300, level: 8, name: "Leviatã dos Mares", icon: "🐉" },
+            { minRatio: 400, level: 9, name: "Behemoth Ancestral", icon: "👹" },
+            { minRatio: 550, level: 10, name: "BERZERKER SUPREMO", icon: "⚡" }
+        ];
+
+                // ====================== TEMAS DA GAMIFICAÇÃO ======================
+        const STORAGE_KEY_THEME = 'berzerker_game_theme_v1';
+        // Patente = XP ACUMULADO: 1 XP a cada 100 kg ajustados (pernas ×0,5) + 50 XP por PR + chefão derrotado (HP ÷ 200).
+        const XP_MIN = [0, 150, 500, 1100, 2000, 3300, 5000, 7500, 11000, 16000];
+        const MUSCLE_WEIGHT = { 'Pernas': 0.5 };
+        let BOSSES = [], ANIMAL_RANKS = [], THEME = null;
+        let lastRankLevel = null, lastBossesDefeated = null;
+
+        // Chefões dos temas: HP cresce a cada estágio; o dano acumulado nunca zera (progresso salvo)
+        const mkBosses = (list, base, step) => list.map(([name, icon, desc], i) => ({ id: 'b' + i, name, icon, desc, maxHp: base + step * i }));
+
+        const THEMES = {
+            classico: {
+                name: 'Berzerker (clássico)', desc: 'Formiga Atômica até Berzerker Supremo, com 4 chefões de ferro.',
+                arena: 'Arena de Batalha de Chefão', bossLabel: 'CHEFÃO ATIVO', stageWord: 'ESTÁGIO',
+                ranks: RANKS_CLASSIC.map(r => [r.name, r.icon]), bosses: BOSSES_CLASSIC
+            },
+            zodiaco: {
+                name: 'Cavaleiros do Zodíaco', desc: 'Patentes pelo material da armadura; os guardiões das 12 casas e o Grande Mestre são os chefões.',
+                arena: 'Santuário — As 12 Casas', bossLabel: 'GUARDIÃO ATIVO', stageWord: 'CASA',
+                ranks: [['Aprendiz de Rodório','🥋'],['Cavaleiro de Bronze','🥉'],['Bronze · Cosmo Ardente','🔥'],['Cavaleiro de Prata','🥈'],['Prata · Sétimo Sentido','✨'],['Cavaleiro de Ouro','🥇'],['Ouro · Oitavo Sentido','🌟'],['Armadura Divina','⚔️'],['Cosmo Supremo','🌌'],['Lenda do Santuário','👑']],
+                bosses: mkBosses([
+                    ['Mu de Áries','🐏','Casa de Áries — o ferreiro que guarda a primeira porta.'],
+                    ['Aldebarã de Touro','🐂','Casa de Touro — uma muralha de força bruta.'],
+                    ['Saga de Gêmeos','👥','Casa de Gêmeos — o labirinto de duas faces.'],
+                    ['Máscara da Morte de Câncer','🦀','Casa de Câncer — a entrada do mundo dos mortos.'],
+                    ['Aiolia de Leão','🦁','Casa de Leão — o Raio de Plasma.'],
+                    ['Shaka de Virgem','🧘','Casa de Virgem — o mais próximo de um deus.'],
+                    ['Dohko de Libra','⚖️','Casa de Libra — o Mestre Ancião de Rozan.'],
+                    ['Milo de Escorpião','🦂','Casa de Escorpião — a Agulha Escarlate.'],
+                    ['Aiolos de Sagitário','🏹','Casa de Sagitário — a armadura do herói que salvou Atena.'],
+                    ['Shura de Capricórnio','🐐','Casa de Capricórnio — a lâmina da Excalibur.'],
+                    ['Camus de Aquário','🧊','Casa de Aquário — o Mestre do Gelo.'],
+                    ['Afrodite de Peixes','🌹','Casa de Peixes — a Rosa Sangrenta.'],
+                    ['Mestre Ares','👑','Sala do Grande Mestre — o último desafio do Santuário.']
+                ], 25000, 2000)
+            },
+            hercules: {
+                name: '12 Trabalhos de Hércules', desc: 'Da condição de mortal ao Olimpo, enfrentando os 12 trabalhos em ordem.',
+                arena: 'Os 12 Trabalhos de Hércules', bossLabel: 'DESAFIO ATIVO', stageWord: 'TRABALHO',
+                ranks: [['Mortal','🧑'],['Aprendiz de Quíron','🐴'],['Atleta de Atenas','🏃'],['Campeão da Arena','🏟️'],['Herói de Tebas','🛡️'],['Semideus','💪'],['Filho de Zeus','⚡'],['Olimpiano','🏛️'],['Titã','🌋'],['Imortal do Olimpo','👑']],
+                bosses: mkBosses([
+                    ['Leão de Neméia','🦁','1º Trabalho — a pele que nenhuma arma fura.'],
+                    ['Hidra de Lerna','🐍','2º Trabalho — corte uma cabeça, nascem duas.'],
+                    ['Corça de Cerineia','🦌','3º Trabalho — a caça mais veloz da Arcádia.'],
+                    ['Javali de Erimanto','🐗','4º Trabalho — a fúria da montanha.'],
+                    ['Estábulos de Áugias','🧹','5º Trabalho — décadas de sujeira em um só dia.'],
+                    ['Pássaros do Estínfalo','🐦','6º Trabalho — o bando de penas de bronze.'],
+                    ['Touro de Creta','🐂','7º Trabalho — a fera que aterrorizava a ilha.'],
+                    ['Éguas de Diomedes','🐎','8º Trabalho — cavalos que se alimentam de carne.'],
+                    ['Cinturão de Hipólita','🛡️','9º Trabalho — a rainha das Amazonas.'],
+                    ['Rebanho de Gerião','🐄','10º Trabalho — o gigante de três corpos.'],
+                    ['Maçãs das Hespérides','🍎','11º Trabalho — o dragão Ladão guarda o pomar.'],
+                    ['Cérbero','🐕','12º Trabalho — o cão de três cabeças do Hades.']
+                ], 25000, 2000)
+            },
+            acao: {
+                name: 'Filmes de Ação', desc: 'Patentes pela escada dos durões do cinema; vilões icônicos como chefões.',
+                arena: 'Arena dos Vilões', bossLabel: 'VILÃO ATIVO', stageWord: 'FASE',
+                ranks: [['Recruta da Delegacia','🚓'],['Ethan Hunt','🕵️'],['John McClane','🏢'],['Jason Bourne','🕶️'],['Jack Reacher','🧳'],['RoboCop','🤖'],['John Rambo','🏹'],['T-800 · Exterminador','🦾'],['Dutch · Predador','🌴'],['John Wick · Baba Yaga','🐕']],
+                bosses: mkBosses([
+                    ['Hans Gruber','🎩','Duro de Matar — o cérebro da Nakatomi Plaza.'],
+                    ['ED-209','🤖','RoboCop — a máquina de guerra da OCP.'],
+                    ['T-1000','🪞','Exterminador do Futuro 2 — metal líquido, quase indestrutível.'],
+                    ['Agente Smith','🕴️','Matrix — o programa que se multiplica.'],
+                    ['Viggo Tarasov','🐺','John Wick — o chefe da máfia que mexeu com o cachorro errado.'],
+                    ['A Alta Cúpula','🏛️','John Wick — a ordem que comanda todos os assassinos.']
+                ], 25000, 30000)
+            }
+        };
+        Object.entries(THEMES).forEach(([k, v]) => v.id = k);
+
+        // XP até a data informada (ou total). Dano nos chefões continua bruto (1 kg = 1 DMG) e acumulado.
+        function computeXP(upto) {
+            let raw = 0, adj = 0, prs = 0;
+            logs.forEach(l => {
+                if (upto && l.date > upto) return;
+                const v = l.weight * l.reps.reduce((a, b) => a + b, 0);
+                raw += v; adj += v * (MUSCLE_WEIGHT[l.muscle] ?? 1);
+                if (l.isPR) prs++;
+            });
+            let left = raw, bossXP = 0, defeated = 0;
+            for (const b of BOSSES) {
+                if (left < b.maxHp) break;
+                left -= b.maxHp; bossXP += Math.round(b.maxHp / 200); defeated++;
+            }
+            const training = Math.round(adj / 100), prXP = prs * 50;
+            return { xp: training + prXP + bossXP, training, prXP, bossXP, defeated };
+        }
+
+        function rankFromXP(xp) {
+            let r = ANIMAL_RANKS[0];
+            for (const x of ANIMAL_RANKS) if (xp >= x.minXp) r = x;
+            return r;
+        }
+
+        function checkRankUp() {
+            if (!THEME) return;
+            const d = computeXP(), r = rankFromXP(d.xp), msgs = [];
+            if (lastBossesDefeated !== null && d.defeated > lastBossesDefeated) {
+                const b = BOSSES[d.defeated - 1];
+                msgs.push(`${b.icon} ${b.name} derrotado! +${Math.round(b.maxHp / 200)} XP`);
+            }
+            if (lastRankLevel !== null && r.level > lastRankLevel) msgs.push(`🎉 Nova patente: ${r.icon} ${r.name}!`);
+            lastRankLevel = r.level; lastBossesDefeated = d.defeated;
+            if (msgs.length) alertModal(msgs.join(' · '));
+        }
+
+        // Popup com todas as patentes de um tema (abas para ver os outros temas)
+        function showRanksModal(themeId) {
+            const t = THEMES[themeId] || THEME;
+            const d = computeXP(), cur = rankFromXP(d.xp), nxt = ANIMAL_RANKS[cur.level] || null;
+            const pct = nxt ? Math.min(100, Math.round((d.xp - cur.minXp) / (nxt.minXp - cur.minXp) * 100)) : 100;
+            const fmt = n => n.toLocaleString('pt-BR');
+            const rows = t.ranks.map(([name, icon], i) => {
+                const lvl = i + 1, st = lvl < cur.level ? 0 : (lvl === cur.level ? 1 : 2);
+                const cls = ['border-emerald-600/40 bg-emerald-950/10', 'border-berzerker-500 bg-berzerker-600/10', 'border-berzerker-border opacity-60'][st];
+                const tag = ['✔ conquistada', '◀ você está aqui', '🔒'][st];
+                return `<div class="flex items-center justify-between gap-3 border ${cls} rounded-xl px-3 py-2">
+                    <div class="flex items-center gap-3 min-w-0"><span class="text-2xl">${icon}</span>
+                        <div class="min-w-0"><div class="text-sm font-bold text-white truncate">Nível ${lvl} — ${escapeHtml(name)}</div>
+                        <div class="text-[10px] font-mono text-gray-400">${fmt(XP_MIN[i])} XP</div></div></div>
+                    <span class="text-[10px] font-bold text-gray-300 whitespace-nowrap">${tag}</span></div>`;
+            }).join('');
+            const tabs = Object.values(THEMES).map(x => `<button onclick="showRanksModal('${x.id}')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${x.id === t.id ? 'bg-berzerker-600 text-white' : 'bg-berzerker-border text-gray-400 hover:text-white'}">${escapeHtml(x.name)}</button>`).join('');
+            document.getElementById('ranks-overlay')?.remove();
+            const o = document.createElement('div');
+            o.id = 'ranks-overlay';
+            o.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-start sm:items-center justify-center p-4 overflow-y-auto';
+            o.onclick = ev => { if (ev.target === o) o.remove(); };
+            o.innerHTML = `<div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 max-w-lg w-full shadow-2xl space-y-3">
+                <div class="flex items-center justify-between"><h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">📜 Patentes</h3><button onclick="document.getElementById('ranks-overlay').remove()" class="text-gray-400 hover:text-white">✕</button></div>
+                <div class="flex flex-wrap gap-1.5">${tabs}</div>
+                <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3 space-y-1.5">
+                    <div class="flex justify-between text-[11px] font-bold text-gray-300"><span>${fmt(d.xp)} XP</span><span>${nxt ? 'próxima: ' + fmt(nxt.minXp) + ' XP' : 'nível máximo'}</span></div>
+                    <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-berzerker-600 to-emerald-500" style="width:${pct}%"></div></div>
+                    <div class="text-[10px] text-gray-500 font-mono">Treino ${fmt(d.training)} · PRs ${fmt(d.prXP)} · Chefões ${fmt(d.bossXP)}</div>
+                </div>
+                <div class="space-y-1.5 max-h-[50vh] overflow-y-auto">${rows}</div>
+                <p class="text-[10px] text-gray-500">1 XP a cada 100 kg movidos (pernas contam 50%) · PR +50 XP · chefão derrotado rende 0,5% do HP dele em XP.</p>
+            </div>`;
+            document.body.appendChild(o);
+        }
+
+        function applyTheme(id) {
+            THEME = THEMES[id] || THEMES.classico;
+            BOSSES = THEME.bosses;
+            ANIMAL_RANKS = THEME.ranks.map(([name, icon], i) => ({ minXp: XP_MIN[i], level: i + 1, name, icon }));
+            const set = (el, fn) => { const e = document.getElementById(el); if (e) fn(e); };
+            set('arena-title', e => e.textContent = THEME.arena);
+            set('game-theme-select', e => e.value = THEME.id);
+            set('game-theme-desc', e => e.textContent = THEME.desc);
+            const xd = computeXP(); lastRankLevel = rankFromXP(xd.xp).level; lastBossesDefeated = xd.defeated;
+        }
+
+        function changeGameTheme(id) {
+            applyTheme(id);
+            safeStorage.set(STORAGE_KEY_THEME, THEME.id);
+            refreshAll();
+            alertModal(`🎭 Tema "${THEME.name}" aplicado! Seu progresso foi mantido.`);
+        }
+
+        window.onload = function() {
+            const todayStr = getTodayLocalISO();
+            document.getElementById('log-date').value = todayStr;
+            document.getElementById('filter-date').value = todayStr;
+            document.getElementById('header-today-date').textContent = formatDateBR(todayStr);
+
+            loadStoredData();
+            loadWorkoutsFromStorage();
+            applyTheme(safeStorage.get(STORAGE_KEY_THEME) || 'classico');
+
+            if (logs.length === 0) {
+                seedInitialMockData(todayStr);
+            }
+
+            updateExerciseSuggestions();
+            renderLogsTable();
+            updateSummaryMetrics();
+            renderRecoveryMap();
+            renderBossBattleUI();
+            generateStoryCard();
+            calculate1RM();
+            renderWarmupCalculator();
+            renderBadgesAndStreak();
+            initVolumeChart();
+            renderDraftList();
+            updateSaveButton();
+            renderSavedWorkouts();
+
+            startDateWatcher();
+        };
+
+        function switchTab(tab) {
+            ['diario', 'boss', 'story', 'stats', 'calcs', 'config'].forEach(t => {
+                const el = document.getElementById(`tab-content-${t}`);
+                const btnDesktop = document.getElementById(`nav-${t}`);
+                const btnMobile = document.getElementById(`m-nav-${t}`);
+
+                if (t === tab) {
+                    el.classList.remove('hidden');
+                    if (btnDesktop) btnDesktop.className = "px-4 py-2 rounded-lg bg-berzerker-600 text-white transition-all";
+                    if (btnMobile) btnMobile.className = "px-3 py-1.5 rounded-lg bg-berzerker-600 text-white whitespace-nowrap";
+                } else {
+                    el.classList.add('hidden');
+                    if (btnDesktop) btnDesktop.className = "px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all";
+                    if (btnMobile) btnMobile.className = "px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap";
+                }
+            });
+
+            if (tab === 'boss') renderBossBattleUI();
+            if (tab === 'story') generateStoryCard();
+            if (tab === 'stats') {
+                renderBadgesAndStreak();
+                initVolumeChart();
+            }
+        }
+
+                function seedInitialMockData(todayStr) {
+            // Semeia dados de exemplo APENAS UMA vez por navegador/aparelho.
+            // (impede que o histórico reapareça depois de "Apagar Todo o Histórico")
+            if (safeStorage.get(STORAGE_KEY_SEEDED) === '1') return;
+
+            const d = new Date();
+            d.setDate(d.getDate() - 1);
+            const yesterdayStr = toLocalISO(d);
+
+            logs = [
+                { id: 1, date: todayStr, muscle: 'Peito', exercise: 'Supino Reto com Barra', weight: 110, reps: [10, 8, 6, 4], technique: 'Convencional', nextGoal: '📈 Aumentar Carga', isPR: true },
+                { id: 2, date: todayStr, muscle: 'Peito', exercise: 'Supino Inclinado c/ Halteres', weight: 38, reps: [12, 10, 8], technique: 'Rest-Pause', nextGoal: '➕ Aumentar Reps', isPR: false },
+                { id: 3, date: todayStr, muscle: 'Ombros', exercise: 'Desenvolvimento Militar', weight: 70, reps: [10, 8, 8], technique: 'Convencional', nextGoal: '📈 Aumentar Carga', isPR: true },
+                { id: 4, date: todayStr, muscle: 'Tríceps', exercise: 'Tríceps Polia Alta', weight: 85, reps: [15, 12, 12, 10], technique: 'Drop-Set', nextGoal: '🎯 Ajustar Execução', isPR: false },
+                { id: 5, date: yesterdayStr, muscle: 'Pernas', exercise: 'Agachamento Livre', weight: 140, reps: [10, 8, 6], technique: 'Convencional', nextGoal: '📈 Aumentar Carga', isPR: false }
+            ];
+
+            // Treinos de exemplo para o "Criar Treino"
+            savedWorkouts = [
+                { id: 1001, name: 'Treino A — Push (Peito · Ombro · Tríceps)', exercises: [
+                    { muscle: 'Peito', exercise: 'Supino Reto com Barra', weight: 110, repsText: '10, 8, 6, 4', technique: 'Convencional' },
+                    { muscle: 'Peito', exercise: 'Supino Inclinado c/ Halteres', weight: 38, repsText: '12, 10, 8', technique: 'Rest-Pause' },
+                    { muscle: 'Ombros', exercise: 'Desenvolvimento Militar', weight: 70, repsText: '10, 8, 8', technique: 'Convencional' },
+                    { muscle: 'Tríceps', exercise: 'Tríceps Polia Alta', weight: 85, repsText: '15, 12, 12, 10', technique: 'Drop-Set' }
+                ]},
+                { id: 1002, name: 'Treino B — Pull (Costas · Bíceps)', exercises: [
+                    { muscle: 'Costas', exercise: 'Barra Fixa (Pull-up)', weight: 0, repsText: '10, 8, 6', technique: 'Convencional' },
+                    { muscle: 'Costas', exercise: 'Remada Curvada com Barra', weight: 90, repsText: '10, 8, 8', technique: 'Convencional' },
+                    { muscle: 'Bíceps', exercise: 'Rosca Direta com Barra', weight: 40, repsText: '12, 10, 8', technique: 'Convencional' }
+                ]},
+                { id: 1003, name: 'Treino C — Legs (Pernas · Abdômen)', exercises: [
+                    { muscle: 'Pernas', exercise: 'Agachamento Livre', weight: 140, repsText: '10, 8, 6, 6', technique: 'Convencional' },
+                    { muscle: 'Pernas', exercise: 'Leg Press 45°', weight: 260, repsText: '12, 10, 10', technique: 'Convencional' },
+                    { muscle: 'Pernas', exercise: 'Mesa Flexora', weight: 70, repsText: '12, 10, 10', technique: 'Excêntrica Lenta' },
+                    { muscle: 'Abdômen', exercise: 'Abdominal na Polia Alta', weight: 45, repsText: '15, 15, 12', technique: 'Convencional' }
+                ]}
+            ];
+
+            saveLogsToStorage();
+            saveWorkoutsToStorage();
+            safeStorage.set(STORAGE_KEY_SEEDED, '1');
+        }
+
+        function handleAddLog(event) {
+            event.preventDefault();
+            const date = document.getElementById('log-date').value;
+            const muscle = document.getElementById('log-muscle').value;
+            const exercise = document.getElementById('log-exercise').value.trim();
+            const weight = parseFloat(document.getElementById('log-weight').value) || 0;
+            const repsRaw = document.getElementById('log-reps').value;
+            const technique = document.getElementById('log-technique').value;
+            const nextGoal = document.getElementById('log-next-goal').value;
+            const isPR = document.getElementById('log-is-pr').checked;
+
+            const reps = repsRaw.split(',').map(r => parseInt(r.trim())).filter(r => !isNaN(r) && r > 0);
+
+            if (reps.length === 0) {
+                alertModal("Digite ao menos uma repetição válida (ex: 12, 10, 8).");
+                return;
+            }
+
+            const notes = document.getElementById('log-notes').value.trim();
+            const newLog = { id: Date.now(), date, muscle, exercise, weight, reps, technique, nextGoal, isPR, notes };
+            logs.unshift(newLog);
+            saveLogsToStorage();
+
+            // Clear inputs
+            document.getElementById('log-exercise').value = '';
+            document.getElementById('log-weight').value = '';
+            document.getElementById('log-reps').value = '';
+            document.getElementById('log-is-pr').checked = false;
+            document.getElementById('log-notes').value = '';
+            document.getElementById('warmup-quick-box').classList.add('hidden');
+
+            document.getElementById('filter-date').value = date;
+
+            updateExerciseSuggestions();
+            renderLogsTable();
+            updateSummaryMetrics();
+            renderRecoveryMap();
+            renderBossBattleUI();
+            generateStoryCard();
+            renderBadgesAndStreak();
+            initVolumeChart();
+        }
+
+        function renderLogsTable() {
+            const container = document.getElementById('logs-container');
+            const dayLogs = getFilteredLogs();
+
+            if (dayLogs.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500 border border-dashed border-berzerker-border rounded-xl">
+                        Nenhum treino registrado nesta data.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = dayLogs.map(l => `
+                <div class="bg-berzerker-dark border border-berzerker-border p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-gray-600 transition-colors">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-xs font-bold px-2 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">
+                                ${l.muscle}
+                            </span>
+                            ${l.isPR ? '<span class="text-xs font-bold px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded">🏆 PR</span>' : ''}
+                            ${l.technique !== 'Convencional' ? `<span class="text-xs font-mono text-gray-400">[${l.technique}]</span>` : ''}
+                            ${l.nextGoal ? `<span class="text-[11px] font-bold px-2 py-0.5 bg-berzerker-card border border-emerald-500/40 text-emerald-400 rounded">⚡ ${l.nextGoal}</span>` : ''}
+                        </div>
+                        <h3 class="font-bold text-white text-base mt-1">${l.biset ? '🔗 ' : ''}${escapeHtml(l.exercise)}${l.biset ? ' <span class="text-[10px] font-bold text-cyan-400 border border-cyan-500/40 rounded px-1.5 py-0.5 align-middle">BI-SET</span>' : ''}<button onclick="editLog(${l.id})" title="Editar" class="ml-2 px-2 py-0.5 text-xs text-gray-400 hover:text-cyan-400 align-middle">✏️ Editar</button></h3>
+                        ${l.notes ? `<p class="text-[11px] text-gray-400 mt-1 italic">📝 ${escapeHtml(l.notes)}</p>` : ''}
+                        <div class="text-xs text-gray-400 mt-1 font-mono">
+                            Carga: <span class="text-white font-bold">${l.weight} kg</span> × Séries: <span class="text-berzerker-500 font-bold">(${l.reps.join(', ')})</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="deleteLog(${l.id})" class="self-end sm:self-center p-2 text-gray-500 hover:text-red-400 transition-colors" title="Excluir">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+                function renderRecoveryMap() {
+            const gridEl = document.getElementById('recovery-status-grid');
+            if (!gridEl) return;
+
+            const musclesList = ['Peito', 'Costas', 'Pernas', 'Ombros', 'Bíceps', 'Tríceps', 'Abdômen'];
+            // "Hoje" real, data local do aparelho (sem bug de fuso UTC)
+            const todayMs = new Date(getTodayLocalISO()).getTime();
+            const DAY_MS = 1000 * 60 * 60 * 24;
+
+            gridEl.innerHTML = musclesList.map(m => {
+                // Último registro deste grupo muscular (mais recente primeiro)
+                const muscleLogs = logs
+                    .filter(l => l.muscle.toLowerCase() === m.toLowerCase())
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                let st;
+                if (muscleLogs.length === 0) {
+                    st = { label: 'SEM REGISTRO', icon: '✨', pct: null,
+                        badge: 'bg-berzerker-border text-gray-400 border-gray-700', bar: 'bg-gray-600',
+                        border: 'border-berzerker-border', info: 'Nunca treinado', last: '—' };
+                } else {
+                    const last = muscleLogs[0];
+                    const diffDays = Math.floor((todayMs - new Date(last.date).getTime()) / DAY_MS);
+
+                    if (diffDays <= 0) {
+                        st = { label: 'EXAUSTO', icon: '🔥', pct: 10,
+                            badge: 'bg-red-950 text-red-400 border-red-800', bar: 'bg-red-500',
+                            border: 'border-red-600/60 shadow-lg shadow-red-950/40', info: 'Treinado hoje', last: last.exercise };
+                    } else if (diffDays === 1) {
+                        st = { label: 'RECUPERANDO', icon: '⏳', pct: 55,
+                            badge: 'bg-amber-950 text-amber-400 border-amber-800', bar: 'bg-amber-500',
+                            border: 'border-amber-500/60 shadow-lg shadow-amber-950/40', info: 'Treinado ontem', last: last.exercise };
+                    } else {
+                        st = { label: '100% PRONTO', icon: '✅', pct: 100,
+                            badge: 'bg-emerald-950 text-emerald-400 border-emerald-800', bar: 'bg-emerald-500',
+                            border: 'border-emerald-500/60 shadow-lg shadow-emerald-950/40', info: `Treinado há ${diffDays} dias`, last: last.exercise };
+                    }
+                }
+
+                const pctText = st.pct === null ? '—' : `${st.pct}%`;
+
+                return `
+                <div onclick="prefillMuscleFromMap('${m}')" title="Registrar exercício de ${m}" class="cursor-pointer bg-berzerker-dark border ${st.border} rounded-xl p-3.5 space-y-2.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-oswald text-lg font-bold text-white uppercase tracking-wide leading-none">${m}</span>
+                        <span class="text-lg leading-none">${st.icon}</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${st.badge}">${st.label}</span>
+                        <span class="text-[10px] text-gray-500 font-mono">${st.info}</span>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">
+                            <span>Recuperação</span><span class="text-gray-400">${pctText}</span>
+                        </div>
+                        <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
+                            <div class="h-full ${st.bar} rounded-full transition-all duration-500" style="width: ${st.pct === null ? 100 : st.pct}%"></div>
+                        </div>
+                    </div>
+                    <div class="text-[10px] text-gray-600 truncate border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderBossBattleUI() {
+            let totalCumulativeKg = 0;
+            logs.forEach(l => {
+                const repsSum = l.reps.reduce((a, b) => a + b, 0);
+                totalCumulativeKg += (l.weight * repsSum);
+            });
+
+            const filterDate = document.getElementById('filter-date').value || getTodayLocalISO();
+            const rank = getAnimalRankForSession(filterDate);
+            const todayDmg = Math.round(rank.sessionTonnage);
+
+            document.getElementById('boss-today-dmg-display').textContent = `${todayDmg.toLocaleString()} DMG`;
+            document.getElementById('stat-boss-dmg').textContent = `${todayDmg.toLocaleString()} DMG`;
+
+            // Determine current active boss
+            let remainingDmg = totalCumulativeKg;
+            let currentBossIndex = 0;
+
+            for (let i = 0; i < BOSSES.length; i++) {
+                if (remainingDmg >= BOSSES[i].maxHp) {
+                    remainingDmg -= BOSSES[i].maxHp;
+                    if (i < BOSSES.length - 1) currentBossIndex = i + 1;
+                    else currentBossIndex = i; // Max boss reached
+                } else {
+                    currentBossIndex = i;
+                    break;
+                }
+            }
+
+            const currentBoss = BOSSES[currentBossIndex];
+            const isDefeated = (currentBossIndex === BOSSES.length - 1 && remainingDmg >= currentBoss.maxHp);
+            const currentHp = isDefeated ? 0 : Math.max(0, currentBoss.maxHp - remainingDmg);
+            const hpPercent = Math.min(100, Math.max(0, (currentHp / currentBoss.maxHp) * 100));
+
+            const activeCard = document.getElementById('active-boss-card');
+            if (activeCard) {
+                activeCard.innerHTML = `
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="text-6xl p-3 bg-berzerker-border/50 rounded-2xl border border-berzerker-border">${currentBoss.icon}</div>
+                            <div>
+                                <span class="text-xs font-bold text-red-400 uppercase tracking-wider block">${THEME.bossLabel} — ${THEME.stageWord} ${currentBossIndex + 1}/${BOSSES.length}</span>
+                                <h3 class="font-oswald text-3xl font-bold text-white uppercase">${currentBoss.name}</h3>
+                                <p class="text-xs text-gray-400 mt-0.5">${currentBoss.desc}</p>
+                            </div>
+                        </div>
+
+                        <div class="text-right w-full sm:w-auto">
+                            <span class="text-xs text-gray-400 font-bold uppercase block">Vida do Boss (HP)</span>
+                            <div class="font-oswald text-3xl font-bold text-red-500">${currentHp.toLocaleString()} / ${currentBoss.maxHp.toLocaleString()} HP</div>
+                        </div>
+                    </div>
+
+                    <!-- HP PROGRESS BAR -->
+                    <div class="space-y-1">
+                        <div class="w-full bg-berzerker-border h-5 rounded-full overflow-hidden p-0.5 border border-red-900/50">
+                            <div class="bg-gradient-to-r from-red-700 via-berzerker-500 to-amber-500 h-full rounded-full transition-all duration-500" style="width: ${hpPercent}%"></div>
+                        </div>
+                        <div class="flex justify-between text-[11px] font-mono text-gray-400">
+                            <span>Dano total acumulado: ${totalCumulativeKg.toLocaleString()} kg</span>
+                            <span>${hpPercent.toFixed(1)}% HP Restante</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Grid of all bosses
+            const grid = document.getElementById('bosses-grid');
+            if (grid) {
+                let checkKg = totalCumulativeKg;
+                grid.innerHTML = BOSSES.map((b, idx) => {
+                    const defeated = checkKg >= b.maxHp;
+                    checkKg = Math.max(0, checkKg - b.maxHp);
+                    return `
+                        <div class="p-4 rounded-xl border ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === currentBossIndex ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-2xl">${b.icon}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
+                                    ${defeated ? 'DERROTADO 🏆' : (idx === currentBossIndex ? 'EM BATALHA ⚔️' : 'BLOQUEADO 🔒')}
+                                </span>
+                            </div>
+                            <h4 class="font-oswald font-bold text-white text-lg">${b.name}</h4>
+                            <span class="text-xs font-mono text-gray-400 block">${b.maxHp.toLocaleString()} HP · ${defeated ? '✔' : '🎁'} +${Math.round(b.maxHp / 200)} XP</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function updateSummaryMetrics() {
+            const filterDate = document.getElementById('filter-date').value;
+            const rank = getAnimalRankForSession(filterDate);
+
+            document.getElementById('stat-tonnage').textContent = `${(rank.sessionTonnage / 1000).toFixed(2)} TON`;
+            document.getElementById('stat-relative').textContent = `${rank.relativeRatio.toFixed(1)}× BW`;
+            document.getElementById('stat-rank').textContent = `${rank.icon} ${rank.name} (Niv ${rank.level} · ${rank.xp.toLocaleString('pt-BR')} XP)`;
+            
+            const todayDmg = Math.round(rank.sessionTonnage);
+            document.getElementById('stat-boss-dmg').textContent = `${todayDmg.toLocaleString()} DMG`;
+        }
+
+        function deleteLog(id) {
+            logs = logs.filter(l => l.id !== id);
+            if (activeSession) { activeSession.exercises.forEach(e => { if (e.logId === id) { e.done = false; e.logId = null; } }); renderSession(); }
+            saveLogsToStorage();
+            renderLogsTable();
+            updateSummaryMetrics();
+            renderRecoveryMap();
+            renderBossBattleUI();
+            generateStoryCard();
+            renderBadgesAndStreak();
+            initVolumeChart();
+        }
+
+        function handleFilterDateChange(newDate) {
+            renderLogsTable();
+            updateSummaryMetrics();
+            renderRecoveryMap();
+            renderBossBattleUI();
+            generateStoryCard();
+        }
+
+        function getFilteredLogs() {
+            const filterDate = document.getElementById('filter-date').value;
+            return logs.filter(l => l.date === filterDate);
+        }
+
+        function getAnimalRankForSession(targetDate) {
+            const dayLogs = logs.filter(l => l.date === targetDate);
+            let totalVolumeKg = 0;
+            let adjustedKg = 0;
+            let prCount = 0;
+
+            dayLogs.forEach(l => {
+                const repsSum = l.reps.reduce((a, b) => a + b, 0);
+                totalVolumeKg += (l.weight * repsSum);
+                adjustedKg += l.weight * repsSum * (MUSCLE_WEIGHT[l.muscle] ?? 1);
+                if (l.isPR) prCount++;
+            });
+
+            // Relative Strength Ratio = Total Volume / User Bodyweight
+            const relativeRatio = userBodyweight > 0 ? (adjustedKg / userBodyweight) : 0;
+            
+            const xpData = computeXP(targetDate);
+            const currentRank = rankFromXP(xpData.xp);
+
+            return {
+                ...currentRank, xp: xpData.xp, xpData,
+                sessionTonnage: totalVolumeKg,
+                relativeRatio: relativeRatio,
+                prCount: prCount,
+                dayLogs: dayLogs
+            };
+        }
+
+        function playBeepSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 tone
+                gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.6);
+            } catch(e) {}
+        }
+
+        function handleBgImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        customBgImageData = img;
+                        generateStoryCard();
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeBgImage() {
+            customBgImageData = null;
+            document.getElementById('bg-image-input').value = '';
+            generateStoryCard();
+        }
+
+        function setTheme(theme) {
+            selectedStoryTheme = theme;
+            ['berzerker', 'cyberpunk', 'minimal'].forEach(t => {
+                const btn = document.getElementById(`btn-theme-${t}`);
+                if (btn) {
+                    btn.className = (t === theme) 
+                        ? "py-2 px-2 text-xs font-bold uppercase rounded-lg border bg-berzerker-600 border-berzerker-500 text-white"
+                        : "py-2 px-2 text-xs font-bold uppercase rounded-lg border bg-berzerker-dark border-berzerker-border text-gray-400";
+                }
+            });
+            generateStoryCard();
+        }
+
+        function generateStoryCard() {
+            const canvas = document.getElementById('story-canvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const targetDate = document.getElementById('filter-date').value || getTodayLocalISO();
+            const rank = getAnimalRankForSession(targetDate);
+            const dayLogs = [...rank.dayLogs].sort((a, b) => a.id - b.id); // ordem em que foram executados
+
+            const musicVibe = document.getElementById('vibe-music')?.value.trim() || "";
+            const weatherVibe = document.getElementById('vibe-weather')?.value.trim() || "";
+
+            // PALETTES
+            let palette = {
+                bgStart: '#0a0a0a', bgEnd: '#1a0303',
+                cardBg: 'rgba(18, 18, 22, 0.88)', cardBorder: 'rgba(255, 255, 255, 0.08)',
+                borderPrimary: '#dc2626', titleColor: '#ffffff',
+                accentColor: '#ef4444', textDim: '#9ca3af',
+                prColor: '#10b981', badgeBg: '#1f1f1f'
+            };
+
+            if (selectedStoryTheme === 'cyberpunk') {
+                palette = {
+                    bgStart: '#050811', bgEnd: '#11021c',
+                    cardBg: 'rgba(10, 16, 31, 0.88)', cardBorder: 'rgba(0, 255, 204, 0.2)',
+                    borderPrimary: '#00ffcc', titleColor: '#00ffcc',
+                    accentColor: '#ff0055', textDim: '#8899ac',
+                    prColor: '#ffe600', badgeBg: '#121b2d'
+                };
+            } else if (selectedStoryTheme === 'minimal') {
+                palette = {
+                    bgStart: '#121212', bgEnd: '#1c1c1c',
+                    cardBg: 'rgba(36, 36, 36, 0.88)', cardBorder: 'rgba(255, 255, 255, 0.12)',
+                    borderPrimary: '#ffffff', titleColor: '#ffffff',
+                    accentColor: '#e0e0e0', textDim: '#aaaaaa',
+                    prColor: '#ffffff', badgeBg: '#2e2e2e'
+                };
+            }
+
+            // 1. BACKGROUND (CUSTOM PHOTO OR GRADIENT)
+            if (customBgImageData) {
+                ctx.drawImage(customBgImageData, 0, 0, 1080, 1920);
+                const opacity = parseFloat(document.getElementById('bg-overlay-opacity').value) || 0.6;
+                ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+                ctx.fillRect(0, 0, 1080, 1920);
+            } else {
+                const grad = ctx.createLinearGradient(0, 0, 0, 1920);
+                grad.addColorStop(0, palette.bgStart);
+                grad.addColorStop(1, palette.bgEnd);
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 1080, 1920);
+
+                // Grid pattern
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                ctx.lineWidth = 2;
+                for (let x = 60; x < 1080; x += 60) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1920); ctx.stroke();
+                }
+                for (let y = 60; y < 1920; y += 60) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1080, y); ctx.stroke();
+                }
+            }
+
+            function drawRoundedRect(x, y, w, h, r, fillColor, strokeColor, strokeWidth = 1) {
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.lineTo(x + w - r, y);
+                ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                ctx.lineTo(x + w, y + h - r);
+                ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                ctx.lineTo(x + r, y + h);
+                ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                ctx.lineTo(x, y + r);
+                ctx.quadraticCurveTo(x, y, x + r, y);
+                ctx.closePath();
+                if (fillColor) { ctx.fillStyle = fillColor; ctx.fill(); }
+                if (strokeColor) { ctx.strokeStyle = strokeColor; ctx.lineWidth = strokeWidth; ctx.stroke(); }
+            }
+
+            // 2. OUTER BORDER
+            ctx.strokeStyle = palette.borderPrimary;
+            ctx.lineWidth = 10;
+            ctx.strokeRect(30, 30, 1020, 1860);
+
+            // 3. HEADER & DATE
+            ctx.fillStyle = palette.borderPrimary;
+            ctx.fillRect(70, 75, 14, 85);
+
+            ctx.fillStyle = palette.titleColor;
+            ctx.font = 'bold 62px Oswald, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('DIÁRIO DE CARGAS', 100, 130);
+
+            ctx.fillStyle = palette.accentColor;
+            ctx.font = '34px Teko, sans-serif';
+            ctx.fillText(`// B E R Z E R K E R   M O D E   ·   ${targetDate}`, 100, 168);
+
+            // 4. ANIMAL RANK BANNER
+            drawRoundedRect(70, 200, 940, 150, 12, palette.cardBg, palette.accentColor, 2);
+
+            ctx.font = '72px Inter, sans-serif';
+            ctx.fillText(rank.icon, 100, 300);
+
+            ctx.fillStyle = palette.accentColor;
+            ctx.font = 'bold 22px Inter, sans-serif';
+            ctx.fillText(`PATENTE — NÍVEL ${rank.level}/10 · ${rank.xp.toLocaleString('pt-BR')} XP`, 200, 245);
+
+            ctx.fillStyle = palette.titleColor;
+            ctx.font = 'bold 42px Oswald, sans-serif';
+            ctx.fillText(rank.name.toUpperCase(), 200, 305);
+
+            // 5. METRICS (VOLUME & RELATIVE)
+            drawRoundedRect(70, 370, 455, 150, 12, palette.cardBg, palette.cardBorder, 1);
+            drawRoundedRect(555, 370, 455, 150, 12, palette.cardBg, palette.cardBorder, 1);
+
+            ctx.fillStyle = palette.borderPrimary;
+            ctx.font = 'bold 64px Oswald, sans-serif';
+            ctx.fillText(`${(rank.sessionTonnage / 1000).toFixed(2)} TON`, 95, 445);
+            ctx.fillStyle = palette.textDim;
+            ctx.font = 'bold 20px Inter, sans-serif';
+            ctx.fillText('VOLUME TOTAL MOVIDO', 95, 485);
+
+            ctx.fillStyle = palette.prColor;
+            ctx.font = 'bold 64px Oswald, sans-serif';
+            ctx.fillText(`${rank.relativeRatio.toFixed(1)}× BW`, 580, 445);
+            ctx.fillStyle = palette.textDim;
+            ctx.font = 'bold 20px Inter, sans-serif';
+            ctx.fillText(`RAZÃO FORÇA (${userBodyweight}kg BW)`, 580, 485);
+
+            let currentY = 540;
+
+            // 6. VIBE BAR (MUSIC / WEATHER IF PROVIDED)
+            if (musicVibe || weatherVibe) {
+                drawRoundedRect(70, currentY, 940, 70, 8, palette.badgeBg, palette.cardBorder, 1);
+                ctx.fillStyle = palette.titleColor;
+                ctx.font = '22px Inter, sans-serif';
+                let vibeText = "";
+                if (musicVibe) vibeText += `🎵 ${musicVibe}  `;
+                if (weatherVibe) vibeText += `🌩️ ${weatherVibe}`;
+                ctx.fillText(vibeText, 90, currentY + 42);
+                currentY += 90;
+            }
+
+            // 7. EXERCISE BREAKDOWN
+            ctx.fillStyle = palette.titleColor;
+            ctx.font = 'bold 34px Oswald, sans-serif';
+            ctx.fillText('EXERCÍCIOS & SÉRIES DA SESSÃO:', 70, currentY + 30);
+            currentY += 50;
+
+            if (dayLogs.length === 0) {
+                drawRoundedRect(70, currentY, 940, 100, 12, palette.cardBg, palette.cardBorder, 1);
+                ctx.fillStyle = palette.textDim;
+                ctx.font = '28px Inter, sans-serif';
+                ctx.fillText('Nenhum treino registrado nesta data.', 100, currentY + 60);
+            } else {
+                const grouped = []; // trechos consecutivos do mesmo grupo, na ordem de execução
+                dayLogs.forEach(l => { const last = grouped[grouped.length - 1]; if (last && last[0] === l.muscle) last[1].push(l); else grouped.push([l.muscle, [l]]); });
+
+                const room = 1800 - currentY - grouped.length * 45;
+                let cardSpacing = Math.min(75, Math.max(58, Math.floor(room / dayLogs.length)));
+                let cardHeight = cardSpacing - 10;
+
+                for (const [muscleGroup, logs] of grouped) {
+                    if (currentY + 100 > 1800) break;
+
+                    ctx.fillStyle = palette.borderPrimary;
+                    ctx.font = 'bold 28px Oswald, sans-serif';
+                    ctx.fillText(`⚔️ ${muscleGroup.toUpperCase()}`, 70, currentY + 25);
+                    currentY += 35;
+
+                    logs.forEach(l => {
+                        if (currentY + cardHeight > 1800) return;
+
+                        drawRoundedRect(70, currentY, 940, cardHeight, 8, palette.cardBg, palette.cardBorder, 1);
+
+                        ctx.fillStyle = palette.titleColor;
+                        ctx.font = 'bold 24px Inter, sans-serif';
+                        ctx.fillText(`${l.biset ? '🔗' : '•'} ${l.exercise}`, 90, currentY + 40);
+
+                        ctx.fillStyle = l.isPR ? palette.prColor : palette.accentColor;
+                        ctx.font = 'bold 22px Monospace, sans-serif';
+                        let detailStr = `${l.weight} kg × (${l.reps.join(', ')})`;
+                        if (l.isPR) detailStr += ` 🏆 PR`;
+                        ctx.textAlign = 'right';
+                        ctx.fillText(detailStr, 990, currentY + 40);
+                        ctx.textAlign = 'left';
+
+                        currentY += cardSpacing;
+                    });
+                    currentY += 10;
+                }
+            }
+
+            // 8. FOOTER
+            const footerY = 1850;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(70, footerY - 30); ctx.lineTo(1010, footerY - 30); ctx.stroke();
+
+            ctx.fillStyle = palette.borderPrimary;
+            ctx.font = 'italic bold 40px Oswald, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('@BerzerkerMode // DIÁRIO DE CARGAS', 540, footerY);
+            ctx.textAlign = 'left';
+        }
+
+        function downloadStoryCard() {
+            const canvas = document.getElementById('story-canvas');
+            if (!canvas) return;
+            const targetDate = document.getElementById('filter-date').value || 'treino';
+            const link = document.createElement('a');
+            link.download = `berzerker-story-${targetDate}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function calculate1RM() {
+            const w = parseFloat(document.getElementById('calc-1rm-weight').value) || 0;
+            const r = parseInt(document.getElementById('calc-1rm-reps').value) || 0;
+            const resEl = document.getElementById('calc-1rm-result');
+            const tableEl = document.getElementById('calc-1rm-table');
+
+            if (w <= 0 || r <= 0) {
+                resEl.textContent = "0 kg";
+                tableEl.innerHTML = "";
+                return;
+            }
+
+            // Epley Formula: 1RM = W * (1 + r/30)
+            const epley1RM = Math.round(w * (1 + r / 30));
+            resEl.textContent = `${epley1RM} kg`;
+
+            const percentages = [100, 95, 90, 85, 80, 75, 70, 60];
+            tableEl.innerHTML = percentages.map(p => `
+                <div class="bg-berzerker-dark p-2 rounded border border-berzerker-border text-center">
+                    <span class="text-berzerker-500 font-bold">${p}%</span>
+                    <div class="text-white font-bold">${Math.round(epley1RM * (p / 100))} kg</div>
+                </div>
+            `).join('');
+        }
+
+        function renderWarmupCalculator() {
+            const targetW = parseFloat(document.getElementById('calc-warmup-target').value) || 0;
+            const container = document.getElementById('warmup-results-container');
+
+            if (targetW <= 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 italic">Digite a carga alvo para ver a pirâmide de aquecimento.</p>`;
+                return;
+            }
+
+            const sets = [
+                { title: "Série 1 (Mobilidade / Barra)", weight: Math.round(targetW * 0.5), reps: "10-12 reps", desc: "Aquece articulações sem fadiga." },
+                { title: "Série 2 (Preparação SNC)", weight: Math.round(targetW * 0.7), reps: "6 reps", desc: "Aumenta recrutamento motor." },
+                { title: "Série 3 (Acoplamento de Carga)", weight: Math.round(targetW * 0.85), reps: "3 reps", desc: "Prepara a mente para o peso." },
+                { title: "Série 4 (Feeder Set)", weight: Math.round(targetW * 0.95), reps: "1 rep", desc: "Garante a pegada sem acumular lactato." },
+                { title: "Séries de Trabalho", weight: targetW, reps: "Reps do Treino", desc: "100% da carga foco!" }
+            ];
+
+            container.innerHTML = sets.map((s, idx) => `
+                <div class="p-3 bg-berzerker-dark rounded-xl border ${idx === 4 ? 'border-emerald-500/50 bg-emerald-950/20' : 'border-berzerker-border'} flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-bold text-white uppercase">${s.title}</div>
+                        <div class="text-[11px] text-gray-400">${s.desc}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-oswald text-lg font-bold text-berzerker-500">${s.weight} kg</div>
+                        <div class="text-xs font-mono text-gray-300">${s.reps}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function calculateWarmupFromForm() {
+            const w = parseFloat(document.getElementById('log-weight').value) || 0;
+            if (w <= 0) {
+                alertModal("Digite uma carga no campo de carga primeiro!");
+                return;
+            }
+            const box = document.getElementById('warmup-quick-box');
+            const content = document.getElementById('warmup-quick-content');
+            box.classList.remove('hidden');
+
+            content.innerHTML = `
+                • 50% (${Math.round(w * 0.5)}kg) × 10 reps (Aquece)<br>
+                • 70% (${Math.round(w * 0.7)}kg) × 6 reps (Prepara)<br>
+                • 85% (${Math.round(w * 0.85)}kg) × 3 reps (SNC)<br>
+                • 100% (${w}kg) × Trabalhar!
+            `;
+        }
+
+                // ============================ UTILITÁRIOS DE DATA ============================
+        // Converte Date para string local AAAA-MM-DD (corrige bug de fuso do toISOString)
+        function toLocalISO(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        // "Hoje" real do aparelho do usuário (data local, não UTC)
+        function getTodayLocalISO() {
+            return toLocalISO(new Date());
+        }
+
+        function formatDateBR(isoStr) {
+            if (!isoStr) return '';
+            const [y, m, d] = isoStr.split('-').map(Number);
+            const date = new Date(y, m - 1, d);
+            const dias = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+            return `${dias[date.getDay()]} · ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+        }
+
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        // ============================ PERSISTÊNCIA ============================
+        function loadStoredData() {
+            try {
+                const storedLogs = JSON.parse(safeStorage.get(STORAGE_KEY_LOGS));
+                if (Array.isArray(storedLogs)) logs = storedLogs;
+            } catch (e) { logs = []; }
+
+            const storedBw = parseFloat(safeStorage.get(STORAGE_KEY_BW));
+            if (!isNaN(storedBw) && storedBw > 0) {
+                userBodyweight = storedBw;
+                const bwInput = document.getElementById('user-bodyweight');
+                if (bwInput) bwInput.value = storedBw;
+            }
+        }
+
+        function saveLogsToStorage() {
+            safeStorage.set(STORAGE_KEY_LOGS, JSON.stringify(logs));
+            checkRankUp();
+        }
+
+        function loadWorkoutsFromStorage() {
+            try {
+                const stored = JSON.parse(safeStorage.get(STORAGE_KEY_WORKOUTS));
+                if (Array.isArray(stored)) savedWorkouts = stored;
+            } catch (e) { savedWorkouts = []; }
+        }
+
+        function saveWorkoutsToStorage() {
+            safeStorage.set(STORAGE_KEY_WORKOUTS, JSON.stringify(savedWorkouts));
+        }
+
+        function saveBodyweight() {
+            const val = parseFloat(document.getElementById('user-bodyweight').value);
+            if (isNaN(val) || val <= 0) {
+                alertModal("Digite um peso corporal válido!");
+                return;
+            }
+            userBodyweight = val;
+            safeStorage.set(STORAGE_KEY_BW, val.toString());
+            updateSummaryMetrics();
+            generateStoryCard();
+            renderBadgesAndStreak();
+            alertModal("Peso corporal salvo!");
+        }
+
+        // ==================== VIGIA DE VIRADA DE DIA (MEIA-NOITE) ====================
+        // A cada 30s confere se o dia local mudou. Se mudou (com o app aberto na
+        // meia-noite), recalcula o mapa de fadiga — os boxes mudam de cor sozinhos.
+        function startDateWatcher() {
+            lastKnownTodayISO = getTodayLocalISO();
+            setInterval(() => {
+                const nowISO = getTodayLocalISO();
+                if (nowISO === lastKnownTodayISO) return;
+
+                const prevISO = lastKnownTodayISO;
+                lastKnownTodayISO = nowISO;
+
+                document.getElementById('header-today-date').textContent = formatDateBR(nowISO);
+
+                const logDateEl = document.getElementById('log-date');
+                if (logDateEl.value === prevISO) logDateEl.value = nowISO;
+
+                const filterEl = document.getElementById('filter-date');
+                if (filterEl.value === prevISO) {
+                    filterEl.value = nowISO;
+                    renderLogsTable();
+                    updateSummaryMetrics();
+                }
+
+                renderRecoveryMap();
+                renderBadgesAndStreak();
+                alertModal("🌙 Virou o dia! Mapa de fadiga atualizado automaticamente.");
+            }, 30000);
+        }
+
+        // ============================ EFEITO DE PR ============================
+        function shakeElement(el) {
+            if (!el) return;
+            el.classList.remove('animate-pr-shake');
+            void el.offsetWidth; // força reinício da animação
+            el.classList.add('animate-pr-shake');
+            setTimeout(() => el.classList.remove('animate-pr-shake'), 600);
+        }
+
+        function triggerPrShakeEffect(checkbox) {
+            if (checkbox.checked) shakeElement(document.getElementById('form-card-container'));
+        }
+
+        // ============================ MODAL DE CONFIRMAÇÃO ============================
+        function confirmModal(msg, onConfirm) {
+            const existing = document.getElementById('confirm-modal-overlay');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'confirm-modal-overlay';
+            overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4';
+            overlay.innerHTML = `
+                <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-2xl">
+                    <p class="text-sm text-white font-bold leading-relaxed">${escapeHtml(msg)}</p>
+                    <div class="flex gap-3 justify-end">
+                        <button id="confirm-modal-no" class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Cancelar</button>
+                        <button id="confirm-modal-yes" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Confirmar</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+            overlay.querySelector('#confirm-modal-no').onclick = () => overlay.remove();
+            overlay.onclick = (ev) => { if (ev.target === overlay) overlay.remove(); };
+            overlay.querySelector('#confirm-modal-yes').onclick = () => { overlay.remove(); onConfirm(); };
+        }
+
+        // ====================== REGISTRO UNIFICADO + EDIÇÃO ======================
+        let _lastLogId = 0;
+        function newLogId() { _lastLogId = Math.max(Date.now(), _lastLogId + 1); return _lastLogId; }
+
+        function refreshAll() {
+            renderLogsTable(); updateSummaryMetrics(); renderRecoveryMap(); renderBossBattleUI();
+            generateStoryCard(); renderBadgesAndStreak(); initVolumeChart(); updateExerciseSuggestions();
+        }
+
+        // Campos de carga/reps iguais no treino iniciado e na edição (p = prefixo dos ids)
+        function fieldsHTML(p, v) {
+            const opts = (arr, sel) => arr.map(([val, lab]) => `<option value="${val}"${val === (sel || '') ? ' selected' : ''}>${lab}</option>`).join('');
+            return `
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-3">
+                <div><label class="${LBL}">Carga Real (kg)</label><input type="number" step="0.5" min="0" id="${p}w" value="${v.weight > 0 ? v.weight : ''}" placeholder="kg" class="${INP}"></div>
+                <div class="sm:col-span-3"><label class="${LBL}">Reps por Série</label><input type="text" id="${p}r" value="${escapeHtml(v.repsText || '')}" placeholder="12, 10, 8" class="${INP}"></div>
+                <div class="col-span-2"><label class="${LBL}">Técnica Avançada</label><select id="${p}t" class="${INP}">${opts(TECHNIQUES, v.technique)}</select></div>
+                <div class="col-span-2"><label class="${LBL} !text-emerald-400">💡 Meta Próximo Treino</label><select id="${p}g" class="${INP}">${opts(NEXT_GOALS, v.nextGoal)}</select></div>
+                <div class="col-span-2 sm:col-span-4"><label class="${LBL}">Observações</label><textarea id="${p}n" rows="2" placeholder="Ex: ajuste do banco, dor, sensação, regulagem da máquina..." class="${INP}">${escapeHtml(v.notes || '')}</textarea></div>
+                <label class="flex items-center gap-2 cursor-pointer col-span-2"><input type="checkbox" id="${p}p"${v.isPR ? ' checked' : ''} class="w-4 h-4 rounded text-emerald-500 bg-berzerker-dark border-berzerker-border"><span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">🏆 Novo PR</span></label>
+            </div>`;
+        }
+
+        function readFields(p) {
+            const g = k => document.getElementById(p + k);
+            return {
+                weight: parseFloat(g('w').value) || 0,
+                reps: g('r').value.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x) && x > 0),
+                technique: g('t').value, nextGoal: g('g').value, isPR: g('p').checked, notes: g('n').value.trim()
+            };
+        }
+
+        // Guarda o que já foi digitado nos exercícios pendentes antes de redesenhar a sessão
+        function snapshotDrafts() {
+            if (!activeSession) return;
+            activeSession.exercises.forEach((e, i) => {
+                const w = document.getElementById(`s${i}-w`);
+                if (!w || e.done) return;
+                const g = k => document.getElementById(`s${i}-${k}`);
+                e.draft = { weight: parseFloat(w.value) || 0, repsText: g('r').value, technique: g('t').value, nextGoal: g('g').value, isPR: g('p').checked, notes: g('n').value };
+            });
+        }
+
+        function editLog(id) {
+            const l = logs.find(x => x.id === id);
+            if (!l) { alertModal('Registro não encontrado.'); return; }
+            document.getElementById('edit-log-overlay')?.remove();
+            const muscles = [...new Set(['Peito', 'Costas', 'Pernas', 'Ombros', 'Bíceps', 'Tríceps', 'Abdômen', 'Geral', l.muscle])];
+            const o = document.createElement('div');
+            o.id = 'edit-log-overlay';
+            o.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-start sm:items-center justify-center p-4 overflow-y-auto';
+            o.innerHTML = `
+                <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 max-w-lg w-full shadow-2xl">
+                    <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider mb-3">✏️ Editar registro</h3>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div><label class="${LBL}">Data</label><input type="date" id="el-d" value="${l.date}" class="${INP}"></div>
+                        <div><label class="${LBL}">Grupo Muscular</label><select id="el-m" class="${INP}">${muscles.map(m => `<option value="${escapeHtml(m)}"${m === l.muscle ? ' selected' : ''}>${escapeHtml(m)}</option>`).join('')}</select></div>
+                        <div class="col-span-2"><label class="${LBL}">Exercício</label><input type="text" id="el-e" value="${escapeHtml(l.exercise)}" class="${INP}"></div>
+                    </div>
+                    ${fieldsHTML('el-', { weight: l.weight, repsText: l.reps.join(', '), technique: l.technique, nextGoal: l.nextGoal, isPR: l.isPR, notes: l.notes })}
+                    <div class="flex gap-3 justify-end mt-4">
+                        <button onclick="document.getElementById('edit-log-overlay').remove()" class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Cancelar</button>
+                        <button onclick="saveEditedLog(${id})" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">💾 Salvar alterações</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(o);
+        }
+
+        function saveEditedLog(id) {
+            const l = logs.find(x => x.id === id);
+            if (!l) return;
+            const f = readFields('el-');
+            const exercise = document.getElementById('el-e').value.trim();
+            if (!exercise) { alertModal('Digite o nome do exercício!'); return; }
+            if (f.reps.length === 0) { alertModal('Digite ao menos uma repetição válida (ex: 12, 10, 8).'); return; }
+            Object.assign(l, f, { exercise, date: document.getElementById('el-d').value || l.date, muscle: document.getElementById('el-m').value });
+            saveLogsToStorage();
+            if (activeSession) activeSession.exercises.forEach(e => {
+                if (e.logId === id) Object.assign(e, { exercise: l.exercise, muscle: l.muscle, loggedWeight: l.weight, loggedReps: l.reps, loggedPR: l.isPR });
+            });
+            document.getElementById('edit-log-overlay').remove();
+            document.getElementById('filter-date').value = l.date;
+            refreshAll();
+            renderSession();
+            alertModal('✅ Registro atualizado!');
+        }
+
+        // Bi-set: o exercício marcado forma par com o anterior (máx. 2 por bi-set)
+        function normalizeBisets(arr) {
+            arr.forEach((e, i) => { if (i === 0 || arr[i - 1].biset) e.biset = false; });
+        }
+
+        function pairLink(i) {
+            const d = draftExercises, e = d[i];
+            if (e.biset) return `<button onclick="toggleDraftBiset(${i})" class="ml-5 text-[10px] font-bold text-gray-500 hover:text-red-400 transition-colors">✂ Desfazer bi-set</button>`;
+            if (i > 0 && !d[i - 1].biset && !(d[i + 1] && d[i + 1].biset))
+                return `<button onclick="toggleDraftBiset(${i})" class="w-full text-[11px] font-bold text-cyan-400 hover:bg-cyan-950/30 border border-dashed border-cyan-500/40 rounded-lg py-1.5 transition-colors">🔗 Juntar com o exercício acima em bi-set</button>`;
+            return '';
+        }
+
+        function toggleDraftBiset(i) {
+            const e = draftExercises[i];
+            if (e.biset) e.biset = false;
+            else if (i === 0) { alertModal('O 1º exercício não tem anterior para formar bi-set.'); return; }
+            else if (draftExercises[i - 1].biset) { alertModal('O anterior já é o 2º de um bi-set (máximo 2).'); return; }
+            else if (draftExercises[i + 1] && draftExercises[i + 1].biset) { alertModal('Este exercício já abre um bi-set com o próximo.'); return; }
+            else e.biset = true;
+            renderDraftList();
+        }
+
+        // ====================== CRIAR TREINO (BUILDER) ======================
+        // Preenche as sugestões de exercício (catálogo + histórico) do grupo selecionado
+        function updateExerciseSuggestions() {
+            const datalist = document.getElementById('wb-exercise-suggestions');
+            const muscle = document.getElementById('wb-muscle')?.value;
+            if (!datalist || !muscle) return;
+
+            const historyNames = muscle === 'Geral'
+                ? logs.map(l => l.exercise)
+                : logs.filter(l => l.muscle === muscle).map(l => l.exercise);
+
+            const all = [...new Set([...(EXERCISE_CATALOG[muscle] || []), ...historyNames])];
+            datalist.innerHTML = all.map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+        }
+
+        function addExerciseToDraft(forceBiset) {
+            const muscle = document.getElementById('wb-muscle').value;
+            const exercise = document.getElementById('wb-exercise').value.trim();
+            const weight = parseFloat(document.getElementById('wb-weight').value) || 0;
+            const repsText = document.getElementById('wb-reps').value.trim();
+            const technique = document.getElementById('wb-technique').value;
+
+            if (!exercise) {
+                alertModal("Digite o nome do exercício!");
+                document.getElementById('wb-exercise').focus();
+                return;
+            }
+
+            const reps = repsText.split(',').map(r => parseInt(r.trim())).filter(r => !isNaN(r) && r > 0);
+            const last = draftExercises[draftExercises.length - 1];
+            let biset = false;
+            if (forceBiset === true) {
+                if (!last) alertModal("O bi-set precisa de um exercício anterior — este entra como o primeiro.");
+                else if (last.biset) alertModal("O exercício anterior já é o 2º de um bi-set (máximo 2) — este entra separado.");
+                else biset = true;
+            }
+            draftExercises.push({ muscle, exercise, weight, reps, repsText, technique, biset });
+            renderDraftList();
+
+            document.getElementById('wb-exercise').value = '';
+            document.getElementById('wb-weight').value = '';
+            document.getElementById('wb-reps').value = '';
+            document.getElementById('wb-exercise').focus();
+        }
+
+        function removeDraftExercise(i) {
+            draftExercises.splice(i, 1);
+            renderDraftList();
+        }
+
+        function moveDraftExercise(i, dir) {
+            const j = i + dir;
+            if (j < 0 || j >= draftExercises.length) return;
+            [draftExercises[i], draftExercises[j]] = [draftExercises[j], draftExercises[i]];
+            renderDraftList();
+        }
+
+        function renderDraftList() {
+            const listEl = document.getElementById('draft-exercises-list');
+            const countEl = document.getElementById('draft-count');
+            if (!listEl) return;
+            if (countEl) countEl.textContent = draftExercises.length;
+            normalizeBisets(draftExercises);
+            const bb = document.getElementById('wb-biset-btn');
+            if (bb) {
+                const lastEx = draftExercises[draftExercises.length - 1];
+                bb.disabled = !lastEx || !!lastEx.biset;
+                bb.classList.toggle('opacity-40', bb.disabled);
+                bb.title = bb.disabled ? 'Adicione antes um exercício que ainda não esteja num bi-set' : `Adiciona este exercício em bi-set com "${lastEx.exercise}"`;
+            }
+
+            if (draftExercises.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-6 text-gray-500 border border-dashed border-berzerker-border rounded-xl text-xs uppercase tracking-wider">
+                        Nenhum exercício no treino ainda — adicione acima.
+                    </div>`;
+                return;
+            }
+
+            listEl.innerHTML = draftExercises.map((e, i) => pairLink(i) + `
+                <div class="bg-berzerker-dark border ${e.biset ? 'border-cyan-500/60 ml-5' : 'border-berzerker-border'} rounded-xl p-3 flex items-center justify-between gap-3 hover:border-berzerker-600 transition-colors">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-6 h-6 flex items-center justify-center bg-berzerker-600/20 border border-berzerker-600/40 text-berzerker-500 rounded-md text-xs font-bold shrink-0">${i + 1}</span>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
+                                ${e.technique !== 'Convencional' ? `<span class="text-[10px] font-mono text-gray-500">[${escapeHtml(e.technique)}]</span>` : ''}
+                            </div>
+                            <span class="font-bold text-white text-sm block truncate">${e.biset ? '🔗 ' : ''}${escapeHtml(e.exercise)}</span>
+                            <span class="text-[11px] text-gray-400 font-mono">Meta: ${e.weight > 0 ? e.weight + ' kg' : '—'} × (${escapeHtml(e.repsText || '—')})</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-0.5 shrink-0">
+                        <button onclick="moveDraftExercise(${i}, -1)" title="Subir" class="p-1.5 text-gray-500 hover:text-white transition-colors text-[10px]">▲</button>
+                        <button onclick="moveDraftExercise(${i}, 1)" title="Descer" class="p-1.5 text-gray-500 hover:text-white transition-colors text-[10px]">▼</button>
+                        <button onclick="removeDraftExercise(${i})" title="Remover" class="p-1.5 text-gray-500 hover:text-red-400 transition-colors text-xs">✕</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateSaveButton() {
+            const btn = document.getElementById('btn-save-workout');
+            if (!btn) return;
+            btn.textContent = editingWorkoutId !== null ? '💾 Atualizar Treino' : '💾 Salvar Treino';
+        }
+
+        function saveWorkout() {
+            const nameEl = document.getElementById('workout-name');
+            const name = nameEl.value.trim();
+            if (!name) { alertModal("Dê um nome ao treino!"); nameEl.focus(); return; }
+            if (draftExercises.length === 0) { alertModal("Adicione ao menos 1 exercício ao treino!"); return; }
+
+            if (editingWorkoutId !== null) {
+                const idx = savedWorkouts.findIndex(w => w.id === editingWorkoutId);
+                if (idx >= 0) {
+                    savedWorkouts[idx] = { ...savedWorkouts[idx], name, exercises: JSON.parse(JSON.stringify(draftExercises)) };
+                }
+                alertModal("✅ Treino atualizado!");
+            } else {
+                savedWorkouts.push({ id: Date.now(), name, exercises: JSON.parse(JSON.stringify(draftExercises)) });
+                alertModal("💾 Treino salvo! Agora é só clicar em ▶ Iniciar no dia do treino.");
+            }
+
+            saveWorkoutsToStorage();
+            clearDraft(false);
+            renderSavedWorkouts();
+        }
+
+        function clearDraft(showToast = true) {
+            draftExercises = [];
+            editingWorkoutId = null;
+            const nameEl = document.getElementById('workout-name');
+            if (nameEl) nameEl.value = '';
+            renderDraftList();
+            updateSaveButton();
+            if (showToast) alertModal("Rascunho descartado.");
+        }
+
+        function editWorkout(id) {
+            const w = savedWorkouts.find(x => x.id === id);
+            if (!w) return;
+            editingWorkoutId = id;
+            draftExercises = JSON.parse(JSON.stringify(w.exercises));
+            document.getElementById('workout-name').value = w.name;
+            renderDraftList();
+            updateSaveButton();
+            document.getElementById('workout-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            alertModal(`✏️ Editando "${w.name}" — salve para aplicar as mudanças.`);
+        }
+
+        function deleteWorkout(id) {
+            const w = savedWorkouts.find(x => x.id === id);
+            if (!w) return;
+            confirmModal(`Excluir o treino "${w.name}"?`, () => {
+                savedWorkouts = savedWorkouts.filter(x => x.id !== id);
+                if (editingWorkoutId === id) clearDraft(false);
+                saveWorkoutsToStorage();
+                renderSavedWorkouts();
+                alertModal("Treino excluído.");
+            });
+        }
+
+        function renderSavedWorkouts() {
+            const listEl = document.getElementById('saved-workouts-list');
+            if (!listEl) return;
+
+            if (savedWorkouts.length === 0) {
+                listEl.innerHTML = `
+                    <div class="col-span-full text-center py-6 text-gray-500 border border-dashed border-berzerker-border rounded-xl text-xs uppercase tracking-wider">
+                        Nenhum treino salvo ainda — monte o primeiro acima! 💪
+                    </div>`;
+                return;
+            }
+
+            listEl.innerHTML = savedWorkouts.map(w => {
+                const muscleTags = [...new Set(w.exercises.map(e => e.muscle))];
+                return `
+                <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-4 space-y-2.5 hover:border-berzerker-600 transition-colors flex flex-col">
+                    <div class="flex items-start justify-between gap-2">
+                        <h4 class="font-oswald font-bold text-white text-base uppercase leading-tight">${escapeHtml(w.name)}</h4>
+                        <span class="text-[10px] font-bold px-2 py-0.5 bg-berzerker-border text-gray-300 rounded uppercase whitespace-nowrap">${w.exercises.length} exs</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1">
+                        ${muscleTags.map(mt => `<span class="text-[9px] font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(mt)}</span>`).join('')}
+                    </div>
+                    <p class="text-[11px] text-gray-500 font-mono leading-relaxed line-clamp-2">${escapeHtml(w.exercises.map((e, i) => (i ? (e.biset ? ' + ' : ' · ') : '') + e.exercise).join(''))}</p>
+                    <div class="flex gap-2 pt-1 mt-auto">
+                        <button onclick="startSession(${w.id})" class="flex-1 px-3 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors">▶ Iniciar</button>
+                        <button onclick="editWorkout(${w.id})" title="Editar" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-[11px] rounded-lg transition-colors">✏️</button>
+                        <button onclick="deleteWorkout(${w.id})" title="Excluir" class="px-3 py-2 bg-berzerker-border hover:bg-red-900/60 text-red-400 text-[11px] rounded-lg transition-colors">🗑</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ====================== TREINO EM ANDAMENTO (SESSÃO) ======================
+        function startSession(workoutId) {
+            const w = savedWorkouts.find(x => x.id === workoutId);
+            if (!w) { alertModal("Treino não encontrado!"); return; }
+
+            // Sessão sempre começa na data de HOJE (local)
+            const todayStr = getTodayLocalISO();
+            document.getElementById('log-date').value = todayStr;
+            document.getElementById('filter-date').value = todayStr;
+
+            activeSession = {
+                workoutId: w.id,
+                name: w.name,
+                exercises: w.exercises.map(e => ({
+                    muscle: e.muscle,
+                    exercise: e.exercise,
+                    weight: e.weight || 0,
+                    repsText: e.repsText || (Array.isArray(e.reps) ? e.reps.join(', ') : ''),
+                    technique: e.technique || 'Convencional',
+                    biset: !!e.biset, done: false, logId: null, draft: null, loggedWeight: null, loggedReps: null, loggedPR: false
+                }))
+            };
+
+            renderLogsTable();
+            updateSummaryMetrics();
+            renderRecoveryMap();
+
+            const card = document.getElementById('active-session-card');
+            card.classList.remove('hidden');
+            renderSession();
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            alertModal(`⚔️ "${w.name}" iniciado! Bora treinar!`);
+        }
+
+        function renderSession() {
+            if (!activeSession) return;
+
+            document.getElementById('session-title').textContent = activeSession.name;
+
+            const total = activeSession.exercises.length;
+            const doneCount = activeSession.exercises.filter(e => e.done).length;
+            document.getElementById('session-progress-text').textContent = `${doneCount} / ${total} exercícios`;
+            document.getElementById('session-progress-bar').style.width = total > 0 ? `${(doneCount / total) * 100}%` : '0%';
+
+            let sessionVol = 0;
+            activeSession.exercises.forEach(e => {
+                if (e.done && Array.isArray(e.loggedReps)) {
+                    sessionVol += (e.loggedWeight || 0) * e.loggedReps.reduce((a, b) => a + b, 0);
+                }
+            });
+            document.getElementById('session-volume-text').textContent = `${Math.round(sessionVol).toLocaleString('pt-BR')} kg movidos na sessão`;
+
+            snapshotDrafts();
+            const listEl = document.getElementById('session-exercises-list');
+            const ex = activeSession.exercises;
+
+            const itemHTML = (e, i) => {
+                if (e.done) {
+                    const lg = logs.find(x => x.id === e.logId);
+                    return `<div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 flex-wrap min-w-0">
+                                <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-emerald-600 text-white">✔</span>
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
+                                <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-emerald-400 font-mono whitespace-nowrap">${e.loggedWeight} kg × (${e.loggedReps.join(', ')})${e.loggedPR ? ' 🏆 PR' : ''}</span>
+                                <button onclick="editLog(${e.logId})" class="px-2 py-1 bg-berzerker-border hover:bg-gray-700 text-white text-[11px] font-bold rounded-lg transition-colors">✏️ Editar</button>
+                            </div>
+                        </div>
+                        ${lg && lg.notes ? `<p class="text-[11px] text-gray-400 mt-1.5 italic">📝 ${escapeHtml(lg.notes)}</p>` : ''}
+                    </div>`;
+                }
+                const d = e.draft || { weight: e.weight, repsText: e.repsText, technique: e.technique, nextGoal: '', isPR: false, notes: '' };
+                return `<div>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 flex-wrap min-w-0">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-berzerker-border text-gray-300">${i + 1}</span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
+                            <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
+                        </div>
+                        <span class="text-[10px] text-gray-500 font-mono whitespace-nowrap">🎯 Meta: ${e.weight > 0 ? e.weight + ' kg' : '—'} × (${escapeHtml(e.repsText || '—')})</span>
+                    </div>
+                    ${fieldsHTML(`s${i}-`, d)}
+                </div>`;
+            };
+
+            let html = '';
+            for (let i = 0; i < ex.length; i++) {
+                const pair = !!(ex[i + 1] && ex[i + 1].biset);
+                const idxs = pair ? [i, i + 1] : [i];
+                if (pair) i++;
+                const pending = idxs.filter(k => !ex[k].done);
+                html += `<div class="rounded-xl border ${pending.length ? (pair ? 'border-cyan-500/60 bg-berzerker-dark' : 'border-berzerker-border bg-berzerker-dark') : 'border-emerald-600/50 bg-emerald-950/10'} p-4 space-y-3">
+                    ${pair ? '<div class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">🔗 BI-SET — os dois exercícios juntos, na mesma série</div>' : ''}
+                    ${idxs.map(k => itemHTML(ex[k], k)).join('<div class="border-t border-dashed border-berzerker-border"></div>')}
+                    ${pending.length ? `<div class="flex justify-end"><button onclick="registerSessionUnit([${pending.join(',')}], ${pair})" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">✔ Registrar${pending.length > 1 ? ' Bi-set' : ''}</button></div>` : ''}
+                </div>`;
+            }
+            listEl.innerHTML = html;
+        }
+
+        function registerSessionUnit(idxs, isPair) {
+            if (!activeSession) return;
+            const date = document.getElementById('log-date').value || getTodayLocalISO();
+            const items = idxs.map(i => ({ item: activeSession.exercises[i], f: readFields(`s${i}-`) }));
+            const bad = items.find(x => x.f.reps.length === 0);
+            if (bad) { alertModal(`Digite ao menos uma repetição válida em "${bad.item.exercise}" (ex: 12, 10, 8).`); return; }
+
+            items.forEach(({ item, f }) => {
+                const id = newLogId();
+                logs.unshift({ id, date, muscle: item.muscle, exercise: item.exercise, ...f, ...(isPair ? { biset: true } : {}) });
+                Object.assign(item, { done: true, logId: id, loggedWeight: f.weight, loggedReps: f.reps, loggedPR: f.isPR, draft: null });
+            });
+            saveLogsToStorage();
+            document.getElementById('filter-date').value = date;
+            refreshAll();
+            renderSession();
+            if (items.some(x => x.f.isPR)) shakeElement(document.getElementById('active-session-card'));
+        }
+
+        function endSession() {
+            if (!activeSession) return;
+            const remaining = activeSession.exercises.filter(e => !e.done).length;
+
+            const finish = () => {
+                activeSession = null;
+                stopSessionTimer();
+                document.getElementById('active-session-card').classList.add('hidden');
+                alertModal("💪 Treino finalizado! Confira o resumo nas abas ⚔️ Boss e 📸 Story Card.");
+            };
+
+            if (remaining > 0) {
+                confirmModal(`Ainda existem ${remaining} exercício(s) sem registro. Finalizar o treino mesmo assim?`, finish);
+            } else {
+                finish();
+            }
+        }
+
+        // ====================== CRONÔMETRO DE DESCANSO ======================
+        function updateSessionTimerDisplay() {
+            const m = Math.floor(sessionTimerSeconds / 60).toString().padStart(2, '0');
+            const s = (sessionTimerSeconds % 60).toString().padStart(2, '0');
+            const el = document.getElementById('session-timer-display');
+            if (el) el.textContent = `${m}:${s}`;
+        }
+
+        function addSessionTimer(sec) {
+            sessionTimerSeconds += sec;
+            updateSessionTimerDisplay();
+            if (!sessionTimerInterval) toggleSessionTimer(); // começa ou retoma a contagem
+        }
+
+        function toggleSessionTimer() {
+            const btn = document.getElementById('session-timer-btn');
+
+            if (sessionTimerInterval) {
+                clearInterval(sessionTimerInterval);
+                sessionTimerInterval = null;
+                if (btn) {
+                    btn.textContent = 'Retomar';
+                    btn.className = 'px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold uppercase rounded-lg transition-colors';
+                }
+                return;
+            }
+
+            if (sessionTimerSeconds <= 0) {
+                alertModal("Escolha um tempo de descanso!");
+                return;
+            }
+
+            if (btn) {
+                btn.textContent = 'Pausar';
+                btn.className = 'px-3 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[10px] font-bold uppercase rounded-lg transition-colors';
+            }
+
+            sessionTimerInterval = setInterval(() => {
+                sessionTimerSeconds--;
+                updateSessionTimerDisplay();
+                if (sessionTimerSeconds <= 0) {
+                    stopSessionTimer();
+                    playBeepSound();
+                    alertModal("⚡ FIM DO DESCANSO! DE VOLTA À BATALHA!");
+                }
+            }, 1000);
+        }
+
+        function stopSessionTimer() {
+            if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+            sessionTimerInterval = null;
+            sessionTimerSeconds = 0;
+            updateSessionTimerDisplay();
+            const btn = document.getElementById('session-timer-btn');
+            if (btn) {
+                btn.textContent = 'Iniciar';
+                btn.className = 'px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold uppercase rounded-lg transition-colors';
+            }
+        }
+
+        // ====================== ATALHO DO MAPA DE FADIGA ======================
+        // Clicar num box do mapa pré-seleciona o grupo no formulário de registro
+        function prefillMuscleFromMap(m) {
+            const sel = document.getElementById('log-muscle');
+            if (sel) sel.value = m;
+            const card = document.getElementById('form-card-container');
+            if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => document.getElementById('log-exercise')?.focus(), 400);
+        }
+
+        function renderBadgesAndStreak() {
+            // 1. Calculate Streak
+            const uniqueDates = [...new Set(logs.map(l => l.date))].sort().reverse();
+            let streak = 0;
+            let totalTon = 0;
+            let totalPRs = 0;
+
+            logs.forEach(l => {
+                const repsSum = l.reps.reduce((a, b) => a + b, 0);
+                totalTon += (l.weight * repsSum) / 1000;
+                if (l.isPR) totalPRs++;
+            });
+
+            const today = getTodayLocalISO();
+            let checkDate = new Date();
+
+            for (let i = 0; i < 30; i++) {
+                const dateStr = toLocalISO(checkDate);
+                if (uniqueDates.includes(dateStr)) {
+                    streak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else if (i === 0) {
+                    // Check if trained yesterday
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+
+            document.getElementById('stat-streak-days').textContent = `${streak} Dias`;
+            document.getElementById('stat-total-tonnage').textContent = `${totalTon.toFixed(1)} TON`;
+
+            // Badges
+            const badges = [
+                { title: "Primeiro Sangue", desc: "1º Exercício Registrado", unlocked: logs.length > 0, icon: "⚔️" },
+                { title: "Ofensiva 3 Dias", desc: "3 Dias de Sequência", unlocked: streak >= 3, icon: "🔥" },
+                { title: "Mover Titan", desc: "10+ Toneladas Acumuladas", unlocked: totalTon >= 10, icon: "🐘" },
+                { title: "Caçador de PRs", desc: "5+ Recordes Pessoais", unlocked: totalPRs >= 5, icon: "🏆" },
+                { title: "Tanque de Guerra", desc: "Razão > 50x Peso Corporal", unlocked: logs.some(l => getAnimalRankForSession(l.date).relativeRatio >= 50), icon: "🛡️" },
+                { title: "Berzerker Master", desc: "50+ Treinos Registrados", unlocked: uniqueDates.length >= 50, icon: "⚡" }
+            ];
+
+            const unlockedCount = badges.filter(b => b.unlocked).length;
+            document.getElementById('stat-unlocked-badges').textContent = `${unlockedCount} / ${badges.length}`;
+
+            const grid = document.getElementById('badges-grid');
+            grid.innerHTML = badges.map(b => `
+                <div class="p-3 rounded-xl border text-center transition-all ${b.unlocked ? 'bg-berzerker-dark border-emerald-500/50 text-white' : 'bg-berzerker-dark/40 border-berzerker-border text-gray-600 opacity-60'}">
+                    <div class="text-3xl mb-1">${b.icon}</div>
+                    <div class="font-bold text-xs uppercase ${b.unlocked ? 'text-emerald-400' : 'text-gray-500'}">${b.title}</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">${b.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        function initVolumeChart() {
+            const canvas = document.getElementById('volumeChart');
+            if (!canvas) return;
+
+            // Aggregate volume by date
+            const dateMap = {};
+            logs.forEach(l => {
+                const repsSum = l.reps.reduce((a, b) => a + b, 0);
+                const ton = (l.weight * repsSum) / 1000;
+                dateMap[l.date] = (dateMap[l.date] || 0) + ton;
+            });
+
+            const labels = Object.keys(dateMap).sort().slice(-7);
+            const dataValues = labels.map(d => dateMap[d]);
+
+            if (volumeChartInstance) volumeChartInstance.destroy();
+
+            const ctx = canvas.getContext('2d');
+            volumeChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length > 0 ? labels : ['Sem Dados'],
+                    datasets: [{
+                        label: 'Tonelagem (TON)',
+                        data: dataValues.length > 0 ? dataValues : [0],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#ef4444',
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function exportJSONBackup() {
+            const backupData = {
+                userBodyweight: userBodyweight,
+                logs: logs,
+                savedWorkouts: savedWorkouts,
+                gameTheme: THEME ? THEME.id : 'classico',
+                exportDate: new Date().toISOString()
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `berzerker-diario-backup-${getTodayLocalISO()}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function importJSONBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && Array.isArray(parsed.logs)) {
+                        logs = parsed.logs;
+                        if (parsed.userBodyweight) userBodyweight = parsed.userBodyweight;
+                        if (Array.isArray(parsed.savedWorkouts)) savedWorkouts = parsed.savedWorkouts;
+                        if (parsed.gameTheme && THEMES[parsed.gameTheme]) { applyTheme(parsed.gameTheme); safeStorage.set(STORAGE_KEY_THEME, parsed.gameTheme); }
+                        lastRankLevel = null; lastBossesDefeated = null;
+
+                        saveLogsToStorage();
+                        saveWorkoutsToStorage();
+                        safeStorage.set(STORAGE_KEY_BW, userBodyweight.toString());
+                        safeStorage.set(STORAGE_KEY_SEEDED, '1'); // não re-semear dados de exemplo
+
+                        const bwInput = document.getElementById('user-bodyweight');
+                        if (bwInput && userBodyweight > 0) bwInput.value = userBodyweight;
+
+                        alertModal("Backup importado com sucesso!");
+                        updateExerciseSuggestions();
+                        renderLogsTable();
+                        updateSummaryMetrics();
+                        renderRecoveryMap();
+                        renderBossBattleUI();
+                        generateStoryCard();
+                        renderBadgesAndStreak();
+                        initVolumeChart();
+                        renderDraftList();
+                        updateSaveButton();
+                        renderSavedWorkouts();
+                    } else {
+                        alertModal("Arquivo JSON inválido!");
+                    }
+                } catch(err) {
+                    alertModal("Erro ao ler o arquivo de backup.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            confirmModal("Tem certeza que deseja apagar TODO o histórico e os treinos salvos?", () => {
+                logs = [];
+                savedWorkouts = [];
+                draftExercises = [];
+                editingWorkoutId = null;
+                activeSession = null;
+                stopSessionTimer();
+                document.getElementById('active-session-card').classList.add('hidden');
+                safeStorage.set(STORAGE_KEY_SEEDED, '1'); // não re-semear dados de exemplo
+                saveLogsToStorage();
+                saveWorkoutsToStorage();
+                renderLogsTable();
+                updateSummaryMetrics();
+                renderRecoveryMap();
+                renderBossBattleUI();
+                generateStoryCard();
+                renderBadgesAndStreak();
+                initVolumeChart();
+                renderDraftList();
+                updateSaveButton();
+                renderSavedWorkouts();
+                alertModal("Dados zerados.");
+            });
+        }
+
+        function alertModal(msg) {
+            const banner = document.createElement('div');
+            banner.className = 'fixed bottom-5 right-5 bg-berzerker-600 text-white font-bold px-5 py-3 rounded-xl shadow-2xl z-50 transition-all text-xs uppercase tracking-wider';
+            banner.textContent = msg;
+            document.body.appendChild(banner);
+            setTimeout(() => banner.remove(), 3500);
+        }
+    </script>
+<script>
+        // PWA: registra o service worker (só em http/https) e pede armazenamento persistente
+        if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
+                if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+            });
+        }
+    </script>
+</body>
+</html>
