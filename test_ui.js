@@ -84,6 +84,15 @@ try { window.onload(); } catch (e) { bootOk = false; bootErr = e.message; }
 check('window.onload() roda sem erro', bootOk, bootErr);
 check('data de hoje no formulário', $('log-date').value === ev('getTodayLocalISO()'));
 check('aba Buscar existe (desktop e mobile)', !!$('tab-content-busca') && !!$('nav-busca') && !!$('m-nav-busca'));
+check('Montador tem tela e navegação próprias (desktop e mobile)', !!$('tab-content-montador') && !!$('nav-montador') && !!$('m-nav-montador'));
+check('registro rápido aparece antes dos painéis longos', $('tab-content-diario').firstElementChild.id === 'form-card-container');
+check('detalhes do registro começam recolhidos, sem perder campos', !!$('advanced-details') && !$('advanced-details').open && !!$('mode') && !!$('sets-box') && !!$('t') && !!$('n') && !!$('warmup-quick-box'));
+check('cardio compacto começa recolhido e conserva formulário', !!$('cardio-details') && !$('cardio-details').open && !!$('cardio-distance') && !!$('cardio-duration') && !!$('cardio-notes'));
+setSelect('mode', 'sets');
+check('selecionar série a série abre os detalhes e mostra as linhas', $('advanced-details').open && !$('sets-box').classList.contains('hidden') && $('simple-box').classList.contains('hidden'));
+setSelect('mode', 'simple');
+$('advanced-details').open = false;
+check('voltar ao modo simples restaura carga/reps rápidos', !$('simple-box').classList.contains('hidden'));
 check('seed carregou registros', ev('logs.length') > 0, ev('logs.length'));
 check('seed real: 44 logs + 5 sessões salvas', ev('logs.length') === 44 && ev('savedWorkouts.length') === 5);
 check('9 temas no select de tema', $('game-theme-select').options.length === 9);
@@ -104,6 +113,10 @@ click($('nav-busca'));
 check('clique em 🔎 Buscar abre a aba', !$('tab-content-busca').classList.contains('hidden'));
 check('e esconde o diário', $('tab-content-diario').classList.contains('hidden'));
 check('botão ativo destacado', $('nav-busca').className.includes('bg-berzerker-600'));
+click($('nav-montador'));
+check('Montador abre em tela própria e esconde Hoje', !$('tab-content-montador').classList.contains('hidden') && $('tab-content-diario').classList.contains('hidden'));
+check('botão Montador fica destacado', $('nav-montador').className.includes('bg-berzerker-600'));
+click($('nav-busca'));
 const totalEx = ev('EXERCISE_CATALOG_FULL.length');
 check('catálogo inteiro listado', cards().length === totalEx, cards().length);
 check('contador de resultados dinâmico', $('cat-count').textContent === `${totalEx} de ${totalEx} exercícios`, $('cat-count').textContent);
@@ -197,7 +210,7 @@ check('linha de tags do formulário apareceu', $('log-tags-line').textContent.in
 click($('nav-busca'));
 setInput('cat-q', 'remada curvada');
 click(btnIn(cards()[0], 'No treino'));
-check('"🎯 No treino" preenche o builder', $('wb-exercise').value === 'Remada Curvada com Barra');
+check('"🎯 No treino" abre o Montador e preenche o builder', !$('tab-content-montador').classList.contains('hidden') && $('wb-exercise').value === 'Remada Curvada com Barra');
 check('reps alvo pela faixa do catálogo', $('wb-reps').value === '12, 12, 10', $('wb-reps').value);
 
 click($('nav-busca'));
@@ -258,9 +271,13 @@ setInput('log-exercise', 'Rosca Direta com Barra');
 fire($('log-exercise'), 'input');
 check('digitar mostra as tags do exercício', $('log-tags-line').textContent.includes('Puxar') && $('log-tags-line').textContent.includes('Barra'), $('log-tags-line').textContent);
 setInput('w', '45'); setInput('r', '12, 10, 8');
+$('advanced-details').open = true;
+setInput('n', 'Banco ajustado'); setInput('rir', '2'); setInput('sessao', 'Peito/Tríceps');
+setSelect('t', 'Rest-Pause'); setSelect('g', '🎯 Ajustar Execução');
 const antes = ev('logs.length');
 fire($('workout-form'), 'submit');
 check('registro adicionado', ev('logs.length') === antes + 1);
+check('campos opcionais em Mais detalhes ficam registrados', ev(`logs[0].notes === 'Banco ajustado' && logs[0].rir === 2 && logs[0].technique === 'Rest-Pause' && logs[0].sessao === 'Peito/Tríceps' && logs[0].nextGoal === '🎯 Ajustar Execução'`));
 check('cartão do diário mostra o exercício', $('logs-container').textContent.includes('Rosca Direta com Barra'));
 check('busca passa a contar o uso', ev(`usageStats().usage['Rosca Direta com Barra']`) >= 1);
 
@@ -276,8 +293,8 @@ draftExercises = [
     { muscle: 'Ombros', exercise: 'Manguito Rotador', weight: 20, repsText: '15, 15', technique: 'Convencional', type: 'carga_total' }
 ]; renderDraftList();`);
 check('rascunho montado com 5 exercícios', $('draft-count').textContent === '5', $('draft-count').textContent);
-check('botão "Ordenar com o assistente" existe', !!btnIn($('tab-content-diario'), 'Ordenar com o assistente'));
-click(btnIn($('tab-content-diario'), 'Ordenar com o assistente'));
+check('botão "Ordenar com o assistente" existe no Montador', !!btnIn($('tab-content-montador'), 'Ordenar com o assistente'));
+click(btnIn($('tab-content-montador'), 'Ordenar com o assistente'));
 check('ordem aplicada: manguito (ativação) primeiro', ev('draftExercises[0].exercise') === 'Manguito Rotador', ev('draftExercises.map(e => e.exercise)'));
 check('composto (remada) antes do isolador (rosca)', ev("draftExercises.findIndex(e => e.exercise === 'Remada Curvada com Barra')") < ev("draftExercises.findIndex(e => e.exercise === 'Rosca Martelo')"));
 check('entre compostos, o grupo mais pronto e abaixo da meta sobe', ev("draftExercises.findIndex(e => e.exercise === 'Supino Reto na Máquina')") < ev("draftExercises.findIndex(e => e.exercise === 'Leg Press 45°')"), ev('draftExercises.map(e => e.exercise)'));
@@ -313,6 +330,9 @@ check('sessão completa → sugestão do próximo treino', !$('session-next-hint
 check('banner traz o porquê em linguagem simples', /Por quê:/.test($('session-next-hint').textContent));
 ev('endSession()');
 check('finalizar sessão recolhe o card e atualiza a sugestão', $('active-session-card').classList.contains('hidden') && $('suggestion-content').textContent.includes('Próximo treino recomendado'));
+click($('nav-montador'));
+click(btnIn($('saved-workouts-list'), 'Iniciar'));
+check('iniciar um treino salvo no Montador leva à sessão em Hoje', !$('tab-content-diario').classList.contains('hidden') && $('active-session-card').textContent.includes('Treino em Andamento'));
 
 // ============================ CONSOLE ============================
 console.log('\n== UI 11. Console limpo ==');

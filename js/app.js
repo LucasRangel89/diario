@@ -349,20 +349,22 @@ function showRanksModal(themeId) {
 
 // ============================ TABS ============================
 function switchTab(tab) {
-    ['diario', 'historico', 'busca', 'boss', 'story', 'stats', 'calcs', 'config'].forEach(t => {
+    ['diario', 'montador', 'historico', 'busca', 'boss', 'story', 'stats', 'calcs', 'config'].forEach(t => {
         const el = document.getElementById(`tab-content-${t}`);
         const btnDesktop = document.getElementById(`nav-${t}`);
         const btnMobile = document.getElementById(`m-nav-${t}`);
+        if (!el) return;
         if (t === tab) {
             el.classList.remove('hidden');
-            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg bg-berzerker-600 text-white transition-all';
+            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg bg-berzerker-600 text-white transition-all shrink-0';
             if (btnMobile) btnMobile.className = 'px-3 py-1.5 rounded-lg bg-berzerker-600 text-white whitespace-nowrap';
         } else {
             el.classList.add('hidden');
-            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all';
+            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all shrink-0';
             if (btnMobile) btnMobile.className = 'px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap';
         }
     });
+    if (tab === 'montador') { renderDraftList(); renderSavedWorkouts(); renderWeekGaps(); }
     if (tab === 'historico') renderHistory();
     if (tab === 'busca') renderSearchScreen();
     if (tab === 'boss') { renderBossBattleUI(); renderMissions(); renderSeason(); }
@@ -425,8 +427,12 @@ function toggleSetMode(prefix) {
     const mode = document.getElementById(prefix + 'mode')?.value || 'simple';
     const box = document.getElementById(prefix + 'sets-box');
     const simpleBox = document.getElementById(prefix + 'simple-box');
+    const advanced = document.getElementById(prefix + 'advanced-details');
     if (box) box.classList.toggle('hidden', mode !== 'sets');
     if (simpleBox) simpleBox.classList.toggle('hidden', mode === 'sets');
+    // Ao escolher o registro série a série, abra os detalhes para não ocultar
+    // os campos necessários depois da mudança de modo.
+    if (mode === 'sets' && advanced) advanced.open = true;
 }
 
 function renderSetRows(prefix) {
@@ -487,8 +493,8 @@ function fieldsHTML(p, v, opts) {
     const typeOptions = Object.entries(CATALOG_TIPOS).map(([val, t]) =>
         `<option value="${val}"${val === (v.type || 'carga_total') ? ' selected' : ''}>${t.label}</option>`).join('');
     const wLabelText = (CATALOG_TIPOS[v.type || 'carga_total'] || CATALOG_TIPOS.carga_total).label;
-    return `
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-3">
+    const typeModeHTML = `
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5${o.quickCapture ? '' : ' mt-3'}">
         <div class="col-span-2"><label class="${LBL}">Tipo de registro</label>
             <select id="${p}type" onchange="onTypeChange('${p}')" class="${INP}">${typeOptions}</select>
         </div>
@@ -498,16 +504,19 @@ function fieldsHTML(p, v, opts) {
                 <option value="sets"${v.mode === 'sets' ? ' selected' : ''}>Série a série (drop-set, pirâmide)</option>
             </select>
         </div>
-    </div>
-    <div id="${p}simple-box" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-2.5">
+    </div>`;
+    const simpleHTML = `
+    <div id="${p}simple-box" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5${o.quickCapture ? ' mb-3' : ' mt-2.5'}">
         <div><label class="${LBL}" id="${p}w-label">${wLabelText}</label><input type="number" step="0.5" min="0" id="${p}w" value="${v.weight > 0 ? v.weight : ''}" placeholder="kg" class="${INP}"></div>
         <div class="sm:col-span-3"><label class="${LBL}">Reps por Série (ou segundos em isometria)</label><input type="text" id="${p}r" value="${escapeHtml(v.repsText || '')}" placeholder="12, 10, 8" class="${INP}"></div>
-    </div>
+    </div>`;
+    const setsHTML = `
     <div id="${p}sets-box" class="hidden mt-2.5 space-y-1.5">
         <div class="flex items-center justify-between"><label class="${LBL} !mb-0">Séries — carga · reps · RIR (opcional)</label>
             <button type="button" onclick="addSetRow('${p}')" class="text-[10px] font-bold text-cyan-400 hover:underline">+ série</button></div>
         <div id="${p}sets" class="space-y-1.5"></div>
-    </div>
+    </div>`;
+    const extraHTML = `
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-2.5">
         <div><label class="${LBL}">RIR (reps em reserva)</label><input type="number" min="0" max="10" id="${p}rir" value="${v.rir ?? ''}" placeholder="ex: 2" class="${INP}"></div>
         <div><label class="${LBL}">Técnica Avançada</label><select id="${p}t" class="${INP}">${optsSelect(TECHNIQUES, v.technique)}</select></div>
@@ -517,6 +526,39 @@ function fieldsHTML(p, v, opts) {
         <div class="col-span-2 sm:col-span-4"><label class="${LBL}">Observações</label><textarea id="${p}n" rows="2" placeholder="Ex: ajuste do banco, dor, sensação, regulagem da máquina..." class="${INP}">${escapeHtml(v.notes || '')}</textarea></div>
         ${o.prOverride ? `<label class="flex items-center gap-2 cursor-pointer col-span-2"><input type="checkbox" id="${p}p"${v.isPR ? ' checked' : ''} class="w-4 h-4 rounded text-emerald-500 bg-berzerker-dark border-berzerker-border"><span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">🏆 PR (auto pelo 1RM — pode forçar)</span></label>` : ''}
     </div>`;
+
+    if (o.quickCapture) {
+        return `${simpleHTML}
+        <details id="${p}advanced-details" class="border border-berzerker-border rounded-xl bg-berzerker-dark/50"${v.mode === 'sets' ? ' open' : ''}>
+            <summary class="cursor-pointer select-none px-3 py-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center justify-between gap-3">
+                <span>Mais detalhes</span>
+                <span class="text-[10px] text-gray-500 normal-case tracking-normal">séries individuais, técnica, observações e ferramentas</span>
+            </summary>
+            <div class="border-t border-berzerker-border p-3 space-y-3">
+                ${typeModeHTML}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div id="${p}type-hint" class="text-[11px] text-amber-400/90 font-mono bg-amber-950/20 border border-amber-700/30 rounded-lg px-3 py-2"></div>
+                    <div id="${p}faixa-hint" class="text-[11px] text-cyan-300/90 font-mono bg-cyan-950/20 border border-cyan-700/30 rounded-lg px-3 py-2"></div>
+                </div>
+                ${setsHTML}
+                ${extraHTML}
+                <div id="${p}warmup-quick-box" class="hidden bg-berzerker-dark/80 border border-amber-500/30 rounded-xl p-3 text-xs space-y-1">
+                    <div class="font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                        <span>🔥 Aquecimento & Anilhas</span>
+                        <button type="button" onclick="document.getElementById('${p}warmup-quick-box').classList.add('hidden')" class="text-gray-400 hover:text-white">✕</button>
+                    </div>
+                    <div id="${p}warmup-quick-content" class="font-mono text-gray-300"></div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" onclick="calculateWarmupFromForm()" class="px-3 py-2 bg-amber-900/30 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase rounded-lg hover:bg-amber-900/50">🔥 Aquecimento</button>
+                    <button type="button" onclick="calculatePlatesQuick()" class="px-3 py-2 bg-berzerker-border text-gray-200 text-xs font-bold uppercase rounded-lg hover:bg-gray-700">⚙️ Anilhas</button>
+                </div>
+                <p class="text-[10px] text-gray-500">🏆 O PR é detectado sozinho pelo 1RM estimado (ou tempo, em isometria) — sem checkbox. 💡 Quando todas as séries baterem o topo da faixa, o app sugere subir a carga.</p>
+            </div>
+        </details>`;
+    }
+
+    return `${typeModeHTML}${simpleHTML}${setsHTML}${extraHTML}`;
 }
 
 function readFields(p) {
@@ -820,7 +862,7 @@ function renderDaySuggestion() {
     const el = document.getElementById('suggestion-content');
     if (!el) return;
     if (savedWorkouts.length === 0) {
-        el.innerHTML = `<p class="text-xs text-gray-500">Monte um treino no <b>Criar Treino</b> para receber a sugestão do dia.</p>`;
+        el.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><p class="text-xs text-gray-500">Monte um treino no <b>Montador</b> para receber a sugestão do dia.</p><button type="button" onclick="switchTab('montador')" class="px-3 py-2 bg-berzerker-600/20 border border-berzerker-500/40 text-berzerker-500 text-[10px] font-bold uppercase rounded-lg hover:bg-berzerker-600/40">🎯 Abrir Montador</button></div>`;
         return;
     }
     const scored = suggestNextWorkout(savedWorkouts, logs, Date.now());
@@ -898,6 +940,7 @@ function startSession(workoutId) {
     const card = document.getElementById('active-session-card');
     card.classList.remove('hidden');
     renderSession();
+    switchTab('diario');
     card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     acquireWakeLock();
     alertModal(`⚔️ "${w.name}" iniciado! Bora treinar!`);
@@ -1500,7 +1543,7 @@ function renderSavedWorkouts() {
     if (savedWorkouts.length === 0) {
         listEl.innerHTML = `
             <div class="col-span-full text-center py-6 text-gray-500 border border-dashed border-berzerker-border rounded-xl text-xs uppercase tracking-wider">
-                Nenhum treino salvo ainda — monte o primeiro acima! 💪
+                Nenhum treino salvo ainda — monte o primeiro no Montador! 💪
             </div>`;
         return;
     }
@@ -2812,7 +2855,7 @@ window.onload = function () {
 
     // Campos do formulário principal (prefixo vazio)
     const mainFields = document.getElementById('main-fields');
-    if (mainFields) mainFields.innerHTML = fieldsHTML('', { type: 'carga_total', mode: 'simple' });
+    if (mainFields) mainFields.innerHTML = fieldsHTML('', { type: 'carga_total', mode: 'simple' }, { quickCapture: true });
 
     updateExerciseSuggestions();
     initSetEditor('', { mode: 'simple', sets: [] });
