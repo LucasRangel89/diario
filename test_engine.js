@@ -321,6 +321,7 @@ const orderWithRecovery = api.orderWorkoutExercises(recoveryTieVector, {
 check('sem contexto preserva a ordem-base por grupo', nomes(orderWithoutContext)[0] === 'Leg Press 45°', nomes(orderWithoutContext));
 check('na mesma fase, prioriza mais prontidão + séries que faltam', nomes(orderWithRecovery)[0] === 'Supino Reto na Máquina', nomes(orderWithRecovery));
 check('a ordem adaptada explica prontidão e meta semanal', /prontidão/.test(orderWithRecovery[0].orderReason) && /faltam 10/.test(orderWithRecovery[0].orderReason), orderWithRecovery[0].orderReason);
+check('não atribui ao tamanho do grupo uma posição decidida pela recuperação', !/Grupo grande primeiro/.test(orderWithRecovery[0].orderReason), orderWithRecovery[0].orderReason);
 const recoveryKeepsPhases = api.orderWorkoutExercises([
     { muscle: 'Peito', exercise: 'Crucifixo na Máquina' },
     { muscle: 'Pernas', exercise: 'Leg Press 45°' }
