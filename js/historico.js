@@ -438,7 +438,7 @@ function parseSheetLogRows(rows) {
         const sessao = (idx('sessão') >= 0 ? c[idx('sessão')] : c[1]) || '';
         out.push({
             id: id++, date: parseDateBRorISO(idx('data') >= 0 ? c[idx('data')] : c[0]), kind: 'peso',
-            muscle: (catalogInfo(exercise) || {}).grupo || 'Geral',
+            muscle: normalizeMuscle((catalogInfo(exercise) || {}).grupo || 'Geral'),
             sessao: sessao.trim(),
             exercise: exercise.trim(),
             type: (catalogInfo(exercise) || {}).tipo || inferExerciseType(exercise),
@@ -497,7 +497,7 @@ function importPlanilhaCSV(text) {
         const exercise = c[3];
         if (!exercise) return;
         logs.push({
-            id: id++, date: parseDateBRorISO(c[0]), kind: 'peso', muscle: c[2] || 'Geral',
+            id: id++, date: parseDateBRorISO(c[0]), kind: 'peso', muscle: normalizeMuscle(c[2] || 'Geral'),
             sessao: '', exercise, type: c[1] || inferExerciseType(exercise),
             weight: parseFloat(c[4]) || 0,
             reps: (c[5] || '').split(',').map(x => parseInt(x)).filter(x => !isNaN(x) && x > 0),

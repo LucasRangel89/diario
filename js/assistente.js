@@ -13,7 +13,7 @@
      4. Equilíbrio empurrar/puxar (compostos alternam os padrões);
      5. Recuperação + séries semanais só desempata exercícios da mesma fase;
      6. Descanso do catálogo segue no cronômetro, e recuperação também é aviso.
-   Desempates restantes: grupos grandes primeiro (Pernas → … → Pescoço),
+   Desempates restantes: grupos grandes primeiro (Pernas → … → Antebraço),
    core/abdômen no fim. Bi-sets se movem como bloco (o par nunca se separa).
    ============================================================ */
 
@@ -26,7 +26,7 @@ const ATIVACAO_NOMES = ['Manguito Rotador', 'Face Pull'];
 const MUSCLE_SIZE_RANK = {
     'Pernas': 0, 'Glúteos': 1, 'Costas': 2, 'Peito': 3, 'Ombros': 4,
     'Bíceps': 5, 'Tríceps': 6, 'Abdômen': 7, 'Core': 8, 'Antebraço': 9,
-    'Pescoço': 10, 'Geral': 11, 'Cardio': 12
+    'Geral': 10, 'Cardio': 11
 };
 
 // Músculo que "segura/apoia" → exercícios que precisam dele fresco.
@@ -50,7 +50,7 @@ function classifyExercicio(ex) {
     const nome = (ex && (ex.exercise || ex.nome)) || '';
     const tags = exerciseTags(nome);
     const cat = catalogInfo(nome);
-    const grupo = (ex && (ex.muscle || ex.grupo)) || (cat ? cat.grupo : 'Geral') || 'Geral';
+    const grupo = normalizeMuscle((ex && (ex.muscle || ex.grupo)) || (cat ? cat.grupo : 'Geral') || 'Geral');
     return {
         nome, tags, grupo,
         ativacao: isAtivacaoExercise(nome),
