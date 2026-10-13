@@ -43,7 +43,7 @@ const BOSSES_CLASSIC = mkBosses([
     ['Ogro da Bigorna', '👹', 'Ogro ferreiro que transforma uma bigorna em arma de guerra.', 'Antebraço', 'A maça depende de uma pegada firme; cansar o antebraço quebra o balanço.'],
     ['Quimera Blindada', '🐲', 'Fera de três aspectos, coberta por placas montadas sobre um só tronco.', 'Abdômen', 'A junção das placas deixa o centro do corpo menos protegido.'],
     ['Dragão de Aço', '🐲', 'Dragão de forja com asas articuladas e escamas metálicas.', 'Ombros', 'As dobradiças das asas convergem nas articulações dos ombros.'],
-    ['Minotauro das Forjas', '🐂', 'Monstro encouraçado que investe pelos corredores incandescentes.', 'Glúteos', 'A investida nasce do quadril; mudar seu eixo retira o impulso.'],
+    ['Minotauro das Forjas', '🐂', 'Monstro encouraçado que investe pelos corredores incandescentes.', 'Posterior', 'A investida nasce do quadril; mudar seu eixo retira o impulso.'],
     ['Leviatã de Ferro', '🐋', 'Serpente abissal de placas, capaz de esmagar muralhas com o corpo.', 'Costas', 'Ao desenrolar o dorso para atacar, expõe as placas da coluna.'],
     ['Titã de Escória', '🗿', 'Gigante de metal vulcânico que ergue um martelo maior que a arena.', 'Bíceps', 'Os golpes do martelo dependem da força dos braços que o sustentam.'],
     ['Colosso das Forjas', '🔥', 'Guardião final: um núcleo incandescente envolto em armadura de ferro.', 'Peito', 'A abertura do forno no tórax revela o núcleo durante cada descarga.']
@@ -90,7 +90,7 @@ const THEMES = {
             ['Leão de Neméia', '🦁', 'Sua pele era impenetrável; Hércules o venceu estrangulando-o.', 'Ombros', 'O estrangulamento trava a juba com os braços: a força que sustenta o aperto nasce dos ombros.'],
             ['Hidra de Lerna', '🐍', 'Hércules cauterizou os pescoços após cortá-los, com ajuda de Iolau.', 'Core', 'Segurar as cabeças e manter a posição para cauterizar exige um tronco estável.'],
             ['Corça de Cerineia', '🦌', 'Corça consagrada a Ártemis; Hércules a perseguiu e capturou sem feri-la.', 'Pernas', 'A prova é uma perseguição de resistência e controle dos passos.'],
-            ['Javali de Erimanto', '🐗', 'Hércules capturou vivo o javali após persegui-lo até a neve profunda.', 'Glúteos', 'A subida e a mudança de direção dependem da força do quadril.'],
+            ['Javali de Erimanto', '🐗', 'Hércules capturou vivo o javali após persegui-lo até a neve profunda.', 'Posterior', 'A subida e a mudança de direção dependem da força do quadril.'],
             ['Estábulos de Áugias', '🧹', 'Hércules desviou os rios Alfeu e Peneu para limpar os estábulos em um dia.', 'Abdômen', 'A tarefa de abrir e sustentar o novo curso dos rios exige centro firme.'],
             ['Pássaros do Estínfalo', '🐦', 'Hércules os espantou com címbalos de Atena e usou o arco contra as aves.', 'Ombros', 'As asas de bronze precisam ser mantidas abertas para o voo.'],
             ['Touro de Creta', '🐂', 'O sétimo trabalho consistia em capturar vivo o touro de Creta.', 'Ombros', 'Segurar os chifres na investida baixa transfere toda a força do animal para os ombros.'],
@@ -103,17 +103,17 @@ const THEMES = {
     },
     acao: {
         id: 'acao', name: 'Filmes de Ação',
-        desc: 'Do Sobrevivente à LENDA DO CINEMA: você encarna os heróis e enfrenta doze vilões famosos, em ordem de ameaça.',
+        desc: 'De Indiana Jones a CHUCK NORRIS: você encarna os heróis e enfrenta doze vilões famosos, em ordem de ameaça.',
         arena: 'Cine Ação — Vilões em Cena', bossLabel: 'VILÃO ATIVO', stageWord: 'CENA',
         missionWord: 'Missão', missionWordPlural: 'Missões', frame: 'neon',
-        ranks: [['John McClane, o Sobrevivente', '🧨'], ['Rocky Balboa, o Lutador', '🥊'], ['Indiana Jones, o Aventureiro', '🎩'], ['O Dragão, o Mestre', '🐲'], ['Mad Max, o Guerreiro da Estrada', '🚗'], ['Rambo, a Máquina de Guerra', '🎖️'], ['007, o Agente Secreto', '🍸'], ['John Wick, o Baba-Yaga', '🐶'], ['Neo, o Escolhido', '🕶️'], ['A LENDA DO CINEMA', '🏆']],
+        ranks: [['Indiana Jones, o Explorador', '🎩'], ['007, o Agente Secreto', '🍸'], ['John McClane, o Sobrevivente', '🧨'], ['Rocky Balboa, o Lutador', '🥊'], ['Frank Dux, o Guerreiro do Kumite', '🥋'], ['Mad Max, o Guerreiro da Estrada', '🚗'], ['Rambo, a Máquina de Guerra', '🎖️'], ['John Wick, o Baba-Yaga', '🐶'], ['Neo, o Escolhido', '🕶️'], ['CHUCK NORRIS, O INVENCÍVEL', '💪']],
         // IDs b0…b11 preservados de propósito: o dano já registrado em cada cena continua valendo.
         bosses: mkBosses([
             ['O Predador', '👽', 'Caçador alienígena que rastreia calor e escolhe a presa pela mira térmica.', 'Pernas', 'Mudanças de posição quebram a mira térmica.'],
             ['O Exterminador', '🤖', 'Andróide implacável que persegue o alvo sem pausa nem cansaço.', 'Peito', 'O reator fica atrás da placa frontal.'],
             ['Tubarão', '🦈', 'Predador das águas que ronda o casco antes de subir à superfície.', 'Costas', 'Quem circula por trás do barco escolhe o momento.'],
             ['Hans Gruber', '🤵', 'Ladrão sofisticado que toma o prédio e dita as regras do próprio plano.', 'Core', 'O plano desmorona quando o centro se rompe.'],
-            ['Ivan Drago', '🥊', 'Pugilista frio, preparado para decidir a luta nos rounds finais.', 'Glúteos', 'Os rounds finais: a base que sustenta a trocação.'],
+            ['Ivan Drago', '🥊', 'Pugilista frio, preparado para decidir a luta nos rounds finais.', 'Posterior', 'Os rounds finais: a base que sustenta a trocação.'],
             ['Chucky', '🪆', 'Boneco possuído que ataca de onde ninguém espera.', 'Abdômen', 'As costuras do boneco: o centro costurado cede.'],
             ['O Coringa', '🃏', 'Criminoso imprevisível que transforma a cidade em armadilha e piada.', 'Ombros', 'Esquivar de armadilhas e piadas letais exige guarda móvel.'],
             ['Freddy Krueger', '🧤', 'Pesadelo de luva de lâminas que ataca enquanto as vítimas dormem.', 'Tríceps', 'A luva de lâminas exige a extensão do braço.'],
@@ -135,7 +135,7 @@ const THEMES = {
             ['Caipora', '🐗', 'Protetora da caça e dos animais; em muitas versões, cavalga um porco-do-mato.', 'Core', 'Manter o equilíbrio sobre o porco-do-mato é o ponto vulnerável da investida.'],
             ['Lobisomem', '🐺', 'Figura de tradição popular; a origem e as condições da transformação variam entre regiões.', 'Peito', 'A investida frontal expõe o tórax quando a criatura muda de direção.'],
             ['Cuca', '🐊', 'Personagem de contos populares, muitas vezes representada como bruxa com traços de jacaré.', 'Antebraço', 'As garras e os feitiços dependem dos braços que ela mantém erguidos.'],
-            ['Mula-sem-Cabeça', '🐴', 'Encantado que galopa em chamas; detalhes da lenda mudam conforme a região.', 'Glúteos', 'O galope e as arrancadas dependem do impulso do quadril.'],
+            ['Mula-sem-Cabeça', '🐴', 'Encantado que galopa em chamas; detalhes da lenda mudam conforme a região.', 'Posterior', 'O galope e as arrancadas dependem do impulso do quadril.'],
             ['Iara', '💧', 'Encantada das águas cujo canto atrai pessoas para os rios, segundo a lenda.', 'Ombros', 'As ondas e os movimentos de nado dependem da força dos ombros.'],
             ['Boto Cor-de-Rosa', '🐬', 'Na lenda amazônica, o boto assume forma humana e aparece em festas ribeirinhas.', 'Bíceps', 'A dança e a fuga dependem dos braços usados para abrir caminho na multidão.'],
             ['Boitatá', '🔥', 'Serpente de fogo que, em versões da lenda, protege os campos e as matas.', 'Costas', 'O corpo em espiral expõe a linha dorsal quando a serpente se desenrola.'],
@@ -178,9 +178,9 @@ const THEMES = {
             ['Dupla de Dimachaeri', '🗡️', 'Dois dimachaeri lutam com uma lâmina em cada mão.', 'Costas', 'A dupla ataca dos dois lados e deixa a retaguarda aberta ao girar.'],
             ['Hoplômaco', '🛡️', 'Hoplomachus: gladiador de lança e escudo, com equipamento de inspiração grega.', 'Pernas', 'A lança mantém distância, mas exige passos curtos e uma base móvel.'],
             ['Bestiário & Pantera', '🐆', 'Bestiário (bestiarius) treinado para enfrentar uma fera em uma caçada de arena.', 'Core', 'Manter-se em pé diante da pantera depende do equilíbrio do tronco.'],
-            ['Venator & Urso', '🐻', 'Venator: caçador de animais apresentado nas venationes, os espetáculos com feras.', 'Glúteos', 'A esquiva e a mudança de direção dependem do impulso do quadril.'],
+            ['Venator & Urso', '🐻', 'Venator: caçador de animais apresentado nas venationes, os espetáculos com feras.', 'Posterior', 'A esquiva e a mudança de direção dependem do impulso do quadril.'],
             ['Leão da Numídia', '🦁', 'Fera trazida para uma venatio; não era uma classe de gladiador.', 'Pernas', 'A fera salta apoiada nas patas dianteiras; quebrar a base derruba o ataque.'],
-            ['Touro da Arena', '🐂', 'Animal de uma venatio, desafio de esquiva e controle do espaço.', 'Glúteos', 'A investida depende do quadril; uma mudança lateral interrompe o avanço.'],
+            ['Touro da Arena', '🐂', 'Animal de uma venatio, desafio de esquiva e controle do espaço.', 'Posterior', 'A investida depende do quadril; uma mudança lateral interrompe o avanço.'],
             ['Capitão dos Pretorianos', '🛡️', 'Oficial fictício da guarda imperial, incluído como rival dramático da arena.', 'Ombros', 'A armadura e o escudo deixam as articulações dos ombros como ponto móvel.'],
             ['Cômodo, o Imperador', '🤵', 'O imperador Cômodo participou de combates encenados na arena, em condições controladas.', 'Peito', 'A couraça imperial protege a frente, mas abre no centro ao avançar.'],
             ['Máximo, o Gladiador', '👑', 'Rival final inspirado no protagonista fictício de Gladiador; não é uma pessoa histórica.', 'Core', 'O duelo prolongado exige estabilidade do tronco e revela a guarda nas rotações.']
@@ -199,7 +199,7 @@ const THEMES = {
             ['Necromante', '💀', 'Feiticeiro que comanda mortos-vivos das criptas.', 'Ombros', 'Os gestos que sustentam os feitiços deixam os braços expostos.'],
             ['Hidra do Pântano', '🐍', 'Serpente de várias cabeças que se esconde entre as águas turvas.', 'Ombros', 'As cabeças se erguem por juntas estreitas que trabalham como ombros da serpente.'],
             ['Grifo Guardião', '🦅', 'Criatura alada que vigia o salão superior da masmorra.', 'Costas', 'As asas dependem de articulações dorsais que se abrem durante o voo.'],
-            ['Minotauro da Masmorra', '🐂', 'Guardião de um labirinto subterrâneo, sempre pronto para investir.', 'Glúteos', 'A força da arrancada vem do quadril e pode ser desviada.'],
+            ['Minotauro da Masmorra', '🐂', 'Guardião de um labirinto subterrâneo, sempre pronto para investir.', 'Posterior', 'A força da arrancada vem do quadril e pode ser desviada.'],
             ['Mago Negro', '🧙', 'Conjurador que usa um cajado para canalizar magia sombria.', 'Antebraço', 'O controle do cajado e dos feitiços depende da firmeza das mãos.'],
             ['Dragão Ancião', '🐲', 'Dragão que repousa sobre tesouros acumulados durante séculos.', 'Peito', 'A chama começa no tórax, onde a couraça se abre antes do sopro.'],
             ['Titã de Ferro', '🤖', 'Autômato colossal cuja armadura continua lutando mesmo sem piloto.', 'Core', 'A junta do centro de massa controla os movimentos do autômato.'],
@@ -224,7 +224,7 @@ const THEMES = {
             ['Núcleo de IA Rebelde', '🧠', 'Inteligência artificial distribuída que comanda uma estação automatizada.', 'Core', 'O núcleo físico que alimenta a estação é o ponto de falha central.'],
             ['Domínio Sombrio', '👽', 'Frota de uma civilização hostil que avança sem anunciar suas intenções.', 'Costas', 'A retaguarda da frota depende de linhas de suprimento vulneráveis.'],
             ['Buraco Negro Vivo', '🕳️', 'Anomalia ficcional que altera a gravidade e puxa objetos para o horizonte.', 'Core', 'A energia se concentra no centro da anomalia, alvo do ataque coordenado.'],
-            ['Devorador de Planetas', '🪐', 'Entidade ficcional que consome mundos e deixa órbitas vazias.', 'Glúteos', 'A criatura precisa se ancorar ao planeta; romper sua base interrompe a sucção.'],
+            ['Devorador de Planetas', '🪐', 'Entidade ficcional que consome mundos e deixa órbitas vazias.', 'Posterior', 'A criatura precisa se ancorar ao planeta; romper sua base interrompe a sucção.'],
             ['Imperador Galáctico', '👑', 'Comandante supremo que reúne as forças inimigas no centro da galáxia.', 'Bíceps', 'O cetro de comando depende da mão que o ergue; quebrar a força do braço interrompe as ordens.']
         ])
     },
@@ -245,7 +245,7 @@ const THEMES = {
             ['Espectros de Dunharrow', '💀', 'Os mortos do juramento quebrado, presos entre as montanhas.', 'Core', 'O medo congela o centro; firmeza abre caminho entre os mortos.'],
             ['Laracna (Shelob)', '🕸️', 'A aranha colossal que vigia a passagem de Cirith Ungol.', 'Abdômen', 'O ponto brando sob a carapaça, por onde Sam fincou a lâmina.'],
             ['Rei-Bruxo de Angmar', '👑', 'Senhor dos Nazgûl e comandante das forças que cercam Minas Tirith.', 'Pernas', 'A dobra do joelho, onde Merry fincou a lâmina de Dúnedain.'],
-            ['Gollum, o Portador Caído', '💍', 'Sméagol, consumido pelo Anel, guia os hobbits até Mordor.', 'Glúteos', 'O impulso agachado na borda do Monte da Perdição.'],
+            ['Gollum, o Portador Caído', '💍', 'Sméagol, consumido pelo Anel, guia os hobbits até Mordor.', 'Posterior', 'O impulso agachado na borda do Monte da Perdição.'],
             ['Sauron, o Senhor do Anel', '👁️', 'O poder de Barad-dûr: quem forjou o Um Anel e procura o portador.', 'Antebraço', 'A mão que porta o Um Anel é o elo que sustenta o poder.']
         ])
     }

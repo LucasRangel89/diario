@@ -27,6 +27,7 @@ const api = new Function(src + `
     weeklyStreakInfo, seasonState, completeSeason, migrateLog,
     buildPlanilhaCSV, parseSheetLogRows, parseCSVRows, parseDateBRorISO, seedFromPlanilha, TYPE_META, THEMES,
     deriveTags, searchCatalog, matchesTags, exerciseTags, TAG_DEFS, EXERCISE_CATALOG_FULL,
+    SINERGIA, sinergiaState, sinergiaLogs, STABILIZER_GROUPS,
     orderWorkoutExercises, isAtivacaoExercise, classifyExercicio, bisetBlockRanges,
     weeklySetsByMuscle, fatigueState, suggestNextWorkout, weeklyGaps, diasDesdeUltimoTreino,
     FAIXA_SERIES_SEMANAIS, MUSCULOS_MAPA, MUSCLE_META, normalizeMuscle, PLANILHA_SESSOES,
@@ -174,7 +175,7 @@ const recSem = api.recoveryState('Peito', [], Date.now());
 check('grupo sem registro', recSem.label === 'SEM REGISTRO');
 
 console.log('\n== 12b. Grupo "Pescoço" removido ==');
-const GRUPOS_ESPERADOS = ['Peito', 'Costas', 'Pernas', 'Glúteos', 'Ombros', 'Bíceps', 'Tríceps', 'Abdômen', 'Core', 'Antebraço'];
+const GRUPOS_ESPERADOS = ['Peito', 'Costas', 'Pernas', 'Posterior', 'Ombros', 'Bíceps', 'Tríceps', 'Abdômen', 'Core', 'Antebraço'];
 check('10 grupos musculares, sem Pescoço', api.MUSCULOS_MAPA.length === 10 && api.MUSCULOS_MAPA.join(',') === GRUPOS_ESPERADOS.join(','), api.MUSCULOS_MAPA);
 check('mapa de recuperação acompanha os 10 grupos (nada de Pescoço)', !('Pescoço' in api.MUSCLE_META) && api.MUSCULOS_MAPA.every(m => api.MUSCLE_META[m] && api.MUSCLE_META[m].ordem <= 10), Object.keys(api.MUSCLE_META));
 check('nenhum exercício do catálogo segue em Pescoço', !api.EXERCISE_CATALOG_FULL.some(e => e.grupo === 'Pescoço'));
@@ -191,6 +192,43 @@ const importados = api.parseSheetLogRows(csvAntigo);
 check('planilha antiga importa sem Pescoço (catálogo → Ombros; resto → Geral)', importados.length === 2 && importados[0].muscle === 'Ombros' && importados[1].muscle === 'Geral', importados.map(l => l.muscle));
 check('séries da semana contam a cervical em Ombros', api.weeklySetsByMuscle([{ id: 1, kind: 'peso', muscle: 'Ombros', date: '2026-10-12', exercise: 'Extensão Cervical', reps: [15, 10] }], '2026-10-14')['Ombros'] === 2);
 
+console.log('\n== 12c. Pernas × Posterior e co-ativação ==');
+const EXERCICIOS_PERNAS = ['Leg Press 45°', 'Agachamento Hack', 'Agachamento Livre', 'Cadeira Extensora', 'Afundo Búlgaro', 'Afundo c/ Halteres'];
+const EXERCICIOS_POSTERIOR = ['Mesa Flexora', 'Stiff com Barra', 'Elevação Pélvica (Hip Thrust)', 'Abdutor', 'Panturrilha em Pé', 'Panturrilha Sentado'];
+check('Pernas contém exatamente os seis exercícios de quadríceps', api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Pernas').map(e => e.nome).join('|') === EXERCICIOS_PERNAS.join('|'), api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Pernas').map(e => e.nome));
+check('Posterior contém exatamente os seis exercícios da cadeia posterior', api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Posterior').map(e => e.nome).join('|') === EXERCICIOS_POSTERIOR.join('|'), api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Posterior').map(e => e.nome));
+check('Glúteos não é grupo do catálogo nem consta em MUSCLE_META', !api.EXERCISE_CATALOG_FULL.some(e => e.grupo === 'Glúteos') && !('Glúteos' in api.MUSCLE_META));
+check('Glúteos legado migra para Posterior (migrateLog + normalizeMuscle)', api.migrateLog({ id: 100, date: '2026-10-14', muscle: 'Glúteos', exercise: 'Elevação Pélvica (Hip Thrust)', reps: [10] }).muscle === 'Posterior' && api.normalizeMuscle('Glúteos') === 'Posterior');
+const agoraSinergia = new Date('2026-10-14T18:00:00').getTime();
+const logRemadaSinergia = { id: 101, date: '2026-10-14', kind: 'peso', muscle: 'Costas', exercise: 'Remada Baixa na Polia', reps: [10, 10, 10] };
+const logsCandidatosAntebraco = [logRemadaSinergia,
+    { id: 104, date: '2026-10-14', kind: 'peso', muscle: 'Antebraço', exercise: 'Remada Baixa na Polia', reps: [10, 10, 10] },
+    { id: 105, date: '2026-10-14', kind: 'corrida', muscle: 'Cardio', exercise: 'Remada Baixa na Polia', reps: [10, 10, 10] }
+];
+const logsDeApoioAntebraco = api.sinergiaLogs('Antebraço', logsCandidatosAntebraco);
+const apoioAntebraco = api.sinergiaState('Antebraço', logsCandidatosAntebraco, agoraSinergia);
+check('remada apoia antebraço: 3 séries × 0,5 = 1,5 equivalentes', logsDeApoioAntebraco.length === 1 && logsDeApoioAntebraco[0] === logRemadaSinergia && apoioAntebraco && apoioAntebraco.fator === 0.5 && apoioAntebraco.seriesBrutas === 3 && apoioAntebraco.series === 1.5 && apoioAntebraco.ultimo === 'Remada Baixa na Polia' && apoioAntebraco.ultimoEm === '2026-10-14' && apoioAntebraco.exercicios.includes('Remada Baixa na Polia'), apoioAntebraco);
+const fadigaComApoio = api.fatigueState('Antebraço', [], 0, agoraSinergia, apoioAntebraco);
+check('apoio reduz prontidão (63%), deixa semRegistro falso e formata decimal pt-BR', fadigaComApoio.pct === 63 && fadigaComApoio.semRegistro === false && fadigaComApoio.sinergia === apoioAntebraco && fadigaComApoio.sinergiaText === '🤝 apoio em pegada (~1,5 séries equivalentes)', fadigaComApoio);
+check('Peito sem regra e sem logs não cria estado de sinergia', api.sinergiaState('Peito', [], agoraSinergia) === null);
+check('grupo com regra, mas sem logs indiretos, também retorna null', api.sinergiaState('Antebraço', [], agoraSinergia) === null);
+const logAgachamentoSinergia = { id: 102, date: '2026-10-14', kind: 'peso', muscle: 'Pernas', exercise: 'Agachamento Livre', reps: [8, 8, 8] };
+check('agachamento é apoio indireto para Core e Posterior', !!api.sinergiaState('Core', [logAgachamentoSinergia], agoraSinergia) && !!api.sinergiaState('Posterior', [logAgachamentoSinergia], agoraSinergia));
+check('Pernas não recebe regra nem aviso de sinergia', !('Pernas' in api.SINERGIA) && api.sinergiaState('Pernas', [logAgachamentoSinergia], agoraSinergia) === null);
+check('STABILIZER_GROUPS deriva da mesma lista SINERGIA', Object.keys(api.STABILIZER_GROUPS).join() === Object.keys(api.SINERGIA).join());
+
+const logDiretoPernas = { id: 103, date: '2026-10-14', kind: 'peso', muscle: 'Pernas', exercise: 'Agachamento Livre', type: 'carga_total', weight: 100, reps: [10, 10, 10] };
+const setsDiretosSinergia = api.weeklySetsByMuscle([logDiretoPernas], '2026-10-14');
+check('weeklySetsByMuscle não credita séries de apoio a Core/Posterior', setsDiretosSinergia.Pernas === 3 && setsDiretosSinergia.Core === undefined && setsDiretosSinergia.Posterior === undefined, setsDiretosSinergia);
+const gapsDiretosSinergia = api.weeklyGaps([logDiretoPernas], '2026-10-14');
+check('weeklyGaps mantém zero séries de meta para Core/Posterior apoiados', gapsDiretosSinergia.find(g => g.muscle === 'Core').series === 0 && gapsDiretosSinergia.find(g => g.muscle === 'Posterior').series === 0, gapsDiretosSinergia);
+const xpDiretoSinergia = api.computeXP('2026-10-14', { logs: [logDiretoPernas], bodyweight: BW, deloadWeeks: [], missionsXpTotal: 0, bosses: [{ id: 'xp-check', maxHp: 100000000, weak: 'Posterior' }] });
+check('computeXP conta só o grupo direto (3.000 kg × 0,5 ÷ 100 = 15 XP)', xpDiretoSinergia.training === 15, xpDiretoSinergia);
+const chefaoPosterior = { id: 'weak-check', name: 'Teste', maxHp: 100000, weak: 'Posterior' };
+const danoDiretoSinergia = api.logDamageKg(logDiretoPernas, BW, chefaoPosterior);
+const progressoDiretoSinergia = api.computeBossProgress([logDiretoPernas], BW, [chefaoPosterior]);
+check('sinergia não dá bônus ×1,25 de fraqueza no dano do chefão', danoDiretoSinergia === api.logVolumeKg(logDiretoPernas, BW) && progressoDiretoSinergia.totalDamage === danoDiretoSinergia && progressoDiretoSinergia.weakHits === 0, { danoDiretoSinergia, progressoDiretoSinergia });
+
 console.log('\n== 13. Temas (10) ==');
 const themeIds = Object.keys(api.THEMES);
 const expectedThemeIds = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica', 'aneis'];
@@ -206,16 +244,19 @@ expectedThemeIds.forEach(id => {
 const aneis = api.THEMES.aneis;
 check('Senhor dos Anéis: do Hobbit do Condado à LENDA DA TERRA MÉDIA', aneis.ranks.map(r => r[0]).join('|') === 'Hobbit do Condado|Andarilho do Norte|Companheiro da Sociedade|Guardião de Gondor|Cavaleiro de Rohan|Caçador de Orcs|Herói do Abismo de Helm|Portador do Anel|Rei de Gondor|LENDA DA TERRA MÉDIA', aneis.ranks.map(r => r[0]));
 check('Senhor dos Anéis: jornada abre nos Goblins de Moria e fecha em Sauron', aneis.bosses[0].name === 'Goblins de Moria' && aneis.bosses[11].name === 'Sauron, o Senhor do Anel' && aneis.bosses.map(b => b.name).join('|') === 'Goblins de Moria|Espectros do Anel|Balrog de Morgoth|Lurtz, o Uruk-hai|Wargs das Terras Bravias|Uruk-hai do Abismo de Helm|Saruman, o Branco|Espectros de Dunharrow|Laracna (Shelob)|Rei-Bruxo de Angmar|Gollum, o Portador Caído|Sauron, o Senhor do Anel', aneis.bosses.map(b => b.name));
-check('Senhor dos Anéis: fraquezas da jornada (pernas → costas → peito → ... → antebraço)', aneis.bosses.map(b => b.weak).join('|') === 'Pernas|Costas|Peito|Antebraço|Tríceps|Ombros|Bíceps|Core|Abdômen|Pernas|Glúteos|Antebraço', aneis.bosses.map(b => b.weak));
+check('Senhor dos Anéis: fraquezas da jornada (pernas → costas → peito → ... → antebraço)', aneis.bosses.map(b => b.weak).join('|') === 'Pernas|Costas|Peito|Antebraço|Tríceps|Ombros|Bíceps|Core|Abdômen|Pernas|Posterior|Antebraço', aneis.bosses.map(b => b.weak));
 check('Senhor dos Anéis: vocabulário do tema (arena, jornadas e provas)', aneis.arena === 'Jornada até o Monte da Perdição' && aneis.bossLabel === 'DESAFIO ATIVO' && aneis.stageWord === 'JORNADA' && aneis.missionWord === 'Prova da Sociedade' && aneis.missionWordPlural === 'Provas da Sociedade' && aneis.frame === 'ouro' && /Condado ao Monte da Perdição/.test(aneis.desc));
 check('missões do Senhor dos Anéis usam "Prova da Sociedade"', api.missionsState([], aneis, '2026-10-14').missions[0].title.startsWith('Prova da Sociedade ·'));
 check('clássico mantém quatro IDs/retratos originais', api.THEMES.classico.bosses.slice(0, 4).map(b => `${b.id}:${b.name}`).join('|') === 'boss1:Golem de Anilhas|boss2:Hydra de Titânio|boss3:Mecagorila Berzerker|boss4:Behemoth Devastador', api.THEMES.classico.bosses.slice(0, 4));
 check('clássico acrescenta oito monstros de fantasia pesada com emojis', api.THEMES.classico.bosses.slice(4).length === 8 && api.THEMES.classico.bosses.slice(4).every(b => !!b.icon && /ferro|aço|forja|ogro|quimera|dragão|minotauro|titã|colosso/i.test(b.name)), api.THEMES.classico.bosses.slice(4).map(b => b.name));
 check('patentes clássicas não repetem nomes de chefões', !api.THEMES.classico.ranks.some(([rank]) => api.THEMES.classico.bosses.some(b => b.name.toLowerCase() === rank.toLowerCase())));
 check('Zodíaco usa Aprendiz do Dojo e Grande Mestre em 12 etapas', api.THEMES.zodiaco.ranks[0][0] === 'Aprendiz do Dojo' && api.THEMES.zodiaco.bosses.length === 12 && api.THEMES.zodiaco.bosses[11].name === 'Grande Mestre' && !JSON.stringify(api.THEMES.zodiaco).includes('Mestre Ares'));
-check('Ação: patentes são heróis, do Sobrevivente à LENDA DO CINEMA', api.THEMES.acao.ranks.map(r => r[0]).join('|') === 'John McClane, o Sobrevivente|Rocky Balboa, o Lutador|Indiana Jones, o Aventureiro|O Dragão, o Mestre|Mad Max, o Guerreiro da Estrada|Rambo, a Máquina de Guerra|007, o Agente Secreto|John Wick, o Baba-Yaga|Neo, o Escolhido|A LENDA DO CINEMA', api.THEMES.acao.ranks.map(r => r[0]));
+check('Ação: patentes 1–10 seguem a escala de heróis até CHUCK NORRIS', JSON.stringify(api.THEMES.acao.ranks) === JSON.stringify([['Indiana Jones, o Explorador', '🎩'], ['007, o Agente Secreto', '🍸'], ['John McClane, o Sobrevivente', '🧨'], ['Rocky Balboa, o Lutador', '🥊'], ['Frank Dux, o Guerreiro do Kumite', '🥋'], ['Mad Max, o Guerreiro da Estrada', '🚗'], ['Rambo, a Máquina de Guerra', '🎖️'], ['John Wick, o Baba-Yaga', '🐶'], ['Neo, o Escolhido', '🕶️'], ['CHUCK NORRIS, O INVENCÍVEL', '💪']]), api.THEMES.acao.ranks);
 check('Ação: doze vilões em ordem de ameaça, com os ids preservados (b0…b11)', api.THEMES.acao.bosses.map(b => `${b.id}:${b.name}`).join('|') === 'b0:O Predador|b1:O Exterminador|b2:Tubarão|b3:Hans Gruber|b4:Ivan Drago|b5:Chucky|b6:O Coringa|b7:Freddy Krueger|b8:Agent Smith|b9:Pennywise|b10:Thanos|b11:Darth Vader', api.THEMES.acao.bosses.map(b => `${b.id}:${b.name}`));
-check('Ação: fraqueza de cada vilão', api.THEMES.acao.bosses.map(b => b.weak).join('|') === 'Pernas|Peito|Costas|Core|Glúteos|Abdômen|Ombros|Tríceps|Bíceps|Antebraço|Peito|Antebraço', api.THEMES.acao.bosses.map(b => b.weak));
+check('Ação: fraqueza de cada vilão', api.THEMES.acao.bosses.map(b => b.weak).join('|') === 'Pernas|Peito|Costas|Core|Posterior|Abdômen|Ombros|Tríceps|Bíceps|Antebraço|Peito|Antebraço', api.THEMES.acao.bosses.map(b => b.weak));
+const todasFraquezas = expectedThemeIds.flatMap(id => api.THEMES[id].bosses.map(b => b.weak));
+const contagemFraquezas = todasFraquezas.reduce((acc, grupo) => (acc[grupo] = (acc[grupo] || 0) + 1, acc), {});
+check('120 chefões mantêm 10 fraquezas distintas (Posterior 9, Pernas 14)', todasFraquezas.length === 120 && Object.keys(contagemFraquezas).length === 10 && contagemFraquezas.Posterior === 9 && contagemFraquezas.Pernas === 14, contagemFraquezas);
 check('Ação: heróis não repetem nome de vilão', !api.THEMES.acao.ranks.some(([rank]) => api.THEMES.acao.bosses.some(b => b.name.toLowerCase() === rank.toLowerCase())));
 check('Roma vai de Escravo da Arena a IMPERADOR DE ROMA e deixa o Imperador antes do final', api.THEMES.roma.ranks[0][0] === 'Escravo da Arena' && api.THEMES.roma.ranks[9][0] === 'IMPERADOR DE ROMA' && api.THEMES.roma.bosses[10].name.includes('Imperador') && api.THEMES.roma.bosses[11].name === 'Máximo, o Gladiador');
 check('patentes romanas não repetem nomes exatos de chefões', !api.THEMES.roma.ranks.some(([rank]) => api.THEMES.roma.bosses.some(b => b.name.toLowerCase() === rank.toLowerCase())));
