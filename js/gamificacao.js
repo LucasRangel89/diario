@@ -29,8 +29,8 @@ const RANKS_CLASSIC = [
     { minXp: 2000, level: 5, name: 'Rinoceronte Blindado', icon: '🦏' },
     { minXp: 3300, level: 6, name: 'Elefante de Guerra', icon: '🐘' },
     { minXp: 5000, level: 7, name: 'T-Rex Devastador', icon: '🦖' },
-    { minXp: 7500, level: 8, name: 'Mestre da Fundição', icon: '⚒️' },
-    { minXp: 11000, level: 9, name: 'Lenda das Cargas', icon: '🏋️' },
+    { minXp: 7500, level: 8, name: 'Kraken dos Abismos', icon: '🐙' },
+    { minXp: 11000, level: 9, name: 'Fênix Imortal', icon: '🔥' },
     { minXp: 16000, level: 10, name: 'BERZERKER SUPREMO', icon: '⚡' }
 ];
 
@@ -87,18 +87,18 @@ const THEMES = {
         missionWord: 'Trabalho Extra', missionWordPlural: 'Trabalhos Extra', frame: 'marmore',
         ranks: [['Mortal', '🧑'], ['Aprendiz de Quíron', '🐴'], ['Atleta de Atenas', '🏃'], ['Campeão da Arena', '🏟️'], ['Herói de Tebas', '🛡️'], ['Semideus', '💪'], ['Filho de Zeus', '⚡'], ['Olimpiano', '🏛️'], ['Titã', '🌋'], ['Imortal do Olimpo', '👑']],
         bosses: mkBosses([
-            ['Leão de Neméia', '🦁', 'Sua pele era impenetrável; Héracles o venceu estrangulando-o.', 'Ombros', 'O estrangulamento trava a juba com os braços: a força que sustenta o aperto nasce dos ombros.'],
-            ['Hidra de Lerna', '🐍', 'Héracles cauterizou os pescoços após cortá-los, com ajuda de Iolau.', 'Core', 'Segurar as cabeças e manter a posição para cauterizar exige um tronco estável.'],
-            ['Corça de Cerineia', '🦌', 'Corça consagrada a Ártemis; Héracles a perseguiu e capturou sem feri-la.', 'Pernas', 'A prova é uma perseguição de resistência e controle dos passos.'],
-            ['Javali de Erimanto', '🐗', 'Héracles capturou vivo o javali após persegui-lo até a neve profunda.', 'Glúteos', 'A subida e a mudança de direção dependem da força do quadril.'],
-            ['Estábulos de Áugias', '🧹', 'Héracles desviou os rios Alfeu e Peneu para limpar os estábulos em um dia.', 'Abdômen', 'A tarefa de abrir e sustentar o novo curso dos rios exige centro firme.'],
-            ['Pássaros do Estínfalo', '🐦', 'Héracles os espantou com címbalos de Atena e usou o arco contra as aves.', 'Ombros', 'As asas de bronze precisam ser mantidas abertas para o voo.'],
+            ['Leão de Neméia', '🦁', 'Sua pele era impenetrável; Hércules o venceu estrangulando-o.', 'Ombros', 'O estrangulamento trava a juba com os braços: a força que sustenta o aperto nasce dos ombros.'],
+            ['Hidra de Lerna', '🐍', 'Hércules cauterizou os pescoços após cortá-los, com ajuda de Iolau.', 'Core', 'Segurar as cabeças e manter a posição para cauterizar exige um tronco estável.'],
+            ['Corça de Cerineia', '🦌', 'Corça consagrada a Ártemis; Hércules a perseguiu e capturou sem feri-la.', 'Pernas', 'A prova é uma perseguição de resistência e controle dos passos.'],
+            ['Javali de Erimanto', '🐗', 'Hércules capturou vivo o javali após persegui-lo até a neve profunda.', 'Glúteos', 'A subida e a mudança de direção dependem da força do quadril.'],
+            ['Estábulos de Áugias', '🧹', 'Hércules desviou os rios Alfeu e Peneu para limpar os estábulos em um dia.', 'Abdômen', 'A tarefa de abrir e sustentar o novo curso dos rios exige centro firme.'],
+            ['Pássaros do Estínfalo', '🐦', 'Hércules os espantou com címbalos de Atena e usou o arco contra as aves.', 'Ombros', 'As asas de bronze precisam ser mantidas abertas para o voo.'],
             ['Touro de Creta', '🐂', 'O sétimo trabalho consistia em capturar vivo o touro de Creta.', 'Ombros', 'Segurar os chifres na investida baixa transfere toda a força do animal para os ombros.'],
             ['Éguas de Diomedes', '🐎', 'As éguas antropófagas pertenciam a Diomedes, rei da Trácia.', 'Bíceps', 'Conter as rédeas e dominar a arrancada exige uma pegada forte.'],
             ['Cinturão de Hipólita', '🛡️', 'Hipólita era rainha das Amazonas; as versões divergem sobre o encontro pelo cinturão.', 'Tríceps', 'A prova exige afastar a guarda armada para alcançar o cinturão.'],
             ['Rebanho de Gerião', '🐄', 'O décimo trabalho era levar o gado de Gerião, descrito como gigante de três corpos.', 'Peito', 'Os três corpos protegem o flanco; abrir a guarda frontal interrompe a formação.'],
-            ['Maçãs das Hespérides', '🍎', 'Ladão guardava o pomar; em uma versão, Atlas ajuda Héracles a obter as maçãs.', 'Antebraço', 'A prova termina com a retirada cuidadosa das maçãs guardadas no pomar.'],
-            ['Cérbero', '🐕', 'Héracles levou o cão de três cabeças do Hades à superfície e o devolveu.', 'Core', 'Subjugar três cabeças sem armas depende de controle do tronco e equilíbrio.']
+            ['Maçãs das Hespérides', '🍎', 'Ladão guardava o pomar; em uma versão, Atlas ajuda Hércules a obter as maçãs.', 'Antebraço', 'A prova termina com a retirada cuidadosa das maçãs guardadas no pomar.'],
+            ['Cérbero', '🐕', 'Hércules levou o cão de três cabeças do Hades à superfície e o devolveu.', 'Core', 'Subjugar três cabeças sem armas depende de controle do tronco e equilíbrio.']
         ])
     },
     acao: {
@@ -176,7 +176,7 @@ const THEMES = {
             ['Retiário Mestre', '🔱', 'Retiarius: combatia com rede e tridente contra adversários mais protegidos.', 'Bíceps', 'Lançar e recolher a rede exige força e controle dos braços.'],
             ['Dupla de Dimachaeri', '🗡️', 'Dois dimachaeri lutam com uma lâmina em cada mão.', 'Costas', 'A dupla ataca dos dois lados e deixa a retaguarda aberta ao girar.'],
             ['Hoplômaco', '🛡️', 'Hoplomachus: gladiador de lança e escudo, com equipamento de inspiração grega.', 'Pernas', 'A lança mantém distância, mas exige passos curtos e uma base móvel.'],
-            ['Bestiarius & Pantera', '🐆', 'Bestiarius treinado para enfrentar uma fera em uma caçada de arena.', 'Core', 'Manter-se em pé diante da pantera depende do equilíbrio do tronco.'],
+            ['Bestiário & Pantera', '🐆', 'Bestiário (bestiarius) treinado para enfrentar uma fera em uma caçada de arena.', 'Core', 'Manter-se em pé diante da pantera depende do equilíbrio do tronco.'],
             ['Venator & Urso', '🐻', 'Venator: caçador de animais apresentado nas venationes, os espetáculos com feras.', 'Glúteos', 'A esquiva e a mudança de direção dependem do impulso do quadril.'],
             ['Leão da Numídia', '🦁', 'Fera trazida para uma venatio; não era uma classe de gladiador.', 'Pernas', 'A fera salta apoiada nas patas dianteiras; quebrar a base derruba o ataque.'],
             ['Touro da Arena', '🐂', 'Animal de uma venatio, desafio de esquiva e controle do espaço.', 'Glúteos', 'A investida depende do quadril; uma mudança lateral interrompe o avanço.'],
@@ -211,7 +211,7 @@ const THEMES = {
         desc: 'Da Academia ao Supremo da Galáxia, enfrentando ameaças de frotas e mundos distantes.',
         arena: 'Setor Omega — Fronteira Estelar', bossLabel: 'ALVO ATIVO', stageWord: 'SETOR',
         missionWord: 'Missão de Patrulha', missionWordPlural: 'Missões de Patrulha', frame: 'espacial',
-        ranks: [['Cadete da Academia', '🚀'], ['Piloto Estelar', '🛸'], ['Oficial de Bordo', '⭐'], ['Comandante de Esquadrão', '🪐'], ['Capitão de Cruzador', '🛰️'], ['Almirante de Frota', '🌌'], ['Marechal Estelar', '🛡️'], ['General Galáctico', '⚔️'], ['Lorde das Estrelas', '🌟'], ['SUPREMO DA GALÁXIA', '👽']],
+        ranks: [['Cadete da Academia', '🚀'], ['Piloto Estelar', '🛸'], ['Oficial de Bordo', '⭐'], ['Comandante de Esquadrão', '🪐'], ['Capitão de Cruzador', '🛰️'], ['Almirante de Frota', '🌌'], ['General Galáctico', '⚔️'], ['Marechal Estelar', '🛡️'], ['Lorde das Estrelas', '🌟'], ['SUPREMO DA GALÁXIA', '👽']],
         bosses: mkBosses([
             ['Enxame de Drones', '🛸', 'Nuvem de máquinas leves que satura os sensores de uma nave.', 'Tríceps', 'Os propulsores expostos podem ser desativados por golpes sustentados.'],
             ['Pirata Espacial', '🏴‍☠️', 'Corsário que ataca cargueiros para roubar a carga e fugir.', 'Antebraço', 'A arma e o gancho de abordagem dependem da força da pegada.'],

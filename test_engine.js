@@ -212,7 +212,10 @@ check('Roma vai de Escravo da Arena a IMPERADOR DE ROMA e deixa o Imperador ante
 check('patentes romanas não repetem nomes exatos de chefões', !api.THEMES.roma.ranks.some(([rank]) => api.THEMES.roma.bosses.some(b => b.name.toLowerCase() === rank.toLowerCase())));
 check('Nórdica abre com criaturas menores', api.THEMES.nordica.bosses.slice(0, 4).map(b => b.name).join('|') === 'Draugr|Troll Jovem de Gelo|Nøkk do Fiorde|Huldra da Floresta');
 check('Nórdica termina com Ymir perto do fim e Ragnarök por último', api.THEMES.nordica.ranks[9][0] === 'ODIN, O PAI DE TODOS' && api.THEMES.nordica.bosses[10].name.includes('Ymir') && api.THEMES.nordica.bosses[11].name === 'Ragnarök');
-check('Galáctica progride de Almirante a Marechal Estelar', api.THEMES.galactica.ranks[5][0] === 'Almirante de Frota' && api.THEMES.galactica.ranks[6][0] === 'Marechal Estelar' && !JSON.stringify(api.THEMES.galactica).includes('Guardião do Setor'));
+check('Galáctica: General antes do Marechal (marechal é patente maior)', api.THEMES.galactica.ranks[5][0] === 'Almirante de Frota' && api.THEMES.galactica.ranks[6][0] === 'General Galáctico' && api.THEMES.galactica.ranks[7][0] === 'Marechal Estelar' && !JSON.stringify(api.THEMES.galactica).includes('Guardião do Setor'));
+check('clássico retoma a escalada de animais nas patentes 8 e 9', api.THEMES.classico.ranks[7][0] === 'Kraken dos Abismos' && api.THEMES.classico.ranks[7][1] === '🐙' && api.THEMES.classico.ranks[8][0] === 'Fênix Imortal' && api.THEMES.classico.ranks[8][1] === '🔥' && !JSON.stringify(api.THEMES.classico).includes('Mestre da Fundição') && !JSON.stringify(api.THEMES.classico).includes('Lenda das Cargas'));
+check('Roma chama o chefe 6 de Bestiário', api.THEMES.roma.bosses[5].name === 'Bestiário & Pantera' && !api.THEMES.roma.bosses[5].name.includes('Bestiarius'), api.THEMES.roma.bosses[5].name);
+check('Hércules usa "Hércules" nas descrições (nada de Héracles)', !JSON.stringify(api.THEMES.hercules).includes('Héracles') && /Hércules/.test(JSON.stringify(api.THEMES.hercules)));
 
 console.log('\n== 14. Seed da planilha real + round-trip CSV ==');
 api.setLogs([]);
