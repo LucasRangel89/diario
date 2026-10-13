@@ -662,6 +662,14 @@ const CATALOG_BY_SEARCH = {};
 EXERCISE_CATALOG_FULL.forEach(e => { CATALOG_BY_SEARCH[normalizeText(e.nome)] = e; });
 
 const TAG_IDS = Object.keys(TAG_DEFS);
+// Lista completa de exercícios (base + customizados)
+function allExercisesList() {
+    if (typeof customExercises !== 'undefined' && Array.isArray(customExercises)) {
+        return [...EXERCISE_CATALOG_FULL, ...customExercises];
+    }
+    return EXERCISE_CATALOG_FULL;
+}
+if (typeof catalogInfoCustom !== 'function') function catalogInfoCustom(n) { return catalogInfo(n); }
 const TAG_BY_CATEGORY = TAG_CATEGORIAS.map(c => ({
     ...c, tags: TAG_IDS.filter(id => TAG_DEFS[id].cat === c.id).map(id => ({ id, ...TAG_DEFS[id] }))
 }));
@@ -769,7 +777,7 @@ function searchCatalog(opts = {}) {
     const onlyUsed = !!opts.onlyUsed;
     const onlyNew = !!opts.onlyNew;
 
-    const list = EXERCISE_CATALOG_FULL.filter(e => {
+    const list = allExercisesList().filter(e => {
         if (grupo && grupo !== 'Todos' && e.grupo !== grupo) return false;
         if (equipamento && e.equipamento !== equipamento) return false;
         if (tipo && e.tipo !== tipo) return false;

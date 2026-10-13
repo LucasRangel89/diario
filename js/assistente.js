@@ -337,6 +337,7 @@ function suggestNextWorkout(workouts, allLogs, nowMs) {
     const now = (nowMs != null) ? nowMs : Date.now();
     const weekly = weeklySetsByMuscle(allLogs, assistenteTodayISO(now));
     const dias = diasDesdeUltimoTreino(allLogs, now);
+    const estadoLombar = regiaoLombarState(allLogs, now);
 
     const scored = (Array.isArray(workouts) ? workouts : []).map(w => {
         const groups = [...new Set((w.exercises || []).map(e => e && e.muscle).filter(m => m && m !== 'Cardio'))];
@@ -354,8 +355,14 @@ function suggestNextWorkout(workouts, allLogs, nowMs) {
         });
         const n = Math.max(1, groups.length);
         score = score / n;
+        // Penalidade da lombar
+        const penal = aplicaPenalidadeLombar(score, w, estadoLombar);
+        score = penal.score;
+        if (penal.penalidade > 0) {
+            motivos.push(`⚠️ ${penal.qtdCarregaLombar} exercício(s) exigem a lombar, que ainda está ${String(estadoLombar.label).toLowerCase()}`);
+        }
         if (dias >= 1) score += Math.min(dias, 7) * 5;
-        return { w, score: Math.round(score), motivos, groups, diasSemTreinar: dias };
+        return { w, score: Math.round(score), motivos, groups, diasSemTreinar: dias, penalidadeLombar: penal.penalidade, estadoLombar };
     });
 
     scored.sort((a, b) => (b.score - a.score)
@@ -378,3 +385,204 @@ function weeklyGaps(allLogs, refDateISO) {
     }).filter(g => g.faltam > 0 || g.excesso > 0)
         .sort((a, b) => (b.faltam - a.faltam) || a.muscle.localeCompare(b.muscle, 'pt-BR'));
 }
+
+// ============================================================
+/* ============================================================
+   REGIÕES DE CARGA (lombar, etc.) — ALERTA DE FADIGA SEM META
+   ============================================================
+   Não são grupos musculares e não entram na faixa de 10-20 séries.
+   Servem só para alertar que a região está carregada e orientar o treino.
+   Nível de carga da lombar:
+     0 = não carrega / máquina guiada / deitado/sentado com apoio
+     1 = leve (afundo, remada unilateral, desenvolvimento sentado)
+     2 = moderado (stiff, remada curvada, good morning, hiperextensão, swing, sumô)
+     3 = muito pesado (terra, agachamento livre barra costas, desenvolvimento militar em pé)
+*/
+
+// Horas base de recuperação por nível de carga por série
+const LOMBAR_HORAS_POR_SERIE = { 0: 0, 1: 0.25, 2: 0.5, 3: 1.0 };
+// Janela base mínima de recuperação depois de qualquer sessão que carregou lombar
+const LOMBAR_HORAS_BASE = 24;
+
+// Nível de carga lombar por nome explícito (sobrescreve tudo)
+const LOMBAR_NIVEL = {
+    'Levantamento Terra': 3,
+    'Agachamento Livre': 3,
+    'Desenvolvimento Militar': 3,
+    'Stiff com Barra': 2,
+    'Remada Curvada com Barra': 2,
+    'Extensão Lombar (Banco Romano)': 2,
+    'Swing de Kettlebell': 2,
+    'Agachamento Sumô': 2,
+    'Good Morning': 2,
+    'Remada Unilateral c/ Halter': 1,
+    'Afundo Búlgaro': 1,
+    'Afundo c/ Halteres': 1,
+    'Desenvolvimento c/ Halteres': 1,
+    'Desenvolvimento Arnold': 1
+};
+
+// Regex de detecção por nível
+const LOMBAR_REGEX_NIVEL = {
+    3: /terra|deadlift|agachamento livre|back squat|desenvolvimento militar|overhead press.*barra/i,
+    2: /stiff|rdl|good morning|remada curvada|bent over row|hiperextens|banco romano|back extension|swing|kettlebell|agachamento sumo|sumo squat/i,
+    1: /afundo|bulgaro|remada unilateral|serrote|desenvolvimento.*halter|arnold/i
+};
+
+// Exercícios que NÃO carregam lombar mesmo que o regex bata
+const LOMBAR_EXCLUSAO = [
+    /leg press|hack squat|agachamento hack|cadeira extensora|leg extension|mesa flexora|leg curl|voador|crucifixo|supino maquina|crossover|peck deck|pulldown|puxada frontal|remada baixa|cadeira adutora|triceps|rosca|face pull|manguito|abdominal sentado|polia baixa/
+];
+
+// Fallback se custom_exercises ainda não carregou
+if (typeof catalogInfoCustom !== 'function') { function catalogInfoCustom(nome) { return catalogInfo(nome); } }
+if (typeof exercicioCarregaLombarCustom !== 'function') { function exercicioCarregaLombarCustom(nome) { return exercicioCarregaLombar(nome); } }
+
+// Retorna o nível (0–3) de carga da lombar para um exercício
+function nivelCargaLombar(nomeExercicio) {
+    const n = normalizeText(nomeExercicio || '');
+    if (!n) return 0;
+    const cat = catalogInfoCustom(nomeExercicio);
+    // Sobrescrita explícita: se o exercício tem cargaLombarNivel, usa ele
+    if (cat && cat.cargaLombarNivel != null) return Number(cat.cargaLombarNivel);
+    if (cat && cat.cargaLombar === false) return 0;
+    // Sobrescrita por nome explícito do catálogo
+    for (const [nome, nivel] of Object.entries(LOMBAR_NIVEL)) {
+        if (n.includes(normalizeText(nome))) return nivel;
+    }
+    // Exclusões (máquina guiada)
+    if (LOMBAR_EXCLUSAO.some(re => re.test(n))) return 0;
+    // Se tem tag de dobradiça de quadril, começa com moderado
+    const tags = exerciseTags(nomeExercicio);
+    if (tags.includes('dobradica')) return 2;
+    // Regex por nível
+    for (let nivel = 3; nivel >= 1; nivel--) {
+        if (LOMBAR_REGEX_NIVEL[nivel].test(n)) return nivel;
+    }
+    return 0;
+}
+
+function exercicioCarregaLombar(nomeExercicio) {
+    return nivelCargaLombar(nomeExercicio) >= 1;
+}
+
+// Estado da região da lombar (sem meta de séries)
+// Retorna { label, icon, pct, last, seriesNaSessao, nivelMedio, horasRestantes, dica, carregada, nivelPeso }
+function regiaoLombarState(allLogs, nowMs) {
+    const now = (nowMs != null) ? nowMs : Date.now();
+    const logs = (allLogs || []).filter(l => l && l.kind !== 'corrida' && nivelCargaLombar(l.exercise) >= 1);
+    if (!logs.length) {
+        return {
+            label: 'LIVRE',
+            icon: '✅',
+            badge: 'bg-emerald-950 text-emerald-400 border-emerald-800',
+            bar: 'bg-emerald-500',
+            border: 'border-emerald-500/60',
+            pct: 100,
+            carregada: false,
+            horasRestantes: 0,
+            horasNecessarias: 0,
+            last: '',
+            seriesNaSessao: 0,
+            cargaTotal: 0,
+            nivelPeso: 0,
+            nivelMedio: 0,
+            dica: 'Lombar descansada — você pode fazer exercícios que exigem a região hoje.'
+        };
+    }
+    // Agrupa por data para achar a última sessão que carregou
+    const porData = {};
+    logs.forEach(l => {
+        if (!porData[l.date]) porData[l.date] = { date: l.date, exercicios: new Set(), series: 0, cargaTotal: 0, niveis: [] };
+        const nivel = nivelCargaLombar(l.exercise);
+        porData[l.date].exercicios.add(l.exercise);
+        const sets = (Array.isArray(l.sets) && l.sets.length) ? l.sets.length
+            : (Array.isArray(l.reps) ? l.reps.length : 0);
+        porData[l.date].series += sets;
+        porData[l.date].cargaTotal += sets * (LOMBAR_HORAS_POR_SERIE[nivel] || 0);
+        for (let s = 0; s < sets; s++) porData[l.date].niveis.push(nivel);
+    });
+    const datas = Object.keys(porData).sort().reverse();
+    const ultimaData = datas[0];
+    const sessao = porData[ultimaData];
+    const dataMs = new Date(ultimaData + 'T12:00:00').getTime();
+    const horasPassadas = (now - dataMs) / 36e5;
+    const nivelMax = Math.max(0, ...sessao.niveis);
+    const nivelMedio = sessao.series > 0 ? Math.round(sessao.niveis.reduce((a, b) => a + b, 0) / sessao.series * 10) / 10 : 0;
+    // Janela: base + carga calculada por série, com mínimo maior se tem exercício pesado
+    const horasNecessarias = LOMBAR_HORAS_BASE + sessao.cargaTotal + (nivelMax >= 3 ? 12 : nivelMax >= 2 ? 6 : 0);
+    const horasRestantes = Math.max(0, horasNecessarias - horasPassadas);
+    const pct = Math.max(2, Math.min(100, Math.round(horasPassadas / horasNecessarias * 100)));
+    let label, icon, badge, bar, border, dica;
+    if (pct < 33 || nivelMax === 3) {
+        label = 'MUITO CARREGADA';
+        icon = '⚠️';
+        badge = 'bg-red-950 text-red-400 border-red-800';
+        bar = 'bg-red-500';
+        border = 'border-red-600/60 shadow-lg shadow-red-950/40';
+        dica = 'Hoje: PREFIRA Hack, Extensora, Cadeira Flexora, Puxada na Polia, Supino Máquina. EVITE COMPLETAMENTE Terra, Agachamento Livre, Stiff ou qualquer dobradiça de quadril pesada.';
+    } else if (pct < 100 || nivelMedio >= 1.5) {
+        label = 'RECUPERANDO';
+        icon = '⏳';
+        badge = 'bg-amber-950 text-amber-400 border-amber-800';
+        bar = 'bg-amber-500';
+        border = 'border-amber-500/60 shadow-lg shadow-amber-950/40';
+        dica = 'Lombar ainda recuperando: se for fazer exercício que usa a região, priorize CARGA LEVE e técnica PERFEITA, ou opte por máquinas guiadas que apoiam a coluna.';
+    } else {
+        label = 'LIVRE';
+        icon = '✅';
+        badge = 'bg-emerald-950 text-emerald-400 border-emerald-800';
+        bar = 'bg-emerald-500';
+        border = 'border-emerald-500/60';
+        dica = 'Lombar descansada — você pode fazer exercícios que exigem a região hoje.';
+    }
+    const dataLegivel = new Date(ultimaData + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const diasPassados = Math.floor(horasPassadas / 24);
+    const quando = diasPassados === 0 ? 'hoje' : diasPassados === 1 ? 'ontem' : `há ${diasPassados} dias`;
+    const listaExercicios = [...sessao.exercicios].slice(0, 2).join(' + ');
+    const last = `${listaExercicios} — ${quando}, ${sessao.series} séries (${dataLegivel})`;
+    let descricaoPeso;
+    if (nivelMax === 3) descricaoPeso = 'carga MUITO ALTA na lombar';
+    else if (nivelMax === 2) descricaoPeso = 'carga moderada na lombar';
+    else if (nivelMax === 1) descricaoPeso = 'carga leve na lombar';
+    else descricaoPeso = '';
+    return {
+        label, icon, badge, bar, border, pct,
+        carregada: pct < 100,
+        horasPassadas: Math.round(horasPassadas),
+        horasRestantes: Math.round(horasRestantes),
+        horasNecessarias: Math.round(horasNecessarias),
+        last,
+        seriesNaSessao: sessao.series,
+        cargaTotal: Math.round(sessao.cargaTotal * 10) / 10,
+        nivelMax,
+        nivelMedio,
+        nivelPeso: descricaoPeso,
+        ultimaData,
+        dica
+    };
+}
+
+// Penaliza um treino no score se ele tiver exercícios que carregam a lombar
+// quando a região não está livre
+function aplicaPenalidadeLombar(score, treino, estadoLombar) {
+    if (!estadoLombar || !estadoLombar.carregada) return { score, penalidade: 0 };
+    const exercicios = (treino && treino.exercises) || [];
+    let penalidadeTotal = 0;
+    let qtdCarregaLombar = 0;
+    let qtdPesado = 0;
+    exercicios.forEach(e => {
+        const nivel = nivelCargaLombar(e && e.exercise);
+        if (nivel >= 1) {
+            qtdCarregaLombar++;
+            if (nivel >= 2) qtdPesado++;
+            // Penalidade maior para exercícios mais pesados
+            penalidadeTotal += (100 - estadoLombar.pct) * (0.8 + nivel * 0.4);
+        }
+    });
+    if (qtdCarregaLombar === 0) return { score, penalidade: 0 };
+    const penalidade = Math.round(penalidadeTotal);
+    return { score: score - penalidade, penalidade, qtdCarregaLombar, qtdPesado };
+}
+
+

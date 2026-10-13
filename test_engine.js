@@ -193,10 +193,10 @@ check('planilha antiga importa sem Pescoço (catálogo → Ombros; resto → Ger
 check('séries da semana contam a cervical em Ombros', api.weeklySetsByMuscle([{ id: 1, kind: 'peso', muscle: 'Ombros', date: '2026-10-12', exercise: 'Extensão Cervical', reps: [15, 10] }], '2026-10-14')['Ombros'] === 2);
 
 console.log('\n== 12c. Pernas × Posterior e co-ativação ==');
-const EXERCICIOS_PERNAS = ['Leg Press 45°', 'Agachamento Hack', 'Agachamento Livre', 'Cadeira Extensora', 'Afundo Búlgaro', 'Afundo c/ Halteres'];
-const EXERCICIOS_POSTERIOR = ['Mesa Flexora', 'Stiff com Barra', 'Elevação Pélvica (Hip Thrust)', 'Abdutor', 'Panturrilha em Pé', 'Panturrilha Sentado'];
-check('Pernas contém exatamente os seis exercícios de quadríceps', api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Pernas').map(e => e.nome).join('|') === EXERCICIOS_PERNAS.join('|'), api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Pernas').map(e => e.nome));
-check('Posterior contém exatamente os seis exercícios da cadeia posterior', api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Posterior').map(e => e.nome).join('|') === EXERCICIOS_POSTERIOR.join('|'), api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Posterior').map(e => e.nome));
+const EXERCICIOS_PERNAS = ['Leg Press 45°', 'Agachamento Hack', 'Agachamento Livre', 'Cadeira Extensora', 'Afundo Búlgaro', 'Afundo c/ Halteres', 'Agachamento Sumô'];
+const EXERCICIOS_POSTERIOR = ['Mesa Flexora', 'Stiff com Barra', 'Elevação Pélvica (Hip Thrust)', 'Abdutor', 'Cadeira Adutora', 'Panturrilha em Pé', 'Panturrilha Sentado', 'Swing de Kettlebell'];
+check('Pernas contém todos os exercícios de quadríceps', api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Pernas').map(e => e.nome).join('|') === EXERCICIOS_PERNAS.join('|'), api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Pernas').map(e => e.nome));
+check('Posterior contém todos os exercícios da cadeia posterior', api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Posterior').map(e => e.nome).join('|') === EXERCICIOS_POSTERIOR.join('|'), api.EXERCISE_CATALOG_FULL.filter(e => e.grupo === 'Posterior').map(e => e.nome));
 check('Glúteos não é grupo do catálogo nem consta em MUSCLE_META', !api.EXERCISE_CATALOG_FULL.some(e => e.grupo === 'Glúteos') && !('Glúteos' in api.MUSCLE_META));
 check('Glúteos legado migra para Posterior (migrateLog + normalizeMuscle)', api.migrateLog({ id: 100, date: '2026-10-14', muscle: 'Glúteos', exercise: 'Elevação Pélvica (Hip Thrust)', reps: [10] }).muscle === 'Posterior' && api.normalizeMuscle('Glúteos') === 'Posterior');
 const agoraSinergia = new Date('2026-10-14T18:00:00').getTime();

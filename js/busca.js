@@ -195,7 +195,8 @@ function renderCatalogResults() {
     const stats = usageStats();
     const list = searchCatalog(searchOptsFrom(searchState, stats));
     const countEl = document.getElementById('cat-count');
-    if (countEl) countEl.textContent = `${list.length} de ${EXERCISE_CATALOG_FULL.length} exercícios`;
+    const totalEx = allExercisesList().length;
+    if (countEl) countEl.textContent = `${list.length} de ${totalEx} exercícios`;
 
     if (list.length === 0) {
         el.innerHTML = `<div class="md:col-span-2 text-center py-8 text-gray-500 border border-dashed border-berzerker-border rounded-xl text-sm">

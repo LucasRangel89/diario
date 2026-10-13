@@ -1157,6 +1157,31 @@ function renderRecoveryMap() {
             <div class="text-[10px] text-gray-600 truncate border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
         </div>`;
     }).join('');
+    // Painel de ALERTA DA LOMBAR
+    const lombarEl = document.getElementById('lombar-alert-panel');
+    if (lombarEl) {
+        const lombar = regiaoLombarState(logs, nowMs);
+        lombarEl.innerHTML = `
+        <div class="bg-berzerker-dark border ${lombar.border} rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl leading-none">${lombar.icon}</span>
+                    <span class="font-oswald text-lg font-bold text-white uppercase tracking-wide leading-none">⚠️ Lombar</span>
+                </div>
+                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${lombar.badge}">${lombar.label}</span>
+            </div>
+            <div>
+                <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">
+                    <span>Recuperação da região</span><span class="text-gray-400">${lombar.pct}%</span>
+                </div>
+                <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
+                    <div class="h-full ${lombar.bar} rounded-full transition-all duration-500" style="width: ${lombar.pct}%"></div>
+                </div>
+            </div>
+            ${lombar.last ? `<div class="text-[10px] text-gray-400">Última sessão que carregou: ${escapeHtml(lombar.last)} · ${lombar.horasRestantes}h restantes</div>` : ''}
+            <div class="text-[11px] text-gray-300 leading-relaxed">💡 ${escapeHtml(lombar.dica)}</div>
+        </div>`;
+    }
 }
 
 function prefillMuscleFromMap(m) {
@@ -1320,6 +1345,7 @@ function renderSession() {
             </div>
             ${e.orderReason ? `<div class="text-[10px] text-gray-500 leading-relaxed"><span class="text-berzerker-500 font-bold">📌 Por que nesta posição:</span> ${escapeHtml(e.orderReason)}</div>` : ''}
             ${fat.pct !== null && fat.pct < 100 ? `<div class="text-[10px] text-amber-400/90 font-mono">⏳ ${escapeHtml(e.muscle)} ainda em recuperação (${fat.pct}%) — considere uma carga mais leve</div>` : ''}
+            ${exercicioCarregaLombar(e.exercise) && lombarEstado.carregada ? `<div class="text-[10px] text-red-400/90 font-mono">⚠️ Este exercício exige a lombar — ainda carregada (${lombarEstado.horasRestantes}h restantes): priorize técnica perfeita e carga mais leve</div>` : ''}
             ${catInfo && catInfo.descanso ? `<div class="text-[10px] text-gray-500 font-mono">⏱ Descanso do catálogo: ${catInfo.descanso}s · faixa ${catInfo.faixa[0]}–${catInfo.faixa[1]}${catInfo.tipo === 'isometria' ? ' s' : ' reps'}</div>` : ''}
             ${lastPerformanceHTML(e.exercise)}
             <div class="flex gap-2 flex-wrap mt-1.5">
@@ -1334,6 +1360,12 @@ function renderSession() {
     let html = '';
     if (activeSession.ordenado) {
         html += `<div class="text-[11px] text-gray-400 bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2">✨ <b class="text-white">Ordem sugerida aplicada</b> — cada exercício mostra o porquê da posição. Use ▲▼ para trocar quando quiser (o bi-set anda junto).</div>`;
+    }
+    // Aviso de lombar carregada no topo da sessão
+    const lombarEstado = regiaoLombarState(logs, nowMs);
+    const temExercicioLombar = ex.some(e => !e.done && exercicioCarregaLombar(e.exercise));
+    if (lombarEstado.carregada && temExercicioLombar) {
+        html += `<div class="text-[11px] bg-red-950/40 border border-red-600/50 rounded-lg px-3 py-2 text-red-300">⚠️ <b>Sua lombar ainda está ${lombarEstado.label.toLowerCase()} (${lombarEstado.pct}% de recuperação, ${lombarEstado.horasRestantes}h restantes).</b> ${escapeHtml(lombarEstado.dica)}</div>`;
     }
     for (let i = 0; i < ex.length; i++) {
         const pair = !!(ex[i + 1] && ex[i + 1].biset);
@@ -3206,4 +3238,50 @@ window.onload = function () {
     } else if (logs.length > 0) {
         setTimeout(() => alertModal('💾 Dica: exporte um backup na aba ⚙️ Config para não perder seu histórico.'), 1500);
     }
+
+    // ============================================================
+    // Correção para Android/PWA: abrir seletor de data/hora ao tocar,
+    // e garantir foco em campos de texto (teclado abre)
+    // ============================================================
+    function fixMobileInputs() {
+        // Todos os inputs de data: chama showPicker() no clique/toque
+        document.querySelectorAll('input[type="date"]').forEach(input => {
+            if (input._pickerFixed) return;
+            input._pickerFixed = true;
+            input.addEventListener('click', (e) => {
+                try {
+                    if (typeof input.showPicker === 'function') {
+                        e.preventDefault();
+                        input.focus();
+                        input.showPicker();
+                    } else {
+                        input.focus();
+                    }
+                } catch (err) { /* fallback: só foca */ input.focus(); }
+            });
+            input.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                try {
+                    if (typeof input.showPicker === 'function') input.showPicker();
+                } catch (err) { /* ignore */ }
+                input.focus();
+            }, { passive: false });
+        });
+        // Garante foco duplo em inputs de texto (resolve perda de foco em WebView)
+        document.querySelectorAll('input[type="text"], input[type="number"], textarea, input:not([type])').forEach(input => {
+            if (input._focusFixed) return;
+            input._focusFixed = true;
+            input.addEventListener('touchend', () => {
+                setTimeout(() => {
+                    if (document.activeElement !== input) {
+                        input.focus();
+                    }
+                }, 50);
+            }, { passive: true });
+        });
+    }
+    // Aplica agora e sempre que o DOM mudar (inputs criados dinamicamente)
+    fixMobileInputs();
+    const mo = new MutationObserver(fixMobileInputs);
+    mo.observe(document.body, { childList: true, subtree: true });
 };

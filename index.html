@@ -26,6 +26,14 @@
             background-color: #08080a;
             color: #f3f4f6;
             font-family: 'Inter', sans-serif;
+            color-scheme: dark;
+        }
+
+        /* Correção para mobile: fonte 16px evita zoom automático do iOS e melhora o foco */
+        @media (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
         }
 
         /* PR Shake Microinteraction Keyframes */
@@ -297,6 +305,7 @@
                 </div>
 
                 <div id="recovery-status-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+                <div id="lombar-alert-panel" class="mt-3"></div>
             </div>
 
             <!-- CARDIO / CORRIDA (compacto; expande ao registrar) -->
@@ -490,6 +499,7 @@
                         <option>Peito</option><option>Costas</option><option>Pernas</option><option>Posterior</option><option>Ombros</option>
                         <option>Bíceps</option><option>Tríceps</option><option>Abdômen</option>
                         <option>Core</option><option>Antebraço</option><option>Geral</option>
+                        <option>Cardio</option>
                     </select>
                 </div>
                 <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">De</label><input type="date" id="hist-de" onchange="renderHistory()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
@@ -522,7 +532,10 @@
                             <span id="cat-count" class="font-mono text-gray-500"></span>
                         </p>
                     </div>
-                    <button type="button" onclick="clearSearchFilters()" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap">✕ Limpar filtros</button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="openCustomExModal()" class="px-3 py-2 bg-emerald-600/20 border border-emerald-600/50 hover:bg-emerald-600/40 text-emerald-400 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap">➕ Novo exercício</button>
+                        <button type="button" onclick="clearSearchFilters()" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap">✕ Limpar filtros</button>
+                    </div>
                 </div>
 
                 <!-- atalhos de filtro -->
@@ -963,6 +976,7 @@
     <script src="js/planilha_data.js"></script>
     <script src="js/historico.js"></script>
     <script src="js/busca.js"></script>
+    <script src="js/custom_exercises.js"></script>
     <script src="js/app.js"></script>
     <script>
         // PWA: registra o service worker (só em http/https) e pede armazenamento persistente
