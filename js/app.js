@@ -25,7 +25,9 @@ let missionsXpTotal = 0;       // XP já resgatado de missões
 let missionsClaimed = {};      // { '2026-W41': true }
 let tests = [];                // Modo Testes
 let seasons = null;            // temporadas de 12 semanas
-let bossPortraits = {};        // { bossId: dataURL }
+let bossPortraits = {};        // retratos do tema ativo { bossId: dataURL }
+let themeGameSaves = {};       // progresso separado por tema
+let activeGameThemeId = 'classico';
 let selectedStoryBossId = null;
 
 let THEME = null, BOSSES = [], ANIMAL_RANKS = [];
@@ -47,7 +49,9 @@ const STORAGE_KEY_BW = 'berzerker_user_bodyweight';
 const STORAGE_KEY_WORKOUTS = 'berzerker_saved_workouts_v1';
 const STORAGE_KEY_SEEDED = 'berzerker_seeded_v2';
 const STORAGE_KEY_SETTINGS = 'berzerker_settings_v1';
-const STORAGE_KEY_GAME = 'berzerker_game_state_v1';     // deload, missões, testes, temporadas, retratos
+const STORAGE_KEY_GAME = 'berzerker_game_state_v1';     // save legado, lido apenas para migração
+const STORAGE_KEY_THEME_GAMES = 'berzerker_game_saves_v2';
+const STORAGE_KEY_GAME_SHARED = 'berzerker_game_shared_v1';
 const STORAGE_KEY_STORY = 'berzerker_story_v1';          // foto de fundo do Story Card
 const STORAGE_KEY_BACKUP = 'berzerker_last_backup_at';
 
@@ -201,6 +205,129 @@ function migrateLog(l) {
     return l;
 }
 
+function parseStoredObject(key) {
+    try {
+        const value = JSON.parse(safeStorage.get(key));
+        return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+    } catch (e) { return null; }
+}
+
+function emptyThemeGameSave() {
+    return { missionsXpTotal: 0, missionsClaimed: {}, seasons: null, bossPortraits: {}, deloadRestDays: [] };
+}
+
+function ensureThemeGameSave(themeId) {
+    const id = THEMES[themeId] ? themeId : 'classico';
+    const raw = themeGameSaves[id] && typeof themeGameSaves[id] === 'object' ? themeGameSaves[id] : {};
+    const missionsClaimed = raw.missionsClaimed && typeof raw.missionsClaimed === 'object' && !Array.isArray(raw.missionsClaimed) ? raw.missionsClaimed : {};
+    const bossPortraits = raw.bossPortraits && typeof raw.bossPortraits === 'object' && !Array.isArray(raw.bossPortraits) ? raw.bossPortraits : {};
+    themeGameSaves[id] = {
+        ...emptyThemeGameSave(), ...raw,
+        missionsXpTotal: Math.max(0, Number(raw.missionsXpTotal) || 0),
+        missionsClaimed,
+        seasons: raw.seasons && typeof raw.seasons === 'object' ? raw.seasons : null,
+        bossPortraits,
+        deloadRestDays: Array.isArray(raw.deloadRestDays) ? [...new Set(raw.deloadRestDays.filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x)))].sort() : []
+    };
+    return themeGameSaves[id];
+}
+
+function restoreActiveThemeGameSave(themeId) {
+    activeGameThemeId = THEMES[themeId] ? themeId : 'classico';
+    const save = ensureThemeGameSave(activeGameThemeId);
+    missionsXpTotal = save.missionsXpTotal;
+    missionsClaimed = { ...save.missionsClaimed };
+    seasons = save.seasons ? JSON.parse(JSON.stringify(save.seasons)) : null;
+    bossPortraits = { ...save.bossPortraits };
+}
+
+function isoWeekDateRange(weekKey) {
+    const match = String(weekKey || '').match(/^(\d{4})-W(\d{1,2})$/);
+    if (!match) return null;
+    const year = Number(match[1]), week = Number(match[2]);
+    if (week < 1 || week > 53) return null;
+    const jan4 = new Date(year, 0, 4);
+    const start = new Date(jan4);
+    start.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (week - 1) * 7);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    return [toLocalISO(start), toLocalISO(end)];
+}
+
+function ensureDeloadRestAwards() {
+    const activeWeeks = new Set(deloadWeeks);
+    const trainingDates = new Set(logs.filter(l => l && l.date).map(l => l.date));
+    const assignedDates = new Set();
+    let changed = false;
+
+    Object.keys(THEMES).forEach(themeId => {
+        const save = ensureThemeGameSave(themeId);
+        const keep = [];
+        save.deloadRestDays.forEach(date => {
+            const valid = activeWeeks.has(isoWeekKey(date)) && !trainingDates.has(date) && !assignedDates.has(date);
+            if (valid) { keep.push(date); assignedDates.add(date); }
+            else changed = true;
+        });
+        if (keep.length !== save.deloadRestDays.length) save.deloadRestDays = keep;
+    });
+
+    deloadWeeks.forEach(weekKey => {
+        const range = isoWeekDateRange(weekKey);
+        if (!range) return;
+        const [start, end] = range;
+        for (let date = start; date <= end; ) {
+            if (!trainingDates.has(date) && !assignedDates.has(date)) {
+                ensureThemeGameSave(activeGameThemeId).deloadRestDays.push(date);
+                assignedDates.add(date);
+                changed = true;
+            }
+            const next = new Date(`${date}T12:00:00`);
+            next.setDate(next.getDate() + 1);
+            date = toLocalISO(next);
+        }
+    });
+    return changed;
+}
+
+function loadGameProgressFromStorage() {
+    const storedTheme = safeStorage.get(STORAGE_KEY_THEME);
+    activeGameThemeId = THEMES[storedTheme] ? storedTheme : 'classico';
+    const legacy = parseStoredObject(STORAGE_KEY_GAME);
+    const storedThemes = parseStoredObject(STORAGE_KEY_THEME_GAMES);
+    themeGameSaves = {};
+    if (storedThemes && Object.keys(storedThemes).some(id => THEMES[id] && storedThemes[id] && typeof storedThemes[id] === 'object')) {
+        Object.entries(storedThemes).forEach(([id, save]) => {
+            if (THEMES[id] && save && typeof save === 'object' && !Array.isArray(save)) themeGameSaves[id] = save;
+        });
+    } else {
+        // Migração única do save antigo: todo o progresso de jogo vai para o tema ativo.
+        const migrated = emptyThemeGameSave();
+        if (legacy) {
+            migrated.missionsXpTotal = Number(legacy.missionsXpTotal) || 0;
+            migrated.missionsClaimed = legacy.missionsClaimed || {};
+            migrated.seasons = legacy.seasons || null;
+            migrated.bossPortraits = legacy.bossPortraits || {};
+        }
+        themeGameSaves[activeGameThemeId] = migrated;
+    }
+
+    const shared = parseStoredObject(STORAGE_KEY_GAME_SHARED) || {};
+    deloadWeeks = Array.isArray(shared.deloadWeeks) ? shared.deloadWeeks : (Array.isArray(legacy?.deloadWeeks) ? legacy.deloadWeeks : []);
+    tests = Array.isArray(shared.tests) ? shared.tests : (Array.isArray(legacy?.tests) ? legacy.tests : defaultTests());
+    weightLog = Array.isArray(shared.weightLog) ? shared.weightLog : (Array.isArray(legacy?.weightLog) ? legacy.weightLog : []);
+    if (!tests.length) tests = defaultTests();
+
+    Object.keys(THEMES).forEach(ensureThemeGameSave);
+    restoreActiveThemeGameSave(activeGameThemeId);
+    let logsChanged = false;
+    logs.forEach(log => {
+        if (!THEMES[log.xpTheme]) { log.xpTheme = activeGameThemeId; logsChanged = true; }
+    });
+    if (logsChanged) safeStorage.set(STORAGE_KEY_LOGS, JSON.stringify(logs));
+    ensureDeloadRestAwards();
+    saveGameState();
+}
+
 function loadStoredData() {
     try {
         const storedLogs = JSON.parse(safeStorage.get(STORAGE_KEY_LOGS));
@@ -217,21 +344,8 @@ function loadStoredData() {
         const s = JSON.parse(safeStorage.get(STORAGE_KEY_SETTINGS));
         if (s && typeof s === 'object') settings = { ...settings, ...s };
     } catch (e) { /* defaults */ }
-    try {
-        const g = JSON.parse(safeStorage.get(STORAGE_KEY_GAME));
-        if (g && typeof g === 'object') {
-            deloadWeeks = Array.isArray(g.deloadWeeks) ? g.deloadWeeks : [];
-            missionsXpTotal = g.missionsXpTotal || 0;
-            missionsClaimed = g.missionsClaimed || {};
-            tests = Array.isArray(g.tests) ? g.tests : defaultTests();
-            seasons = g.seasons || null;
-            bossPortraits = g.bossPortraits || {};
-            weightLog = Array.isArray(g.weightLog) ? g.weightLog : [];
-        } else {
-            tests = defaultTests();
-        }
-    } catch (e) { tests = defaultTests(); }
-    if (!Array.isArray(tests) || tests.length === 0) tests = defaultTests();
+
+    loadGameProgressFromStorage();
     try {
         const st = JSON.parse(safeStorage.get(STORAGE_KEY_STORY));
         if (st && typeof st === 'object') {
@@ -246,8 +360,16 @@ function loadStoredData() {
     lastBackupAt = safeStorage.get(STORAGE_KEY_BACKUP);
 }
 
+function logsForTheme(themeId = activeGameThemeId) {
+    return logs.filter(log => log && log.xpTheme === themeId);
+}
+
 function saveLogsToStorage() {
+    logs.forEach(log => {
+        if (!THEMES[log.xpTheme]) log.xpTheme = activeGameThemeId;
+    });
     safeStorage.set(STORAGE_KEY_LOGS, JSON.stringify(logs));
+    if (ensureDeloadRestAwards()) saveGameState();
     checkRankUp();
 }
 function saveWorkoutsToStorage() { safeStorage.set(STORAGE_KEY_WORKOUTS, JSON.stringify(savedWorkouts)); }
@@ -255,9 +377,13 @@ function saveSettings() {
     safeStorage.set(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
 }
 function saveGameState() {
-    safeStorage.set(STORAGE_KEY_GAME, JSON.stringify({
-        deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, weightLog
-    }));
+    const activeSave = ensureThemeGameSave(activeGameThemeId);
+    activeSave.missionsXpTotal = Math.max(0, Number(missionsXpTotal) || 0);
+    activeSave.missionsClaimed = { ...missionsClaimed };
+    activeSave.seasons = seasons ? JSON.parse(JSON.stringify(seasons)) : null;
+    activeSave.bossPortraits = { ...bossPortraits };
+    safeStorage.set(STORAGE_KEY_THEME_GAMES, JSON.stringify(themeGameSaves));
+    safeStorage.set(STORAGE_KEY_GAME_SHARED, JSON.stringify({ deloadWeeks, tests, weightLog }));
 }
 function saveStoryState() {
     safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({
@@ -328,6 +454,7 @@ function updateStoryThemeInfo() {
 
 function applyTheme(id) {
     THEME = THEMES[id] || THEMES.classico;
+    activeGameThemeId = THEME.id;
     BOSSES = THEME.bosses;
     ANIMAL_RANKS = THEME.ranks.map(([name, icon], i) => ({ minXp: XP_MIN[i], level: i + 1, name, icon }));
     const set = (el, fn) => { const e = document.getElementById(el); if (e) fn(e); };
@@ -339,22 +466,33 @@ function applyTheme(id) {
 }
 
 function changeGameTheme(id) {
+    if (!THEMES[id]) return;
+    saveGameState();
+    restoreActiveThemeGameSave(id);
+    safeStorage.set(STORAGE_KEY_THEME, id);
     applyTheme(id);
-    safeStorage.set(STORAGE_KEY_THEME, THEME.id);
     refreshAll();
-    alertModal(`🎭 Tema "${THEME.name}" aplicado! Seu progresso foi mantido.`);
+    alertModal(`🎭 Tema "${THEME.name}" aplicado! Seu progresso foi preservado.`);
 }
 
 function computeThemeXPCtx(themeId, upto) {
     const t = THEMES[themeId] || THEME || THEMES.classico;
+    const save = ensureThemeGameSave(t.id);
+    if (ensureDeloadRestAwards()) saveGameState();
+    const gameLogs = logsForTheme(t.id);
+    const missionXP = t.id === activeGameThemeId ? missionsXpTotal : save.missionsXpTotal;
     return computeXP(upto, {
-        logs, bodyweight: userBodyweight, deloadWeeks,
-        missionsXpTotal, bosses: t.bosses
+        logs: gameLogs, bodyweight: userBodyweight, deloadWeeks,
+        missionsXpTotal: missionXP, bosses: t.bosses, restDays: save.deloadRestDays
     });
 }
 
 function computeXPCtx(upto) {
-    return computeThemeXPCtx(THEME?.id || 'classico', upto);
+    return computeThemeXPCtx(activeGameThemeId || THEME?.id || 'classico', upto);
+}
+
+function getGlobalXPTotal() {
+    return Object.keys(THEMES).reduce((sum, themeId) => sum + computeThemeXPCtx(themeId).xp, 0);
 }
 
 function themeRankList(theme) {
@@ -812,7 +950,7 @@ function handleAddLog(event) {
 
     const newLog = {
         id: newLogId(), date, kind: 'peso', muscle, exercise,
-        ...f
+        xpTheme: activeGameThemeId, ...f
     };
     // PR automático pelo 1RM estimado (ou tempo, em isometria)
     newLog.isPR = detectAutoPR(newLog, logs, userBodyweight) || f.isPR;
@@ -1045,7 +1183,7 @@ function registerCorrida(event) {
     if (distanceKm <= 0 && durationMin <= 0) { alertModal('Informe a distância e/ou o tempo da corrida.'); return; }
     const newLog = {
         id: newLogId(), date, kind: 'corrida', muscle: 'Cardio', exercise,
-        distanceKm, durationMin, notes, technique: 'Convencional', isPR: false, nextGoal: '', type: 'corrida', reps: []
+        xpTheme: activeGameThemeId, distanceKm, durationMin, notes, technique: 'Convencional', isPR: false, nextGoal: '', type: 'corrida', reps: []
     };
     newLog.isPR = detectAutoPR(newLog, logs, userBodyweight);
     logs.unshift(newLog);
@@ -1269,7 +1407,7 @@ function registerSessionUnit(idxs, isPair) {
         const id = newLogId();
         const newLog = {
             id, date, kind: 'peso', muscle: item.muscle, exercise: item.exercise,
-            ...f, ...(isPair ? { biset: true } : {})
+            xpTheme: activeGameThemeId, ...f, ...(isPair ? { biset: true } : {})
         };
         if (!newLog.sessao) newLog.sessao = activeSession.name;
         newLog.isPR = detectAutoPR(newLog, logs, userBodyweight) || f.isPR;
@@ -1754,7 +1892,10 @@ function updateHeaderChrome() {
         themeButton.title = `Tema atual: ${THEME?.name || 'Gamificação'}. Abrir galeria`;
         themeButton.setAttribute('aria-label', `Tema atual: ${THEME?.name || 'Gamificação'}. Abrir galeria de temas`);
     }
-    if (xp) xp.textContent = `${fmtN(computeXPCtx().xp)} XP`;
+    const globalXP = getGlobalXPTotal();
+    if (xp) xp.textContent = `${fmtN(globalXP)} XP`;
+    const profileXP = document.getElementById('global-profile-xp');
+    if (profileXP) profileXP.textContent = `${fmtN(globalXP)} XP`;
 }
 
 function updateSummaryMetrics() {
@@ -1807,10 +1948,10 @@ function getBossImg(src) {
 }
 
 function renderBossBattleUI() {
-    const prog = computeBossProgress(logs, userBodyweight, BOSSES);
+    const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
     const filterDate = document.getElementById('filter-date').value || getTodayLocalISO();
     const rank = getAnimalRankForSession(filterDate);
-    const todayDmg = Math.round(rank.dayLogs.reduce((a, l) => a + logDamageKg(l, userBodyweight, prog.current), 0));
+    const todayDmg = Math.round(rank.dayLogs.filter(l => l.xpTheme === activeGameThemeId).reduce((a, l) => a + logDamageKg(l, userBodyweight, prog.current), 0));
 
     document.getElementById('boss-today-dmg-display').textContent = `${todayDmg.toLocaleString()} DMG`;
     document.getElementById('stat-boss-dmg').textContent = `${todayDmg.toLocaleString()} DMG`;
@@ -1904,7 +2045,7 @@ function uploadBossPortrait(event, bossId) {
 function renderMissions() {
     const el = document.getElementById('missions-content');
     if (!el) return;
-    const st = missionsState(logs, THEME, getTodayLocalISO());
+    const st = missionsState(logsForTheme(activeGameThemeId), THEME, getTodayLocalISO());
     const claimed = !!missionsClaimed[st.week];
     el.innerHTML = `
         <div class="flex items-center justify-between text-[11px] text-gray-400 font-mono mb-2">
@@ -1930,7 +2071,7 @@ function renderMissions() {
 }
 
 function claimMissions() {
-    const st = missionsState(logs, THEME, getTodayLocalISO());
+    const st = missionsState(logsForTheme(activeGameThemeId), THEME, getTodayLocalISO());
     if (!st.allDone || missionsClaimed[st.week]) return;
     missionsClaimed[st.week] = true;
     missionsXpTotal += st.totalXP;
@@ -1944,7 +2085,7 @@ function renderSeason() {
     const el = document.getElementById('season-content');
     if (!el) return;
     const today = getTodayLocalISO();
-    if (!seasons) seasons = { start: today, completed: [] };
+    if (!seasons) { seasons = { start: today, completed: [] }; saveGameState(); }
     // Autocompleta temporada vencida
     let s = seasonState(seasons, today);
     if (s.finished) {
@@ -2335,7 +2476,7 @@ function generateBossDefeatCard() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const prog = computeBossProgress(logs, userBodyweight, BOSSES);
+    const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
     const boss = prog.defeatedCount > 0 ? BOSSES[Math.min(prog.defeatedCount, BOSSES.length) - 1] : prog.current;
     const derrotado = prog.defeatedCount > 0;
     const portrait = bossPortraitSrc(boss.id);
@@ -2526,7 +2667,7 @@ function renderBadgesAndStreak() {
         { title: 'Maratonista', desc: '10+ km registrados', unlocked: totalKm >= 10, icon: '🏃' },
         { title: 'Tanque de Guerra', desc: 'Razão > 50x Peso Corporal', unlocked: logs.some(l => getAnimalRankForSession(l.date).relativeRatio >= 50), icon: '🛡️' },
         { title: 'Berzerker Master', desc: '50+ Treinos Registrados', unlocked: uniqueDates.length >= 50, icon: '⚡' },
-        { title: 'Caçador de Chefões', desc: '3+ Chefões Derrotados', unlocked: computeBossProgress(logs, userBodyweight, BOSSES).defeatedCount >= 3, icon: '👑' }
+        { title: 'Caçador de Chefões', desc: '3+ Chefões Derrotados', unlocked: computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).defeatedCount >= 3, icon: '👑' }
     ];
 
     const unlockedCount = badges.filter(b => b.unlocked).length;
@@ -2797,15 +2938,19 @@ function parseCSVRows(text, sep) {
 
 // ============================ BACKUP JSON ============================
 function exportJSONBackup() {
+    saveGameState();
     const backupData = {
-        version: 3,
+        version: 4,
         userBodyweight,
         logs,
         savedWorkouts,
         settings,
-        gameTheme: THEME ? THEME.id : 'classico',
-        bgImageData: customBgImageData ? customBgImageData.src : null,
+        gameTheme: activeGameThemeId,
+        themeGameSaves,
+        sharedGameState: { deloadWeeks, tests, weightLog },
+        // Campos legados para que versões antigas ainda consigam importar o backup.
         deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, weightLog,
+        bgImageData: customBgImageData ? customBgImageData.src : null,
         exportDate: new Date().toISOString()
     };
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
@@ -2819,7 +2964,7 @@ function exportJSONBackup() {
     lastBackupAt = getTodayLocalISO();
     safeStorage.set(STORAGE_KEY_BACKUP, lastBackupAt);
     renderBackupReminder();
-    alertModal('📥 Backup exportado (dados, tema, configurações e retratos)!');
+    alertModal('📥 Backup exportado (dados, temas e progresso dos jogos)!');
 }
 
 function importJSONBackup(event) {
@@ -2830,22 +2975,41 @@ function importJSONBackup(event) {
         try {
             const parsed = JSON.parse(e.target.result);
             if (parsed && Array.isArray(parsed.logs)) {
+                const importedThemeId = THEMES[parsed.gameTheme] ? parsed.gameTheme : activeGameThemeId;
                 logs = parsed.logs.map(migrateLog);
                 if (parsed.userBodyweight) userBodyweight = parsed.userBodyweight;
                 if (Array.isArray(parsed.savedWorkouts)) savedWorkouts = parsed.savedWorkouts;
                 if (parsed.settings) settings = { ...settings, ...parsed.settings };
-                if (parsed.gameTheme && THEMES[parsed.gameTheme]) { applyTheme(parsed.gameTheme); safeStorage.set(STORAGE_KEY_THEME, parsed.gameTheme); }
+
+                const importedSaves = parsed.themeGameSaves && typeof parsed.themeGameSaves === 'object' ? parsed.themeGameSaves : null;
+                themeGameSaves = {};
+                if (importedSaves) {
+                    Object.entries(importedSaves).forEach(([id, save]) => {
+                        if (THEMES[id] && save && typeof save === 'object' && !Array.isArray(save)) themeGameSaves[id] = save;
+                    });
+                } else {
+                    // Backups antigos não tinham saves por tema: migrar tudo para o jogo exportado.
+                    themeGameSaves[importedThemeId] = {
+                        ...emptyThemeGameSave(),
+                        missionsXpTotal: Number(parsed.missionsXpTotal) || 0,
+                        missionsClaimed: parsed.missionsClaimed || {},
+                        seasons: parsed.seasons || null,
+                        bossPortraits: parsed.bossPortraits || {}
+                    };
+                }
+                Object.keys(THEMES).forEach(ensureThemeGameSave);
+
+                const shared = parsed.sharedGameState && typeof parsed.sharedGameState === 'object' ? parsed.sharedGameState : parsed;
+                deloadWeeks = Array.isArray(shared.deloadWeeks) ? shared.deloadWeeks : [];
+                tests = Array.isArray(shared.tests) && shared.tests.length ? shared.tests : defaultTests();
+                weightLog = Array.isArray(shared.weightLog) ? shared.weightLog : [];
+                restoreActiveThemeGameSave(importedThemeId);
+                safeStorage.set(STORAGE_KEY_THEME, importedThemeId);
+                applyTheme(importedThemeId);
                 // storyTheme de backups antigos é ignorado; o tema do jogo define o visual.
-                if (parsed.deloadWeeks) deloadWeeks = parsed.deloadWeeks;
-                if (parsed.missionsXpTotal != null) missionsXpTotal = parsed.missionsXpTotal;
-                if (parsed.missionsClaimed) missionsClaimed = parsed.missionsClaimed;
-                if (Array.isArray(parsed.tests)) tests = parsed.tests;
-                if (parsed.seasons) seasons = parsed.seasons;
-                if (parsed.bossPortraits) bossPortraits = parsed.bossPortraits;
-                if (Array.isArray(parsed.weightLog)) weightLog = parsed.weightLog;
                 if (parsed.bgImageData) {
                     const img = new Image();
-                    img.onload = () => { customBgImageData = img; generateStoryCard(); };
+                    img.onload = () => { customBgImageData = img; saveStoryState(); generateStoryCard(); };
                     img.src = parsed.bgImageData;
                 }
                 lastRankLevel = null; lastBossesDefeated = null;

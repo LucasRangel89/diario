@@ -126,6 +126,8 @@ const logsXP = [
 const xp = api.computeXP('2026-10-01', { logs: logsXP, bodyweight: BW, deloadWeeks: [], missionsXpTotal: 0, bosses: [] });
 check('teto de 60 XP de volume por grupo/dia', xp.training === 60, xp.training);
 check('cardio XP = 53 (5×8 + 25×0,5)', xp.cardio === 53, xp.cardio);
+const isolatedRestXP = api.computeXP('2026-10-13', { logs: [], bodyweight: BW, deloadWeeks: ['2026-W41'], missionsXpTotal: 0, bosses: [], restDays: ['2026-10-05', '2026-10-06'] });
+check('dias de descanso podem ser atribuídos a um jogo sem duplicar XP', isolatedRestXP.restXP === 50, isolatedRestXP.restXP);
 
 console.log('\n== 8. Missões semanais ==');
 const theme = { missionWord: 'Prova de Cosmo' };

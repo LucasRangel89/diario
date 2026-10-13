@@ -322,15 +322,19 @@ function computeXP(upto, ctx) {
     const deloadWeeks = c.deloadWeeks || [];
     const missionsXpTotal = c.missionsXpTotal || 0;
     const bosses = c.bosses || BOSSES_CLASSIC;
+    const explicitRestDays = Array.isArray(c.restDays) ? c.restDays : null;
     const cutoff = upto || '9999-12-31';
 
     let training = 0, cardio = 0, prXP = 0, restXP = 0;
     const byDayGroup = {};
     const daysWithTraining = new Set();
 
+    const activityLogs = Array.isArray(c.activityLogs) ? c.activityLogs : allLogs;
+    activityLogs.forEach(l => {
+        if (l && l.date && l.date <= cutoff) daysWithTraining.add(l.date);
+    });
     allLogs.forEach(l => {
         if (!l || l.date > cutoff) return;
-        daysWithTraining.add(l.date);
         if (l.kind === 'corrida') {
             cardio += cardioXP(l);
             return;
@@ -357,23 +361,31 @@ function computeXP(upto, ctx) {
         training += grant;
     });
 
-    // XP de descanso: em semanas de deload, cada dia sem treino rende XP_REST_PER_DAY
-    deloadWeeks.forEach(week => {
-        const [ws, we] = (() => {
-            const [y, wnum] = week.split('-W').map(Number);
-            const jan4 = new Date(y, 0, 4);
-            const start = new Date(jan4);
-            start.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (wnum - 1) * 7);
-            const end = new Date(start); end.setDate(end.getDate() + 6);
-            return [toLocalISO(start), toLocalISO(end)];
-        })();
-        const limit = cutoff < we ? cutoff : we;
-        for (let d = new Date(ws + 'T12:00:00'); toLocalISO(d) <= limit; d.setDate(d.getDate() + 1)) {
-            const ds = toLocalISO(d);
-            if (ds > cutoff) break;
-            if (!daysWithTraining.has(ds)) restXP += XP_REST_PER_DAY;
-        }
-    });
+    // XP de descanso: saves por tema podem fornecer os dias já atribuídos a cada jogo.
+    if (explicitRestDays) {
+        const activeWeeks = new Set(deloadWeeks);
+        [...new Set(explicitRestDays)].forEach(date => {
+            if (date <= cutoff && activeWeeks.has(isoWeekKey(date))) restXP += XP_REST_PER_DAY;
+        });
+    } else {
+        // Compatibilidade com consumidores legados: cada dia sem treino no deload rende XP.
+        deloadWeeks.forEach(week => {
+            const [ws, we] = (() => {
+                const [y, wnum] = week.split('-W').map(Number);
+                const jan4 = new Date(y, 0, 4);
+                const start = new Date(jan4);
+                start.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (wnum - 1) * 7);
+                const end = new Date(start); end.setDate(end.getDate() + 6);
+                return [toLocalISO(start), toLocalISO(end)];
+            })();
+            const limit = cutoff < we ? cutoff : we;
+            for (let d = new Date(ws + 'T12:00:00'); toLocalISO(d) <= limit; d.setDate(d.getDate() + 1)) {
+                const ds = toLocalISO(d);
+                if (ds > cutoff) break;
+                if (!daysWithTraining.has(ds)) restXP += XP_REST_PER_DAY;
+            }
+        });
+    }
 
     const prog = computeBossProgress(allLogs.filter(l => l.date <= cutoff), bodyweight, bosses);
     const bossXP = prog.defeatedCount > 0

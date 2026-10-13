@@ -96,6 +96,7 @@ check('aba Buscar aparece no grupo Treino', !!$('tab-content-busca') && !!$('nav
 check('navegação tem exatamente quatro grupos, sem trilho horizontal', ['treino', 'jogo', 'voce', 'config'].every(g => !!$(`nav-group-${g}`)) && $('nav-groups').children.length === 4 && !$('group-navigation').className.includes('overflow-x-auto'));
 check('cabeçalho compacto contém título, tema, data e XP', !!$('header-theme-button') && !!$('header-today-date') && !!$('header-xp-display') && document.querySelector('header').querySelectorAll('h1').length === 1);
 check('data curta e XP atualizados no cabeçalho', /^\d{2}\/\d{2}$/.test($('header-today-date').textContent) && $('header-xp-display').textContent.endsWith(' XP'));
+check('Perfil Global soma o XP dos nove temas', !!$('global-profile-xp') && $('global-profile-xp').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP`);
 navTo('boss');
 check('grupo Jogo preserva Boss e Story Card', !$('tab-content-boss').classList.contains('hidden') && !!$('nav-boss') && !!$('nav-story'));
 navTo('story');
@@ -136,7 +137,7 @@ click($('header-theme-button'));
 click($('theme-gallery-overlay').querySelector('[data-theme-id="roma"]'));
 click($('confirm-modal-yes'));
 check('confirmar troca atualiza tema, ícone e Story Card', ev("THEME.id === 'roma'") && $('header-theme-icon').textContent === '🏛️' && $('story-theme-name').textContent === ev('THEME.name'));
-ev("applyTheme('classico'); safeStorage.set(STORAGE_KEY_THEME, 'classico'); refreshAll();");
+ev("changeGameTheme('classico');");
 check('histórico renderizado', !!$('history-content'));
 check('CSV multi-aba com 22 colunas no Log', ev('buildPlanilhaCSV()').split(/--- Sheet: Log ---/)[1].split('\n')[1].split(';').length === 22);
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fs.readFileSync('js/app.js', 'utf8')) && /frame === 'espacial'/.test(fs.readFileSync('js/app.js', 'utf8')));
@@ -375,8 +376,44 @@ navTo('montador');
 click(btnIn($('saved-workouts-list'), 'Iniciar'));
 check('iniciar um treino salvo no Montador leva à sessão em Hoje', !$('tab-content-diario').classList.contains('hidden') && $('active-session-card').textContent.includes('Treino em Andamento'));
 
+// ============================ SAVES POR TEMA + MIGRAÇÃO ============================
+console.log('\n== UI 11. Saves por tema e migração ==');
+const storedBeforeMigrationTest = {};
+for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i);
+    storedBeforeMigrationTest[key] = window.localStorage.getItem(key);
+}
+window.localStorage.clear();
+window.localStorage.setItem('berzerker_game_theme_v1', 'roma');
+window.localStorage.setItem('berzerker_diario_cargas_logs_v2', JSON.stringify([
+    { id: 91, date: '2026-10-01', kind: 'peso', muscle: 'Peito', exercise: 'Supino', type: 'carga_total', weight: 100, reps: [10], isPR: false }
+]));
+window.localStorage.setItem('berzerker_game_state_v1', JSON.stringify({
+    deloadWeeks: ['2026-W41'], missionsXpTotal: 123, missionsClaimed: { '2026-W41': true },
+    tests: [{ id: 'shared-test', name: 'Teste compartilhado', unit: 'kg', goal: 100, records: [] }],
+    seasons: { start: '2026-10-01', completed: [] }, bossPortraits: { b0: 'data:image/jpeg;base64,roma' },
+    weightLog: [{ date: '2026-10-10', peso: 94, obs: 'compartilhado' }]
+}));
+let migrationLoadOk = true;
+try { ev('loadStoredData(); applyTheme(activeGameThemeId);'); } catch (e) { migrationLoadOk = false; }
+check('migração do save legado roda sem erro', migrationLoadOk);
+check('logs e progresso antigo migram para o tema que estava ativo', ev("activeGameThemeId === 'roma' && logs.length === 1 && logs[0].xpTheme === 'roma' && missionsXpTotal === 123 && themeGameSaves.roma.missionsClaimed['2026-W41'] === true && themeGameSaves.roma.bossPortraits.b0.includes('roma')"));
+check('testes, peso e deload são carregados como dados compartilhados', ev("tests[0].name === 'Teste compartilhado' && weightLog[0].peso === 94 && deloadWeeks.join() === '2026-W41'"));
+const legacyRomaXP = ev("computeThemeXPCtx('roma').xp");
+check('XP de treino, missão e descanso fica somente no tema migrado', legacyRomaXP > 0 && ev("computeThemeXPCtx('classico').xp === 0") && ev("themeGameSaves.roma.deloadRestDays.length === 7"), legacyRomaXP);
+const romaSaveBeforeSwitch = ev('JSON.stringify(themeGameSaves.roma)');
+ev("changeGameTheme('classico'); missionsXpTotal = 999; missionsClaimed = { '2026-W42': true }; seasons = { start: '2026-10-12', completed: [] }; bossPortraits = { classicoOnly: 'classico' }; saveGameState();");
+check('trocar para outro jogo não altera o save de Roma', ev('JSON.stringify(themeGameSaves.roma)') === romaSaveBeforeSwitch);
+check('tema novo tem save independente e dados compartilhados intactos', ev("themeGameSaves.classico.missionsXpTotal === 999 && missionsXpTotal === 999 && tests[0].name === 'Teste compartilhado' && weightLog[0].peso === 94 && deloadWeeks.join() === '2026-W41'"));
+ev("changeGameTheme('roma');");
+check('voltar ao tema restaura XP, missão, temporada e retrato próprios', ev("missionsXpTotal === 123 && missionsClaimed['2026-W41'] === true && seasons.start === '2026-10-01' && bossPortraits.b0.includes('roma')"));
+check('XP global soma os jogos sem duplicar o save migrado', ev('getGlobalXPTotal() === Object.keys(THEMES).reduce((total, id) => total + computeThemeXPCtx(id).xp, 0)') && $('header-xp-display').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP` && $('global-profile-xp').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP`);
+window.localStorage.clear();
+Object.entries(storedBeforeMigrationTest).forEach(([key, value]) => window.localStorage.setItem(key, value));
+ev("loadStoredData(); loadWorkoutsFromStorage(); applyTheme(activeGameThemeId); refreshAll();");
+
 // ============================ CONSOLE ============================
-console.log('\n== UI 11. Console limpo ==');
+console.log('\n== UI 12. Console limpo ==');
 const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));
 check('nenhum erro não capturado', graves.length === 0, graves.slice(0, 3));
 
