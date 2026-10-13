@@ -22,9 +22,9 @@ function historyFilteredLogs() {
     const ate = document.getElementById('hist-ate')?.value || '';
     const soConferir = document.getElementById('hist-conferir')?.checked;
     return logs.filter(l => {
-        if (l.kind !== 'peso') return false;
+        if (l.kind !== 'peso' && l.kind !== 'corrida') return false;
         if (busca && !(l.exercise || '').toLowerCase().includes(busca) && !(l.sessao || '').toLowerCase().includes(busca)) return false;
-        if (grupo && l.muscle !== grupo) return false;
+        if (grupo && grupo !== 'Todos' && l.muscle !== grupo) return false;
         if (de && l.date < de) return false;
         if (ate && l.date > ate) return false;
         if (soConferir && !l.conferir) return false;
@@ -54,8 +54,24 @@ function renderHistory() {
 
 function historyLogHTML() {
     const rows = historyFilteredLogs();
-    const totalVol = rows.reduce((a, l) => a + logVolumeKg(l), 0);
+    const totalVol = rows.filter(l => l.kind !== 'corrida').reduce((a, l) => a + logVolumeKg(l), 0);
+    let totalKm = 0;
     let body = rows.map(l => {
+        if (l.kind === 'corrida') {
+            const km = Number(l.distanceKm) || 0;
+            totalKm += km;
+            const min = Number(l.durationMin) || 0;
+            const pace = km > 0 ? Math.round(min / km * 10) / 10 : 0;
+            return `<tr class="${l.conferir ? 'bg-amber-500/10' : ''} bg-cyan-900/10">
+                <td class="px-2 py-1.5 whitespace-nowrap">${histDataBR(l.date)}</td>
+                <td class="px-2 py-1.5">${escapeHtml(l.sessao || '')}</td>
+                <td class="px-2 py-1.5 font-semibold text-cyan-300">🏃 ${escapeHtml(l.exercise)}</td>
+                <td class="px-2 py-1.5 text-center font-bold text-cyan-400" colspan="6">${String(km).replace('.', ',')} km em ${min} min · pace ${String(pace).replace('.', ',')} min/km · +${cardioXP(l)} XP</td>
+                <td class="px-2 py-1.5 text-center">${l.conferir ? '⚠️' : ''}</td>
+                <td class="px-2 py-1.5 text-xs text-gray-400 max-w-[16ch] truncate" title="${escapeHtml(l.notes || '')}">${escapeHtml(l.notes || '')}</td>
+                <td colspan="10" class="px-2 py-1.5 text-center text-[10px] text-cyan-400/70 uppercase">Cardio / Corrida (não conta no volume de peso)</td>
+            </tr>`;
+        }
         const meta = logFullMeta(l);
         const total = meta.unidade === 'seg' ? meta.totalReps : meta.totalReps;
         return `<tr class="${l.conferir ? 'bg-amber-500/10' : ''}">
@@ -105,7 +121,7 @@ function historyLogHTML() {
             <tbody class="divide-y divide-gray-700/50">${body || `<tr><td colspan="22" class="text-center py-8 text-gray-400">Sem lançamentos no filtro.</td></tr>`}</tbody>
         </table>
     </div>
-    <p class="text-xs text-gray-400 mt-2">⚠️ = linha marcada como "Conferir?". Volume total do filtro: <b class="text-white">${fmtN(totalVol, 0)} kg</b>.</p>`;
+    <p class="text-xs text-gray-400 mt-2">⚠️ = linha marcada como "Conferir?". Volume: <b class="text-white">${fmtN(totalVol, 0)} kg</b>${totalKm > 0 ? ` · Cardio: <b class="text-cyan-300">${String(totalKm).replace('.', ',')} km</b>` : ''}.</p>`;
 }
 
 function historyProgressoHTML() {

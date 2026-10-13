@@ -52,6 +52,20 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
   (isquiotibiais + glúteo), Ombros, Bíceps, Tríceps, Abdômen, Core e Antebraço**. O mapa combina
   **recuperação** (janela 24–72 h) com o **volume direto da semana** (faixa-alvo 10–20 séries por
   grupo) — cada box mostra a prontidão real e as séries registradas naquele grupo.
+- **⚠️ Alerta de Lombar (NOVO):** alerta de carga da região lombar com gradação (leve/moderado/pesado)
+  baseado nos exercícios da última sessão: calcula horas de recuperação restantes, dá dica prática
+  de quais exercícios evitar ou fazer com carga leve, mostra aviso em cada exercício durante a sessão,
+  e penaliza treinos que usam lombar na sugestão automática quando a região está carregada.
+- **Corridas no histórico (CORRIGIDO):** corridas, bike e cardio agora aparecem na aba Histórico
+  com distância, tempo, pace e XP, com opção de filtrar por grupo "Cardio".
+- **Correção teclado no celular (CORRIGIDO):** campos de data abrem o seletor nativo no Android
+  e inputs de texto focam corretamente para abrir o teclado virtual (fonte 16px no mobile evita zoom).
+- **Cadastro de exercício manual (NOVO):** botão "➕ Novo exercício" na aba Buscar permite criar
+  seus próprios exercícios (nome, grupo, equipamento, tipo, faixa, descanso, sinônimos, tags extras,
+  marcação se carrega lombar), salvos em localStorage, editáveis/excluíveis, aparecendo na busca e
+  no seletor.
+- Novos exercícios: Extensão Lombar (Banco Romano), Cadeira Adutora, Desenvolvimento Arnold,
+  Swing de Kettlebell, Caminhada do Fazendeiro, Empurrar Trenó, Superman, Agachamento Sumô, Pullover.
 - **Co-ativação (sinergia):** puxadas, empurradas e compostos podem sinalizar apoio indireto
   (pegada, braços, ombros, core, abdômen e cadeia posterior). O app aplica fatores parciais só
   como **aviso de recuperação** no mapa; séries equivalentes não entram na meta semanal, no XP
