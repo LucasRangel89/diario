@@ -43,14 +43,14 @@ const THEMES = {
         id: 'classico', name: 'Berzerker (clássico)',
         desc: 'Formiga Atômica até Berzerker Supremo, com 4 chefões de ferro.',
         arena: 'Arena de Batalha de Chefão', bossLabel: 'CHEFÃO ATIVO', stageWord: 'ESTÁGIO',
-        missionWord: 'Missão', frame: 'ferro',
+                missionWord: 'Missão', missionWordPlural: 'Missões', frame: 'ferro',
         ranks: RANKS_CLASSIC.map(r => [r.name, r.icon]), bosses: BOSSES_CLASSIC
     },
     zodiaco: {
         id: 'zodiaco', name: 'Cavaleiros do Zodíaco',
         desc: 'Patentes pelo material da armadura; os guardiões das 12 casas e o Grande Mestre são os chefões.',
         arena: 'Santuário — As 12 Casas', bossLabel: 'GUARDIÃO ATIVO', stageWord: 'CASA',
-        missionWord: 'Prova de Cosmo', frame: 'ouro',
+                missionWord: 'Prova de Cosmo', missionWordPlural: 'Provas de Cosmo', frame: 'ouro',
         ranks: [['Aprendiz de Rodório', '🥋'], ['Cavaleiro de Bronze', '🥉'], ['Bronze · Cosmo Ardente', '🔥'], ['Cavaleiro de Prata', '🥈'], ['Prata · Sétimo Sentido', '✨'], ['Cavaleiro de Ouro', '🥇'], ['Ouro · Oitavo Sentido', '🌟'], ['Armadura Divina', '⚔️'], ['Cosmo Supremo', '🌌'], ['Lenda do Santuário', '👑']],
         bosses: mkBosses([
             ['Mu de Áries', '🐏', 'Casa de Áries — o ferreiro que guarda a primeira porta.'],
@@ -72,7 +72,7 @@ const THEMES = {
         id: 'hercules', name: '12 Trabalhos de Hércules',
         desc: 'Da condição de mortal ao Olimpo, enfrentando os 12 trabalhos em ordem.',
         arena: 'Os 12 Trabalhos de Hércules', bossLabel: 'DESAFIO ATIVO', stageWord: 'TRABALHO',
-        missionWord: 'Trabalho Extra', frame: 'marmore',
+                missionWord: 'Trabalho Extra', missionWordPlural: 'Trabalhos Extra', frame: 'marmore',
         ranks: [['Mortal', '🧑'], ['Aprendiz de Quíron', '🐴'], ['Atleta de Atenas', '🏃'], ['Campeão da Arena', '🏟️'], ['Herói de Tebas', '🛡️'], ['Semideus', '💪'], ['Filho de Zeus', '⚡'], ['Olimpiano', '🏛️'], ['Titã', '🌋'], ['Imortal do Olimpo', '👑']],
         bosses: mkBosses([
             ['Leão de Neméia', '🦁', '1º Trabalho — a pele que nenhuma arma fura.'],
@@ -93,7 +93,7 @@ const THEMES = {
         id: 'acao', name: 'Filmes de Ação',
         desc: 'Patentes de recruta a lenda do cinema; os vilões de cada clássico são os chefões.',
         arena: 'Cine Ação — Vilões em Cena', bossLabel: 'VILÃO ATIVO', stageWord: 'CENA',
-        missionWord: 'Missão', frame: 'neon',
+        missionWord: 'Missão', missionWordPlural: 'Missões', frame: 'neon',
         ranks: [['Recruta', '🪖'], ['Policial Novato', '👮'], ['Duro de Matar', '🧨'], ['Agente Secreto', '🕵️'], ['Comando de Elite', '🎖️'], ['Lenda de Guerra', '🔫'], ['Herói de Ação', '💥'], ['O Escolhido', '🕶️'], ['Imbatível', '🚀'], ['Lenda do Cinema', '🎬']],
         bosses: mkBosses([
             ['O Esquadrão', '🧨', 'Cena 1 — caos urbano e muita munição.'],
@@ -108,6 +108,111 @@ const THEMES = {
             ['O Titã', '🦾', 'Cena 10 — força bruta industrial.'],
             ['O Imperador', '👑', 'Cena 11 — poder galáctico.'],
             ['O Chefe Final', '💀', 'Cena 12 — tudo termina aqui.']
+        ], 25000, 2000)
+    },
+    folclore: {
+        id: 'folclore', name: 'Folclore Brasileiro',
+        desc: 'Do Novato da Roça à Lenda do Brasil: os seres do sertão encantado são os chefões.',
+        arena: 'Sertão Encantado — Lendas do Brasil', bossLabel: 'LENDA ATIVA', stageWord: 'LENDA',
+        missionWord: 'Desafio do Sertão', missionWordPlural: 'Desafios do Sertão', frame: 'madeira',
+        ranks: [['Novato da Roça', '🌱'], ['Peão de Boiadeiro', '🤠'], ['Violeiro do Sertão', '🪕'], ['Capanga Valente', '⚔️'], ['Domador de Bestas', '🐎'], ['Herói do Arraial', '🎇'], ['Guardião da Mata', '🌿'], ['Caçador de Encantados', '🔥'], ['Mestre do Folclore', '✨'], ['LENDA DO BRASIL', '🇧🇷']],
+        bosses: mkBosses([
+            ['Saci-Pererê', '🌀', 'A travessura de uma perna só que faz das brasas brinquedo.'],
+            ['Curupira', '🦶', 'Guardião da mata — os pés virados enganam quem caça.'],
+            ['Caipora', '🐗', 'Senhor dos animais, montado no porco-do-mato, castiga caçadores.'],
+            ['Lobisomem', '🐺', 'O sétimo filho condenado a uivar na lua cheia.'],
+            ['Cuca', '🐊', 'A bruxa-jacaré que vem dos contos de ninar buscar quem não dorme.'],
+            ['Mula-sem-Cabeça', '🐴', 'Fogo pelas guampas e ferraduras que incendeiam a estrada.'],
+            ['Iara', '💧', 'A sereia dos rios: canta, encanta e não devolve.'],
+            ['Boto Cor-de-Rosa', '🐬', 'O sedutor de chapéu branco das festas juninas.'],
+            ['Boitatá', '🔥', 'A serpente de fogo que devora os campos secos.'],
+            ['Naiá — Vitória-Régia', '🪷', 'A gigante das águas que arrasta para o fundo.'],
+            ['Mapinguari', '👹', 'O gigante de um olho só, cujo rugido congela a floresta.'],
+            ['Anhanguera', '😈', 'O senhor do pacto — a última porta do sertão encantado.']
+        ], 25000, 2000)
+    },
+    nordica: {
+        id: 'nordica', name: 'Mitologia Nórdica',
+        desc: 'Do Escudeiro do Norte ao All-Father: os seres de Midgard e Asgard são os chefões.',
+        arena: 'Ragnarök — Trilho dos Nove Mundos', bossLabel: 'AMEAÇA ATIVA', stageWord: 'MUNDO',
+        missionWord: 'Prova de Valhalla', missionWordPlural: 'Provas de Valhalla', frame: 'runas',
+        ranks: [['Escudeiro do Norte', '🛡️'], ['Guerreiro de Ferro', '⚔️'], ['Berserker', '🐻'], ['Caçador de Trolls', '🏹'], ['Jarl das Terras', '👑'], ['Filho de Thor', '⚡'], ['Escriba das Runas', '🔮'], ['Guerreiro de Valhalla', '🪓'], ['Semideus de Asgard', '🌩️'], ['ALL-FATHER', '🦅']],
+        bosses: mkBosses([
+            ['Draugr', '🧟', 'O morto que guarda o tesouro dos túmulos.'],
+            ['Troll de Gelo', '👹', 'A montanha que se move e devora viajantes.'],
+            ['Fenris, o Lobo', '🐺', 'O lobo acorrentado que só cresce.'],
+            ['Valquíria Caída', '⚔️', 'A escolhida que virou as costas a Odin.'],
+            ['Níðhöggr', '🐍', 'O dragão que rói as raízes de Yggdrasil.'],
+            ['Jörmungandr', '🌊', 'A Serpente de Midgard que envolve o mundo.'],
+            ['Surtr, o Flamejante', '🔥', 'O gigante de fogo com a espada do crepúsculo.'],
+            ['Hela', '🖤', 'A rainha do reino dos mortos.'],
+            ['Fafnir', '🐉', 'O anão ganancioso virado dragão guardião do ouro.'],
+            ['Sköll, o Devorador de Sol', '🌑', 'O lobo que persegue o sol até devorá-lo.'],
+            ['Ymir, o Primeiro', '🧊', 'O gigante primordial de quem o mundo foi feito.'],
+            ['Ragnarök', '💀', 'O crepúsculo dos deuses — o fim de todas as coisas.']
+        ], 25000, 2000)
+    },
+    roma: {
+        id: 'roma', name: 'Gladiadores de Roma',
+        desc: 'Do Escravo da Arena ao Imperador: gladiadores, feras e imperadores são os chefões.',
+        arena: 'Coliseu — Areia dos Gladiadores', bossLabel: 'OPONENTE ATIVO', stageWord: 'COMBATE',
+        missionWord: 'Prova da Arena', missionWordPlural: 'Provas da Arena', frame: 'louros',
+        ranks: [['Escravo da Arena', '⛓️'], ['Novato de Ludus', '🪖'], ['Mirmilão', '⚔️'], ['Retiário', '🔱'], ['Hoplômaco', '🛡️'], ['Campeão do Coliseu', '🏆'], ['Pretoriano', '🦁'], ['Centurião', '📯'], ['General das Legiões', '🦅'], ['IMPERADOR DE ROMA', '👑']],
+        bosses: mkBosses([
+            ['Provocador da Arena', '🪓', 'O abridor de jogos: fome de sangue e aplausos.'],
+            ['Mirmilão Feroz', '⚔️', 'Escudo pesado, gládio curto, sem recuo.'],
+            ['Retiário Mestre', '🔱', 'Rede e tridente contra todo o peso.'],
+            ['Dupla de Dimachaeri', '🗡️', 'Duas lâminas, um só objetivo.'],
+            ['Bestiário & Pantera', '🐆', 'Homem e fera treinados para matar juntos.'],
+            ['Carruagem de Guerra', '🐎', 'Ferro e velocidade na areia.'],
+            ['Anão da Arena', '👹', 'Pequeno no tamanho, gigante na violência.'],
+            ['Leão de Núbia', '🦁', 'O rei das feras, sem jaula.'],
+            ['Touro Branco de Aretium', '🐂', 'Chifres de ferro e carga impossível.'],
+            ['Cómodo, o Imperador', '🤵', 'O próprio César desce à arena.'],
+            ['Capitão dos Pretorianos', '🛡️', 'A última guarda do trono.'],
+            ['Máximo Imperator', '👑', 'O homem que derrotou todos os homens.']
+        ], 25000, 2000)
+    },
+    rpg: {
+        id: 'rpg', name: 'Fantasia RPG',
+        desc: 'Do Aprendiz de Guilda à Lenda do RPG: monstros de masmorra e o Mestre do Jogo.',
+        arena: 'Masmorra do Mestre — Andar Final', bossLabel: 'MONSTRO ATIVO', stageWord: 'ANDAR',
+        missionWord: 'Missão Secundária', missionWordPlural: 'Missões Secundárias', frame: 'brasao',
+        ranks: [['Aprendiz de Guilda', '📜'], ['Aventureiro', '🗡️'], ['Mercenário', '💰'], ['Cavaleiro', '🛡️'], ['Paladino', '⚔️'], ['Mestre de Guerra', '🪓'], ['Arconte Arcano', '🔮'], ['Caçador de Dragões', '🐉'], ['Herói da Profecia', '✨'], ['LENDA DO RPG', '🎲']],
+        bosses: mkBosses([
+            ['Goblin Chefe', '👺', 'Andar 1 — o bando todo obedece a ele.'],
+            ['Ogro da Ponte', '👹', 'Andar 2 — pede pedágio de ossos.'],
+            ['Golem de Pedra', '🗿', 'Andar 3 — a masmorra que se defende.'],
+            ['Necromante', '💀', 'Andar 4 — o exército já estava enterrado.'],
+            ['Hidra do Pântano', '🐍', 'Andar 5 — corte uma cabeça, cobre o preço.'],
+            ['Grifo Guardião', '🦅', 'Andar 6 — o voo que ninguém vê chegar.'],
+            ['Minotauro da Masmorra', '🐂', 'Andar 7 — o labirinto tem dono.'],
+            ['Mago Negro', '🧙', 'Andar 8 — feitiços que dobram a realidade.'],
+            ['Dragão Ancião', '🐲', 'Andar 9 — séculos dormindo sobre ouro.'],
+            ['Titã de Ferro', '🤖', 'Andar 10 — a armadura vazia que ainda luta.'],
+            ['Rei Demônio', '👿', 'Andar 11 — o trono das sombras.'],
+            ['Mestre do Jogo', '🎲', 'Andar 12 — o verdadeiro último chefe: quem narra a história.']
+        ], 25000, 2000)
+    },
+    galactica: {
+        id: 'galactica', name: 'Comando Galáctico',
+        desc: 'Do Cadete ao Supremo da Galáxia: frotas, mutantes e o Imperador no centro da galáxia.',
+        arena: 'Setor Omega — Fronteira Estelar', bossLabel: 'ALVO ATIVO', stageWord: 'SETOR',
+        missionWord: 'Missão de Patrulha', missionWordPlural: 'Missões de Patrulha', frame: 'espacial',
+        ranks: [['Cadete da Academia', '🚀'], ['Piloto Estelar', '🛸'], ['Oficial de Bordo', '⭐'], ['Comandante de Esquadrão', '🪐'], ['Capitão de Cruzador', '🛰️'], ['Almirante de Frota', '🌌'], ['Guardião do Setor', '🛡️'], ['General Galáctico', '⚔️'], ['Lorde das Estrelas', '🌟'], ['SUPREMO DA GALÁXIA', '👽']],
+        bosses: mkBosses([
+            ['Enxame de Drones', '🛸', 'Setor 1 — barulho de enxame, silêncio de tumba.'],
+            ['Pirata Espacial', '🏴‍☠️', 'Setor 2 — a carga que você escolta é o prêmio dele.'],
+            ['Androide Rebelde', '🤖', 'Setor 3 — aprendeu a odiar quem o construiu.'],
+            ['Mutante das Luas', '👾', 'Setor 4 — radiação que pensa.'],
+            ['Rainha dos Insetos', '🦂', 'Setor 5 — a colônia inteira é um só organismo.'],
+            ['Colosso Estelar', '🌑', 'Setor 6 — um corpo do tamanho de um planeta.'],
+            ['Leviatã do Espaço', '🐙', 'Setor 7 — a coisa que vive no vácuo.'],
+            ['Núcleo de IA Rebelde', '🧠', 'Setor 8 — pensa mais rápido que a sua frota.'],
+            ['Domínio Sombrio', '👽', 'Setor 9 — a civilização que não deixa sobreviventes.'],
+            ['Buraco Negro Vivo', '🕳️', 'Setor 10 — a gravidade como predador.'],
+            ['Devorador de Planetas', '🪐', 'Setor 11 — o apetite vem antes da frota.'],
+            ['Imperador Galáctico', '👑', 'Setor 12 — o trono no centro da galáxia.']
         ], 25000, 2000)
     }
 };

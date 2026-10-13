@@ -14,6 +14,8 @@ let selectedStoryTheme = 'berzerker';
 let volumeChartInstance = null;
 let exChartInstance = null;
 let setsChartInstance = null;
+let weightLog = [];            // pesagens [{date, peso, obs}] — aba "Peso corporal"
+let histVolChartInstance = null;
 
 // Configurações de treino
 let settings = { weeklyGoal: 3, restDefault: 90, barWeight: DEFAULT_BAR_WEIGHT, sledWeight: DEFAULT_SLED_WEIGHT };
@@ -60,7 +62,7 @@ const TECHNIQUES = [['Convencional', 'Convencional'], ['Rest-Pause', 'Rest-Pause
 const NEXT_GOALS = [['', '— automático —'], ['📈 Aumentar Carga', '📈 Aumentar Carga (+kg)'], ['➕ Aumentar Reps', '➕ Mais Repetições'], ['⚖️ Manter Carga', '⚖️ Manter Carga'], ['🎯 Ajustar Execução', '🎯 Ajustar Técnica'], ['📉 Reduzir Carga', '📉 Reduzir Peso']];
 const INP = 'w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm focus:outline-none focus:border-berzerker-500';
 const LBL = 'block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1';
-const MUSCLE_OPTIONS = ['Peito', 'Costas', 'Pernas', 'Ombros', 'Bíceps', 'Tríceps', 'Abdômen', 'Geral'];
+const MUSCLE_OPTIONS = MUSCLE_OPTIONS_FULL; // catálogo completo (11 grupos + Geral + Cardio)
 
 // ============================ UTILITÁRIOS ============================
 function toLocalISO(d) {
@@ -85,7 +87,9 @@ function formatShortBR(isoStr) {
 function escapeHtml(str) {
     return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
-function fmtN(n) { return (Number(n) || 0).toLocaleString('pt-BR'); }
+function fmtN(n, dec) {
+    return (Number(n) || 0).toLocaleString('pt-BR', dec != null ? { minimumFractionDigits: dec, maximumFractionDigits: dec } : undefined);
+}
 
 function alertModal(msg) {
     const banner = document.createElement('div');
@@ -133,6 +137,11 @@ function migrateLog(l) {
     if (l.type === 'isometria' && l.weight > 0 && (!Array.isArray(l.reps) || l.reps.length === 0)) {
         l.reps = [l.weight]; l.weight = 0;
     }
+    // Upgrade de registros antigos: convenção da planilha (carga registrada pura)
+    if (l.kind === 'peso') {
+        if (l.type === 'peso_corporal' && (!l.weight || l.weight <= 0) && userBodyweight > 0) l.weight = userBodyweight;
+        if (l.conferir === undefined) l.conferir = false;
+    }
     if (l.kind === 'corrida') { l.muscle = 'Cardio'; }
     return l;
 }
@@ -162,6 +171,7 @@ function loadStoredData() {
             tests = Array.isArray(g.tests) ? g.tests : defaultTests();
             seasons = g.seasons || null;
             bossPortraits = g.bossPortraits || {};
+            weightLog = Array.isArray(g.weightLog) ? g.weightLog : [];
         } else {
             tests = defaultTests();
         }
@@ -191,7 +201,7 @@ function saveSettings() {
 }
 function saveGameState() {
     safeStorage.set(STORAGE_KEY_GAME, JSON.stringify({
-        deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits
+        deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, weightLog
     }));
 }
 function saveStoryState() {
@@ -339,21 +349,22 @@ function showRanksModal(themeId) {
 
 // ============================ TABS ============================
 function switchTab(tab) {
-    ['diario', 'busca', 'boss', 'story', 'stats', 'calcs', 'config'].forEach(t => {
+    ['diario', 'historico', 'busca', 'boss', 'story', 'stats', 'calcs', 'config'].forEach(t => {
         const el = document.getElementById(`tab-content-${t}`);
         const btnDesktop = document.getElementById(`nav-${t}`);
         const btnMobile = document.getElementById(`m-nav-${t}`);
         if (t === tab) {
             el.classList.remove('hidden');
-            if (btnDesktop) btnDesktop.className = 'px-3 py-2 rounded-lg bg-berzerker-600 text-white transition-all whitespace-nowrap';
+            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg bg-berzerker-600 text-white transition-all';
             if (btnMobile) btnMobile.className = 'px-3 py-1.5 rounded-lg bg-berzerker-600 text-white whitespace-nowrap';
         } else {
             el.classList.add('hidden');
-            if (btnDesktop) btnDesktop.className = 'px-3 py-2 rounded-lg text-gray-400 hover:text-white transition-all whitespace-nowrap';
+            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all';
             if (btnMobile) btnMobile.className = 'px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap';
         }
     });
-    if (tab === 'busca' && typeof renderSearchScreen === 'function') renderSearchScreen();
+    if (tab === 'historico') renderHistory();
+    if (tab === 'busca') renderSearchScreen();
     if (tab === 'boss') { renderBossBattleUI(); renderMissions(); renderSeason(); }
     if (tab === 'story') generateStoryCard();
     if (tab === 'stats') { renderBadgesAndStreak(); initVolumeChart(); renderExerciseChart(); renderWeeklySetsChart(); renderTests(); }
@@ -362,45 +373,9 @@ function switchTab(tab) {
 
 // ============================ SEED ============================
 function seedInitialMockData(todayStr) {
+    // Seed = planilha real do usuário (Log de 28/09 a 10/10/2026 + 5 sessões)
     if (safeStorage.get(STORAGE_KEY_SEEDED) === '1') return;
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    const yesterdayStr = toLocalISO(d);
-    const d2 = new Date();
-    d2.setDate(d2.getDate() - 3);
-    logs = [
-        { id: 1, date: todayStr, kind: 'peso', muscle: 'Peito', exercise: 'Supino Reto com Barra', type: 'carga_total', weight: 110, reps: [10, 8, 6, 4], technique: 'Convencional', nextGoal: '📈 Aumentar Carga', isPR: true, notes: '' },
-        { id: 2, date: todayStr, kind: 'peso', muscle: 'Peito', exercise: 'Supino Inclinado c/ Halteres', type: 'halter_par', weight: 38, reps: [12, 10, 8], technique: 'Rest-Pause', nextGoal: '➕ Aumentar Reps', isPR: false, notes: '' },
-        { id: 3, date: todayStr, kind: 'peso', muscle: 'Ombros', exercise: 'Desenvolvimento Militar', type: 'carga_total', weight: 70, reps: [10, 8, 8], technique: 'Convencional', nextGoal: '📈 Aumentar Carga', isPR: true, notes: '' },
-        { id: 4, date: todayStr, kind: 'peso', muscle: 'Tríceps', exercise: 'Tríceps Polia Alta', type: 'carga_total', weight: 85, reps: [15, 12, 12, 10], technique: 'Drop-Set', nextGoal: '🎯 Ajustar Execução', isPR: false, notes: '' },
-        { id: 5, date: yesterdayStr, kind: 'peso', muscle: 'Pernas', exercise: 'Agachamento Livre', type: 'carga_total', weight: 140, reps: [10, 8, 6], technique: 'Convencional', nextGoal: '📈 Aumentar Carga', isPR: false, notes: '' },
-        { id: 6, date: toLocalISO(d2), kind: 'peso', muscle: 'Costas', exercise: 'Barra Fixa (Pull-up)', type: 'peso_corporal', weight: 0, reps: [10, 8, 6], technique: 'Convencional', nextGoal: '', isPR: false, notes: '' }
-    ];
-    savedWorkouts = [
-        {
-            id: 1001, name: 'Treino A — Push (Peito · Ombro · Tríceps)', exercises: [
-                { muscle: 'Peito', exercise: 'Supino Reto com Barra', weight: 110, repsText: '10, 8, 6, 4', technique: 'Convencional', type: 'carga_total' },
-                { muscle: 'Peito', exercise: 'Supino Inclinado c/ Halteres', weight: 38, repsText: '12, 10, 8', technique: 'Rest-Pause', type: 'halter_par' },
-                { muscle: 'Ombros', exercise: 'Desenvolvimento Militar', weight: 70, repsText: '10, 8, 8', technique: 'Convencional', type: 'carga_total' },
-                { muscle: 'Tríceps', exercise: 'Tríceps Polia Alta', weight: 85, repsText: '15, 12, 12, 10', technique: 'Drop-Set', type: 'carga_total' }
-            ]
-        },
-        {
-            id: 1002, name: 'Treino B — Pull (Costas · Bíceps)', exercises: [
-                { muscle: 'Costas', exercise: 'Barra Fixa (Pull-up)', weight: 0, repsText: '10, 8, 6', technique: 'Convencional', type: 'peso_corporal' },
-                { muscle: 'Costas', exercise: 'Remada Curvada com Barra', weight: 90, repsText: '10, 8, 8', technique: 'Convencional', type: 'carga_total' },
-                { muscle: 'Bíceps', exercise: 'Rosca Direta com Barra', weight: 40, repsText: '12, 10, 8', technique: 'Convencional', type: 'carga_total' }
-            ]
-        },
-        {
-            id: 1003, name: 'Treino C — Legs (Pernas · Abdômen)', exercises: [
-                { muscle: 'Pernas', exercise: 'Agachamento Livre', weight: 140, repsText: '10, 8, 6, 6', technique: 'Convencional', type: 'carga_total' },
-                { muscle: 'Pernas', exercise: 'Leg Press 45°', weight: 260, repsText: '12, 10, 10', technique: 'Convencional', type: 'carga_total' },
-                { muscle: 'Pernas', exercise: 'Mesa Flexora', weight: 70, repsText: '12, 10, 10', technique: 'Excêntrica Lenta', type: 'carga_total' },
-                { muscle: 'Abdômen', exercise: 'Abdominal na Polia Alta', weight: 45, repsText: '15, 15, 12', technique: 'Convencional', type: 'carga_total' }
-            ]
-        }
-    ];
+    if (typeof seedFromPlanilha === 'function') seedFromPlanilha();
     saveLogsToStorage();
     saveWorkoutsToStorage();
     safeStorage.set(STORAGE_KEY_SEEDED, '1');
@@ -442,8 +417,8 @@ function onLogExerciseChange() {
         if (muscleSel) muscleSel.value = cat.grupo;
         if (typeSel) typeSel.value = cat.tipo;
     }
+    if (typeof renderExerciseTagLine === 'function') renderExerciseTagLine('log-tags-line', exName || '');
     onTypeChange('');
-    if (typeof renderExerciseTagLine === 'function') renderExerciseTagLine('log-tags', exName);
 }
 
 function toggleSetMode(prefix) {
@@ -537,6 +512,8 @@ function fieldsHTML(p, v, opts) {
         <div><label class="${LBL}">RIR (reps em reserva)</label><input type="number" min="0" max="10" id="${p}rir" value="${v.rir ?? ''}" placeholder="ex: 2" class="${INP}"></div>
         <div><label class="${LBL}">Técnica Avançada</label><select id="${p}t" class="${INP}">${optsSelect(TECHNIQUES, v.technique)}</select></div>
         <div class="col-span-2"><label class="${LBL} !text-emerald-400">💡 Meta Próximo Treino</label><select id="${p}g" class="${INP}">${optsSelect(NEXT_GOALS, v.nextGoal)}</select></div>
+        <div class="col-span-2"><label class="${LBL}">Sessão (split do dia)</label><input type="text" id="${p}sessao" value="${escapeHtml(v.sessao || '')}" list="sessao-list" placeholder="ex: Peito/Tríceps/Ombro" class="${INP}"></div>
+        <label class="flex items-center gap-2 cursor-pointer col-span-2 self-end pb-2"><input type="checkbox" id="${p}conf"${v.conferir ? ' checked' : ''} class="w-4 h-4 rounded text-amber-500 bg-berzerker-dark border-berzerker-border"><span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">⚠️ Conferir?</span></label>
         <div class="col-span-2 sm:col-span-4"><label class="${LBL}">Observações</label><textarea id="${p}n" rows="2" placeholder="Ex: ajuste do banco, dor, sensação, regulagem da máquina..." class="${INP}">${escapeHtml(v.notes || '')}</textarea></div>
         ${o.prOverride ? `<label class="flex items-center gap-2 cursor-pointer col-span-2"><input type="checkbox" id="${p}p"${v.isPR ? ' checked' : ''} class="w-4 h-4 rounded text-emerald-500 bg-berzerker-dark border-berzerker-border"><span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">🏆 PR (auto pelo 1RM — pode forçar)</span></label>` : ''}
     </div>`;
@@ -553,6 +530,8 @@ function readFields(p) {
         nextGoal: g('g').value,
         isPR: g('p') ? g('p').checked : false,
         rir: g('rir') && g('rir').value !== '' ? parseInt(g('rir').value) : null,
+        sessao: g('sessao') ? g('sessao').value.trim() : '',
+        conferir: g('conf') ? g('conf').checked : false,
         notes: g('n').value.trim()
     };
     if (mode === 'sets') {
@@ -580,6 +559,8 @@ function snapshotDrafts() {
             technique: g('t').value, nextGoal: g('g').value,
             isPR: g('p') ? g('p').checked : false,
             rir: g('rir') && g('rir').value !== '' ? parseInt(g('rir').value) : null,
+            sessao: g('sessao') ? g('sessao').value : '',
+            conferir: g('conf') ? g('conf').checked : false,
             notes: g('n').value
         };
     });
@@ -780,7 +761,6 @@ function renderLogsTable() {
                 <h3 class="font-bold text-white text-base mt-1">${l.biset ? '🔗 ' : ''}${escapeHtml(l.exercise)}${l.biset ? ' <span class="text-[10px] font-bold text-cyan-400 border border-cyan-500/40 rounded px-1.5 py-0.5 align-middle">BI-SET</span>' : ''}<button onclick="editLog(${l.id})" title="Editar" class="ml-2 px-2 py-0.5 text-xs text-gray-400 hover:text-cyan-400 align-middle">✏️ Editar</button></h3>
                 ${l.notes ? `<p class="text-[11px] text-gray-400 mt-1 italic">📝 ${escapeHtml(l.notes)}</p>` : ''}
                 <div class="text-xs text-gray-400 mt-1 font-mono">${detalhe}</div>
-                ${typeof exerciseTagChipsHTML === 'function' ? exerciseTagChipsHTML(l.exercise, { max: 5, className: 'mt-1.5' }) : ''}
             </div>
             <button onclick="deleteLog(${l.id})" class="self-end sm:self-center p-2 text-gray-500 hover:text-red-400 transition-colors" title="Excluir">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -1053,6 +1033,7 @@ function registerSessionUnit(idxs, isPair) {
             id, date, kind: 'peso', muscle: item.muscle, exercise: item.exercise,
             ...f, ...(isPair ? { biset: true } : {})
         };
+        if (!newLog.sessao) newLog.sessao = activeSession.name;
         newLog.isPR = detectAutoPR(newLog, logs, userBodyweight) || f.isPR;
         const prog = duplaProgressao(newLog);
         if (prog && !newLog.nextGoal) newLog.nextGoal = '📈 Aumentar Carga';
@@ -1272,7 +1253,6 @@ function onWbExerciseChange() {
     } else if (hint) {
         hint.textContent = 'Fora do catálogo — o tipo fica como "carga total".';
     }
-    if (typeof renderExerciseTagLine === 'function') renderExerciseTagLine('wb-tags', exName);
 }
 
 function addExerciseToDraft(forceBiset) {
@@ -1496,6 +1476,43 @@ function updateSummaryMetrics() {
 }
 
 // ============================ BOSS BATTLE ============================
+// Retratos padrão dos chefões (arte original embutida no app).
+// O upload do usuário (bossPortraits) tem prioridade sobre estes.
+const DEFAULT_BOSS_PORTRAITS = {
+    'classico:boss1': 'images/bosses/golem-anilhas.jpg',
+    'classico:boss2': 'images/bosses/hidra-titanio.jpg',
+    'classico:boss3': 'images/bosses/mecagorila.jpg',
+    'classico:boss4': 'images/bosses/behemoth.jpg',
+    'folclore:b0': 'images/bosses/saci.jpg',
+    'folclore:b1': 'images/bosses/curupira.jpg',
+    'folclore:b2': 'images/bosses/caipora.jpg',
+    'folclore:b3': 'images/bosses/lobisomem.jpg',
+    'folclore:b4': 'images/bosses/cuca.jpg',
+    'folclore:b5': 'images/bosses/mula-sem-cabeca.jpg',
+    'folclore:b6': 'images/bosses/iara.jpg',
+    'folclore:b7': 'images/bosses/boto.jpg',
+    'folclore:b8': 'images/bosses/boitata.jpg',
+    'folclore:b9': 'images/bosses/naia.jpg',
+    'folclore:b10': 'images/bosses/mapinguari.jpg',
+    'folclore:b11': 'images/bosses/anhanguera.jpg'
+};
+
+function bossPortraitSrc(bossId) {
+    if (bossPortraits[bossId]) return bossPortraits[bossId]; // upload do usuário
+    return DEFAULT_BOSS_PORTRAITS[(THEME ? THEME.id : 'classico') + ':' + bossId] || null;
+}
+
+// Cache de imagens para desenho em canvas (o canvas precisa de HTMLImageElement)
+const _bossImgCache = {};
+function getBossImg(src) {
+    if (!src) return null;
+    if (_bossImgCache[src]) return _bossImgCache[src];
+    const img = new Image();
+    img.src = src;
+    _bossImgCache[src] = img;
+    return img;
+}
+
 function renderBossBattleUI() {
     const prog = computeBossProgress(logs, userBodyweight, BOSSES);
     const filterDate = document.getElementById('filter-date').value || getTodayLocalISO();
@@ -1506,7 +1523,7 @@ function renderBossBattleUI() {
     document.getElementById('stat-boss-dmg').textContent = `${todayDmg.toLocaleString()} DMG`;
 
     const currentBoss = prog.current;
-    const portrait = bossPortraits[currentBoss.id];
+    const portrait = bossPortraitSrc(currentBoss.id);
     const activeCard = document.getElementById('active-boss-card');
     if (activeCard) {
         activeCard.innerHTML = `
@@ -1550,10 +1567,11 @@ function renderBossBattleUI() {
         let checkKg = prog.totalDamage;
         grid.innerHTML = BOSSES.map((b, idx) => {
             const defeated = idx < prog.defeatedCount;
+            const thumb = bossPortraitSrc(b.id);
             return `
                 <div class="p-4 rounded-xl border ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
                     <div class="flex justify-between items-center">
-                        <span class="text-2xl">${b.icon}</span>
+                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" class="w-10 h-10 rounded-lg object-cover border border-berzerker-border">` : `<span class="text-2xl">${b.icon}</span>`}
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
                             ${defeated ? 'DERROTADO 🏆' : (idx === prog.currentIdx ? 'EM BATALHA ⚔️' : 'BLOQUEADO 🔒')}
                         </span>
@@ -1614,7 +1632,7 @@ function renderMissions() {
                 </div>`).join('')}
         </div>
         <button onclick="claimMissions()" ${(!st.allDone || claimed) ? 'disabled' : ''} class="mt-3 w-full py-2.5 ${st.allDone && !claimed ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-berzerker-border opacity-50 cursor-not-allowed'} text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">
-            ${claimed ? '✔ XP resgatado esta semana' : (st.allDone ? `🎁 Resgatar ${st.totalXP} XP` : `Complete as 4 ${THEME.missionWord.toLowerCase()}s para resgatar`)}
+            ${claimed ? '✔ XP resgatado esta semana' : (st.allDone ? `🎁 Resgatar ${st.totalXP} XP` : `Complete as 4 ${THEME.missionWordPlural || (THEME.missionWord + 's')} para resgatar`)}
         </button>`;
 }
 
@@ -1747,6 +1765,101 @@ function drawThemedFrame(ctx, palette) {
         ctx.shadowColor = '#ff0055';
         ctx.strokeStyle = '#ff0055'; ctx.lineWidth = 3; ctx.strokeRect(48, 48, 984, 1824);
         ctx.shadowBlur = 0;
+    } else if (frame === 'madeira') {
+        // Folclore Brasileiro: moldura de madeira entalhada com tachas douradas
+        const g = ctx.createLinearGradient(0, 0, 1080, 1920);
+        g.addColorStop(0, '#3e2510'); g.addColorStop(0.5, '#8a5a28'); g.addColorStop(1, '#3e2510');
+        ctx.strokeStyle = g; ctx.lineWidth = 20; ctx.strokeRect(21, 21, 1038, 1878);
+        ctx.strokeStyle = '#d9a441'; ctx.lineWidth = 3; ctx.strokeRect(44, 44, 992, 1832);
+        [[64, 64], [1016, 64], [64, 1856], [1016, 1856]].forEach(([x, y]) => {
+            ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI * 2);
+            ctx.fillStyle = '#d9a441'; ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2);
+            ctx.fillStyle = '#6b431c'; ctx.fill();
+        });
+    } else if (frame === 'runas') {
+        // Nórdica: moldura de pedra gelada com runas gravadas
+        const g = ctx.createLinearGradient(0, 0, 1080, 1920);
+        g.addColorStop(0, '#16202e'); g.addColorStop(0.5, '#5c7285'); g.addColorStop(1, '#16202e');
+        ctx.strokeStyle = g; ctx.lineWidth = 18; ctx.strokeRect(22, 22, 1036, 1876);
+        ctx.strokeStyle = '#a8d8e8'; ctx.lineWidth = 2; ctx.strokeRect(46, 46, 988, 1828);
+        ctx.save();
+        ctx.strokeStyle = '#a8d8e8'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+        // runas geométricas (ᚠ-like: haste + traços) ao longo das laterais
+        for (let y = 160; y < 1800; y += 170) {
+            [[34, y], [1046, y]].forEach(([x, ry]) => {
+                ctx.beginPath();
+                ctx.moveTo(x, ry - 22); ctx.lineTo(x, ry + 22);
+                ctx.moveTo(x, ry - 10); ctx.lineTo(x + 12, ry - 22);
+                ctx.moveTo(x, ry + 6); ctx.lineTo(x + 12, ry + 18);
+                ctx.stroke();
+            });
+        }
+        ctx.restore();
+    } else if (frame === 'louros') {
+        // Roma: moldura dourada com louros nos cantos
+        const g = ctx.createLinearGradient(0, 0, 1080, 1920);
+        g.addColorStop(0, '#7a5c1e'); g.addColorStop(0.5, '#e8c86a'); g.addColorStop(1, '#7a5c1e');
+        ctx.strokeStyle = g; ctx.lineWidth = 14; ctx.strokeRect(24, 24, 1032, 1872);
+        ctx.strokeStyle = '#8a2c2c'; ctx.lineWidth = 2; ctx.strokeRect(46, 46, 988, 1828);
+        ctx.save();
+        ctx.fillStyle = '#e8c86a';
+        // folhas de louro em arcos nos 4 cantos
+        [[70, 70, 1], [1010, 70, -1], [70, 1850, 1], [1010, 1850, -1]].forEach(([x, y, dir]) => {
+            for (let i = 0; i < 5; i++) {
+                const a = (i / 5) * Math.PI / 2;
+                const lx = x + dir * Math.cos(a) * 46, ly = y + Math.sin(a) * 46 * (y < 960 ? 1 : -1);
+                ctx.save(); ctx.translate(lx, ly); ctx.rotate(a * dir);
+                ctx.beginPath(); ctx.ellipse(0, 0, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+            ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.restore();
+    } else if (frame === 'brasao') {
+        // RPG: brasão heráldico — borda dupla vermelha/dourada + escudo no topo
+        ctx.strokeStyle = '#8a2c2c'; ctx.lineWidth = 16; ctx.strokeRect(24, 24, 1032, 1872);
+        ctx.strokeStyle = '#e8c86a'; ctx.lineWidth = 3; ctx.strokeRect(48, 48, 984, 1824);
+        // escudo central do topo
+        ctx.save();
+        ctx.translate(540, 96);
+        ctx.beginPath();
+        ctx.moveTo(-34, -34); ctx.lineTo(34, -34); ctx.lineTo(34, 10);
+        ctx.quadraticCurveTo(34, 44, 0, 58); ctx.quadraticCurveTo(-34, 44, -34, 10);
+        ctx.closePath();
+        ctx.fillStyle = '#8a2c2c'; ctx.fill();
+        ctx.strokeStyle = '#e8c86a'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-34, -12); ctx.lineTo(34, -12); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, -34); ctx.lineTo(0, 58); ctx.stroke();
+        ctx.restore();
+        // losangos nos cantos
+        [[64, 64], [1016, 64], [64, 1856], [1016, 1856]].forEach(([x, y]) => {
+            ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI / 4);
+            ctx.fillStyle = '#e8c86a'; ctx.fillRect(-10, -10, 20, 20);
+            ctx.fillStyle = '#8a2c2c'; ctx.fillRect(-5, -5, 10, 10);
+            ctx.restore();
+        });
+    } else if (frame === 'espacial') {
+        // Galáctica: moldura espacial com estrelas e circuito luminoso
+        const g = ctx.createLinearGradient(0, 0, 1080, 1920);
+        g.addColorStop(0, '#0b1030'); g.addColorStop(0.5, '#2a3a8a'); g.addColorStop(1, '#0b1030');
+        ctx.strokeStyle = g; ctx.lineWidth = 18; ctx.strokeRect(22, 22, 1036, 1876);
+        ctx.shadowColor = '#66e0ff'; ctx.shadowBlur = 12;
+        ctx.strokeStyle = '#66e0ff'; ctx.lineWidth = 2; ctx.strokeRect(46, 46, 988, 1828);
+        ctx.shadowBlur = 0;
+        // estrelas na moldura
+        for (let i = 0; i < 42; i++) {
+            const edge = i % 4;
+            const t = ((i * 97) % 100) / 100;
+            let x, y;
+            if (edge === 0) { x = 30 + t * 1020; y = 30; }
+            else if (edge === 1) { x = 30 + t * 1020; y = 1888; }
+            else if (edge === 2) { x = 30; y = 30 + t * 1858; }
+            else { x = 1050; y = 30 + t * 1858; }
+            const r = 1 + ((i * 13) % 3);
+            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = i % 3 ? '#9ad8ff' : '#ffffff'; ctx.fill();
+        }
     } else {
         ctx.strokeStyle = palette.borderPrimary;
         ctx.lineWidth = 10;
@@ -1967,7 +2080,8 @@ function generateBossDefeatCard() {
     const prog = computeBossProgress(logs, userBodyweight, BOSSES);
     const boss = prog.defeatedCount > 0 ? BOSSES[Math.min(prog.defeatedCount, BOSSES.length) - 1] : prog.current;
     const derrotado = prog.defeatedCount > 0;
-    const portrait = bossPortraits[boss.id];
+    const portrait = bossPortraitSrc(boss.id);
+    const portraitImg = getBossImg(portrait);
     const rank = rankFromXP(computeXPCtx().xp);
 
     const g = ctx.createLinearGradient(0, 0, 0, 1080);
@@ -1987,13 +2101,17 @@ function generateBossDefeatCard() {
     ctx.arc(540, 420, 190, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
-    if (portrait) {
-        ctx.drawImage(portrait, 350, 230, 380, 380);
+    if (portraitImg && portraitImg.complete && portraitImg.naturalWidth > 0) {
+        ctx.drawImage(portraitImg, 350, 230, 380, 380);
     } else {
         ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(350, 230, 380, 380);
         ctx.font = '180px Inter, sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.fillText(boss.icon, 540, 480);
+        // quando a imagem carregar, redesenha o card
+        if (portraitImg && !portraitImg.complete) {
+            portraitImg.onload = () => generateBossDefeatCard();
+        }
     }
     ctx.restore();
     ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 8;
@@ -2396,109 +2514,9 @@ function deleteTest(testId) {
     });
 }
 
-// ============================ CSV (formato da planilha) ============================
-const CSV_HEADER = ['data', 'tipo', 'grupo', 'exercicio', 'carga', 'series_reps', 'tecnica', 'rir', 'pr', 'proxima_meta', 'obs', 'distancia_km', 'tempo_min'];
-
-function exportCSV() {
-    const sep = ';';
-    const lines = [CSV_HEADER.join(sep)];
-    const sorted = [...logs].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.id - b.id)));
-    sorted.forEach(l => {
-        const carga = l.kind === 'corrida' ? '' : (l.type === 'isometria' ? '' : String(l.weight ?? '').replace('.', ','));
-        const series = l.kind === 'corrida' ? ''
-            : (l.type === 'isometria'
-                ? `${logTstSeconds(l)} s`
-                : (l.sets && l.sets.length ? l.sets.map(s => s.reps).join(', ') : (l.reps || []).join(', ')));
-        const row = [
-            l.date,
-            l.kind === 'corrida' ? 'corrida' : 'peso',
-            l.muscle || '',
-            l.exercise || '',
-            carga,
-            series,
-            l.technique || '',
-            l.rir != null ? l.rir : '',
-            l.isPR ? 'sim' : 'nao',
-            l.nextGoal || '',
-            l.notes || '',
-            l.kind === 'corrida' ? String(l.distanceKm ?? '').replace('.', ',') : '',
-            l.kind === 'corrida' ? String(l.durationMin ?? '') : ''
-        ];
-        lines.push(row.map(v => {
-            const s = String(v ?? '');
-            return s.includes(sep) || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s;
-        }).join(sep));
-    });
-    const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `diario-cargas-${getTodayLocalISO()}.csv`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-    alertModal('📥 CSV exportado no formato da planilha!');
-}
-
-function importCSV(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        try {
-            const text = String(e.target.result).replace(/^\ufeff/, '');
-            const firstLine = text.split(/\r?\n/)[0] || '';
-            const sep = (firstLine.match(/;/g) || []).length >= (firstLine.match(/,/g) || []).length ? ';' : ',';
-            const rows = parseCSVRows(text, sep);
-            if (rows.length < 2) { alertModal('CSV sem linhas de dados.'); return; }
-            const header = rows[0].map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
-            const idx = name => header.indexOf(name);
-            const iDate = idx('data'), iGrupo = idx('grupo'), iEx = idx('exercicio'), iCarga = idx('carga'),
-                iSeries = idx('series_reps'), iTec = idx('tecnica'), iRir = idx('rir'), iPr = idx('pr'),
-                iMeta = idx('proxima_meta'), iObs = idx('obs'), iDist = idx('distancia_km'), iTempo = idx('tempo_min'),
-                iTipo = idx('tipo');
-            if (iDate < 0 || iEx < 0) { alertModal('Cabeçalho inválido: preciso ao menos das colunas "data" e "exercicio".'); return; }
-
-            const novos = [];
-            rows.slice(1).forEach(row => {
-                if (!row[iDate] || !row[iEx]) return;
-                const kind = (iTipo >= 0 && row[iTipo] === 'corrida') || (iDist >= 0 && row[iDist]) ? 'corrida' : 'peso';
-                if (kind === 'corrida') {
-                    novos.push({
-                        id: newLogId(), date: row[iDate].trim(), kind: 'corrida', muscle: 'Cardio',
-                        exercise: row[iEx].trim(), distanceKm: parseFloat(String(row[iDist] || '0').replace(',', '.')) || 0,
-                        durationMin: parseFloat(String(row[iTempo] || '0').replace(',', '.')) || 0,
-                        notes: iObs >= 0 ? row[iObs] : '', technique: 'Convencional', isPR: false, nextGoal: '', reps: []
-                    });
-                } else {
-                    const carga = parseFloat(String(row[iCarga] || '0').replace(',', '.')) || 0;
-                    const repsStr = iSeries >= 0 ? row[iSeries] : '';
-                    const reps = String(repsStr || '').replace(/[^0-9,]/g, '').split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x) && x > 0);
-                    const exercise = row[iEx].trim();
-                    novos.push({
-                        id: newLogId(), date: row[iDate].trim(), kind: 'peso',
-                        muscle: (iGrupo >= 0 && row[iGrupo]) || 'Geral',
-                        exercise, type: inferExerciseType(exercise, row[iGrupo]),
-                        weight: carga, reps,
-                        technique: (iTec >= 0 && row[iTec]) || 'Convencional',
-                        rir: (iRir >= 0 && row[iRir] !== '') ? parseInt(row[iRir]) : null,
-                        isPR: iPr >= 0 && /sim|s|1|true/i.test(row[iPr] || ''),
-                        nextGoal: iMeta >= 0 ? row[iMeta] : '',
-                        notes: iObs >= 0 ? row[iObs] : ''
-                    });
-                }
-            });
-            if (novos.length === 0) { alertModal('Nenhuma linha válida encontrada.'); return; }
-            confirmModal(`Importar ${novos.length} registro(s) do CSV? Eles serão somados ao histórico atual.`, () => {
-                logs = [...novos, ...logs];
-                saveLogsToStorage();
-                refreshAll();
-                alertModal(`✅ ${novos.length} registros importados!`);
-            });
-        } catch (err) {
-            alertModal('Erro ao ler o CSV.');
-        }
-    };
-    reader.readAsText(file);
-}
+// ============================ CSV ============================
+// exportCSV/importCSV vivem em js/historico.js (formato multi-aba da planilha).
+// parseCSVRows é compartilhado com o import de CSV.
 
 function parseCSVRows(text, sep) {
     const rows = [];
@@ -2530,7 +2548,7 @@ function exportJSONBackup() {
         gameTheme: THEME ? THEME.id : 'classico',
         storyTheme: selectedStoryTheme,
         bgImageData: customBgImageData ? customBgImageData.src : null,
-        deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits,
+        deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, weightLog,
         exportDate: new Date().toISOString()
     };
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
@@ -2567,6 +2585,7 @@ function importJSONBackup(event) {
                 if (Array.isArray(parsed.tests)) tests = parsed.tests;
                 if (parsed.seasons) seasons = parsed.seasons;
                 if (parsed.bossPortraits) bossPortraits = parsed.bossPortraits;
+                if (Array.isArray(parsed.weightLog)) weightLog = parsed.weightLog;
                 if (parsed.bgImageData) {
                     const img = new Image();
                     img.onload = () => { customBgImageData = img; generateStoryCard(); };
@@ -2676,9 +2695,7 @@ function refreshAll() {
     initVolumeChart();
     updateExerciseSuggestions();
     if (document.getElementById('tests-container')) renderTests();
-    // só redesenha a busca se a aba estiver aberta (switchTab('busca') já renderiza ao entrar)
-    const buscaTab = document.getElementById('tab-content-busca');
-    if (buscaTab && !buscaTab.classList.contains('hidden') && typeof renderSearchScreen === 'function') renderSearchScreen();
+    if (document.getElementById('history-content')) renderHistory();
 }
 
 // ============================ BOOT ============================
@@ -2731,6 +2748,7 @@ window.onload = function () {
     renderSavedWorkouts();
     renderBackupReminder();
     updateTypeHint();
+    renderHistory();
 
     startDateWatcher();
 

@@ -1,61 +1,65 @@
-nome;grupo;equipamento;tipo;faixa_min;faixa_max;descanso_s;tags
-Supino Reto com Barra;Peito;Barra;carga_total;6;10;120;empurrar|composto|barra|forca|hipertrofia|anterior|intermediario|academia
-Supino Inclinado com Barra;Peito;Barra;carga_total;6;10;120;empurrar|composto|barra|forca|hipertrofia|anterior|intermediario|academia
-Supino Reto com Halteres;Peito;Halteres;halter_par;8;12;90;empurrar|composto|halter|hipertrofia|anterior|intermediario|academia|casa
-Supino Inclinado c/ Halteres;Peito;Halteres;halter_par;8;12;90;empurrar|composto|halter|hipertrofia|anterior|intermediario|academia|casa
-Crucifixo na Máquina;Peito;Máquina;carga_total;10;15;60;empurrar|isolado|maquina|hipertrofia|anterior|iniciante|academia
-Crossover na Polia;Peito;Polia;carga_total;10;15;60;empurrar|isolado|polia|hipertrofia|anterior|iniciante|academia
-Peck Deck;Peito;Máquina;carga_total;10;15;60;empurrar|isolado|maquina|hipertrofia|anterior|iniciante|academia
-Flexão de Braço;Peito;Peso corporal;peso_corporal;8;20;60;empurrar|composto|peso-corporal|hipertrofia|anterior|iniciante|academia|casa
-Paralelas (foco peito);Peito;Peso corporal;peso_corporal;6;15;90;empurrar|composto|peso-corporal|hipertrofia|anterior|avancado|academia|casa
-Barra Fixa (Pull-up);Costas;Peso corporal;peso_corporal;5;12;120;puxar|composto|peso-corporal|hipertrofia|posterior|avancado|academia|casa
-Puxada Frontal na Polia;Costas;Polia;carga_total;8;12;90;puxar|composto|polia|hipertrofia|posterior|iniciante|academia
-Remada Curvada com Barra;Costas;Barra;carga_total;6;10;120;puxar|composto|barra|forca|hipertrofia|posterior|avancado|academia
-Remada Unilateral c/ Halter;Costas;Halter;halter_uni;8;12;90;puxar|composto|unilateral|halter|hipertrofia|posterior|intermediario|academia|casa
-Remada Baixa na Polia;Costas;Polia;carga_total;8;12;90;puxar|composto|polia|hipertrofia|posterior|iniciante|academia
-Levantamento Terra;Costas;Barra;carga_total;3;8;150;puxar|dobradica|composto|barra|forca|hipertrofia|posterior|avancado|academia
-Pulldown na Polia;Costas;Polia;carga_total;8;12;90;puxar|composto|polia|hipertrofia|posterior|iniciante|academia
-Remada Cavalinho;Costas;Máquina;carga_total;8;12;90;puxar|composto|maquina|hipertrofia|posterior|iniciante|academia
-Agachamento Livre;Pernas;Barra;carga_total;5;10;150;agachar|composto|barra|forca|hipertrofia|anterior|avancado|academia
-Agachamento Hack;Pernas;Máquina;carga_total;8;12;120;agachar|composto|maquina|hipertrofia|anterior|avancado|academia
-Leg Press 45°;Pernas;Máquina;carga_total;8;15;120;agachar|composto|maquina|hipertrofia|anterior|iniciante|academia
-Cadeira Extensora;Pernas;Máquina;carga_total;10;15;60;agachar|isolado|maquina|hipertrofia|anterior|iniciante|academia
-Mesa Flexora;Pernas;Máquina;carga_total;10;15;60;dobradica|isolado|maquina|hipertrofia|posterior|iniciante|academia
-Stiff com Barra;Pernas;Barra;carga_total;6;10;120;dobradica|composto|barra|forca|hipertrofia|posterior|avancado|academia
-Afundo c/ Halteres;Pernas;Halteres;halter_uni;8;12;90;agachar|composto|unilateral|halter|hipertrofia|anterior|intermediario|academia|casa
-Agachamento Búlgaro;Pernas;Halter;halter_uni;8;12;90;agachar|composto|unilateral|halter|hipertrofia|anterior|avancado|academia|casa
-Elevação Pélvica (Hip Thrust);Pernas;Barra;carga_total;8;12;90;agachar|dobradica|composto|barra|hipertrofia|posterior|avancado|academia
-Panturrilha em Pé;Pernas;Máquina;carga_total;12;20;60;isolado|maquina|hipertrofia|resistencia|posterior|iniciante|academia
-Panturrilha Sentado;Pernas;Máquina;carga_total;12;20;60;isolado|maquina|hipertrofia|resistencia|posterior|iniciante|academia
-Desenvolvimento Militar;Ombros;Barra;carga_total;6;10;120;empurrar|composto|barra|forca|hipertrofia|anterior|avancado|academia
-Desenvolvimento c/ Halteres;Ombros;Halteres;halter_par;8;12;90;empurrar|composto|halter|hipertrofia|anterior|intermediario|academia|casa
-Elevação Lateral c/ Halter;Ombros;Halter;halter_uni;12;20;60;empurrar|isolado|unilateral|halter|hipertrofia|resistencia|intermediario|academia|casa
-Elevação Frontal c/ Halter;Ombros;Halter;halter_uni;10;15;60;empurrar|isolado|unilateral|halter|hipertrofia|anterior|intermediario|academia|casa
-Remada Alta na Polia;Ombros;Polia;carga_total;8;12;90;puxar|composto|polia|hipertrofia|iniciante|academia
-Face Pull;Ombros;Polia;carga_total;12;20;60;puxar|isolado|polia|hipertrofia|resistencia|posterior|iniciante|academia
-Encolhimento de Ombros;Ombros;Halteres;halter_par;10;15;60;puxar|isolado|halter|hipertrofia|posterior|iniciante|academia|casa
-Rosca Direta com Barra;Bíceps;Barra;carga_total;8;12;60;puxar|isolado|barra|hipertrofia|intermediario|academia
-Rosca Alternada c/ Halteres;Bíceps;Halteres;halter_uni;8;12;60;puxar|isolado|unilateral|halter|hipertrofia|intermediario|academia|casa
-Rosca Martelo;Bíceps;Halteres;halter_uni;8;12;60;puxar|isolado|unilateral|halter|hipertrofia|intermediario|academia|casa
-Rosca Scott;Bíceps;Barra W;carga_total;8;12;60;puxar|isolado|barra|hipertrofia|intermediario|academia
-Rosca na Polia Baixa;Bíceps;Polia;carga_total;10;15;60;puxar|isolado|polia|hipertrofia|iniciante|academia
-Rosca Concentrada;Bíceps;Halter;halter_uni;10;15;60;puxar|isolado|unilateral|halter|hipertrofia|intermediario|academia|casa
-Tríceps Polia Alta;Tríceps;Polia;carga_total;10;15;60;empurrar|isolado|polia|hipertrofia|iniciante|academia
-Tríceps Testa com Barra W;Tríceps;Barra W;carga_total;8;12;60;empurrar|isolado|barra|hipertrofia|intermediario|academia
-Tríceps Corda na Polia;Tríceps;Polia;carga_total;10;15;60;empurrar|isolado|polia|hipertrofia|iniciante|academia
-Tríceps Francês c/ Halter;Tríceps;Halter;carga_total;8;12;60;empurrar|isolado|halter|hipertrofia|intermediario|academia|casa
-Paralelas (foco tríceps);Tríceps;Peso corporal;peso_corporal;6;15;90;empurrar|composto|peso-corporal|hipertrofia|avancado|academia|casa
-Supino Reto Pegada Fechada;Tríceps;Barra;carga_total;6;10;90;empurrar|composto|barra|forca|hipertrofia|anterior|intermediario|academia
-Prancha Isométrica;Abdômen;Peso corporal;isometria;20;90;45;peso-corporal|resistencia|core|anterior|iniciante|academia|casa
-Prancha Lateral;Abdômen;Peso corporal;isometria;15;60;45;unilateral|peso-corporal|resistencia|core|anterior|iniciante|academia|casa
-Abdominal Supra no Solo;Abdômen;Peso corporal;peso_corporal;15;30;45;isolado|peso-corporal|hipertrofia|resistencia|core|anterior|iniciante|academia|casa
-Abdominal na Polia Alta;Abdômen;Polia;carga_total;12;20;45;isolado|polia|hipertrofia|resistencia|core|anterior|iniciante|academia
-Elevação de Pernas;Abdômen;Peso corporal;peso_corporal;10;20;45;isolado|peso-corporal|hipertrofia|core|anterior|iniciante|academia|casa
-Abdominal Bicicleta;Abdômen;Peso corporal;peso_corporal;15;30;45;isolado|peso-corporal|hipertrofia|resistencia|core|anterior|iniciante|academia|casa
-Russian Twist;Abdômen;Peso corporal;peso_corporal;15;30;45;isolado|peso-corporal|hipertrofia|resistencia|core|anterior|iniciante|academia|casa
-Ab Wheel;Abdômen;Roda;peso_corporal;8;15;60;composto|peso-corporal|hipertrofia|core|anterior|avancado|academia|casa
-Corrida (Esteira);Cardio;Esteira;corrida;0;0;0;maquina|resistencia|condicionamento|iniciante|academia
-Corrida (Rua);Cardio;Livre;corrida;0;0;0;resistencia|condicionamento|intermediario|ar-livre
-Bike / Ergométrico;Cardio;Bike;corrida;0;0;0;maquina|resistencia|condicionamento|iniciante|academia
-Elíptico;Cardio;Elíptico;corrida;0;0;0;maquina|resistencia|condicionamento|iniciante|academia
-Remo (Ergômetro);Cardio;Remo;corrida;0;0;0;puxar|composto|maquina|resistencia|condicionamento|iniciante|academia
+﻿nome;grupo;equipamento;como_registrar;fator;lados;unidade;faixa_min;faixa_max;extra;descanso_s
+Ab Wheel;Abdômen;Roda;peso corporal do dia;1;1;reps;8;15;;60
+Abdominal Bicicleta;Abdômen;Peso corporal;peso corporal do dia;1;1;reps;15;30;;45
+Abdominal na Polia Alta;Abdômen;Polia;pino;1;1;reps;12;15;;45
+Abdominal Supra no Solo;Abdômen;Peso corporal;peso corporal do dia;1;1;reps;15;30;;45
+Abdutor;Pernas;Máquina;pino;1;1;reps;12;15;;60
+Afundo Búlgaro;Pernas;Halteres (par);peso de 1 haltere;2;2;reps;8;12;;90
+Afundo c/ Halteres;Pernas;Halteres (par);peso de 1 haltere;2;2;reps;8;12;;90
+Agachamento Hack;Pernas;Máquina c/ anilhas;soma das anilhas;1;1;reps;8;12;30;120
+Agachamento Livre;Pernas;Barra;soma das anilhas;1;1;reps;5;10;20;150
+Barra Fixa (Pull-up);Costas;Peso corporal;peso corporal do dia;1;1;reps;3;8;;120
+Cadeira Extensora;Pernas;Máquina;pino;1;1;reps;10;15;;60
+Crossover na Polia Alta;Peito;Polia dupla;peso de 1 lado;2;1;reps;10;15;;60
+Crucifixo na Máquina;Peito;Máquina;pino;1;1;reps;10;15;;60
+Desenvolvimento c/ Halteres;Ombros;Halteres (par);peso de 1 haltere;2;1;reps;8;12;;90
+Desenvolvimento Militar;Ombros;Barra;soma das anilhas;1;1;reps;6;10;20;120
+Elevação de Pernas;Abdômen;Peso corporal;peso corporal do dia;1;1;reps;10;20;;45
+Elevação Frontal c/ Halter;Ombros;Halter (1);peso do haltere;1;2;reps;10;15;;60
+Elevação Lateral c/ Halteres;Ombros;Halteres (par);peso de 1 haltere;2;1;reps;12;20;;60
+Elevação Pélvica (Hip Thrust);Glúteos;Máquina c/ anilhas;soma das anilhas;1;1;reps;10;15;15;90
+Encolhimento de Ombros;Ombros;Halteres (par);peso de 1 haltere;2;1;reps;10;15;;60
+Extensão Cervical;Pescoço;A definir;a definir;1;1;reps;12;20;;45
+Extensão de Punho;Antebraço;Halteres (par);peso de 1 haltere;2;1;reps;12;20;;45
+Face Pull;Ombros;Polia;pino;1;1;reps;15;20;;60
+Flexão de Braço;Peito;Peso corporal;peso corporal do dia;1;1;reps;8;20;;60
+Flexão de Punho;Antebraço;Halteres (par);peso de 1 haltere;2;1;reps;12;20;;45
+Leg Press 45°;Pernas;Máquina c/ anilhas;soma das anilhas;1;1;reps;8;12;40;120
+Levantamento Terra;Costas;Barra;soma das anilhas;1;1;reps;3;8;20;150
+Manguito Rotador;Ombros;Polia;pino;1;1;reps;15;20;;45
+Mesa Flexora;Pernas;Máquina;pino;1;1;reps;10;15;;60
+Panturrilha em Pé;Pernas;Máquina;pino;1;1;reps;10;15;;60
+Panturrilha Sentado;Pernas;Máquina;pino;1;1;reps;12;20;;60
+Paralelas (foco peito);Peito;Peso corporal;peso corporal do dia;1;1;reps;6;15;;90
+Paralelas (foco tríceps);Tríceps;Peso corporal;peso corporal do dia;1;1;reps;6;15;;90
+Peck Deck;Peito;Máquina;pino;1;1;reps;10;15;;60
+Prancha Isométrica;Core;Peso corporal;segundos;1;1;seg;30;60;;45
+Prancha Lateral;Core;Peso corporal;segundos;1;1;seg;15;60;;45
+Pulldown na Polia;Costas;Polia;pino;1;1;reps;8;12;;90
+Puxada Frontal na Polia;Costas;Polia;pino;1;1;reps;8;12;;90
+Remada Alta na Polia;Ombros;Polia;pino;1;1;reps;8;12;;90
+Remada Baixa na Polia;Costas;Polia;pino;1;1;reps;8;12;;90
+Remada Cavalinho;Costas;Máquina;pino;1;1;reps;8;12;;90
+Remada Curvada com Barra;Costas;Barra;soma das anilhas;1;1;reps;8;12;10;120
+Remada Unilateral c/ Halter;Costas;Halter (1);peso do haltere;1;2;reps;8;12;;90
+Rosca Alternada c/ Halteres;Bíceps;Halter (1);peso do haltere;1;2;reps;8;12;;60
+Rosca Concentrada;Bíceps;Halter (1);peso do haltere;1;2;reps;10;15;;60
+Rosca Direta com Barra;Bíceps;Barra;soma das anilhas;1;1;reps;8;12;10;60
+Rosca Martelo;Bíceps;Halteres (par);peso de 1 haltere;2;1;reps;8;12;;60
+Rosca na Polia Baixa;Bíceps;Polia;pino;1;1;reps;10;15;;60
+Rosca Scott;Bíceps;Barra W;soma das anilhas;1;1;reps;8;12;10;60
+Rotação na Polia;Abdômen;Polia;pino;1;2;reps;12;15;;45
+Russian Twist;Abdômen;Peso corporal;peso corporal do dia;1;1;reps;15;30;;45
+Stiff com Barra;Pernas;Barra;soma das anilhas;1;1;reps;6;10;20;120
+Supino Inclinado c/ Halteres;Peito;Halteres (par);peso de 1 haltere;2;1;reps;6;10;;90
+Supino Inclinado com Barra;Peito;Barra;soma das anilhas;1;1;reps;6;10;20;120
+Supino Reto com Barra;Peito;Barra;soma das anilhas;1;1;reps;6;10;20;120
+Supino Reto com Halteres;Peito;Halteres (par);peso de 1 haltere;2;1;reps;8;12;;90
+Supino Reto na Máquina;Peito;Máquina articulada;número da máquina;1;1;reps;6;10;;120
+Supino Reto Pegada Fechada;Tríceps;Barra;soma das anilhas;1;1;reps;6;10;20;90
+Tríceps Corda na Polia;Tríceps;Polia;pino;1;1;reps;10;15;;60
+Tríceps Francês na Polia;Tríceps;Polia/Máquina;pino;1;1;reps;8;12;;60
+Tríceps na Polia Alta;Tríceps;Polia;pino;1;1;reps;10;15;;60
+Tríceps Testa com Barra W;Tríceps;Barra W;soma das anilhas;1;1;reps;8;12;10;60
+Tríceps Unilateral (francês/testa);Tríceps;Polia;pino;1;2;reps;10;15;;60
+Voador Inverso;Costas;Máquina;pino;1;1;reps;12;15;;60
