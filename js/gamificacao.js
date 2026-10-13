@@ -103,23 +103,24 @@ const THEMES = {
     },
     acao: {
         id: 'acao', name: 'Filmes de Ação',
-        desc: 'De recruta a lenda do cinema, enfrentando doze antagonistas de ação.',
+        desc: 'Do Sobrevivente à LENDA DO CINEMA: você encarna os heróis e enfrenta doze vilões famosos, em ordem de ameaça.',
         arena: 'Cine Ação — Vilões em Cena', bossLabel: 'VILÃO ATIVO', stageWord: 'CENA',
         missionWord: 'Missão', missionWordPlural: 'Missões', frame: 'neon',
-        ranks: [['Recruta', '🪖'], ['Policial Novato', '👮'], ['Policial Veterano', '🚔'], ['Agente Secreto', '🕵️'], ['Comando de Elite', '🎖️'], ['Lenda de Guerra', '🔫'], ['Herói de Ação', '💥'], ['O Escolhido', '🕶️'], ['Imbatível', '🚀'], ['Lenda do Cinema', '🎬']],
+        ranks: [['John McClane, o Sobrevivente', '🧨'], ['Rocky Balboa, o Lutador', '🥊'], ['Indiana Jones, o Aventureiro', '🎩'], ['O Dragão, o Mestre', '🐲'], ['Mad Max, o Guerreiro da Estrada', '🚗'], ['Rambo, a Máquina de Guerra', '🎖️'], ['007, o Agente Secreto', '🍸'], ['John Wick, o Baba-Yaga', '🐶'], ['Neo, o Escolhido', '🕶️'], ['A LENDA DO CINEMA', '🏆']],
+        // IDs b0…b11 preservados de propósito: o dano já registrado em cada cena continua valendo.
         bosses: mkBosses([
-            ['O Esquadrão', '🧨', 'Uma equipe de mercenários que controla o quarteirão com fogo cruzado.', 'Pernas', 'Flanquear rapidamente quebra a formação e evita o fogo cruzado.'],
-            ['O Sicário', '🥷', 'Assassino silencioso que prefere lâminas e ataques de surpresa.', 'Antebraço', 'A arma curta depende de uma pegada firme; desarmá-lo interrompe a emboscada.'],
-            ['O Chefe do Crime', '🎩', 'O estrategista protegido por capangas e rotas de fuga.', 'Core', 'Ao perder o equilíbrio no centro da sala, deixa de comandar a equipe.'],
-            ['O Predador', '👽', 'Caçador extraterrestre que rastreia calor e escolhe o momento do ataque.', 'Pernas', 'Mudanças rápidas de posição quebram sua linha de mira térmica.'],
-            ['O Exterminador', '🤖', 'Androide implacável que persegue o alvo sem se cansar.', 'Peito', 'O núcleo de energia fica atrás da placa frontal do tórax.'],
-            ['O Coringa', '🃏', 'Criminoso imprevisível que transforma a cidade em uma armadilha.', 'Ombros', 'Desviar de armas e armadilhas exige manter a guarda alta e móvel.'],
-            ['O Dragão', '🐲', 'Mestre de artes marciais que domina o combate corpo a corpo.', 'Bíceps', 'A força das pegadas e dos golpes depende da linha dos braços.'],
-            ['O General', '🪖', 'Comandante que usa comunicações e armadura para coordenar sua tropa.', 'Costas', 'O rádio e a proteção da tropa deixam a retaguarda como ponto cego.'],
-            ['O Fantasma', '👤', 'Infiltrador que some nas sombras e ataca sem ser visto.', 'Costas', 'Quem mantém a retaguarda coberta não é surpreendido pela infiltração silenciosa.'],
-            ['O Titã', '🦾', 'Exoesqueleto industrial construído para força bruta e demolição.', 'Glúteos', 'O peso do exoesqueleto depende do quadril; deslocar sua base derruba a máquina.'],
-            ['O Imperador', '👑', 'Chefe de uma rede criminosa que controla a cidade por trás dos eventos.', 'Tríceps', 'O escudo de comando abre quando o braço que o projeta perde força.'],
-            ['O Chefe Final', '💀', 'O confronto derradeiro reúne todas as ameaças das cenas anteriores.', 'Core', 'A sequência de ataques exige estabilidade e deixa o centro exposto nas pausas.']
+            ['O Predador', '👽', 'Caçador alienígena que rastreia calor e escolhe a presa pela mira térmica.', 'Pernas', 'Mudanças de posição quebram a mira térmica.'],
+            ['O Exterminador', '🤖', 'Andróide implacável que persegue o alvo sem pausa nem cansaço.', 'Peito', 'O reator fica atrás da placa frontal.'],
+            ['Tubarão', '🦈', 'Predador das águas que ronda o casco antes de subir à superfície.', 'Costas', 'Quem circula por trás do barco escolhe o momento.'],
+            ['Hans Gruber', '🤵', 'Ladrão sofisticado que toma o prédio e dita as regras do próprio plano.', 'Core', 'O plano desmorona quando o centro se rompe.'],
+            ['Ivan Drago', '🥊', 'Pugilista frio, preparado para decidir a luta nos rounds finais.', 'Glúteos', 'Os rounds finais: a base que sustenta a trocação.'],
+            ['Chucky', '🪆', 'Boneco possuído que ataca de onde ninguém espera.', 'Abdômen', 'As costuras do boneco: o centro costurado cede.'],
+            ['O Coringa', '🃏', 'Criminoso imprevisível que transforma a cidade em armadilha e piada.', 'Ombros', 'Esquivar de armadilhas e piadas letais exige guarda móvel.'],
+            ['Freddy Krueger', '🧤', 'Pesadelo de luva de lâminas que ataca enquanto as vítimas dormem.', 'Tríceps', 'A luva de lâminas exige a extensão do braço.'],
+            ['Agent Smith', '🕴️', 'Agente capaz de se multiplicar em cópias idênticas de si mesmo.', 'Bíceps', 'A cópia perfeita repete o golpe; o braço que segura a gravata cede.'],
+            ['Pennywise', '🎈', 'Criatura do balão vermelho, que usa o medo como isca.', 'Antebraço', 'A mão que segura o balão e oferece o medo.'],
+            ['Thanos', '👊', 'Titã que reúne as Jóias do Infinito para impor a própria ordem.', 'Peito', 'A couraça abre quando o braço das Jóias se ergue.'],
+            ['Darth Vader', '⚔️', 'Lorde Sith que aperta à distância com a Força.', 'Antebraço', 'A mão da Força que sufoca à distância.']
         ])
     },
     folclore: {

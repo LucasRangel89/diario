@@ -155,6 +155,7 @@ check('Story Card segue o tema Senhor dos Anéis', $('story-theme-name').textCon
 ev("changeGameTheme('classico');");
 check('histórico renderizado', !!$('history-content'));
 check('CSV multi-aba com 22 colunas no Log', ev('buildPlanilhaCSV()').split(/--- Sheet: Log ---/)[1].split('\n')[1].split(';').length === 22);
+check('vilões de Ação são só texto (nenhum retrato padrão)', ev("THEMES.acao.bosses.every(b => !DEFAULT_BOSS_PORTRAITS['acao:' + b.id]) && THEMES.aneis.bosses.every(b => !DEFAULT_BOSS_PORTRAITS['aneis:' + b.id])"));
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fs.readFileSync('js/app.js', 'utf8')) && /frame === 'espacial'/.test(fs.readFileSync('js/app.js', 'utf8')));
 
 // vistas do histórico
