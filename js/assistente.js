@@ -6,14 +6,15 @@
    A UI (app.js) só apresenta os resultados. Isso deixa o algoritmo testável
    com vetores fixos no test_engine.js.
    ------------------------------------------------------------
-   REGRAS DE ORDENAÇÃO (aprovadas — nesta prioridade):
+   REGRAS DE ORDENAÇÃO (prioridade aprovada):
      1. Ativação/correção primeiro (Manguito Rotador, Face Pull);
      2. Compostos multiarticulares antes de isoladores;
      3. Não fadigar um músculo que será estabilizador/apoio depois;
      4. Equilíbrio empurrar/puxar (compostos alternam os padrões);
-     5. Recuperação/descanso viram AVISO na tela (não mudam a ordem).
-   Desempates: grupos grandes primeiro (Pernas → … → Pescoço), core/abdômen
-   no fim. Bi-sets se movem como bloco (o par nunca se separa).
+     5. Recuperação + séries semanais só desempata exercícios da mesma fase;
+     6. Descanso do catálogo segue no cronômetro, e recuperação também é aviso.
+   Desempates restantes: grupos grandes primeiro (Pernas → … → Pescoço),
+   core/abdômen no fim. Bi-sets se movem como bloco (o par nunca se separa).
    ============================================================ */
 
 // ---------- Fase 2: ordenação inteligente ----------
@@ -104,31 +105,91 @@ function rangeUsaComoApoio(list, range, G) {
 }
 
 /* Ordena a lista de exercícios do treino pelas regras aprovadas.
-   Entrada: [{muscle, exercise, biset, ...}] (formato draft/sessão).
-   Saída: NOVA lista (não mexe na original), mesma forma + orderReason por item. */
-function orderWorkoutExercises(list) {
+   Entrada: [{muscle, exercise, biset, ...}] + contexto opcional {logs, nowMs}.
+   Saída: NOVA lista (não mexe na original), mesma forma + orderReason por item.
+   Sem contexto, mantém a ordenação-base (compatível com chamadas antigas). */
+function orderWorkoutExercises(list, options = {}) {
     const src = Array.isArray(list) ? list : [];
     if (src.length <= 1) {
         return src.map(e => ({ ...e, orderReason: e.orderReason || 'Treino com 1 exercício só.' }));
     }
 
+    const opts = options && typeof options === 'object' ? options : {};
+    const hasRecoveryContext = Array.isArray(opts.logs);
+    const allLogs = hasRecoveryContext ? opts.logs : [];
+    const nowMs = Number.isFinite(opts.nowMs) ? opts.nowMs : Date.now();
+    const weekly = hasRecoveryContext
+        ? weeklySetsByMuscle(allLogs, opts.refDateISO || assistenteTodayISO(nowMs))
+        : {};
+    const muscleStateCache = new Map();
+    const muscleState = muscle => {
+        const m = muscle || 'Geral';
+        if (!muscleStateCache.has(m)) {
+            const muscleLogs = allLogs.filter(l => l && l.kind !== 'corrida' && (l.muscle || 'Geral') === m);
+            const state = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs);
+            // Mesma lógica da recomendação: prontidão + séries que faltam − excesso.
+            state.orderScore = state.pct + state.faltam * 4 - state.excesso * 3;
+            muscleStateCache.set(m, state);
+        }
+        return muscleStateCache.get(m);
+    };
+
     // ---- blocos (bi-set anda junto) ----
     const ranges = bisetBlockRanges(src);
     const classif = src.map(e => classifyExercicio(e));
+    const rangeGroups = r => [...new Set(r.map(i => classif[i].grupo).filter(m => m && m !== 'Cardio'))];
+    const rangeRecoveryScore = r => {
+        const groups = rangeGroups(r);
+        if (!groups.length) return 0; // Cardio não usa a meta de séries musculares.
+        return groups.reduce((sum, m) => sum + muscleState(m).orderScore, 0) / groups.length;
+    };
+    const rangeRecoveryReason = r => {
+        const groups = rangeGroups(r);
+        if (!groups.length) return '';
+        const resumo = groups.map(m => {
+            const st = muscleState(m);
+            const volume = st.faltam > 0
+                ? `${st.seriesSemana}/${st.metaMin} séries; faltam ${st.faltam}`
+                : st.excesso > 0
+                    ? `${st.seriesSemana}/${st.metaMax} séries; ${st.excesso} acima da faixa`
+                    : `${st.seriesSemana} séries; dentro da faixa`;
+            return `${m}: ${st.pct}% de prontidão, ${volume}`;
+        });
+        return `Ajuste leve por recuperação e volume semanal: ${resumo.join(' · ')}`;
+    };
 
-    // ---- ordem base: fase (regras 1–2 + core no fim), tamanho do grupo, ordem original ----
-    const key = (r) => {
+    // ---- ordem-base: fase (ativação/compostos/isoladores/core), tamanho, ordem original ----
+    const key = r => {
         const f = Math.min(...r.map(i => faseDe(classif[i])));
         const rank = Math.min(...r.map(i => MUSCLE_SIZE_RANK[classif[i].grupo] ?? 11));
         return [f, rank, r[0]];
     };
-    ranges.sort((a, b) => {
+    const compareBase = (a, b) => {
         const ka = key(a), kb = key(b);
         return (ka[0] - kb[0]) || (ka[1] - kb[1]) || (ka[2] - kb[2]);
-    });
+    };
+    ranges.sort(compareBase);
+
+    // Recuperação/volume só desempata blocos da MESMA fase.
+    // Assim não passa isolador à frente de composto nem separa bi-sets.
+    const recoveryMoved = new Set();
+    if (hasRecoveryContext) {
+        const baseOrder = ranges.slice();
+        const baseIndex = new Map(baseOrder.map((r, i) => [r, i]));
+        ranges.sort((a, b) => {
+            const ka = key(a), kb = key(b);
+            return (ka[0] - kb[0])
+                || (rangeRecoveryScore(b) - rangeRecoveryScore(a))
+                || (ka[1] - kb[1])
+                || (ka[2] - kb[2]);
+        });
+        ranges.forEach((r, i) => {
+            if (baseIndex.get(r) !== i) recoveryMoved.add(r);
+        });
+    }
 
     // ---- regra 4: alternar empurrar/puxar entre os compostos (fase 1) ----
-    const patternFase1 = (r) => (Math.min(...r.map(i => faseDe(classif[i]))) === 1 ? blockPattern(src, r) : null);
+    const patternFase1 = r => (Math.min(...r.map(i => faseDe(classif[i]))) === 1 ? blockPattern(src, r) : null);
     const altMoved = new Set();
     for (let i = 0; i < ranges.length - 1; i++) {
         const p1 = patternFase1(ranges[i]);
@@ -182,6 +243,10 @@ function orderWorkoutExercises(list) {
             else if (c.composto) partes.push('Composto multiarticular — fazer com o músculo fresco');
             else partes.push('Isolador — rende melhor depois dos compostos');
             if (c.composto && !c.ativacao && (MUSCLE_SIZE_RANK[c.grupo] ?? 11) <= 3) partes.push('Grupo grande primeiro, enquanto há força');
+            if (recoveryMoved.has(r)) {
+                const recoveryReason = rangeRecoveryReason(r);
+                if (recoveryReason) partes.push(recoveryReason);
+            }
             const est = estabMoved.get(r);
             if (est && est.G === c.grupo) {
                 const alvo = (src[est.after[0]] || {}).exercise || '';

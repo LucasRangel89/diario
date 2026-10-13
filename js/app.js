@@ -873,7 +873,7 @@ function startSession(workoutId) {
     document.getElementById('filter-date').value = todayStr;
 
     // Fase 2: ordem sugerida aplicada automaticamente (com o "porquê" de cada posição)
-    const ordered = orderWorkoutExercises(w.exercises || []);
+    const ordered = orderWorkoutExercises(w.exercises || [], { logs, nowMs: Date.now() });
     activeSession = {
         workoutId: w.id,
         name: w.name,
@@ -1349,7 +1349,7 @@ function moveDraftExercise(i, dir) {
 // Fase 2 no montador: reordena o rascunho pelas regras (você continua livre p/ trocar)
 function applySuggestedOrder() {
     if (draftExercises.length < 2) { alertModal('Adicione pelo menos 2 exercícios para o assistente ordenar.'); return; }
-    const ordered = orderWorkoutExercises(draftExercises);
+    const ordered = orderWorkoutExercises(draftExercises, { logs, nowMs: Date.now() });
     draftExercises = ordered.map(e => ({ ...e }));
     renderDraftList();
     alertModal('✨ Ordem sugerida aplicada! Cada exercício mostra o porquê — use ▲▼ para mudar quando quiser.');
