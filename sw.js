@@ -2,7 +2,7 @@
 // App 100% local (Tailwind e Chart.js empacotados em /vendor) — funciona offline na academia.
 // Estratégia: rede primeiro para os arquivos do app (sempre a versão nova quando há sinal),
 // cache como reserva offline. Troque VERSION ao mudar bibliotecas locais.
-const VERSION = 'v3';   // v3: Fase 1 — tags acumulativas + tela de busca/filtros (js/busca.js)
+const VERSION = 'v6';
 const CACHE = 'berzerker-' + VERSION;
 const CORE = [
   './',
@@ -15,8 +15,26 @@ const CORE = [
   './vendor/chart.umd.js',
   './js/catalogo.js',
   './js/gamificacao.js',
+  './js/planilha_data.js',
+  './js/historico.js',
   './js/busca.js',
-  './js/app.js'
+  './js/app.js',
+  './images/bosses/golem-anilhas.jpg',
+  './images/bosses/hidra-titanio.jpg',
+  './images/bosses/mecagorila.jpg',
+  './images/bosses/behemoth.jpg',
+  './images/bosses/saci.jpg',
+  './images/bosses/curupira.jpg',
+  './images/bosses/caipora.jpg',
+  './images/bosses/lobisomem.jpg',
+  './images/bosses/cuca.jpg',
+  './images/bosses/mula-sem-cabeca.jpg',
+  './images/bosses/iara.jpg',
+  './images/bosses/boto.jpg',
+  './images/bosses/boitata.jpg',
+  './images/bosses/naia.jpg',
+  './images/bosses/mapinguari.jpg',
+  './images/bosses/anhanguera.jpg'
 ];
 const EXTERNAL = [
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Oswald:wght@500;600;700&family=Teko:wght@500;600;700&display=swap'

@@ -3,3 +3,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .seg-btn { @apply text-gray-400 transition-colors; }
+  .seg-btn-active { @apply bg-berzerker-600 text-white; }
+}

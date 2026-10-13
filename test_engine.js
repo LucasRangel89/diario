@@ -2,7 +2,7 @@
 const fs = require('fs');
 
 // ---- Stubs de browser ----
-const noop = () => {};
+const noop = () => { };
 global.window = { localStorage: { getItem: () => null, setItem: noop }, addEventListener: noop, onload: null };
 global.document = {
     addEventListener: noop,
@@ -14,24 +14,24 @@ global.navigator = { vibrate: noop };
 global.Image = class { set src(v) { } };
 global.Chart = undefined;
 
-// ---- Carrega os módulos ----
-const load = (p) => new Function(fs.readFileSync(p, 'utf8'))();
-// catalogo e gamificacao rodam soltos; app.js precisa do escopo compartilhado
-const src = fs.readFileSync('js/catalogo.js', 'utf8') + '\n' + fs.readFileSync('js/gamificacao.js', 'utf8') + '\n' + fs.readFileSync('js/busca.js', 'utf8') + '\n' + fs.readFileSync('js/app.js', 'utf8');
+// ---- Carrega os módulos (mesmo escopo) ----
+const src = ['js/catalogo.js', 'js/gamificacao.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
+    .map(p => fs.readFileSync(p, 'utf8')).join('\n');
 const api = new Function(src + `
   return {
-    logVolumeKg, logTstSeconds, logEst1RM, effectiveLoadKg, effectiveReps,
+    logVolumeKg, logTstSeconds, logEst1RM, logCargaEfetiva, logFullMeta, logBestSet, logWorstSet,
+    epleySeValido, sinalProximaSessao, logMeta,
     formatLoadText, formatRepsText, duplaProgressao, detectAutoPR, recoveryState,
     formatPlates, inferExerciseType, catalogInfo,
-    TAG_DEFS, TAG_CATEGORIAS, TAG_BY_CATEGORY, EXERCISE_CATALOG_FULL,
-    normalizeText, exerciseTags, searchCatalog, catalogFacets, matchesTags, matchesQuery, deriveTags,
-    usageStats, searchHistoryLogs, renderSearchScreen, repsAlvoSugeridas,
-    get SEARCH() { return searchState; },
     computeXP, computeBossProgress, logDamageKg, missionsState, isoWeekKey, isoWeekRange,
     weeklyStreakInfo, seasonState, completeSeason, migrateLog,
+    buildPlanilhaCSV, parseSheetLogRows, parseCSVRows, parseDateBRorISO, seedFromPlanilha, TYPE_META, THEMES,
+    deriveTags, searchCatalog, matchesTags, exerciseTags, TAG_DEFS, EXERCISE_CATALOG_FULL,
     get STATE() { return { logs, settings, userBodyweight }; },
     setLogs(arr) { logs = arr; },
-    setBW(v) { userBodyweight = v; }
+    setBW(v) { userBodyweight = v; },
+    setWeightLog(arr) { weightLog = arr; },
+    get logsArr() { return logs; }
   };
 `)();
 
@@ -41,30 +41,55 @@ function check(name, cond, extra) {
     else { failures++; console.log('  ✘', name, extra !== undefined ? JSON.stringify(extra) : ''); }
 }
 
-console.log('\n== 1. Volume por tipo ==');
+console.log('\n== 1. Volume por tipo (convenção da planilha) ==');
 const BW = 80;
 check('barra: 100 kg × 10 = 1000', api.logVolumeKg({ type: 'carga_total', weight: 100, reps: [10] }, BW) === 1000);
 check('halter_par: 30/halter × 10 = 600', api.logVolumeKg({ type: 'halter_par', weight: 30, reps: [10] }, BW) === 600);
-check('halter_uni: 25 × 8/lado = 400', api.logVolumeKg({ type: 'halter_uni', weight: 25, reps: [8] }, BW) === 400);
-check('peso_corporal (barra fixa 0 kg): 80 × 10 = 800', api.logVolumeKg({ type: 'peso_corporal', weight: 0, reps: [10] }, BW) === 800);
-check('peso_corporal +10 kg extra: 90 × 10 = 900', api.logVolumeKg({ type: 'peso_corporal', weight: 10, reps: [10] }, BW) === 900);
+check('halter_uni: 25 × 8/lado × 2 = 400', api.logVolumeKg({ type: 'halter_uni', weight: 25, reps: [8] }, BW) === 400);
+check('par_dois_lados (afundo): 5 × 22 × 2 × 2 = 440', api.logVolumeKg({ exercise: 'Afundo Búlgaro', type: 'par_dois_lados', weight: 5, reps: [7, 8, 7] }, BW) === 440);
+check('peso_corporal digitado (barra fixa 93 kg): 93 × 10 = 930', api.logVolumeKg({ exercise: 'Barra Fixa (Pull-up)', type: 'peso_corporal', weight: 93, reps: [4, 2, 4] }, BW) === 930);
+check('peso_corporal legado 0 kg cai no peso corporal: 80 × 10 = 800', api.logVolumeKg({ type: 'peso_corporal', weight: 0, reps: [10] }, BW) === 800);
 check('isometria: 0 kg de tonelagem', api.logVolumeKg({ type: 'isometria', weight: 0, reps: [134] }, BW) === 0);
-check('isometria TST = 134 s', api.logTstSeconds({ type: 'isometria', reps: [134] }) === 134);
+check('isometria TST = 134 s', api.logTstSeconds({ type: 'isometria', reps: [60, 40, 34] }) === 134);
 check('prancha 95 kg × 134 s NÃO vira 12,7 t', api.logVolumeKg({ type: 'isometria', weight: 95, reps: [134] }, BW) === 0);
 check('sets por série (drop): 40×10 + 35×10 + 30×10 = 1050', api.logVolumeKg({ type: 'carga_total', sets: [{ weight: 40, reps: 10 }, { weight: 35, reps: 10 }, { weight: 30, reps: 10 }] }, BW) === 1050);
 check('corrida: volume 0', api.logVolumeKg({ kind: 'corrida', distanceKm: 5 }, BW) === 0);
 
+console.log('\n== 1b. Vetores exatos da planilha do usuário ==');
+const v1 = api.logFullMeta({ exercise: 'Tríceps Corda na Polia', type: 'carga_total', weight: 40, reps: [12, 12, 12] });
+check('Tríceps Corda 40×36 = 1440', v1.volume === 1440 && v1.cargaEfetiva === 40 && v1.totalReps === 36, v1);
+const v2 = api.logFullMeta({ exercise: 'Elevação Lateral c/ Halteres', type: 'halter_par', weight: 10, reps: [13, 13, 12, 11] });
+check('Elev. Lateral 10×49×2 = 980', v2.volume === 980 && v2.cargaEfetiva === 20 && v2.totalReps === 49, v2);
+const v3 = api.logFullMeta({ exercise: 'Crossover na Polia Alta', type: 'halter_par', weight: 20, reps: [12, 13, 12] });
+check('Crossover 20×37×2 = 1480', v3.volume === 1480, v3);
+const v4 = api.logFullMeta({ exercise: 'Afundo Búlgaro', type: 'par_dois_lados', weight: 5, reps: [7, 8, 7] });
+check('Afundo 5×22×2×2 = 440', v4.volume === 440 && v4.fator === 2 && v4.lados === 2, v4);
+const v5 = api.logFullMeta({ exercise: 'Prancha Isométrica', type: 'isometria', weight: 0, reps: [60, 40, 34] });
+check('Prancha: volume 0, métrica = melhor tempo', v5.volume === 0 && v5.bestSet === 60 && v5.totalReps === 134, v5);
+const v6 = api.logFullMeta({ exercise: 'Barra Fixa (Pull-up)', type: 'peso_corporal', weight: 93, reps: [4, 2, 4] });
+check('Barra fixa 93×10 = 930', v6.volume === 930, v6);
+
 console.log('\n== 2. Texto e 1RM ==');
 check('format halter_par', api.formatLoadText({ type: 'halter_par', weight: 38 }) === '38 kg/halter');
 check('format PC', api.formatLoadText({ type: 'peso_corporal', weight: 0 }) === 'PC');
-check('format PC + 10', api.formatLoadText({ type: 'peso_corporal', weight: 10 }) === 'PC + 10 kg');
+check('format PC do dia (93 kg)', api.formatLoadText({ type: 'peso_corporal', weight: 93 }) === '93 kg (PC)');
 check('1RM Epley 100×5 = 116,7', api.logEst1RM({ type: 'carga_total', weight: 100, reps: [5] }) === 116.7, api.logEst1RM({ type: 'carga_total', weight: 100, reps: [5] }));
+
+console.log('\n== 2b. Regra do 1RM Epley da planilha (só ≤ 12 reps) ==');
+check('epley 40 × (1+12/30) = 56', api.epleySeValido(40, 12) === 56, api.epleySeValido(40, 12));
+check('epley 100 × (1+5/30) = 116,7', api.epleySeValido(100, 5) === 116.7, api.epleySeValido(100, 5));
+check('melhor série 13 > 12 → null (1RM superestimado)', api.epleySeValido(20, 13) === null);
+check('logFullMeta: Elev. Lateral best 13 → est1RM null', v2.est1RM === null, v2.est1RM);
+check('logFullMeta: Tríceps best 12 → est1RM 56', v1.est1RM === 56, v1.est1RM);
 
 console.log('\n== 3. Dupla progressão ==');
 const supino = { exercise: 'Supino Reto com Barra', type: 'carga_total', weight: 100, reps: [10, 10, 10, 10] };
 const prog = api.duplaProgressao(supino);
 check('todas no topo (10 = topo 6-10) sugere +2,5', prog && prog.proximaCarga === 102.5, prog);
 check('sem sugestão quando reps abaixo', api.duplaProgressao({ ...supino, reps: [8, 8] }) === null);
+check('halter no topo sugere +2', api.duplaProgressao({ exercise: 'Elevação Lateral c/ Halteres', type: 'halter_par', weight: 10, reps: [20, 20, 20] }).proximaCarga === 12);
+check('sinal ⬆ quando menor série no topo', api.sinalProximaSessao({ exercise: 'Cadeira Extensora', type: 'carga_total', weight: 40, reps: [18, 15, 20] }) === '⬆ Progredir');
+check('sinal ➡ quando menor série fora do topo', api.sinalProximaSessao({ exercise: 'Tríceps Corda na Polia', type: 'carga_total', weight: 30, reps: [12, 15, 15] }) === '➡ Manter e buscar reps');
 
 console.log('\n== 4. PR automático ==');
 const logsBase = [{ id: 1, date: '2026-10-01', kind: 'peso', muscle: 'Peito', exercise: 'Supino', type: 'carga_total', weight: 100, reps: [5], isPR: false }];
@@ -82,8 +107,8 @@ const bosses = [
     { id: 'b1', name: 'B', maxHp: 2000, weak: 'Peito' }
 ];
 const logsBoss = [
-    { id: 1, date: '2026-10-01', kind: 'peso', muscle: 'Pernas', exercise: 'Agachamento', type: 'carga_total', weight: 100, reps: [10], isPR: false },   // 1000 × 1,25 = 1250 → derrota b0 e sobra 250
-    { id: 2, date: '2026-10-02', kind: 'peso', muscle: 'Peito', exercise: 'Supino', type: 'carga_total', weight: 100, reps: [5], isPR: true }                 // 500 × 1,25 × 2 = 1250
+    { id: 1, date: '2026-10-01', kind: 'peso', muscle: 'Pernas', exercise: 'Agachamento', type: 'carga_total', weight: 100, reps: [10], isPR: false },
+    { id: 2, date: '2026-10-02', kind: 'peso', muscle: 'Peito', exercise: 'Supino', type: 'carga_total', weight: 100, reps: [5], isPR: true }
 ];
 const prog2 = api.computeBossProgress(logsBoss, BW, bosses);
 check('chefão 1 derrotado pela fraqueza (sobra vaza p/ próximo)', prog2.defeatedCount === 1, prog2);
@@ -92,8 +117,8 @@ check('dano total = 1250 + 1250 = 2500', prog2.totalDamage === 2500, prog2.total
 
 console.log('\n== 7. XP com teto diário ==');
 const logsXP = [
-    { id: 1, date: '2026-10-01', kind: 'peso', muscle: 'Peito', exercise: 'Supino', type: 'carga_total', weight: 200, reps: [10, 10, 10, 10, 10], isPR: false }, // 10 000 kg → 100 XP bruto → cap 60
-    { id: 2, date: '2026-10-01', kind: 'corrida', distanceKm: 5, durationMin: 25, isPR: false }                                                                  // 5×8 + 25×0,5 = 52,5
+    { id: 1, date: '2026-10-01', kind: 'peso', muscle: 'Peito', exercise: 'Supino', type: 'carga_total', weight: 200, reps: [10, 10, 10, 10, 10], isPR: false },
+    { id: 2, date: '2026-10-01', kind: 'corrida', distanceKm: 5, durationMin: 25, isPR: false }
 ];
 const xp = api.computeXP('2026-10-01', { logs: logsXP, bodyweight: BW, deloadWeeks: [], missionsXpTotal: 0, bosses: [] });
 check('teto de 60 XP de volume por grupo/dia', xp.training === 60, xp.training);
@@ -119,7 +144,6 @@ api.setLogs([
     ...['2026-10-05', '2026-10-06', '2026-10-07'].map((d, i) => ({ id: i, date: d, kind: 'peso', muscle: 'Peito', exercise: 'X', type: 'carga_total', weight: 50, reps: [8] })),
     ...['2026-09-28', '2026-09-29', '2026-09-30'].map((d, i) => ({ id: 100 + i, date: d, kind: 'peso', muscle: 'Peito', exercise: 'X', type: 'carga_total', weight: 50, reps: [8] }))
 ]);
-// "hoje" do teste pode não ser 2026-10-12; weeklyStreakInfo usa Date() real — apenas valida que roda e retorna struct
 const wsInfo = api.weeklyStreakInfo();
 check('weeklyStreakInfo retorna struct', typeof wsInfo.streak === 'number' && typeof wsInfo.goal === 'number', wsInfo);
 
@@ -144,81 +168,63 @@ check('perna com 72 h de janela', recPerna.hoursNeed >= 72, recPerna.hoursNeed);
 const recSem = api.recoveryState('Peito', [], Date.now());
 check('grupo sem registro', recSem.label === 'SEM REGISTRO');
 
+console.log('\n== 13. Temas (9) ==');
+const themeIds = Object.keys(api.THEMES);
+check('9 temas carregados', themeIds.length === 9, themeIds);
+const esperadoChefes = { classico: 4, zodiaco: 13 }; // clássico: 4 chefões originais; zodíaco: 12 signos + chefe final
+['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica'].forEach(id => {
+    const t = api.THEMES[id];
+    const nBoss = esperadoChefes[id] || 12;
+    check(`tema ${id}: 10 patentes + ${nBoss} chefões + frame`, t && t.ranks.length === 10 && t.bosses.length === nBoss && !!t.frame, t && { r: t.ranks.length, b: t.bosses.length, f: t.frame });
+});
 
-console.log('\n== 13. Tags acumulativas (Fase 1) ==');
-const tagIds = Object.keys(api.TAG_DEFS);
-check('pool com pelo menos 20 tags', tagIds.length >= 20, tagIds.length);
-check('todas as tags têm categoria válida', tagIds.every(id => api.TAG_DEFS[id].cat && api.TAG_CATEGORIAS.some(c => c.id === api.TAG_DEFS[id].cat)));
-check('categorias agrupam todas as tags', api.TAG_BY_CATEGORY.reduce((a, c) => a + c.tags.length, 0) === tagIds.length);
-check('catálogo inteiro etiquetado (>= 4 tags)', api.EXERCISE_CATALOG_FULL.every(e => Array.isArray(e.tags) && e.tags.length >= 4),
-    api.EXERCISE_CATALOG_FULL.filter(e => !e.tags || e.tags.length < 4).map(e => e.nome));
-check('nenhuma tag inválida no catálogo', api.EXERCISE_CATALOG_FULL.every(e => e.tags.every(t => api.TAG_DEFS[t])));
-const tTerra = api.exerciseTags('Levantamento Terra');
-check('terra: dobradiça + força + avançado + posterior', ['dobradica', 'forca', 'avancado', 'posterior'].every(t => tTerra.includes(t)), tTerra);
-const tSupino = api.exerciseTags('Supino Reto com Barra');
-check('supino barra: empurrar + composto + barra + anterior', ['empurrar', 'composto', 'barra', 'anterior'].every(t => tSupino.includes(t)), tSupino);
-const tPrancha = api.exerciseTags('Prancha Isométrica');
-check('prancha: core + resistência + peso corporal + casa', ['core', 'resistencia', 'peso-corporal', 'casa'].every(t => tPrancha.includes(t)), tPrancha);
-check('isometria não ganha padrão articular (composto/isolado)', !tPrancha.includes('composto') && !tPrancha.includes('isolado'), tPrancha);
-const tCorrida = api.exerciseTags('Corrida (Rua)');
-check('corrida na rua: condicionamento + ar livre', ['condicionamento', 'ar-livre'].every(t => tCorrida.includes(t)), tCorrida);
-const tFora = api.exerciseTags('Agachamento Búlgaro c/ Halteres');
-check('fora do catálogo também ganha tags por inferência', tFora.includes('unilateral') && tFora.includes('halter'), tFora);
+console.log('\n== 14. Seed da planilha real + round-trip CSV ==');
+api.setLogs([]);
+api.seedFromPlanilha();
+check('seed: 44 lançamentos de 28/09 a 10/10/2026', api.logsArr.length === 44, api.logsArr.length);
+const somaVols = api.logsArr.reduce((a, l) => a + api.logVolumeKg(l), 0);
+const seedCorda = api.logsArr.filter(l => l.exercise === 'Tríceps Corda na Polia');
+check('seed: Tríceps Corda 1440 + 1260 = 2700', seedCorda.reduce((a, l) => a + api.logVolumeKg(l), 0) === 2700);
+const seedMartelo = api.logsArr.filter(l => l.exercise === 'Rosca Martelo');
+check('seed: Martelo convertido p/ haltere (8×2×16 + 6×2×31 = 628)', seedMartelo.reduce((a, l) => a + api.logVolumeKg(l), 0) === 628);
+const seedCross = api.logsArr.filter(l => l.exercise === 'Crossover na Polia Alta');
+check('seed: Crossover por lado (20/30/20) = 5.220', seedCross.reduce((a, l) => a + api.logVolumeKg(l), 0) === 5220, seedCross.map(l => l.weight));
+check('seed: soma total de volumes = 60.182 kg', somaVols === 60182, somaVols);
 
-console.log('\n== 14. Busca e filtros ==');
-check('normalizeText tira acento e caixa', api.normalizeText('Supino Inclinação  W') === 'supino inclinacao w', api.normalizeText('Supino Inclinação  W'));
-const r1 = api.searchCatalog({ q: 'supino halteres inclinado' });
-check('busca por tokens em qualquer ordem', r1.length === 1 && r1[0].nome === 'Supino Inclinado c/ Halteres', r1.map(e => e.nome));
-check('busca sem acento acha o exercício', api.searchCatalog({ q: 'elevacao pelvica' }).some(e => e.nome === 'Elevação Pélvica (Hip Thrust)'));
-check('sinônimo em inglês (bench press)', api.searchCatalog({ q: 'bench press' }).length >= 2);
-check('busca por tag escrita (casa)', api.searchCatalog({ q: 'casa' }).length > 5);
-const casa = api.searchCatalog({ tags: ['casa'] });
-check('filtro por tag casa', casa.length > 0 && casa.every(e => e.tags.includes('casa')));
-const anyMode = api.searchCatalog({ tags: ['casa', 'barra'], tagMode: 'any' });
-const allMode = api.searchCatalog({ tags: ['casa', 'barra'], tagMode: 'all' });
-check('tag OU é mais largo que tag E', anyMode.length > allMode.length, [anyMode.length, allMode.length]);
-check('tag E exige todas as tags', allMode.every(e => e.tags.includes('casa') && e.tags.includes('barra')));
-check('combina grupo + tag', api.searchCatalog({ grupo: 'Pernas', tags: ['agachar'] }).every(e => e.grupo === 'Pernas' && e.tags.includes('agachar')));
-check('combina equipamento + tipo', api.searchCatalog({ equipamento: 'Polia', tipo: 'carga_total' }).every(e => e.equipamento === 'Polia' && e.tipo === 'carga_total'));
-check('filtro vazio devolve o catálogo inteiro', api.searchCatalog({}).length === api.EXERCISE_CATALOG_FULL.length);
-const uso = { 'Supino Reto com Barra': 9, 'Agachamento Livre': 3 };
-const ult = { 'Supino Reto com Barra': '2026-10-10', 'Agachamento Livre': '2026-10-11' };
-check('ordem "uso" põe o mais registrado primeiro', api.searchCatalog({ usage: uso, sort: 'uso' })[0].nome === 'Supino Reto com Barra');
-check('ordem "recentes" põe o último usado primeiro', api.searchCatalog({ lastUsed: ult, sort: 'recentes' })[0].nome === 'Agachamento Livre');
-check('ordem "nome" é alfabética', api.searchCatalog({ sort: 'nome' })[0].nome.localeCompare(api.searchCatalog({ sort: 'nome' }).slice(-1)[0].nome, 'pt-BR') < 0);
-check('onlyUsed: só o que já foi registrado', api.searchCatalog({ usage: uso, onlyUsed: true }).length === 2);
-check('onlyNew: esconde o que já foi registrado', api.searchCatalog({ usage: uso, onlyNew: true }).every(e => !uso[e.nome]));
-check('limit corta a lista', api.searchCatalog({ limit: 5 }).length === 5);
-const fac = api.catalogFacets(api.EXERCISE_CATALOG_FULL);
-check('facetas contam as tags', fac.tags.empurrar === api.EXERCISE_CATALOG_FULL.filter(e => e.tags.includes('empurrar')).length);
-check('matchesTags OU/E', api.matchesTags(['a', 'b'], ['b', 'c'], 'any') === true && api.matchesTags(['a', 'b'], ['b', 'c'], 'all') === false);
-check('matchesQuery AND de tokens', api.matchesQuery('Supino Reto com Barra', 'barra supino') === true && api.matchesQuery('Supino Reto', 'supino terra') === false);
+const csv = api.buildPlanilhaCSV();
+check('CSV exporta as 5 abas', ['--- Sheet: Log ---', '--- Sheet: Catálogo ---', '--- Sheet: Progresso ---', '--- Sheet: Semana a semana ---', '--- Sheet: Peso corporal ---'].every(m => csv.includes(m)));
+const logSheet = csv.split(/--- Sheet: Log ---/)[1].split(/--- Sheet:/)[0].trim();
+const rows = api.parseCSVRows(logSheet, ';');
+check('cabeçalho Log com colunas da planilha', rows[0].length === 22 && rows[0][0] === 'Data' && rows[0].includes('Métrica de progresso'), rows[0].length);
+const imported = api.parseSheetLogRows(rows);
+check('round-trip: 44 linhas importadas', imported.length === 44, imported.length);
+const impVols = imported.reduce((a, l) => a + api.logVolumeKg(l), 0);
+check('round-trip: volumes idênticos (60.182 kg)', impVols === somaVols, impVols);
+check('round-trip: data dd/mm/aaaa vira ISO', imported[0].date === '2026-09-28', imported[0].date);
+check('round-trip: flag Conferir? preservada', imported.filter(l => l.conferir).length === api.logsArr.filter(l => l.conferir).length);
+check('round-trip: sessão preservada', imported[0].sessao === 'Peito/Tríceps/Ombro', imported[0].sessao);
+const impAfundo = imported.find(l => l.exercise === 'Afundo Búlgaro');
+check('round-trip: Afundo segue 5×22×2×2 = 440', api.logVolumeKg(impAfundo) === 440, impAfundo);
 
-console.log('\n== 15. Tela de busca + histórico filtrado ==');
-api.setLogs([
-    { id: 1, date: '2026-10-12', kind: 'peso', muscle: 'Peito', exercise: 'Supino Reto com Barra', type: 'carga_total', weight: 100, reps: [8, 8, 8], notes: 'ombro ok' },
-    { id: 2, date: '2026-10-11', kind: 'peso', muscle: 'Abdômen', exercise: 'Prancha Isométrica', type: 'isometria', weight: 0, reps: [60, 45] },
-    { id: 3, date: '2026-09-01', kind: 'corrida', muscle: 'Cardio', exercise: 'Corrida (Rua)', distanceKm: 5, durationMin: 28 }
-]);
-const us = api.usageStats();
-check('usageStats conta registros', us.usage['Supino Reto com Barra'] === 1 && us.lastUsed['Supino Reto com Barra'] === '2026-10-12', us);
-check('usageStats calcula melhor 1RM (100×8 = 126,7)', us.best1RM['Supino Reto com Barra'] === 126.7, us.best1RM);
-api.SEARCH.tags = ['core']; api.SEARCH.tagMode = 'any'; api.SEARCH.histPeriod = 'todos'; api.SEARCH.histQ = ''; api.SEARCH.histMuscle = '';
-const histCore = api.searchHistoryLogs();
-check('histórico filtrado por tag core', histCore.length === 1 && histCore[0].exercise === 'Prancha Isométrica', histCore.map(l => l.exercise));
-api.SEARCH.tags = []; api.SEARCH.histQ = 'ombro';
-check('histórico filtrado por texto nas observações', api.searchHistoryLogs().length === 1);
-api.SEARCH.histQ = ''; api.SEARCH.histMuscle = 'Cardio';
-check('histórico filtrado por grupo', api.searchHistoryLogs().map(l => l.exercise).join() === 'Corrida (Rua)');
-api.SEARCH.histMuscle = ''; api.SEARCH.histPeriod = '7';
-check('histórico filtrado por período (7 dias)', api.searchHistoryLogs().every(l => l.date >= '2026-01-01') && api.searchHistoryLogs().length <= 3);
-api.SEARCH.histPeriod = 'todos';
-check('reps alvo sugeridas respeitam a faixa', api.repsAlvoSugeridas(api.catalogInfo('Supino Reto com Barra')) === '10, 10, 8', api.repsAlvoSugeridas(api.catalogInfo('Supino Reto com Barra')));
-check('reps alvo de isometria em segundos', api.repsAlvoSugeridas(api.catalogInfo('Prancha Isométrica')) === '90, 20');
-check('reps alvo de corrida vazia', api.repsAlvoSugeridas(api.catalogInfo('Corrida (Rua)')) === '');
-let renderOk = true;
-try { api.renderSearchScreen(); } catch (e) { renderOk = false; console.log('   erro:', e.message); }
-check('renderSearchScreen não quebra sem DOM', renderOk);
+console.log('\n== 15. Conversão de data do CSV ==');
+check('dd/mm/aaaa → ISO', api.parseDateBRorISO('28/09/2026') === '2026-09-28');
+check('ISO passa direto', api.parseDateBRorISO('2026-09-28') === '2026-09-28');
+
+console.log('\n== 16. Tags acumulativas + busca ==');
+const t1 = api.deriveTags({ nome: 'Supino Reto na Máquina' });
+check('supino máquina: empurrar+composto+maquina', t1.includes('empurrar') && t1.includes('composto') && t1.includes('maquina'), t1);
+const t2 = api.deriveTags({ nome: 'Afundo Búlgaro' });
+check('afundo búlgaro: unilateral+agachar', t2.includes('unilateral') && t2.includes('agachar'), t2);
+const t3 = api.deriveTags({ nome: 'Prancha Isométrica' });
+check('prancha: core+resistencia (sem padrão articular)', t3.includes('core') && t3.includes('resistencia') && !t3.includes('composto'), t3);
+check('25 tags no pool', Object.keys(api.TAG_DEFS).length === 25);
+check('busca textual "supino halter" acha os 2', api.searchCatalog({ q: 'supino halter' }).length === 2, api.searchCatalog({ q: 'supino halter' }).map(e => e.nome));
+check('busca sem acento: "elevacao pelvica"', api.searchCatalog({ q: 'elevacao pelvica' }).some(e => e.nome.includes('Pélvica')));
+check('apelido: "bench press" acha supino reto', api.searchCatalog({ q: 'bench press' }).some(e => e.nome.includes('Supino Reto com Barra')));
+check('tag "casa" retorna só exercícios de casa', api.searchCatalog({ tags: ['casa'] }).every(e => (e.tags || []).includes('casa')));
+check('modo E: halter + unilateral', api.searchCatalog({ tags: ['halter', 'unilateral'], tagMode: 'all' }).every(e => e.tags.includes('halter') && e.tags.includes('unilateral')));
+check('matchesTags OU/E', api.matchesTags(['a', 'b'], ['a', 'c'], 'any') && !api.matchesTags(['a', 'b'], ['a', 'c'], 'all'));
+check('catálogo todo etiquetado (≥4 tags cada)', api.EXERCISE_CATALOG_FULL.every(e => (e.tags || []).length >= 4));
 
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);
