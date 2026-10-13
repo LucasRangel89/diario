@@ -10,210 +10,222 @@ const XP_PR = 50;                   // XP por PR automático
 const XP_REST_PER_DAY = 25;         // XP de descanso em semana de deload (dias sem treino)
 const MISSION_XP = { treinos: 120, biset: 80, pr: 100, corrida: 80, fraco: 90 };
 
-const mkBosses = (list, base, step) => list.map(([name, icon, desc], i) => ({
-    id: 'b' + i, name, icon, desc,
-    maxHp: base + step * i,
-    weak: MUSCULOS_MAPA[i % MUSCULOS_MAPA.length] // cada chefe é fraco a um grupo (×1,25)
+const BOSS_HP_BASE = 25000;
+const BOSS_HP_STEP = 2000;
+
+// HP e IDs são determinísticos para manter a mesma curva nos nove jogos.
+// O clássico usa boss1…boss12 para preservar os retratos originais boss1…boss4.
+const mkBosses = (list, idPrefix = 'b', idStart = 0) => list.map(([name, icon, desc, weak, weakReason], i) => ({
+    id: `${idPrefix}${idStart + i}`, name, icon,
+    maxHp: BOSS_HP_BASE + BOSS_HP_STEP * i,
+    desc, weak, weakReason
 }));
 
 const RANKS_CLASSIC = [
     { minXp: 0, level: 1, name: 'Formiga Atômica', icon: '🐜' },
     { minXp: 150, level: 2, name: 'Lobo Solitário', icon: '🐺' },
     { minXp: 500, level: 3, name: 'Urso do Ártico', icon: '🐻' },
-    { minXp: 1100, level: 4, name: 'Gorila de Lombo Prateado', icon: '🦍' },
+    { minXp: 1100, level: 4, name: 'Pantera de Guerra', icon: '🐆' },
     { minXp: 2000, level: 5, name: 'Rinoceronte Blindado', icon: '🦏' },
     { minXp: 3300, level: 6, name: 'Elefante de Guerra', icon: '🐘' },
     { minXp: 5000, level: 7, name: 'T-Rex Devastador', icon: '🦖' },
-    { minXp: 7500, level: 8, name: 'Leviatã dos Mares', icon: '🐉' },
-    { minXp: 11000, level: 9, name: 'Behemoth Ancestral', icon: '👹' },
+    { minXp: 7500, level: 8, name: 'Mestre da Fundição', icon: '⚒️' },
+    { minXp: 11000, level: 9, name: 'Lenda das Cargas', icon: '🏋️' },
     { minXp: 16000, level: 10, name: 'BERZERKER SUPREMO', icon: '⚡' }
 ];
 
-const BOSSES_CLASSIC = [
-    { id: 'boss1', name: 'Golem de Anilhas', icon: '🗿', maxHp: 8000, desc: 'Monstro de Ferro das Forjas Primordiais.', weak: 'Pernas' },
-    { id: 'boss2', name: 'Hydra de Titânio', icon: '🐉', maxHp: 20000, desc: 'Serpente Mítica de Aço temperado.', weak: 'Costas' },
-    { id: 'boss3', name: 'Mecagorila Berzerker', icon: '🦍', maxHp: 45000, desc: 'Titan Biomecânico de Alta Pressão.', weak: 'Peito' },
-    { id: 'boss4', name: 'Behemoth Devastador', icon: '👹', maxHp: 100000, desc: 'O Guardião Supremo das Cargas Pesadas.', weak: 'Ombros' }
-];
+const BOSSES_CLASSIC = mkBosses([
+    ['Golem de Anilhas', '🗿', 'Sentinela de placas de ferro forjada para proteger a arena.', 'Core', 'O núcleo instável concentra o peso das placas no centro.'],
+    ['Hydra de Titânio', '🐉', 'Serpente mecânica de várias cabeças, unidas por juntas de titânio.', 'Pescoço', 'As articulações entre as cabeças são o elo móvel da estrutura.'],
+    ['Mecagorila Berzerker', '🦍', 'Colosso biomecânico com servos de alta pressão nas costas.', 'Costas', 'O servo dorsal exposto coordena os braços mecânicos.'],
+    ['Behemoth Devastador', '👹', 'Fera colossal cuja armadura depende de quatro pernas de sustentação.', 'Pernas', 'A base carrega toda a massa; quebrar o passo derruba a investida.'],
+    ['Cavaleiro de Ferro', '🛡️', 'Guerreiro encantado protegido por uma couraça pesada.', 'Peito', 'A emenda do peitoral abre quando a guarda frontal cede.'],
+    ['Ogro da Bigorna', '👹', 'Ogro ferreiro que transforma uma bigorna em arma de guerra.', 'Antebraço', 'A maça depende de uma pegada firme; cansar o antebraço quebra o balanço.'],
+    ['Quimera Blindada', '🐲', 'Fera de três aspectos, coberta por placas montadas sobre um só tronco.', 'Abdômen', 'A junção das placas deixa o centro do corpo menos protegido.'],
+    ['Dragão de Aço', '🐲', 'Dragão de forja com asas articuladas e escamas metálicas.', 'Ombros', 'As dobradiças das asas convergem nas articulações dos ombros.'],
+    ['Minotauro das Forjas', '🐂', 'Monstro encouraçado que investe pelos corredores incandescentes.', 'Glúteos', 'A investida nasce do quadril; mudar seu eixo retira o impulso.'],
+    ['Leviatã de Ferro', '🐋', 'Serpente abissal de placas, capaz de esmagar muralhas com o corpo.', 'Costas', 'Ao desenrolar o dorso para atacar, expõe as placas da coluna.'],
+    ['Titã de Escória', '🗿', 'Gigante de metal vulcânico que ergue um martelo maior que a arena.', 'Bíceps', 'Os golpes do martelo dependem da força dos braços que o sustentam.'],
+    ['Colosso das Forjas', '🔥', 'Guardião final: um núcleo incandescente envolto em armadura de ferro.', 'Peito', 'A abertura do forno no tórax revela o núcleo durante cada descarga.']
+], 'boss', 1);
 
 const STORAGE_KEY_THEME = 'berzerker_game_theme_v1';
 
 const THEMES = {
     classico: {
         id: 'classico', name: 'Berzerker (clássico)',
-        desc: 'Formiga Atômica até Berzerker Supremo, com 4 chefões de ferro.',
+        desc: 'Dez patentes até o Berzerker Supremo e doze monstros de fantasia pesada e ferro.',
         arena: 'Arena de Batalha de Chefão', bossLabel: 'CHEFÃO ATIVO', stageWord: 'ESTÁGIO',
-                missionWord: 'Missão', missionWordPlural: 'Missões', frame: 'ferro',
+        missionWord: 'Missão', missionWordPlural: 'Missões', frame: 'ferro',
         ranks: RANKS_CLASSIC.map(r => [r.name, r.icon]), bosses: BOSSES_CLASSIC
     },
     zodiaco: {
         id: 'zodiaco', name: 'Cavaleiros do Zodíaco',
-        desc: 'Patentes pelo material da armadura; os guardiões das 12 casas e o Grande Mestre são os chefões.',
+        desc: 'Dez patentes de domínio do Cosmo; as doze Casas culminam no confronto com o Grande Mestre.',
         arena: 'Santuário — As 12 Casas', bossLabel: 'GUARDIÃO ATIVO', stageWord: 'CASA',
-                missionWord: 'Prova de Cosmo', missionWordPlural: 'Provas de Cosmo', frame: 'ouro',
-        ranks: [['Aprendiz de Rodório', '🥋'], ['Cavaleiro de Bronze', '🥉'], ['Bronze · Cosmo Ardente', '🔥'], ['Cavaleiro de Prata', '🥈'], ['Prata · Sétimo Sentido', '✨'], ['Cavaleiro de Ouro', '🥇'], ['Ouro · Oitavo Sentido', '🌟'], ['Armadura Divina', '⚔️'], ['Cosmo Supremo', '🌌'], ['Lenda do Santuário', '👑']],
+        missionWord: 'Prova de Cosmo', missionWordPlural: 'Provas de Cosmo', frame: 'ouro',
+        ranks: [['Aprendiz do Dojo', '🥋'], ['Cavaleiro de Bronze', '🥉'], ['Bronze · Cosmo Ardente', '🔥'], ['Cavaleiro de Prata', '🥈'], ['Prata · Sétimo Sentido', '✨'], ['Cavaleiro de Ouro', '🥇'], ['Ouro · Oitavo Sentido', '🌟'], ['Armadura Divina', '⚔️'], ['Cosmo Supremo', '🌌'], ['Lenda do Santuário', '👑']],
         bosses: mkBosses([
-            ['Mu de Áries', '🐏', 'Casa de Áries — o ferreiro que guarda a primeira porta.'],
-            ['Aldebarã de Touro', '🐂', 'Casa de Touro — uma muralha de força bruta.'],
-            ['Saga de Gêmeos', '👥', 'Casa de Gêmeos — o labirinto de duas faces.'],
-            ['Máscara da Morte de Câncer', '🦀', 'Casa de Câncer — a entrada do mundo dos mortos.'],
-            ['Aiolia de Leão', '🦁', 'Casa de Leão — o Raio de Plasma.'],
-            ['Shaka de Virgem', '🧘', 'Casa de Virgem — o mais próximo de um deus.'],
-            ['Dohko de Libra', '⚖️', 'Casa de Libra — o Mestre Ancião de Rozan.'],
-            ['Milo de Escorpião', '🦂', 'Casa de Escorpião — a Agulha Escarlate.'],
-            ['Aiolos de Sagitário', '🏹', 'Casa de Sagitário — a armadura do herói que salvou Atena.'],
-            ['Shura de Capricórnio', '🐐', 'Casa de Capricórnio — a lâmina da Excalibur.'],
-            ['Camus de Aquário', '🧊', 'Casa de Aquário — o Mestre do Gelo.'],
-            ['Afrodite de Peixes', '🌹', 'Casa de Peixes — a Rosa Sangrenta.'],
-            ['Mestre Ares', '👑', 'Sala do Grande Mestre — o último desafio do Santuário.']
-        ], 25000, 2000)
+            ['Mu de Áries', '🐏', 'Guardião de Áries e reparador de Armaduras; sua Casa abre o caminho.', 'Antebraço', 'A defesa de Cristal depende de precisão e controle das mãos.'],
+            ['Aldebaran de Touro', '🐂', 'Guardião de Touro, conhecido pela força e pelo Grande Chifre.', 'Core', 'O Grande Chifre exige uma base frontal estável; romper o equilíbrio abre a guarda.'],
+            ['Saga de Gêmeos', '👥', 'Guardião de Gêmeos; ilusões e ataques dimensionais confundem o Santuário.', 'Peito', 'A troca entre defesa e ataque abre uma janela na guarda frontal.'],
+            ['Máscara da Morte de Câncer', '🦀', 'Guardião de Câncer, ligado à passagem de Yomotsu Hirasaka.', 'Pernas', 'A luta depende de controlar o terreno e as passagens entre os mundos.'],
+            ['Aiolia de Leão', '🦁', 'Guardião de Leão e autor do Relâmpago de Plasma.', 'Ombros', 'A sequência de golpes velozes depende da articulação dos braços.'],
+            ['Shaka de Virgem', '🧘', 'Guardião de Virgem, célebre por lutar com os sentidos recolhidos.', 'Abdômen', 'A postura imóvel de meditação depende de um centro corporal firme.'],
+            ['Dohko de Libra', '⚖️', 'Guardião de Libra e Mestre Ancião de Rozan.', 'Costas', 'Os giros das armas de Libra deixam a linha dorsal exposta.'],
+            ['Milo de Escorpião', '🦂', 'Guardião de Escorpião; sua técnica é a Agulha Escarlate.', 'Bíceps', 'A precisão dos golpes sucessivos depende do braço que dispara as agulhas.'],
+            ['Aiolos de Sagitário', '🏹', 'Guardião de Sagitário, lembrado por proteger Atena e sua Armadura.', 'Tríceps', 'A extensão do braço que conduz o arco fica vulnerável durante o disparo.'],
+            ['Shura de Capricórnio', '🐐', 'Guardião de Capricórnio, cuja técnica é a Excalibur.', 'Antebraço', 'A lâmina de Cosmo se manifesta pelo braço e exige firmeza do antebraço.'],
+            ['Camus de Aquário', '🧊', 'Guardião de Aquário e mestre das técnicas de gelo.', 'Pescoço', 'A gola da Armadura deixa uma articulação exposta durante a execução das técnicas.'],
+            ['Grande Mestre', '👑', 'A Casa de Peixes, protegida por Afrodite, antecede o duelo final na Sala do Grande Mestre.', 'Core', 'A sequência de rosas e ilusões exige equilíbrio; romper o centro da postura abre a defesa.']
+        ])
     },
     hercules: {
         id: 'hercules', name: '12 Trabalhos de Hércules',
-        desc: 'Da condição de mortal ao Olimpo, enfrentando os 12 trabalhos em ordem.',
+        desc: 'De mortal a herói do Olimpo, enfrentando os doze trabalhos na ordem tradicional.',
         arena: 'Os 12 Trabalhos de Hércules', bossLabel: 'DESAFIO ATIVO', stageWord: 'TRABALHO',
-                missionWord: 'Trabalho Extra', missionWordPlural: 'Trabalhos Extra', frame: 'marmore',
+        missionWord: 'Trabalho Extra', missionWordPlural: 'Trabalhos Extra', frame: 'marmore',
         ranks: [['Mortal', '🧑'], ['Aprendiz de Quíron', '🐴'], ['Atleta de Atenas', '🏃'], ['Campeão da Arena', '🏟️'], ['Herói de Tebas', '🛡️'], ['Semideus', '💪'], ['Filho de Zeus', '⚡'], ['Olimpiano', '🏛️'], ['Titã', '🌋'], ['Imortal do Olimpo', '👑']],
         bosses: mkBosses([
-            ['Leão de Neméia', '🦁', '1º Trabalho — a pele que nenhuma arma fura.'],
-            ['Hidra de Lerna', '🐍', '2º Trabalho — corte uma cabeça, nascem duas.'],
-            ['Corça de Cerineia', '🦌', '3º Trabalho — a caça mais veloz da Arcádia.'],
-            ['Javali de Erimanto', '🐗', '4º Trabalho — a fúria da montanha.'],
-            ['Estábulos de Áugias', '🧹', '5º Trabalho — décadas de sujeira em um só dia.'],
-            ['Pássaros do Estínfalo', '🐦', '6º Trabalho — o bando de penas de bronze.'],
-            ['Touro de Creta', '🐂', '7º Trabalho — a fera que aterrorizava a ilha.'],
-            ['Éguas de Diomedes', '🐎', '8º Trabalho — cavalos que se alimentam de carne.'],
-            ['Cinturão de Hipólita', '🛡️', '9º Trabalho — a rainha das Amazonas.'],
-            ['Rebanho de Gerião', '🐄', '10º Trabalho — o gigante de três corpos.'],
-            ['Maçãs das Hespérides', '🍎', '11º Trabalho — o dragão Ladão guarda o pomar.'],
-            ['Cérbero', '🐕', '12º Trabalho — o cão de três cabeças do Hades.']
-        ], 25000, 2000)
+            ['Leão de Neméia', '🦁', 'Sua pele era impenetrável; Héracles o venceu estrangulando-o.', 'Pescoço', 'O próprio mito conta que Héracles o subjugou por estrangulamento.'],
+            ['Hidra de Lerna', '🐍', 'Héracles cauterizou os pescoços após cortá-los, com ajuda de Iolau.', 'Core', 'Segurar as cabeças e manter a posição para cauterizar exige um tronco estável.'],
+            ['Corça de Cerineia', '🦌', 'Corça consagrada a Ártemis; Héracles a perseguiu e capturou sem feri-la.', 'Pernas', 'A prova é uma perseguição de resistência e controle dos passos.'],
+            ['Javali de Erimanto', '🐗', 'Héracles capturou vivo o javali após persegui-lo até a neve profunda.', 'Glúteos', 'A subida e a mudança de direção dependem da força do quadril.'],
+            ['Estábulos de Áugias', '🧹', 'Héracles desviou os rios Alfeu e Peneu para limpar os estábulos em um dia.', 'Abdômen', 'A tarefa de abrir e sustentar o novo curso dos rios exige centro firme.'],
+            ['Pássaros do Estínfalo', '🐦', 'Héracles os espantou com címbalos de Atena e usou o arco contra as aves.', 'Ombros', 'As asas de bronze precisam ser mantidas abertas para o voo.'],
+            ['Touro de Creta', '🐂', 'O sétimo trabalho consistia em capturar vivo o touro de Creta.', 'Pescoço', 'A investida baixa expõe a junção entre cabeça e pescoço.'],
+            ['Éguas de Diomedes', '🐎', 'As éguas antropófagas pertenciam a Diomedes, rei da Trácia.', 'Bíceps', 'Conter as rédeas e dominar a arrancada exige uma pegada forte.'],
+            ['Cinturão de Hipólita', '🛡️', 'Hipólita era rainha das Amazonas; as versões divergem sobre o encontro pelo cinturão.', 'Tríceps', 'A prova exige afastar a guarda armada para alcançar o cinturão.'],
+            ['Rebanho de Gerião', '🐄', 'O décimo trabalho era levar o gado de Gerião, descrito como gigante de três corpos.', 'Peito', 'Os três corpos protegem o flanco; abrir a guarda frontal interrompe a formação.'],
+            ['Maçãs das Hespérides', '🍎', 'Ladão guardava o pomar; em uma versão, Atlas ajuda Héracles a obter as maçãs.', 'Antebraço', 'A prova termina com a retirada cuidadosa das maçãs guardadas no pomar.'],
+            ['Cérbero', '🐕', 'Héracles levou o cão de três cabeças do Hades à superfície e o devolveu.', 'Core', 'Subjugar três cabeças sem armas depende de controle do tronco e equilíbrio.']
+        ])
     },
     acao: {
         id: 'acao', name: 'Filmes de Ação',
-        desc: 'Patentes de recruta a lenda do cinema; os vilões de cada clássico são os chefões.',
+        desc: 'De recruta a lenda do cinema, enfrentando doze antagonistas de ação.',
         arena: 'Cine Ação — Vilões em Cena', bossLabel: 'VILÃO ATIVO', stageWord: 'CENA',
         missionWord: 'Missão', missionWordPlural: 'Missões', frame: 'neon',
-        ranks: [['Recruta', '🪖'], ['Policial Novato', '👮'], ['Duro de Matar', '🧨'], ['Agente Secreto', '🕵️'], ['Comando de Elite', '🎖️'], ['Lenda de Guerra', '🔫'], ['Herói de Ação', '💥'], ['O Escolhido', '🕶️'], ['Imbatível', '🚀'], ['Lenda do Cinema', '🎬']],
+        ranks: [['Recruta', '🪖'], ['Policial Novato', '👮'], ['Policial Veterano', '🚔'], ['Agente Secreto', '🕵️'], ['Comando de Elite', '🎖️'], ['Lenda de Guerra', '🔫'], ['Herói de Ação', '💥'], ['O Escolhido', '🕶️'], ['Imbatível', '🚀'], ['Lenda do Cinema', '🎬']],
         bosses: mkBosses([
-            ['O Esquadrão', '🧨', 'Cena 1 — caos urbano e muita munição.'],
-            ['O Sequaz', '🥷', 'Cena 2 — silencioso e mortal.'],
-            ['O Chefe do Crime', '🎩', 'Cena 3 — o cérebro por trás de tudo.'],
-            ['O Predador', '👽', 'Cena 4 — caça pelo calor da batalha.'],
-            ['O Exterminador', '🤖', 'Cena 5 — sem piedade, sem cansaço.'],
-            ['O Coringa', '🃏', 'Cena 6 — anarquia pura.'],
-            ['O Dragão', '🐲', 'Cena 7 — artes marciais sobrenaturais.'],
-            ['O General', '🪖', 'Cena 8 — um exército inteiro atrás dele.'],
-            ['O Fantasma', '👤', 'Cena 9 — ninguém escuta a aproximação.'],
-            ['O Titã', '🦾', 'Cena 10 — força bruta industrial.'],
-            ['O Imperador', '👑', 'Cena 11 — poder galáctico.'],
-            ['O Chefe Final', '💀', 'Cena 12 — tudo termina aqui.']
-        ], 25000, 2000)
+            ['O Esquadrão', '🧨', 'Uma equipe de mercenários que controla o quarteirão com fogo cruzado.', 'Pernas', 'Flanquear rapidamente quebra a formação e evita o fogo cruzado.'],
+            ['O Sicário', '🥷', 'Assassino silencioso que prefere lâminas e ataques de surpresa.', 'Antebraço', 'A arma curta depende de uma pegada firme; desarmá-lo interrompe a emboscada.'],
+            ['O Chefe do Crime', '🎩', 'O estrategista protegido por capangas e rotas de fuga.', 'Core', 'Ao perder o equilíbrio no centro da sala, deixa de comandar a equipe.'],
+            ['O Predador', '👽', 'Caçador extraterrestre que rastreia calor e escolhe o momento do ataque.', 'Pernas', 'Mudanças rápidas de posição quebram sua linha de mira térmica.'],
+            ['O Exterminador', '🤖', 'Androide implacável que persegue o alvo sem se cansar.', 'Peito', 'O núcleo de energia fica atrás da placa frontal do tórax.'],
+            ['O Coringa', '🃏', 'Criminoso imprevisível que transforma a cidade em uma armadilha.', 'Ombros', 'Desviar de armas e armadilhas exige manter a guarda alta e móvel.'],
+            ['O Dragão', '🐲', 'Mestre de artes marciais que domina o combate corpo a corpo.', 'Bíceps', 'A força das pegadas e dos golpes depende da linha dos braços.'],
+            ['O General', '🪖', 'Comandante que usa comunicações e armadura para coordenar sua tropa.', 'Costas', 'O rádio e a proteção da tropa deixam a retaguarda como ponto cego.'],
+            ['O Fantasma', '👤', 'Infiltrador que some nas sombras e ataca sem ser visto.', 'Pescoço', 'Manter atenção e rotação da cabeça impede que ele se aproxime sem ser notado.'],
+            ['O Titã', '🦾', 'Exoesqueleto industrial construído para força bruta e demolição.', 'Glúteos', 'O peso do exoesqueleto depende do quadril; deslocar sua base derruba a máquina.'],
+            ['O Imperador', '👑', 'Chefe de uma rede criminosa que controla a cidade por trás dos eventos.', 'Tríceps', 'O escudo de comando abre quando o braço que o projeta perde força.'],
+            ['O Chefe Final', '💀', 'O confronto derradeiro reúne todas as ameaças das cenas anteriores.', 'Core', 'A sequência de ataques exige estabilidade e deixa o centro exposto nas pausas.']
+        ])
     },
     folclore: {
         id: 'folclore', name: 'Folclore Brasileiro',
-        desc: 'Do Novato da Roça à Lenda do Brasil: os seres do sertão encantado são os chefões.',
+        desc: 'Do Novato da Roça à Lenda do Brasil: lendas, encantados e figuras da tradição popular.',
         arena: 'Sertão Encantado — Lendas do Brasil', bossLabel: 'LENDA ATIVA', stageWord: 'LENDA',
         missionWord: 'Desafio do Sertão', missionWordPlural: 'Desafios do Sertão', frame: 'madeira',
         ranks: [['Novato da Roça', '🌱'], ['Peão de Boiadeiro', '🤠'], ['Violeiro do Sertão', '🪕'], ['Capanga Valente', '⚔️'], ['Domador de Bestas', '🐎'], ['Herói do Arraial', '🎇'], ['Guardião da Mata', '🌿'], ['Caçador de Encantados', '🔥'], ['Mestre do Folclore', '✨'], ['LENDA DO BRASIL', '🇧🇷']],
         bosses: mkBosses([
-            ['Saci-Pererê', '🌀', 'A travessura de uma perna só que faz das brasas brinquedo.'],
-            ['Curupira', '🦶', 'Guardião da mata — os pés virados enganam quem caça.'],
-            ['Caipora', '🐗', 'Senhor dos animais, montado no porco-do-mato, castiga caçadores.'],
-            ['Lobisomem', '🐺', 'O sétimo filho condenado a uivar na lua cheia.'],
-            ['Cuca', '🐊', 'A bruxa-jacaré que vem dos contos de ninar buscar quem não dorme.'],
-            ['Mula-sem-Cabeça', '🐴', 'Fogo pelas guampas e ferraduras que incendeiam a estrada.'],
-            ['Iara', '💧', 'A sereia dos rios: canta, encanta e não devolve.'],
-            ['Boto Cor-de-Rosa', '🐬', 'O sedutor de chapéu branco das festas juninas.'],
-            ['Boitatá', '🔥', 'A serpente de fogo que devora os campos secos.'],
-            ['Naiá — Vitória-Régia', '🪷', 'A gigante das águas que arrasta para o fundo.'],
-            ['Mapinguari', '👹', 'O gigante de um olho só, cujo rugido congela a floresta.'],
-            ['Anhanguera', '😈', 'O senhor do pacto — a última porta do sertão encantado.']
-        ], 25000, 2000)
+            ['Saci-Pererê', '🌀', 'Travesso de uma perna só, costuma surgir em redemoinhos e pregar peças.', 'Pernas', 'Seu salto e seus redemoinhos dependem de uma única perna de apoio.'],
+            ['Curupira', '🦶', 'Guardião das matas; os pés virados confundem quem segue suas pegadas.', 'Pernas', 'Os rastros invertidos dependem de passos rápidos e mudanças de direção.'],
+            ['Caipora', '🐗', 'Protetora da caça e dos animais; em muitas versões, cavalga um porco-do-mato.', 'Core', 'Manter o equilíbrio sobre o porco-do-mato é o ponto vulnerável da investida.'],
+            ['Lobisomem', '🐺', 'Figura de tradição popular; a origem e as condições da transformação variam entre regiões.', 'Peito', 'A investida frontal expõe o tórax quando a criatura muda de direção.'],
+            ['Cuca', '🐊', 'Personagem de contos populares, muitas vezes representada como bruxa com traços de jacaré.', 'Antebraço', 'As garras e os feitiços dependem dos braços que ela mantém erguidos.'],
+            ['Mula-sem-Cabeça', '🐴', 'Encantado que galopa em chamas; detalhes da lenda mudam conforme a região.', 'Glúteos', 'O galope e as arrancadas dependem do impulso do quadril.'],
+            ['Iara', '💧', 'Encantada das águas cujo canto atrai pessoas para os rios, segundo a lenda.', 'Ombros', 'As ondas e os movimentos de nado dependem da força dos ombros.'],
+            ['Boto Cor-de-Rosa', '🐬', 'Na lenda amazônica, o boto assume forma humana e aparece em festas ribeirinhas.', 'Bíceps', 'A dança e a fuga dependem dos braços usados para abrir caminho na multidão.'],
+            ['Boitatá', '🔥', 'Serpente de fogo que, em versões da lenda, protege os campos e as matas.', 'Costas', 'O corpo em espiral expõe a linha dorsal quando a serpente se desenrola.'],
+            ['Naiá — Vitória-Régia', '🪷', 'Na lenda amazônica, Jaci transforma Naiá na flor vitória-régia, que se abre ao luar.', 'Core', 'As raízes que prendem o terreno cedem quando o centro da flor é deslocado.'],
+            ['Mapinguari', '👹', 'Criatura amazônica enorme e peluda; relatos variam, e algumas versões citam uma boca no ventre.', 'Ombros', 'A massa dos braços protege a frente, mas deixa as articulações dos ombros expostas.'],
+            ['Anhanguera', '🔥', 'Figura histórica: Bartolomeu Bueno da Silva. A tradição sobre o apelido conta que usou aguardente em chamas para intimidar povos indígenas; os relatos variam.', 'Antebraço', 'O truque da chama depende da mão que sustenta a tigela e pode ser interrompido.']
+        ])
     },
     nordica: {
         id: 'nordica', name: 'Mitologia Nórdica',
-        desc: 'Do Escudeiro do Norte ao All-Father: os seres de Midgard e Asgard são os chefões.',
+        desc: 'De criaturas menores do folclore escandinavo aos gigantes e serpentes do Ragnarök.',
         arena: 'Ragnarök — Trilho dos Nove Mundos', bossLabel: 'AMEAÇA ATIVA', stageWord: 'MUNDO',
         missionWord: 'Prova de Valhalla', missionWordPlural: 'Provas de Valhalla', frame: 'runas',
-        ranks: [['Escudeiro do Norte', '🛡️'], ['Guerreiro de Ferro', '⚔️'], ['Berserker', '🐻'], ['Caçador de Trolls', '🏹'], ['Jarl das Terras', '👑'], ['Filho de Thor', '⚡'], ['Escriba das Runas', '🔮'], ['Guerreiro de Valhalla', '🪓'], ['Semideus de Asgard', '🌩️'], ['ALL-FATHER', '🦅']],
+        ranks: [['Escudeiro do Norte', '🛡️'], ['Guerreiro de Ferro', '⚔️'], ['Berserker', '🐻'], ['Caçador de Trolls', '🏹'], ['Jarl das Terras', '👑'], ['Herói de Valhalla', '🪓'], ['Mestre das Runas', '🔮'], ['Guardião dos Nove Mundos', '🌌'], ['Semideus de Asgard', '🌩️'], ['ODIN, O PAI DE TODOS', '🦅']],
         bosses: mkBosses([
-            ['Draugr', '🧟', 'O morto que guarda o tesouro dos túmulos.'],
-            ['Troll de Gelo', '👹', 'A montanha que se move e devora viajantes.'],
-            ['Fenris, o Lobo', '🐺', 'O lobo acorrentado que só cresce.'],
-            ['Valquíria Caída', '⚔️', 'A escolhida que virou as costas a Odin.'],
-            ['Níðhöggr', '🐍', 'O dragão que rói as raízes de Yggdrasil.'],
-            ['Jörmungandr', '🌊', 'A Serpente de Midgard que envolve o mundo.'],
-            ['Surtr, o Flamejante', '🔥', 'O gigante de fogo com a espada do crepúsculo.'],
-            ['Hela', '🖤', 'A rainha do reino dos mortos.'],
-            ['Fafnir', '🐉', 'O anão ganancioso virado dragão guardião do ouro.'],
-            ['Sköll, o Devorador de Sol', '🌑', 'O lobo que persegue o sol até devorá-lo.'],
-            ['Ymir, o Primeiro', '🧊', 'O gigante primordial de quem o mundo foi feito.'],
-            ['Ragnarök', '💀', 'O crepúsculo dos deuses — o fim de todas as coisas.']
-        ], 25000, 2000)
+            ['Draugr', '🧟', 'Morto-vivo das sagas, associado a túmulos e tesouros guardados.', 'Costas', 'A armadura antiga deixa a retaguarda menos protegida.'],
+            ['Troll Jovem de Gelo', '👹', 'Troll menor criado para este desafio, inspirado no folclore nórdico.', 'Pernas', 'O tamanho reduzido permite avançar depressa, mas torna a base instável.'],
+            ['Nøkk do Fiorde', '🌊', 'Espírito aquático do folclore escandinavo, capaz de mudar de forma e atrair viajantes.', 'Ombros', 'Os movimentos de nado e as ondas dependem das articulações dos ombros.'],
+            ['Huldra da Floresta', '🌲', 'Figura do folclore escandinavo: espírito da floresta que pode ocultar uma cauda de animal.', 'Pescoço', 'A transformação para esconder a cauda deixa a nuca exposta por um instante.'],
+            ['Fenrir, o Lobo', '🐺', 'Lobo monstruoso, filho de Loki e Angrboða; os deuses o prenderam com Gleipnir.', 'Pescoço', 'As correntes de Gleipnir mantêm a cabeça erguida e expõem o pescoço.'],
+            ['Jörmungandr', '🌊', 'Serpente de Midgard que, segundo o mito, circunda o mundo e enfrenta Thor no Ragnarök.', 'Abdômen', 'Ao apertar o próprio corpo em espiral, expõe a parte inferior das escamas.'],
+            ['Surtr, o Gigante de Fogo', '🔥', 'Jötunn de Múspell que empunha uma espada flamejante no Ragnarök.', 'Core', 'A chama se concentra no centro do corpo quando ele prepara o golpe.'],
+            ['Fafnir, o Dragão', '🐉', 'Na saga dos Volsungos, Fafnir transforma-se em dragão e guarda ouro amaldiçoado.', 'Peito', 'O peito fica exposto quando se ergue para proteger o tesouro.'],
+            ['Níðhöggr', '🐍', 'Serpente ou dragão que, nos poemas nórdicos, rói uma raiz de Yggdrasil.', 'Costas', 'O dorso se revela enquanto a criatura se curva para roer a raiz.'],
+            ['Sköll, Devorador do Sol', '🌑', 'Lobo que persegue Sól, a personificação do Sol; Hati persegue Máni, a personificação da Lua.', 'Pernas', 'A perseguição constante torna as pernas a base de sua velocidade.'],
+            ['Ymir, o Primeiro', '🧊', 'Gigante primordial; em um relato da criação, Odin, Vili e Vé formam o mundo de seu corpo.', 'Peito', 'O tórax é o núcleo da massa colossal que sustenta o corpo primordial.'],
+            ['Ragnarök', '💀', 'Confronto profetizado que encerra a ordem antiga e dá lugar a um mundo renovado.', 'Core', 'A batalha final alterna ondas de gigantes e serpentes; manter o centro firme abre a brecha.']
+        ])
     },
     roma: {
         id: 'roma', name: 'Gladiadores de Roma',
-        desc: 'Do Escravo da Arena ao Imperador: gladiadores, feras e imperadores são os chefões.',
+        desc: 'Da vida no ludus ao IMPERADOR DE ROMA, entre tipos de gladiador, feras e rivais da arena.',
         arena: 'Coliseu — Areia dos Gladiadores', bossLabel: 'OPONENTE ATIVO', stageWord: 'COMBATE',
         missionWord: 'Prova da Arena', missionWordPlural: 'Provas da Arena', frame: 'louros',
-        ranks: [['Escravo da Arena', '⛓️'], ['Novato de Ludus', '🪖'], ['Mirmilão', '⚔️'], ['Retiário', '🔱'], ['Hoplômaco', '🛡️'], ['Campeão do Coliseu', '🏆'], ['Pretoriano', '🦁'], ['Centurião', '📯'], ['General das Legiões', '🦅'], ['IMPERADOR DE ROMA', '👑']],
+        ranks: [['Escravo da Arena', '⛓️'], ['Recruta do Ludus', '🪖'], ['Gladiador Disciplinado', '⚔️'], ['Veterano da Arena', '🛡️'], ['Campeão do Coliseu', '🏆'], ['Instrutor do Ludus', '📯'], ['Tribuno Militar', '🦁'], ['Centurião', '📜'], ['Legado das Legiões', '🦅'], ['IMPERADOR DE ROMA', '👑']],
         bosses: mkBosses([
-            ['Provocador da Arena', '🪓', 'O abridor de jogos: fome de sangue e aplausos.'],
-            ['Mirmilão Feroz', '⚔️', 'Escudo pesado, gládio curto, sem recuo.'],
-            ['Retiário Mestre', '🔱', 'Rede e tridente contra todo o peso.'],
-            ['Dupla de Dimachaeri', '🗡️', 'Duas lâminas, um só objetivo.'],
-            ['Bestiário & Pantera', '🐆', 'Homem e fera treinados para matar juntos.'],
-            ['Carruagem de Guerra', '🐎', 'Ferro e velocidade na areia.'],
-            ['Anão da Arena', '👹', 'Pequeno no tamanho, gigante na violência.'],
-            ['Leão de Núbia', '🦁', 'O rei das feras, sem jaula.'],
-            ['Touro Branco de Aretium', '🐂', 'Chifres de ferro e carga impossível.'],
-            ['Cómodo, o Imperador', '🤵', 'O próprio César desce à arena.'],
-            ['Capitão dos Pretorianos', '🛡️', 'A última guarda do trono.'],
-            ['Máximo Imperator', '👑', 'O homem que derrotou todos os homens.']
-        ], 25000, 2000)
+            ['Provocador da Arena', '🪓', 'Provocator: tipo de gladiador equipado para enfrentar um rival de classe semelhante.', 'Peito', 'O escudo protege a frente; romper a guarda abre o peitoral.'],
+            ['Mirmilão Feroz', '⚔️', 'Murmillo: gladiador de elmo, escudo e espada curta.', 'Antebraço', 'A espada e o escudo dependem da pegada do antebraço.'],
+            ['Retiário Mestre', '🔱', 'Retiarius: combatia com rede e tridente contra adversários mais protegidos.', 'Bíceps', 'Lançar e recolher a rede exige força e controle dos braços.'],
+            ['Dupla de Dimachaeri', '🗡️', 'Dois dimachaeri lutam com uma lâmina em cada mão.', 'Costas', 'A dupla ataca dos dois lados e deixa a retaguarda aberta ao girar.'],
+            ['Hoplômaco', '🛡️', 'Hoplomachus: gladiador de lança e escudo, com equipamento de inspiração grega.', 'Pernas', 'A lança mantém distância, mas exige passos curtos e uma base móvel.'],
+            ['Bestiarius & Pantera', '🐆', 'Bestiarius treinado para enfrentar uma fera em uma caçada de arena.', 'Core', 'Manter-se em pé diante da pantera depende do equilíbrio do tronco.'],
+            ['Venator & Urso', '🐻', 'Venator: caçador de animais apresentado nas venationes, os espetáculos com feras.', 'Glúteos', 'A esquiva e a mudança de direção dependem do impulso do quadril.'],
+            ['Leão da Numídia', '🦁', 'Fera trazida para uma venatio; não era uma classe de gladiador.', 'Pescoço', 'A cabeça baixa para atacar, expondo a junção do pescoço.'],
+            ['Touro da Arena', '🐂', 'Animal de uma venatio, desafio de esquiva e controle do espaço.', 'Glúteos', 'A investida depende do quadril; uma mudança lateral interrompe o avanço.'],
+            ['Capitão dos Pretorianos', '🛡️', 'Oficial fictício da guarda imperial, incluído como rival dramático da arena.', 'Ombros', 'A armadura e o escudo deixam as articulações dos ombros como ponto móvel.'],
+            ['Cômodo, o Imperador', '🤵', 'O imperador Cômodo participou de combates encenados na arena, em condições controladas.', 'Peito', 'A couraça imperial protege a frente, mas abre no centro ao avançar.'],
+            ['Máximo, o Gladiador', '👑', 'Rival final inspirado no protagonista fictício de Gladiador; não é uma pessoa histórica.', 'Core', 'O duelo prolongado exige estabilidade do tronco e revela a guarda nas rotações.']
+        ])
     },
     rpg: {
         id: 'rpg', name: 'Fantasia RPG',
-        desc: 'Do Aprendiz de Guilda à Lenda do RPG: monstros de masmorra e o Mestre do Jogo.',
+        desc: 'Do Aprendiz de Guilda à Lenda do RPG, vencendo monstros de masmorra e o Mestre do Jogo.',
         arena: 'Masmorra do Mestre — Andar Final', bossLabel: 'MONSTRO ATIVO', stageWord: 'ANDAR',
         missionWord: 'Missão Secundária', missionWordPlural: 'Missões Secundárias', frame: 'brasao',
         ranks: [['Aprendiz de Guilda', '📜'], ['Aventureiro', '🗡️'], ['Mercenário', '💰'], ['Cavaleiro', '🛡️'], ['Paladino', '⚔️'], ['Mestre de Guerra', '🪓'], ['Arconte Arcano', '🔮'], ['Caçador de Dragões', '🐉'], ['Herói da Profecia', '✨'], ['LENDA DO RPG', '🎲']],
         bosses: mkBosses([
-            ['Goblin Chefe', '👺', 'Andar 1 — o bando todo obedece a ele.'],
-            ['Ogro da Ponte', '👹', 'Andar 2 — pede pedágio de ossos.'],
-            ['Golem de Pedra', '🗿', 'Andar 3 — a masmorra que se defende.'],
-            ['Necromante', '💀', 'Andar 4 — o exército já estava enterrado.'],
-            ['Hidra do Pântano', '🐍', 'Andar 5 — corte uma cabeça, cobre o preço.'],
-            ['Grifo Guardião', '🦅', 'Andar 6 — o voo que ninguém vê chegar.'],
-            ['Minotauro da Masmorra', '🐂', 'Andar 7 — o labirinto tem dono.'],
-            ['Mago Negro', '🧙', 'Andar 8 — feitiços que dobram a realidade.'],
-            ['Dragão Ancião', '🐲', 'Andar 9 — séculos dormindo sobre ouro.'],
-            ['Titã de Ferro', '🤖', 'Andar 10 — a armadura vazia que ainda luta.'],
-            ['Rei Demônio', '👿', 'Andar 11 — o trono das sombras.'],
-            ['Mestre do Jogo', '🎲', 'Andar 12 — o verdadeiro último chefe: quem narra a história.']
-        ], 25000, 2000)
+            ['Goblin Chefe', '👺', 'O líder de um bando que tomou a entrada da masmorra.', 'Pernas', 'Sua rapidez é também seu ponto fraco: um passo em falso derruba a investida.'],
+            ['Ogro da Ponte', '👹', 'Brutamontes que bloqueia a passagem e exige pedágio de ossos.', 'Core', 'O peso da clava deixa o centro do corpo exposto no contragolpe.'],
+            ['Golem de Pedra', '🗿', 'Construto antigo que desperta quando alguém invade a masmorra.', 'Tríceps', 'A articulação do braço que ergue os blocos é o ponto móvel.'],
+            ['Necromante', '💀', 'Feiticeiro que comanda mortos-vivos das criptas.', 'Ombros', 'Os gestos que sustentam os feitiços deixam os braços expostos.'],
+            ['Hidra do Pântano', '🐍', 'Serpente de várias cabeças que se esconde entre as águas turvas.', 'Pescoço', 'As cabeças se movem por juntas estreitas no pescoço.'],
+            ['Grifo Guardião', '🦅', 'Criatura alada que vigia o salão superior da masmorra.', 'Costas', 'As asas dependem de articulações dorsais que se abrem durante o voo.'],
+            ['Minotauro da Masmorra', '🐂', 'Guardião de um labirinto subterrâneo, sempre pronto para investir.', 'Glúteos', 'A força da arrancada vem do quadril e pode ser desviada.'],
+            ['Mago Negro', '🧙', 'Conjurador que usa um cajado para canalizar magia sombria.', 'Antebraço', 'O controle do cajado e dos feitiços depende da firmeza das mãos.'],
+            ['Dragão Ancião', '🐲', 'Dragão que repousa sobre tesouros acumulados durante séculos.', 'Peito', 'A chama começa no tórax, onde a couraça se abre antes do sopro.'],
+            ['Titã de Ferro', '🤖', 'Autômato colossal cuja armadura continua lutando mesmo sem piloto.', 'Core', 'A junta do centro de massa controla os movimentos do autômato.'],
+            ['Rei Demônio', '👿', 'Soberano das sombras que comanda o último exército da masmorra.', 'Costas', 'As asas e a capa ocultam uma articulação dorsal vulnerável.'],
+            ['Mestre do Jogo', '🎲', 'A voz por trás da campanha entra na arena como desafio final.', 'Bíceps', 'A mão que controla os dados precisa manter a mesa; quebrar a pegada muda o jogo.']
+        ])
     },
     galactica: {
         id: 'galactica', name: 'Comando Galáctico',
-        desc: 'Do Cadete ao Supremo da Galáxia: frotas, mutantes e o Imperador no centro da galáxia.',
+        desc: 'Da Academia ao Supremo da Galáxia, enfrentando ameaças de frotas e mundos distantes.',
         arena: 'Setor Omega — Fronteira Estelar', bossLabel: 'ALVO ATIVO', stageWord: 'SETOR',
         missionWord: 'Missão de Patrulha', missionWordPlural: 'Missões de Patrulha', frame: 'espacial',
-        ranks: [['Cadete da Academia', '🚀'], ['Piloto Estelar', '🛸'], ['Oficial de Bordo', '⭐'], ['Comandante de Esquadrão', '🪐'], ['Capitão de Cruzador', '🛰️'], ['Almirante de Frota', '🌌'], ['Guardião do Setor', '🛡️'], ['General Galáctico', '⚔️'], ['Lorde das Estrelas', '🌟'], ['SUPREMO DA GALÁXIA', '👽']],
+        ranks: [['Cadete da Academia', '🚀'], ['Piloto Estelar', '🛸'], ['Oficial de Bordo', '⭐'], ['Comandante de Esquadrão', '🪐'], ['Capitão de Cruzador', '🛰️'], ['Almirante de Frota', '🌌'], ['Marechal Estelar', '🛡️'], ['General Galáctico', '⚔️'], ['Lorde das Estrelas', '🌟'], ['SUPREMO DA GALÁXIA', '👽']],
         bosses: mkBosses([
-            ['Enxame de Drones', '🛸', 'Setor 1 — barulho de enxame, silêncio de tumba.'],
-            ['Pirata Espacial', '🏴‍☠️', 'Setor 2 — a carga que você escolta é o prêmio dele.'],
-            ['Androide Rebelde', '🤖', 'Setor 3 — aprendeu a odiar quem o construiu.'],
-            ['Mutante das Luas', '👾', 'Setor 4 — radiação que pensa.'],
-            ['Rainha dos Insetos', '🦂', 'Setor 5 — a colônia inteira é um só organismo.'],
-            ['Colosso Estelar', '🌑', 'Setor 6 — um corpo do tamanho de um planeta.'],
-            ['Leviatã do Espaço', '🐙', 'Setor 7 — a coisa que vive no vácuo.'],
-            ['Núcleo de IA Rebelde', '🧠', 'Setor 8 — pensa mais rápido que a sua frota.'],
-            ['Domínio Sombrio', '👽', 'Setor 9 — a civilização que não deixa sobreviventes.'],
-            ['Buraco Negro Vivo', '🕳️', 'Setor 10 — a gravidade como predador.'],
-            ['Devorador de Planetas', '🪐', 'Setor 11 — o apetite vem antes da frota.'],
-            ['Imperador Galáctico', '👑', 'Setor 12 — o trono no centro da galáxia.']
-        ], 25000, 2000)
+            ['Enxame de Drones', '🛸', 'Nuvem de máquinas leves que satura os sensores de uma nave.', 'Tríceps', 'Os propulsores expostos podem ser desativados por golpes sustentados.'],
+            ['Pirata Espacial', '🏴‍☠️', 'Corsário que ataca cargueiros para roubar a carga e fugir.', 'Antebraço', 'A arma e o gancho de abordagem dependem da força da pegada.'],
+            ['Androide Rebelde', '🤖', 'Máquina que se voltou contra seus construtores e protege seu núcleo.', 'Peito', 'O reator está atrás da placa frontal do tórax.'],
+            ['Mutante das Luas', '👾', 'Ser mutante ficcional, alterado pela radiação de luas distantes.', 'Costas', 'As mutações dorsais ficam expostas quando a criatura se curva.'],
+            ['Rainha dos Insetos', '🦂', 'Líder de uma colônia extraterrestre que age como um só organismo.', 'Ombros', 'As asas e patas dianteiras dependem das articulações dos ombros.'],
+            ['Colosso Estelar', '🌑', 'Organismo ficcional de escala planetária que se move pelo espaço.', 'Pernas', 'As pernas colossais sustentam o corpo e alteram sua órbita ao serem atingidas.'],
+            ['Leviatã do Espaço', '🐙', 'Criatura tentacular que se desloca pelo vácuo entre as naves.', 'Abdômen', 'A carapaça ventral fica exposta quando se enrola ao redor da presa.'],
+            ['Núcleo de IA Rebelde', '🧠', 'Inteligência artificial distribuída que comanda uma estação automatizada.', 'Core', 'O núcleo físico que alimenta a estação é o ponto de falha central.'],
+            ['Domínio Sombrio', '👽', 'Frota de uma civilização hostil que avança sem anunciar suas intenções.', 'Costas', 'A retaguarda da frota depende de linhas de suprimento vulneráveis.'],
+            ['Buraco Negro Vivo', '🕳️', 'Anomalia ficcional que altera a gravidade e puxa objetos para o horizonte.', 'Core', 'A energia se concentra no centro da anomalia, alvo do ataque coordenado.'],
+            ['Devorador de Planetas', '🪐', 'Entidade ficcional que consome mundos e deixa órbitas vazias.', 'Glúteos', 'A criatura precisa se ancorar ao planeta; romper sua base interrompe a sucção.'],
+            ['Imperador Galáctico', '👑', 'Comandante supremo que reúne as forças inimigas no centro da galáxia.', 'Pescoço', 'O visor e o controle do traje ficam vulneráveis na junção do capacete.']
+        ])
     }
 };
 

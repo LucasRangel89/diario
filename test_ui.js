@@ -99,6 +99,7 @@ check('data curta e XP atualizados no cabeçalho', /^\d{2}\/\d{2}$/.test($('head
 check('Perfil Global soma o XP dos nove temas', !!$('global-profile-xp') && $('global-profile-xp').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP`);
 navTo('boss');
 check('grupo Jogo preserva Boss e Story Card', !$('tab-content-boss').classList.contains('hidden') && !!$('nav-boss') && !!$('nav-story'));
+check('Boss explica a brecha tática por trás da fraqueza', $('active-boss-card').textContent.includes(ev('computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).current.weakReason')));
 navTo('story');
 check('Story Card abre pelo grupo Jogo', !$('tab-content-story').classList.contains('hidden'));
 navTo('stats');
@@ -119,6 +120,7 @@ $('advanced-details').open = false;
 check('voltar ao modo simples restaura carga/reps rápidos', !$('simple-box').classList.contains('hidden'));
 check('seed carregou registros', ev('logs.length') > 0, ev('logs.length'));
 check('seed real: 44 logs + 5 sessões salvas', ev('logs.length') === 44 && ev('savedWorkouts.length') === 5);
+check('IDs e retratos originais dos quatro chefões clássicos preservados', ev("THEMES.classico.bosses.slice(0, 4).map(b => b.id).join() === 'boss1,boss2,boss3,boss4' && DEFAULT_BOSS_PORTRAITS['classico:boss1'].endsWith('golem-anilhas.jpg') && DEFAULT_BOSS_PORTRAITS['classico:boss2'].endsWith('hidra-titanio.jpg') && DEFAULT_BOSS_PORTRAITS['classico:boss3'].endsWith('mecagorila.jpg') && DEFAULT_BOSS_PORTRAITS['classico:boss4'].endsWith('behemoth.jpg') && THEMES.classico.bosses.length === 12"));
 check('seletor antigo de tema foi removido de Config', !$('game-theme-select') && !$('game-theme-desc'));
 check('Story Card remove paletas antigas', !$('btn-theme-berzerker') && !$('btn-theme-cyberpunk') && !$('btn-theme-minimal') && !/Cyberpunk|Minimalist|Berzerker Red/.test($('tab-content-story').textContent));
 check('Story Card preserva upload e controle de escurecimento', !!$('bg-image-input') && !!$('bg-overlay-opacity') && $('bg-overlay-opacity').type === 'range');

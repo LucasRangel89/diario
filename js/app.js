@@ -1970,6 +1970,7 @@ function renderBossBattleUI() {
                         <span class="text-xs font-bold text-red-400 uppercase tracking-wider block">${THEME.bossLabel} — ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
                         <h3 class="font-oswald text-3xl font-bold text-white uppercase">${escapeHtml(currentBoss.name)}</h3>
                         <p class="text-xs text-gray-400 mt-0.5">${escapeHtml(currentBoss.desc)}</p>
+                        <p class="text-[10px] text-purple-200/80 mt-1"><strong>Brecha tática:</strong> ${escapeHtml(currentBoss.weakReason || 'Ataque temático.')}</p>
                         <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                             <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700 uppercase">💢 Fraqueza: ${escapeHtml(currentBoss.weak || '—')} ×1,25</span>
                             <label class="text-[10px] font-bold px-2 py-0.5 rounded bg-berzerker-border text-gray-300 cursor-pointer hover:bg-gray-700">🖼️ Retrato
@@ -2012,6 +2013,7 @@ function renderBossBattleUI() {
                     </div>
                     <h4 class="font-oswald font-bold text-white text-lg">${escapeHtml(b.name)}</h4>
                     <span class="text-[10px] font-mono text-purple-300 block">💢 fraco a ${escapeHtml(b.weak || '—')}</span>
+                    <span class="text-[10px] leading-relaxed text-gray-500 block">${escapeHtml(b.weakReason || 'Ataque temático.')}</span>
                     <span class="text-xs font-mono text-gray-400 block">${fmtN(b.maxHp)} HP · ${defeated ? '✔' : '🎁'} +${Math.round(b.maxHp / 200)} XP</span>
                 </div>`;
         }).join('');
