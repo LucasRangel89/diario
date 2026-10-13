@@ -29,7 +29,7 @@ const api = new Function(src + `
     deriveTags, searchCatalog, matchesTags, exerciseTags, TAG_DEFS, EXERCISE_CATALOG_FULL,
     orderWorkoutExercises, isAtivacaoExercise, classifyExercicio, bisetBlockRanges,
     weeklySetsByMuscle, fatigueState, suggestNextWorkout, weeklyGaps, diasDesdeUltimoTreino,
-    FAIXA_SERIES_SEMANAIS, MUSCULOS_MAPA, PLANILHA_SESSOES,
+    FAIXA_SERIES_SEMANAIS, MUSCULOS_MAPA, MUSCLE_META, normalizeMuscle, PLANILHA_SESSOES,
     get STATE() { return { logs, settings, userBodyweight }; },
     setLogs(arr) { logs = arr; },
     setBW(v) { userBodyweight = v; },
@@ -172,6 +172,24 @@ const recPerna = api.recoveryState('Pernas', [{ date: api.isoWeekRange('2026-10-
 check('perna com 72 h de janela', recPerna.hoursNeed >= 72, recPerna.hoursNeed);
 const recSem = api.recoveryState('Peito', [], Date.now());
 check('grupo sem registro', recSem.label === 'SEM REGISTRO');
+
+console.log('\n== 12b. Grupo "Pescoço" removido ==');
+const GRUPOS_ESPERADOS = ['Peito', 'Costas', 'Pernas', 'Glúteos', 'Ombros', 'Bíceps', 'Tríceps', 'Abdômen', 'Core', 'Antebraço'];
+check('10 grupos musculares, sem Pescoço', api.MUSCULOS_MAPA.length === 10 && api.MUSCULOS_MAPA.join(',') === GRUPOS_ESPERADOS.join(','), api.MUSCULOS_MAPA);
+check('mapa de recuperação acompanha os 10 grupos (nada de Pescoço)', !('Pescoço' in api.MUSCLE_META) && api.MUSCULOS_MAPA.every(m => api.MUSCLE_META[m] && api.MUSCLE_META[m].ordem <= 10), Object.keys(api.MUSCLE_META));
+check('nenhum exercício do catálogo segue em Pescoço', !api.EXERCISE_CATALOG_FULL.some(e => e.grupo === 'Pescoço'));
+check('Extensão Cervical migrou para Ombros', api.catalogInfo('Extensão Cervical').grupo === 'Ombros');
+check('busca por "pescoço" ainda acha a cervical', api.searchCatalog({ q: 'pescoço' }).some(e => e.nome === 'Extensão Cervical'));
+check('registro antigo em Pescoço vira Ombros na migração', api.migrateLog({ id: 1, date: '2026-10-01', muscle: 'Pescoço', exercise: 'Extensão Cervical', weight: 10, reps: [15, 10] }).muscle === 'Ombros');
+check('grupo extinto é remapeado sem erro (normalizeMuscle)', api.normalizeMuscle('Pescoço') === 'Ombros' && api.normalizeMuscle('Antebraço') === 'Antebraço' && api.normalizeMuscle('Geral') === 'Geral' && api.normalizeMuscle('') === 'Geral');
+const csvAntigo = [
+    ['Data', 'Sessão', 'Exercício', 'Carga registrada (kg)', 'S1', 'S2', 'S3', 'S4', 'S5', 'RIR', 'Conferir?', 'Observações'],
+    ['09/10/2026', 'Posterior/Acessórios', 'Extensão Cervical', '10', '15', '10', '', '', '', '', 'Não', ''],
+    ['09/10/2026', 'Posterior/Acessórios', 'Treino antigo', '10', '12', '', '', '', '', '', 'Não', '']
+];
+const importados = api.parseSheetLogRows(csvAntigo);
+check('planilha antiga importa sem Pescoço (catálogo → Ombros; resto → Geral)', importados.length === 2 && importados[0].muscle === 'Ombros' && importados[1].muscle === 'Geral', importados.map(l => l.muscle));
+check('séries da semana contam a cervical em Ombros', api.weeklySetsByMuscle([{ id: 1, kind: 'peso', muscle: 'Ombros', date: '2026-10-12', exercise: 'Extensão Cervical', reps: [15, 10] }], '2026-10-14')['Ombros'] === 2);
 
 console.log('\n== 13. Temas (9) ==');
 const themeIds = Object.keys(api.THEMES);

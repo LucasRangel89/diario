@@ -65,7 +65,7 @@ const TECHNIQUES = [['Convencional', 'Convencional'], ['Rest-Pause', 'Rest-Pause
 const NEXT_GOALS = [['', '— automático —'], ['📈 Aumentar Carga', '📈 Aumentar Carga (+kg)'], ['➕ Aumentar Reps', '➕ Mais Repetições'], ['⚖️ Manter Carga', '⚖️ Manter Carga'], ['🎯 Ajustar Execução', '🎯 Ajustar Técnica'], ['📉 Reduzir Carga', '📉 Reduzir Peso']];
 const INP = 'w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm focus:outline-none focus:border-berzerker-500';
 const LBL = 'block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1';
-const MUSCLE_OPTIONS = MUSCLE_OPTIONS_FULL; // catálogo completo (11 grupos + Geral + Cardio)
+const MUSCLE_OPTIONS = MUSCLE_OPTIONS_FULL; // catálogo completo (10 grupos + Geral)
 const NAV_GROUPS = [
     { id: 'treino', label: 'Treino', tabs: [['diario', 'Hoje'], ['historico', 'Histórico'], ['busca', 'Buscar'], ['montador', 'Meus treinos']] },
     { id: 'jogo', label: 'Jogo', tabs: [['boss', 'Boss'], ['story', 'Story Card']] },
@@ -188,6 +188,8 @@ function shakeElement(el) {
 
 // ============================ CARGA/PERSISTÊNCIA DE DADOS ============================
 function migrateLog(l) {
+    // Grupos extintos são remapeados (ex.: "Pescoço" → "Ombros") sem quebrar o registro.
+    if (l.muscle) l.muscle = normalizeMuscle(l.muscle);
     if (!l.kind) {
         l.kind = /corrida|esteira|bike|elíptic|remo|cardio/i.test(l.exercise || '') && l.distanceKm !== undefined ? 'corrida'
             : (/corrida|esteira|bike|elíptic|remo/i.test(l.exercise || '') && !l.reps ? 'corrida' : 'peso');
@@ -203,6 +205,17 @@ function migrateLog(l) {
     }
     if (l.kind === 'corrida') { l.muscle = 'Cardio'; }
     return l;
+}
+
+// Treinos salvos também carregam grupos antigos (ex.: seed da planilha trazia
+// "Extensão Cervical" em Pescoço) — normaliza na hora de carregar/semeiar.
+function normalizeSavedWorkouts() {
+    (savedWorkouts || []).forEach(w => {
+        (w.exercises || []).forEach(e => {
+            if (e && e.muscle) e.muscle = normalizeMuscle(e.muscle);
+        });
+    });
+    return savedWorkouts;
 }
 
 function parseStoredObject(key) {
@@ -405,6 +418,7 @@ function loadWorkoutsFromStorage() {
         const stored = JSON.parse(safeStorage.get(STORAGE_KEY_WORKOUTS));
         if (Array.isArray(stored)) savedWorkouts = stored;
     } catch (e) { savedWorkouts = []; }
+    normalizeSavedWorkouts();
 }
 
 function saveBodyweight() {
@@ -669,6 +683,7 @@ function seedInitialMockData(todayStr) {
     // Seed = planilha real do usuário (Log de 28/09 a 10/10/2026 + 5 sessões)
     if (safeStorage.get(STORAGE_KEY_SEEDED) === '1') return;
     if (typeof seedFromPlanilha === 'function') seedFromPlanilha();
+    normalizeSavedWorkouts();
     saveLogsToStorage();
     saveWorkoutsToStorage();
     safeStorage.set(STORAGE_KEY_SEEDED, '1');
@@ -2980,7 +2995,7 @@ function importJSONBackup(event) {
                 const importedThemeId = THEMES[parsed.gameTheme] ? parsed.gameTheme : activeGameThemeId;
                 logs = parsed.logs.map(migrateLog);
                 if (parsed.userBodyweight) userBodyweight = parsed.userBodyweight;
-                if (Array.isArray(parsed.savedWorkouts)) savedWorkouts = parsed.savedWorkouts;
+                if (Array.isArray(parsed.savedWorkouts)) savedWorkouts = normalizeSavedWorkouts();
                 if (parsed.settings) settings = { ...settings, ...parsed.settings };
 
                 const importedSaves = parsed.themeGameSaves && typeof parsed.themeGameSaves === 'object' ? parsed.themeGameSaves : null;

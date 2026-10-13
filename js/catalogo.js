@@ -118,10 +118,11 @@ const EXERCISE_CATALOG_FULL = [
     { nome: 'Prancha Isométrica',             grupo: 'Core',     equipamento: 'Peso corporal',      como: 'segundos',            tipo: 'isometria',    fator: 1, lados: 1, unidade: 'seg',  faixa: [30, 60], extra: null, descanso: 45, obs: 'Não entra no volume' },
     { nome: 'Prancha Lateral',                grupo: 'Core',     equipamento: 'Peso corporal',      como: 'segundos',            tipo: 'isometria',    fator: 1, lados: 1, unidade: 'seg',  faixa: [15, 60], extra: null, descanso: 45, obs: 'Não entra no volume' },
 
-    // ============================== ANTEBRAÇO / PESCOÇO ===============
+    // ============================== ANTEBRAÇO ===========================
     { nome: 'Extensão de Punho',              grupo: 'Antebraço',equipamento: 'Halteres (par)',     como: 'peso de 1 haltere',   tipo: 'halter_par',   fator: 2, lados: 1, unidade: 'reps', faixa: [12, 20], extra: null, descanso: 45, obs: 'Halteres (confirmado)' },
     { nome: 'Flexão de Punho',                grupo: 'Antebraço',equipamento: 'Halteres (par)',     como: 'peso de 1 haltere',   tipo: 'halter_par',   fator: 2, lados: 1, unidade: 'reps', faixa: [12, 20], extra: null, descanso: 45, obs: 'Halteres (confirmado)' },
-    { nome: 'Extensão Cervical',              grupo: 'Pescoço',  equipamento: 'A definir',          como: 'a definir',           tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [12, 20], extra: null, descanso: 45 },
+    // "Pescoço" deixou de ser um grupo: a cervical entrou em Ombros (trapézio/ombro).
+    { nome: 'Extensão Cervical',              grupo: 'Ombros',   equipamento: 'A definir',          como: 'a definir',           tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [12, 20], extra: null, descanso: 45 },
 
     // ============================== CARDIO =============================
     { nome: 'Corrida (Esteira)',              grupo: 'Cardio',   equipamento: 'Esteira',            como: 'km e minutos',        tipo: 'corrida',      fator: 1, lados: 1, unidade: 'reps', faixa: [0, 0],   extra: null, descanso: 0 },
@@ -174,12 +175,20 @@ const MUSCLE_META = {
     'Abdômen':   { recoveryH: 24, xpWeight: 1.0, ordem: 8 },
     'Core':      { recoveryH: 24, xpWeight: 1.0, ordem: 9 },
     'Antebraço': { recoveryH: 24, xpWeight: 1.0, ordem: 10 },
-    'Pescoço':   { recoveryH: 24, xpWeight: 1.0, ordem: 11 },
-    'Geral':     { recoveryH: 24, xpWeight: 1.0, ordem: 12 },
-    'Cardio':    { recoveryH: 12, xpWeight: 1.0, ordem: 13 }
+    'Geral':     { recoveryH: 24, xpWeight: 1.0, ordem: 11 },
+    'Cardio':    { recoveryH: 12, xpWeight: 1.0, ordem: 12 }
 };
-const MUSCULOS_MAPA = ['Peito', 'Costas', 'Pernas', 'Glúteos', 'Ombros', 'Bíceps', 'Tríceps', 'Abdômen', 'Core', 'Antebraço', 'Pescoço'];
+// 10 grupos musculares (o antigo "Pescoço" foi absorvido por "Ombros").
+const MUSCULOS_MAPA = ['Peito', 'Costas', 'Pernas', 'Glúteos', 'Ombros', 'Bíceps', 'Tríceps', 'Abdômen', 'Core', 'Antebraço'];
 const MUSCLE_OPTIONS_FULL = [...MUSCULOS_MAPA, 'Geral'];
+
+// Grupos que deixaram de existir: registros antigos (localStorage, backup JSON,
+// CSV da planilha) são remapeados sem erro na hora de carregar/importar.
+const LEGACY_MUSCLE_ALIASES = { 'Pescoço': 'Ombros' };
+function normalizeMuscle(muscle) {
+    const m = String(muscle || '').trim();
+    return LEGACY_MUSCLE_ALIASES[m] || m || 'Geral';
+}
 
 // XP legado: pernas contam metade
 const MUSCLE_WEIGHT = { 'Pernas': 0.5, 'Glúteos': 0.5 };
