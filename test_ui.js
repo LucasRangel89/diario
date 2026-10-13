@@ -266,19 +266,25 @@ check('busca passa a contar o uso', ev(`usageStats().usage['Rosca Direta com Bar
 
 // ============================ ASSISTENTE — FASE 2 (ORDEM) ============================
 console.log('\n== UI 9. Assistente: ordem sugerida (Fase 2) ==');
-ev(`draftExercises = [
+ev(`window.__orderLogsBackup = logs;
+logs = [{ id: -99, kind: 'peso', muscle: 'Pernas', date: getTodayLocalISO(), exercise: 'Leg Press 45°', reps: Array(10).fill(10) }];
+draftExercises = [
+    { muscle: 'Pernas', exercise: 'Leg Press 45°', weight: 100, repsText: '10, 10', technique: 'Convencional', type: 'carga_total' },
     { muscle: 'Bíceps', exercise: 'Rosca Martelo', weight: 8, repsText: '10, 10', technique: 'Convencional', type: 'halter_par' },
     { muscle: 'Costas', exercise: 'Remada Curvada com Barra', weight: 30, repsText: '10, 10', technique: 'Convencional', type: 'carga_total' },
     { muscle: 'Peito', exercise: 'Supino Reto na Máquina', weight: 60, repsText: '8, 8', technique: 'Convencional', type: 'carga_total' },
     { muscle: 'Ombros', exercise: 'Manguito Rotador', weight: 20, repsText: '15, 15', technique: 'Convencional', type: 'carga_total' }
 ]; renderDraftList();`);
-check('rascunho montado com 4 exercícios', $('draft-count').textContent === '4', $('draft-count').textContent);
+check('rascunho montado com 5 exercícios', $('draft-count').textContent === '5', $('draft-count').textContent);
 check('botão "Ordenar com o assistente" existe', !!btnIn($('tab-content-diario'), 'Ordenar com o assistente'));
 click(btnIn($('tab-content-diario'), 'Ordenar com o assistente'));
 check('ordem aplicada: manguito (ativação) primeiro', ev('draftExercises[0].exercise') === 'Manguito Rotador', ev('draftExercises.map(e => e.exercise)'));
 check('composto (remada) antes do isolador (rosca)', ev("draftExercises.findIndex(e => e.exercise === 'Remada Curvada com Barra')") < ev("draftExercises.findIndex(e => e.exercise === 'Rosca Martelo')"));
-check('cada item do rascunho mostra o porquê (📌)', $('draft-exercises-list').innerHTML.split('📌').length - 1 >= 4);
+check('entre compostos, o grupo mais pronto e abaixo da meta sobe', ev("draftExercises.findIndex(e => e.exercise === 'Supino Reto na Máquina')") < ev("draftExercises.findIndex(e => e.exercise === 'Leg Press 45°')"), ev('draftExercises.map(e => e.exercise)'));
+check('ajuste semanal explica o motivo da posição', /prontidão|séries/.test(ev("draftExercises.find(e => e.exercise === 'Supino Reto na Máquina').orderReason")));
+check('cada item do rascunho mostra o porquê (📌)', $('draft-exercises-list').innerHTML.split('📌').length - 1 >= 5);
 check('descrição do porquê em linguagem simples', /Ativação|Composto|Isolador|apoio|Core/i.test($('draft-exercises-list').textContent));
+ev('logs = window.__orderLogsBackup; delete window.__orderLogsBackup; renderRecoveryMap(); renderDaySuggestion(); renderWeekGaps();');
 const antesOrdem = ev('draftExercises.map(e => e.exercise).join()');
 ev('moveDraftExercise(0, 1)');
 check('▲▼ continua funcionando (liberdade total)', ev('draftExercises.map(e => e.exercise).join()') !== antesOrdem);

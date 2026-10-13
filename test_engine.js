@@ -305,6 +305,45 @@ check('prancha no fim mesmo começando 1ª na lista', nomes(o8)[2] === 'Prancha 
 check('leg press (composto grande) antes da elevação lateral', nomes(o8)[0] === 'Leg Press 45°', nomes(o8));
 check('lista vazia/nula não quebra', Array.isArray(api.orderWorkoutExercises([])) && Array.isArray(api.orderWorkoutExercises(null)));
 
+// Recuperação e meta semanal desempata apenas dentro da mesma fase.
+const orderNow = new Date('2026-10-16T12:00:00').getTime();
+const fatigueOrderLogs = [
+    { id: 301, kind: 'peso', muscle: 'Pernas', date: '2026-10-16', exercise: 'Leg Press 45°', reps: Array(10).fill(10) }
+];
+const recoveryTieVector = [
+    { muscle: 'Pernas', exercise: 'Leg Press 45°' },
+    { muscle: 'Peito', exercise: 'Supino Reto na Máquina' }
+];
+const orderWithoutContext = api.orderWorkoutExercises(recoveryTieVector);
+const orderWithRecovery = api.orderWorkoutExercises(recoveryTieVector, {
+    logs: fatigueOrderLogs, nowMs: orderNow, refDateISO: '2026-10-16'
+});
+check('sem contexto preserva a ordem-base por grupo', nomes(orderWithoutContext)[0] === 'Leg Press 45°', nomes(orderWithoutContext));
+check('na mesma fase, prioriza mais prontidão + séries que faltam', nomes(orderWithRecovery)[0] === 'Supino Reto na Máquina', nomes(orderWithRecovery));
+check('a ordem adaptada explica prontidão e meta semanal', /prontidão/.test(orderWithRecovery[0].orderReason) && /faltam 10/.test(orderWithRecovery[0].orderReason), orderWithRecovery[0].orderReason);
+const recoveryKeepsPhases = api.orderWorkoutExercises([
+    { muscle: 'Peito', exercise: 'Crucifixo na Máquina' },
+    { muscle: 'Pernas', exercise: 'Leg Press 45°' }
+], { logs: fatigueOrderLogs, nowMs: orderNow, refDateISO: '2026-10-16' });
+check('prontidão nunca põe isolador antes de composto', nomes(recoveryKeepsPhases)[0] === 'Leg Press 45°', nomes(recoveryKeepsPhases));
+const recoveryKeepsActivation = api.orderWorkoutExercises([
+    { muscle: 'Pernas', exercise: 'Leg Press 45°' },
+    { muscle: 'Ombros', exercise: 'Manguito Rotador' }
+], { logs: fatigueOrderLogs, nowMs: orderNow, refDateISO: '2026-10-16' });
+check('ativação continua abrindo mesmo com outro grupo mais recuperado', nomes(recoveryKeepsActivation)[0] === 'Manguito Rotador', nomes(recoveryKeepsActivation));
+const recoveryKeepsSupport = api.orderWorkoutExercises([
+    { muscle: 'Antebraço', exercise: 'Extensão de Punho' },
+    { muscle: 'Abdômen', exercise: 'Ab Wheel' }
+], { logs: fatigueOrderLogs, nowMs: orderNow, refDateISO: '2026-10-16' });
+check('regra de estabilizador continua valendo com o ajuste de recuperação', nomes(recoveryKeepsSupport)[0] === 'Ab Wheel', nomes(recoveryKeepsSupport));
+const recoveryKeepsBiset = api.orderWorkoutExercises([
+    { muscle: 'Pernas', exercise: 'Leg Press 45°' },
+    { muscle: 'Peito', exercise: 'Supino Reto na Máquina', biset: true },
+    { muscle: 'Peito', exercise: 'Crucifixo na Máquina' }
+], { logs: fatigueOrderLogs, nowMs: orderNow, refDateISO: '2026-10-16' });
+const posBisetSupino = nomes(recoveryKeepsBiset).indexOf('Supino Reto na Máquina');
+check('desempate por fadiga não separa bi-set', nomes(recoveryKeepsBiset)[posBisetSupino + 1] === 'Crucifixo na Máquina', nomes(recoveryKeepsBiset));
+
 console.log('\n== 18. Fadiga real + séries semanais (Fase 3) ==');
 // Semana de 12/10/2026 (seg) a 18/10/2026 (dom) — 14/10 cai no meio
 check('faixa-alvo 10–20 séries', api.FAIXA_SERIES_SEMANAIS.min === 10 && api.FAIXA_SERIES_SEMANAIS.max === 20);
