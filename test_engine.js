@@ -15,7 +15,7 @@ global.Image = class { set src(v) { } };
 global.Chart = undefined;
 
 // ---- Carrega os módulos (mesmo escopo) ----
-const src = ['js/catalogo.js', 'js/gamificacao.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
+const src = ['js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
     .map(p => fs.readFileSync(p, 'utf8')).join('\n');
 const api = new Function(src + `
   return {
@@ -27,6 +27,9 @@ const api = new Function(src + `
     weeklyStreakInfo, seasonState, completeSeason, migrateLog,
     buildPlanilhaCSV, parseSheetLogRows, parseCSVRows, parseDateBRorISO, seedFromPlanilha, TYPE_META, THEMES,
     deriveTags, searchCatalog, matchesTags, exerciseTags, TAG_DEFS, EXERCISE_CATALOG_FULL,
+    orderWorkoutExercises, isAtivacaoExercise, classifyExercicio, bisetBlockRanges,
+    weeklySetsByMuscle, fatigueState, suggestNextWorkout, weeklyGaps, diasDesdeUltimoTreino,
+    FAIXA_SERIES_SEMANAIS, MUSCULOS_MAPA, PLANILHA_SESSOES,
     get STATE() { return { logs, settings, userBodyweight }; },
     setLogs(arr) { logs = arr; },
     setBW(v) { userBodyweight = v; },
@@ -225,6 +228,129 @@ check('tag "casa" retorna só exercícios de casa', api.searchCatalog({ tags: ['
 check('modo E: halter + unilateral', api.searchCatalog({ tags: ['halter', 'unilateral'], tagMode: 'all' }).every(e => e.tags.includes('halter') && e.tags.includes('unilateral')));
 check('matchesTags OU/E', api.matchesTags(['a', 'b'], ['a', 'c'], 'any') && !api.matchesTags(['a', 'b'], ['a', 'c'], 'all'));
 check('catálogo todo etiquetado (≥4 tags cada)', api.EXERCISE_CATALOG_FULL.every(e => (e.tags || []).length >= 4));
+
+console.log('\n== 17. Ordenação inteligente (Fase 2) ==');
+const nomes = arr => arr.map(e => e.exercise);
+
+// Regra 1: ativação/correção primeiro
+const o1 = api.orderWorkoutExercises([
+    { muscle: 'Peito', exercise: 'Supino Reto na Máquina' },
+    { muscle: 'Ombros', exercise: 'Manguito Rotador' }
+]);
+check('ativação (manguito) abre o treino', nomes(o1)[0] === 'Manguito Rotador', nomes(o1));
+check('todo exercício traz o porquê da posição', o1.every(e => typeof e.orderReason === 'string' && e.orderReason.length > 10));
+
+// Regra 2: composto antes de isolador + desempate por tamanho do grupo
+const o2 = api.orderWorkoutExercises([
+    { muscle: 'Bíceps', exercise: 'Rosca Martelo' },
+    { muscle: 'Costas', exercise: 'Remada Curvada com Barra' },
+    { muscle: 'Pernas', exercise: 'Mesa Flexora' }
+]);
+check('composto (remada) antes dos isoladores', nomes(o2)[0] === 'Remada Curvada com Barra', nomes(o2));
+check('isoladores: grupo grande primeiro (pernas antes de bíceps)', nomes(o2)[1] === 'Mesa Flexora' && nomes(o2)[2] === 'Rosca Martelo', nomes(o2));
+
+// Regra 3: não fadigar o estabilizador/apoio antes (antebraço segura o ab wheel)
+const o3 = api.orderWorkoutExercises([
+    { muscle: 'Antebraço', exercise: 'Extensão de Punho' },
+    { muscle: 'Abdômen', exercise: 'Ab Wheel' }
+]);
+check('antebraço NÃO vai antes de quem precisa dele (ab wheel)', nomes(o3)[0] === 'Ab Wheel' && nomes(o3)[1] === 'Extensão de Punho', nomes(o3));
+check('motivo cita o apoio/proteção', /apoio|Antebraço/.test(o3[1].orderReason), o3[1].orderReason);
+
+// Regra 4: compostos alternam empurrar/puxar
+const o4 = api.orderWorkoutExercises([
+    { muscle: 'Peito', exercise: 'Supino Reto na Máquina' },
+    { muscle: 'Peito', exercise: 'Supino Inclinado c/ Halteres' },
+    { muscle: 'Costas', exercise: 'Puxada Frontal na Polia' },
+    { muscle: 'Costas', exercise: 'Remada Curvada com Barra' }
+]);
+const pads = nomes(o4).map(n => api.classifyExercicio({ exercise: n }).empurrar ? 'E' : 'P');
+check('empurrar/puxar alternam nos compostos', pads.join('') === 'PEPE' || pads.join('') === 'EPEP', [nomes(o4), pads]);
+check('os 4 compostos continuam todos presentes', nomes(o4).slice().sort().join() === ['Puxada Frontal na Polia', 'Remada Curvada com Barra', 'Supino Inclinado c/ Halteres', 'Supino Reto na Máquina'].sort().join());
+
+// Bi-set: o par anda junto (nunca separa)
+const o5 = api.orderWorkoutExercises([
+    { muscle: 'Peito', exercise: 'Supino Reto na Máquina' },
+    { muscle: 'Peito', exercise: 'Crucifixo na Máquina', biset: true },
+    { muscle: 'Costas', exercise: 'Puxada Frontal na Polia' }
+]);
+const iSup = nomes(o5).indexOf('Supino Reto na Máquina');
+check('bi-set permanece adjacente', nomes(o5)[iSup + 1] === 'Crucifixo na Máquina', nomes(o5));
+check('2º do par continua marcado como bi-set', o5[iSup + 1].biset === true && o5[iSup].biset === false);
+
+// Core/abdômen no fim
+const o6 = api.orderWorkoutExercises([
+    { muscle: 'Abdômen', exercise: 'Abdominal Supra no Solo' },
+    { muscle: 'Peito', exercise: 'Supino Reto na Máquina' },
+    { muscle: 'Bíceps', exercise: 'Rosca Martelo' },
+    { muscle: 'Core', exercise: 'Prancha Isométrica' }
+]);
+check('core/abdômen fecham o treino', nomes(o6).slice(2).sort().join() === ['Abdominal Supra no Solo', 'Prancha Isométrica'].sort().join(), nomes(o6));
+check('composto (supino) vira o primeiro', nomes(o6)[0] === 'Supino Reto na Máquina', nomes(o6));
+
+// Vetor real: split "Peito/Tríceps/Ombro" da planilha do usuário
+const o7 = api.orderWorkoutExercises(api.PLANILHA_SESSOES[0].exercises);
+check('vetor real: supinos compostos abrem', nomes(o7)[0] === 'Supino Inclinado c/ Halteres' && nomes(o7)[1] === 'Supino Reto na Máquina', nomes(o7));
+check('vetor real: isoladores de peito depois dos compostos', nomes(o7)[2] === 'Crucifixo na Máquina' && nomes(o7)[3] === 'Crossover na Polia Alta', nomes(o7));
+check('vetor real: tríceps (apoio do supino) no fim', nomes(o7).slice(5).sort().join() === ['Tríceps Corda na Polia', 'Tríceps Unilateral (francês/testa)'].sort().join(), nomes(o7));
+check('vetor real: lista original preservada (não muta)', api.PLANILHA_SESSOES[0].exercises[0].exercise === 'Tríceps Corda na Polia');
+
+// isometria/prancha sem padrão articular não quebra a ordenação
+const o8 = api.orderWorkoutExercises([
+    { muscle: 'Core', exercise: 'Prancha Isométrica' },
+    { muscle: 'Pernas', exercise: 'Leg Press 45°' },
+    { muscle: 'Ombros', exercise: 'Elevação Lateral c/ Halteres' }
+]);
+check('prancha no fim mesmo começando 1ª na lista', nomes(o8)[2] === 'Prancha Isométrica', nomes(o8));
+check('leg press (composto grande) antes da elevação lateral', nomes(o8)[0] === 'Leg Press 45°', nomes(o8));
+check('lista vazia/nula não quebra', Array.isArray(api.orderWorkoutExercises([])) && Array.isArray(api.orderWorkoutExercises(null)));
+
+console.log('\n== 18. Fadiga real + séries semanais (Fase 3) ==');
+// Semana de 12/10/2026 (seg) a 18/10/2026 (dom) — 14/10 cai no meio
+check('faixa-alvo 10–20 séries', api.FAIXA_SERIES_SEMANAIS.min === 10 && api.FAIXA_SERIES_SEMANAIS.max === 20);
+const sem = api.isoWeekRange('2026-10-14');
+check('semana de referência = 12 a 18/10', sem[0] === '2026-10-12' && sem[1] === '2026-10-18', sem);
+const fakeLogs = [
+    { id: 1, kind: 'peso', muscle: 'Pernas', date: '2026-10-12', exercise: 'Leg Press 45°', reps: [10, 10, 10] },
+    { id: 2, kind: 'peso', muscle: 'Pernas', date: '2026-10-13', exercise: 'Agachamento Hack', sets: [{}, {}, {}] },
+    { id: 3, kind: 'peso', muscle: 'Peito', date: '2026-10-11', exercise: 'Supino Reto na Máquina', reps: [8, 8] },   // semana anterior
+    { id: 4, kind: 'corrida', muscle: 'Cardio', date: '2026-10-12', distanceKm: 5 },
+    { id: 5, kind: 'peso', muscle: 'Peito', date: '2026-10-16', exercise: 'Supino Reto na Máquina', reps: [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8] }
+];
+const semSets = api.weeklySetsByMuscle(fakeLogs, '2026-10-14');
+check('séries da semana: pernas = 6 (3 reps + 3 sets)', semSets['Pernas'] === 6, semSets);
+check('fora da semana não conta (peito de 11/10 ficou de fora)', (semSets['Peito'] || 0) === 12, semSets);
+check('corrida não conta série', semSets['Cardio'] === undefined, semSets);
+
+const f1 = api.fatigueState('Pernas', [], 4, Date.now());
+check('4 séries: abaixo da meta, faltam 6', f1.volumeStatus === 'abaixo' && f1.faltam === 6 && f1.excesso === 0, f1);
+check('sem registro: prontidão 100% mas meta em falta', f1.pct === 100 && f1.semRegistro === true, f1);
+const f2 = api.fatigueState('Pernas', [], 12, Date.now());
+check('12 séries: na faixa', f2.volumeStatus === 'na-faixa' && f2.faltam === 0 && f2.excesso === 0, f2);
+const f3 = api.fatigueState('Peito', [], 25, Date.now());
+check('25 séries: acima da faixa (excesso 5)', f3.volumeStatus === 'acima' && f3.excesso === 5, f3);
+check('volume estourado derruba a prontidão real', f3.pct < f3.recuperacaoPct && f3.pct === 90, f3);
+const hojeLogs = [{ id: 9, kind: 'peso', muscle: 'Peito', date: '2026-10-16', exercise: 'Supino Reto na Máquina', reps: [8, 8, 8, 8] }];
+const f4 = api.fatigueState('Peito', hojeLogs, 15, new Date('2026-10-16T20:00:00').getTime());
+check('treinou hoje: recuperação baixa mesmo com volume na faixa', f4.recuperacaoPct < 33 && f4.label === 'EXAUSTO', f4);
+check('texto de volume pronto para a tela', /séries/.test(f3.volText), f3.volText);
+
+console.log('\n== 19. Sugestão do próximo treino (Fase 3) ==');
+const wkA = { id: 1, name: 'A — Pernas', exercises: [{ muscle: 'Pernas', exercise: 'Leg Press 45°' }] };
+const wkB = { id: 2, name: 'B — Peito', exercises: [{ muscle: 'Peito', exercise: 'Supino Reto na Máquina' }] };
+const nowSug = new Date('2026-10-16T12:00:00').getTime();
+const sug = api.suggestNextWorkout([wkA, wkB], fakeLogs, nowSug);
+check('prioriza pernas: descansadas + muito abaixo da meta', sug[0].w.name === 'A — Pernas', sug.map(s => [s.w.name, s.score]));
+check('raciocínio cita a meta da semana', sug[0].motivos.some(m => /faltam \d+ séries/.test(m)), sug[0].motivos);
+check('raciocínio cita o descanso', sug[0].motivos.some(m => /descansado/.test(m)), sug[0].motivos);
+check('peito aparece como alternativa com score menor', sug.length === 2 && sug[1].w.name === 'B — Peito' && sug[1].score < sug[0].score, sug.map(s => s.score));
+check('lista vazia de treinos não quebra', api.suggestNextWorkout([], fakeLogs, nowSug).length === 0);
+
+const gaps = api.weeklyGaps(fakeLogs, '2026-10-16');
+check('weeklyGaps lista pernas com falta (6/10)', gaps.some(g => g.muscle === 'Pernas' && g.faltam === 4), gaps);
+check('grupos na faixa saem da lista de faltas', !gaps.some(g => g.muscle === 'Peito'), gaps);
+check('maior falta vem primeiro', gaps[0].faltam >= (gaps[gaps.length - 1] || { faltam: 0 }).faltam, gaps.map(g => g.faltam));
+check('dias desde o último treino', api.diasDesdeUltimoTreino(fakeLogs, nowSug) === 0 && api.diasDesdeUltimoTreino([{ date: '2026-10-10' }], nowSug) === 6, api.diasDesdeUltimoTreino(fakeLogs, nowSug));
 
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);

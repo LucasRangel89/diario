@@ -252,6 +252,9 @@
 
                 <!-- CHECKLIST DE EXERCÍCIOS DA SESSÃO -->
                 <div id="session-exercises-list" class="space-y-3"></div>
+
+                <!-- SESSÃO COMPLETA → PRÓXIMO TREINO SUGERIDO -->
+                <div id="session-next-hint" class="hidden bg-berzerker-dark border border-emerald-600/40 rounded-xl p-4"></div>
             </div>
 
             <!-- MAPA DE FADIGA MUSCULAR -->
@@ -261,7 +264,7 @@
                         <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
                             <span class="text-emerald-400">🧬</span> Mapa de Fadiga Muscular
                         </h2>
-                        <p class="text-xs text-gray-400">Recuperação por grupo: janela de 24 h (abdômen) a 72 h (pernas), ajustada pelas séries feitas. Clique num box para registrar aquele grupo.</p>
+                        <p class="text-xs text-gray-400">Fadiga <b>real</b> = recuperação (janela de 24 h a 72 h) + volume da semana (faixa-alvo 10–20 séries por grupo). Clique num box para registrar aquele grupo.</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold uppercase">
                         <span class="flex items-center gap-1 text-red-400"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Exausto</span>
@@ -380,10 +383,14 @@
 
                 <!-- RASCUNHO DO TREINO -->
                 <div>
-                    <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider mb-2 flex items-center gap-2">
-                        📋 Exercícios do Treino
-                        <span id="draft-count" class="px-1.5 py-0.5 bg-berzerker-border rounded text-[10px] text-gray-300">0</span>
-                    </h3>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                            📋 Exercícios do Treino
+                            <span id="draft-count" class="px-1.5 py-0.5 bg-berzerker-border rounded text-[10px] text-gray-300">0</span>
+                        </h3>
+                        <button type="button" onclick="applySuggestedOrder()" class="px-3 py-1.5 bg-berzerker-600/20 border border-berzerker-500/50 hover:bg-berzerker-600/40 text-berzerker-500 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">✨ Ordenar com o assistente</button>
+                    </div>
+                    <div id="builder-week-gaps" class="mb-3"></div>
                     <div id="draft-exercises-list" class="space-y-2"></div>
                 </div>
 
@@ -1001,9 +1008,10 @@
 
     </main>
 
-    <!-- App (offline-first: catálogo → gamificação → núcleo) -->
+    <!-- App (offline-first: catálogo → gamificação → assistente → núcleo) -->
     <script src="js/catalogo.js"></script>
     <script src="js/gamificacao.js"></script>
+    <script src="js/assistente.js"></script>
     <script src="js/planilha_data.js"></script>
     <script src="js/historico.js"></script>
     <script src="js/busca.js"></script>
