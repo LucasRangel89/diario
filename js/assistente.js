@@ -242,7 +242,7 @@ function orderWorkoutExercises(list, options = {}) {
             else if (c.core) partes.push('Core/abdômen no fim — não atrapalha os exercícios compostos');
             else if (c.composto) partes.push('Composto multiarticular — fazer com o músculo fresco');
             else partes.push('Isolador — rende melhor depois dos compostos');
-            if (c.composto && !c.ativacao && (MUSCLE_SIZE_RANK[c.grupo] ?? 11) <= 3) partes.push('Grupo grande primeiro, enquanto há força');
+            if (c.composto && !c.ativacao && !recoveryMoved.has(r) && (MUSCLE_SIZE_RANK[c.grupo] ?? 11) <= 3) partes.push('Grupo grande primeiro, enquanto há força');
             if (recoveryMoved.has(r)) {
                 const recoveryReason = rangeRecoveryReason(r);
                 if (recoveryReason) partes.push(recoveryReason);
