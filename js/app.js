@@ -63,6 +63,18 @@ const NEXT_GOALS = [['', '— automático —'], ['📈 Aumentar Carga', '📈 A
 const INP = 'w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm focus:outline-none focus:border-berzerker-500';
 const LBL = 'block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1';
 const MUSCLE_OPTIONS = MUSCLE_OPTIONS_FULL; // catálogo completo (11 grupos + Geral + Cardio)
+const NAV_GROUPS = [
+    { id: 'treino', label: 'Treino', tabs: [['diario', 'Hoje'], ['historico', 'Histórico'], ['busca', 'Buscar'], ['montador', 'Meus treinos']] },
+    { id: 'jogo', label: 'Jogo', tabs: [['boss', 'Boss'], ['story', 'Story Card']] },
+    { id: 'voce', label: 'Você', tabs: [['stats', 'Stats'], ['calcs', 'Calcs']] },
+    { id: 'config', label: 'Config', tabs: [['config', 'Config']] }
+];
+let activeNavGroup = 'treino';
+let activeTab = 'diario';
+const THEME_ICONS = Object.freeze({
+    classico: '🦍', zodiaco: '♈', hercules: '🦁', acao: '🎬', folclore: '🌴',
+    nordica: '🛡️', roma: '🏛️', rpg: '🐉', galactica: '🚀'
+});
 
 // ============================ UTILITÁRIOS ============================
 function toLocalISO(d) {
@@ -83,6 +95,12 @@ function formatShortBR(isoStr) {
     if (!isoStr) return '—';
     const [, m, d] = isoStr.split('-').map(Number);
     return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
+}
+function updateHeaderDate(isoStr) {
+    const el = document.getElementById('header-today-date');
+    if (!el) return;
+    el.textContent = formatShortBR(isoStr);
+    el.title = formatDateBR(isoStr);
 }
 function escapeHtml(str) {
     return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -348,22 +366,54 @@ function showRanksModal(themeId) {
 }
 
 // ============================ TABS ============================
-function switchTab(tab) {
-    ['diario', 'montador', 'historico', 'busca', 'boss', 'story', 'stats', 'calcs', 'config'].forEach(t => {
-        const el = document.getElementById(`tab-content-${t}`);
-        const btnDesktop = document.getElementById(`nav-${t}`);
-        const btnMobile = document.getElementById(`m-nav-${t}`);
-        if (!el) return;
-        if (t === tab) {
-            el.classList.remove('hidden');
-            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg bg-berzerker-600 text-white transition-all shrink-0';
-            if (btnMobile) btnMobile.className = 'px-3 py-1.5 rounded-lg bg-berzerker-600 text-white whitespace-nowrap';
-        } else {
-            el.classList.add('hidden');
-            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all shrink-0';
-            if (btnMobile) btnMobile.className = 'px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap';
-        }
+function renderNavigation() {
+    NAV_GROUPS.forEach(group => {
+        const button = document.getElementById(`nav-group-${group.id}`);
+        if (!button) return;
+        const active = group.id === activeNavGroup;
+        button.className = `min-w-0 px-1 py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors ${active ? 'bg-berzerker-600 text-white' : 'bg-berzerker-dark text-gray-300 hover:text-white'}`;
+        if (active) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
     });
+
+    const subnav = document.getElementById('nav-subnav');
+    if (!subnav) return;
+    const group = NAV_GROUPS.find(item => item.id === activeNavGroup) || NAV_GROUPS[0];
+    if (group.id === 'config') {
+        subnav.innerHTML = '';
+        subnav.classList.add('hidden');
+        return;
+    }
+    subnav.classList.remove('hidden');
+    subnav.innerHTML = group.tabs.map(([tab, label]) => {
+        const active = tab === activeTab;
+        return `<button type="button" id="nav-${tab}" onclick="switchTab('${tab}')" ${active ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-colors ${active ? 'bg-berzerker-600/25 text-white border border-berzerker-500/50' : 'text-gray-400 bg-berzerker-dark/60 border border-transparent hover:text-white'}">${label}</button>`;
+    }).join('');
+}
+
+function selectNavGroup(groupId) {
+    const group = NAV_GROUPS.find(item => item.id === groupId);
+    if (!group) return;
+    if (group.id === 'config') {
+        switchTab('config');
+        return;
+    }
+    activeNavGroup = group.id;
+    if (!group.tabs.some(([tab]) => tab === activeTab)) switchTab(group.tabs[0][0]);
+    else renderNavigation();
+}
+
+function switchTab(tab) {
+    const tabIds = NAV_GROUPS.flatMap(group => group.tabs.map(([id]) => id));
+    if (!tabIds.includes(tab)) return;
+    activeTab = tab;
+    const group = NAV_GROUPS.find(item => item.tabs.some(([id]) => id === tab));
+    if (group) activeNavGroup = group.id;
+    tabIds.forEach(id => {
+        const el = document.getElementById(`tab-content-${id}`);
+        if (el) el.classList.toggle('hidden', id !== tab);
+    });
+    renderNavigation();
     if (tab === 'montador') { renderDraftList(); renderSavedWorkouts(); renderWeekGaps(); }
     if (tab === 'historico') renderHistory();
     if (tab === 'busca') renderSearchScreen();
@@ -1592,6 +1642,18 @@ function getAnimalRankForSession(targetDate) {
     };
 }
 
+function updateHeaderChrome() {
+    const icon = document.getElementById('header-theme-icon');
+    const themeButton = document.getElementById('header-theme-button');
+    const xp = document.getElementById('header-xp-display');
+    if (icon) icon.textContent = THEME_ICONS[THEME?.id] || '🎭';
+    if (themeButton) {
+        themeButton.title = `Tema atual: ${THEME?.name || 'Gamificação'}. Abrir galeria`;
+        themeButton.setAttribute('aria-label', `Tema atual: ${THEME?.name || 'Gamificação'}. Abrir galeria de temas`);
+    }
+    if (xp) xp.textContent = `${fmtN(computeXPCtx().xp)} XP`;
+}
+
 function updateSummaryMetrics() {
     const filterDate = document.getElementById('filter-date').value;
     const rank = getAnimalRankForSession(filterDate);
@@ -1600,6 +1662,7 @@ function updateSummaryMetrics() {
     document.getElementById('stat-rank').textContent = `${rank.icon} ${rank.name} (Niv ${rank.level} · ${fmtN(rank.xp)} XP)`;
     const todayDmg = Math.round(rank.sessionTonnage);
     document.getElementById('stat-boss-dmg').textContent = `${todayDmg.toLocaleString()} DMG`;
+    updateHeaderChrome();
 }
 
 // ============================ BOSS BATTLE ============================
@@ -2791,7 +2854,7 @@ function startDateWatcher() {
         const prevISO = lastKnownTodayISO;
         lastKnownTodayISO = nowISO;
 
-        document.getElementById('header-today-date').textContent = formatDateBR(nowISO);
+        updateHeaderDate(nowISO);
         const logDateEl = document.getElementById('log-date');
         if (logDateEl.value === prevISO) logDateEl.value = nowISO;
         const filterEl = document.getElementById('filter-date');
@@ -2833,7 +2896,8 @@ window.onload = function () {
     document.getElementById('filter-date').value = todayStr;
     const cardioDate = document.getElementById('cardio-date');
     if (cardioDate) cardioDate.value = todayStr;
-    document.getElementById('header-today-date').textContent = formatDateBR(todayStr);
+    updateHeaderDate(todayStr);
+    renderNavigation();
 
     loadStoredData();
     loadWorkoutsFromStorage();

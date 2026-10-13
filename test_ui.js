@@ -76,6 +76,15 @@ const cards = () => [...$('cat-results').children].filter(c => c.dataset.ex);   
 const titles = () => cards().map(c => (c.querySelector('h3') || {}).textContent || '');
 const histCards = () => [...$('hist-results').querySelectorAll('[data-log-id]')];
 const pickerRows = () => [...$('picker-results').querySelectorAll('button[data-ex]')];
+const navGroupFor = tab => ({ diario: 'treino', montador: 'treino', historico: 'treino', busca: 'treino', boss: 'jogo', story: 'jogo', stats: 'voce', calcs: 'voce', config: 'config' })[tab];
+function navTo(tab) {
+    const group = navGroupFor(tab);
+    if (group) click($(`nav-group-${group}`));
+    const button = $(`nav-${tab}`);
+    if (button) click(button);
+    else if (tab === 'config') ev("switchTab('config')");
+    else throw new Error(`navegação não encontrada para ${tab}`);
+}
 
 // ============================ BOOT ============================
 console.log('\n== UI 1. Boot ==');
@@ -83,8 +92,22 @@ let bootOk = true, bootErr = '';
 try { window.onload(); } catch (e) { bootOk = false; bootErr = e.message; }
 check('window.onload() roda sem erro', bootOk, bootErr);
 check('data de hoje no formulário', $('log-date').value === ev('getTodayLocalISO()'));
-check('aba Buscar existe (desktop e mobile)', !!$('tab-content-busca') && !!$('nav-busca') && !!$('m-nav-busca'));
-check('Montador tem tela e navegação próprias (desktop e mobile)', !!$('tab-content-montador') && !!$('nav-montador') && !!$('m-nav-montador'));
+check('aba Buscar aparece no grupo Treino', !!$('tab-content-busca') && !!$('nav-busca') && !$('nav-subnav').classList.contains('hidden'));
+check('navegação tem exatamente quatro grupos, sem trilho horizontal', ['treino', 'jogo', 'voce', 'config'].every(g => !!$(`nav-group-${g}`)) && $('nav-groups').children.length === 4 && !$('group-navigation').className.includes('overflow-x-auto'));
+check('cabeçalho compacto contém título, tema, data e XP', !!$('header-theme-button') && !!$('header-today-date') && !!$('header-xp-display') && document.querySelector('header').querySelectorAll('h1').length === 1);
+check('data curta e XP atualizados no cabeçalho', /^\d{2}\/\d{2}$/.test($('header-today-date').textContent) && $('header-xp-display').textContent.endsWith(' XP'));
+navTo('boss');
+check('grupo Jogo preserva Boss e Story Card', !$('tab-content-boss').classList.contains('hidden') && !!$('nav-boss') && !!$('nav-story'));
+navTo('story');
+check('Story Card abre pelo grupo Jogo', !$('tab-content-story').classList.contains('hidden'));
+navTo('stats');
+check('grupo Você preserva Stats e Calcs', !$('tab-content-stats').classList.contains('hidden') && !!$('nav-stats') && !!$('nav-calcs'));
+navTo('calcs');
+check('Calcs abre pelo grupo Você', !$('tab-content-calcs').classList.contains('hidden'));
+navTo('config');
+check('Config continua acessível como quarto grupo', !$('tab-content-config').classList.contains('hidden') && $('nav-subnav').classList.contains('hidden'));
+navTo('diario');
+check('Meus treinos tem tela e navegação próprias', !!$('tab-content-montador') && !!$('nav-montador') && $('nav-montador').textContent.includes('Meus treinos'));
 check('registro rápido aparece antes dos painéis longos', $('tab-content-diario').firstElementChild.id === 'form-card-container');
 check('detalhes do registro começam recolhidos, sem perder campos', !!$('advanced-details') && !$('advanced-details').open && !!$('mode') && !!$('sets-box') && !!$('t') && !!$('n') && !!$('warmup-quick-box'));
 check('cardio compacto começa recolhido e conserva formulário', !!$('cardio-details') && !$('cardio-details').open && !!$('cardio-distance') && !!$('cardio-duration') && !!$('cardio-notes'));
@@ -109,14 +132,14 @@ try {
 
 // ============================ NAVEGAÇÃO ============================
 console.log('\n== UI 2. Navegação ==');
-click($('nav-busca'));
+navTo('busca');
 check('clique em 🔎 Buscar abre a aba', !$('tab-content-busca').classList.contains('hidden'));
 check('e esconde o diário', $('tab-content-diario').classList.contains('hidden'));
 check('botão ativo destacado', $('nav-busca').className.includes('bg-berzerker-600'));
-click($('nav-montador'));
+navTo('montador');
 check('Montador abre em tela própria e esconde Hoje', !$('tab-content-montador').classList.contains('hidden') && $('tab-content-diario').classList.contains('hidden'));
 check('botão Montador fica destacado', $('nav-montador').className.includes('bg-berzerker-600'));
-click($('nav-busca'));
+navTo('busca');
 const totalEx = ev('EXERCISE_CATALOG_FULL.length');
 check('catálogo inteiro listado', cards().length === totalEx, cards().length);
 check('contador de resultados dinâmico', $('cat-count').textContent === `${totalEx} de ${totalEx} exercícios`, $('cat-count').textContent);
@@ -207,20 +230,20 @@ check('modo volta para "séries iguais" (carga/reps visíveis)', $('mode').value
 check('carga e reps da última vez', $('w').value !== '' && $('r').value !== '', [$('w').value, $('r').value]);
 check('linha de tags do formulário apareceu', $('log-tags-line').textContent.includes('Empurrar'), $('log-tags-line').textContent);
 
-click($('nav-busca'));
+navTo('busca');
 setInput('cat-q', 'remada curvada');
 click(btnIn(cards()[0], 'No treino'));
 check('"🎯 No treino" abre o Montador e preenche o builder', !$('tab-content-montador').classList.contains('hidden') && $('wb-exercise').value === 'Remada Curvada com Barra');
 check('reps alvo pela faixa do catálogo', $('wb-reps').value === '12, 12, 10', $('wb-reps').value);
 
-click($('nav-busca'));
+navTo('busca');
 setInput('cat-q', 'agachamento hack');
 click(btnIn(cards()[0], 'Evolução'));
 check('"📊 Evolução" leva ao gráfico do exercício', !$('tab-content-stats').classList.contains('hidden') && $('ex-chart-select').value === 'Agachamento Hack');
 
 // ============================ SELETOR RÁPIDO (MODAL) ============================
 console.log('\n== UI 6. Seletor rápido de exercício ==');
-click($('m-nav-diario'));
+navTo('diario');
 click(btnIn($('log-exercise').parentElement, '🔎'));
 check('modal abre', !!$('picker-overlay'));
 check('modal já abre com o que estava digitado', $('picker-q').value === 'Supino Reto na Máquina', $('picker-q').value);
@@ -245,7 +268,7 @@ check('fecha sem deixar overlay', !$('picker-overlay'));
 
 // ============================ HISTÓRICO ============================
 console.log('\n== UI 7. Busca no histórico ==');
-click($('nav-busca'));
+navTo('busca');
 check('lista todos os registros', histCards().length === ev('logs.length'), histCards().length);
 setInput('hist-q', 'supino');
 check('texto filtra', histCards().length === ev('searchHistoryLogs().length') && histCards().length > 0 && $('hist-results').textContent.includes('Supino'), histCards().length);
@@ -266,7 +289,7 @@ check('cartão do histórico tem editar + ver dia + tags', /Editar/.test($('hist
 
 // ============================ REGISTRO COM TAGS ============================
 console.log('\n== UI 8. Registro diário com tags ==');
-click($('m-nav-diario'));
+navTo('diario');
 setInput('log-exercise', 'Rosca Direta com Barra');
 fire($('log-exercise'), 'input');
 check('digitar mostra as tags do exercício', $('log-tags-line').textContent.includes('Puxar') && $('log-tags-line').textContent.includes('Barra'), $('log-tags-line').textContent);
@@ -330,7 +353,7 @@ check('sessão completa → sugestão do próximo treino', !$('session-next-hint
 check('banner traz o porquê em linguagem simples', /Por quê:/.test($('session-next-hint').textContent));
 ev('endSession()');
 check('finalizar sessão recolhe o card e atualiza a sugestão', $('active-session-card').classList.contains('hidden') && $('suggestion-content').textContent.includes('Próximo treino recomendado'));
-click($('nav-montador'));
+navTo('montador');
 click(btnIn($('saved-workouts-list'), 'Iniciar'));
 check('iniciar um treino salvo no Montador leva à sessão em Hoje', !$('tab-content-diario').classList.contains('hidden') && $('active-session-card').textContent.includes('Treino em Andamento'));
 

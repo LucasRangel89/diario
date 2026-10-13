@@ -109,73 +109,33 @@
         }
     </style>
 </head>
-<body class="min-h-screen bg-berzerker-dark text-gray-100 pb-20 antialiased">
+<body class="min-h-screen bg-berzerker-dark text-gray-100 pb-6 antialiased">
 
-    <header class="border-b border-berzerker-border bg-berzerker-card/90 backdrop-blur-md sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-3 h-10 bg-berzerker-600 rounded-sm"></div>
-                <div>
-                    <h1 class="font-oswald text-2xl sm:text-3xl font-bold tracking-wider text-white uppercase leading-none">
-                        Diário de Cargas
-                    </h1>
-                    <span class="font-teko text-berzerker-500 text-lg sm:text-xl tracking-widest uppercase block -mt-1">
-                        // BERZERKER MODE
-                    </span>
-                </div>
+    <header class="border-b border-berzerker-border bg-berzerker-card/95 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2">
+            <h1 class="font-oswald text-lg sm:text-xl font-bold tracking-wide text-white uppercase leading-none">Diário</h1>
+            <div class="flex items-center gap-1.5 sm:gap-2.5">
+                <button type="button" id="header-theme-button" onclick="showThemeGallery()" title="Trocar tema do jogo" aria-label="Abrir galeria de temas" class="w-9 h-9 flex items-center justify-center rounded-lg bg-berzerker-dark border border-berzerker-border text-xl hover:border-berzerker-500 transition-colors">
+                    <span id="header-theme-icon">⚔️</span>
+                </button>
+                <span id="header-today-date" title="Data de hoje" class="px-2 py-1 bg-berzerker-border text-gray-300 text-[10px] sm:text-xs font-mono rounded-md whitespace-nowrap">--</span>
+                <span id="header-xp-display" title="XP global somado entre os temas" class="px-2 py-1 bg-amber-950/40 border border-amber-700/40 text-amber-300 text-[10px] sm:text-xs font-bold font-mono rounded-md whitespace-nowrap">0 XP</span>
             </div>
-
-            <!-- NAVIGATION TABS -->
-            <nav class="hidden md:flex flex-1 min-w-0 items-center gap-1 bg-berzerker-dark p-1.5 rounded-xl border border-berzerker-border text-xs font-bold uppercase tracking-wider overflow-x-auto mx-4">
-                <button onclick="switchTab('diario')" id="nav-diario" class="px-4 py-2 rounded-lg bg-berzerker-600 text-white transition-all shrink-0">
-                    ⚡ Hoje
-                </button>
-                <button onclick="switchTab('montador')" id="nav-montador" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all shrink-0">
-                    🎯 Montador
-                </button>
-                <button onclick="switchTab('historico')" id="nav-historico" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all shrink-0">
-                    📜 Histórico
-                </button>
-                <button onclick="switchTab('busca')" id="nav-busca" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all shrink-0">
-                    🔎 Buscar
-                </button>
-                <button onclick="switchTab('boss')" id="nav-boss" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all shrink-0">
-                    ⚔️ Boss Battle
-                </button>
-                <button onclick="switchTab('story')" id="nav-story" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all shrink-0">
-                    📸 Story Card
-                </button>
-                <button onclick="switchTab('stats')" id="nav-stats" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all shrink-0">
-                    📊 Stats & Streak
-                </button>
-                <button onclick="switchTab('calcs')" id="nav-calcs" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all shrink-0">
-                    🧮 Calcs
-                </button>
-                <button onclick="switchTab('config')" id="nav-config" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all shrink-0">
-                    ⚙️ Config
-                </button>
-            </nav>
-
-            <div class="flex items-center gap-3">
-                <span id="header-today-date" class="px-3 py-1 bg-berzerker-border text-gray-300 text-xs font-mono rounded-md">
-                    --
-                </span>
-            </div>
-        </div>
-
-        <!-- MOBILE NAVIGATION BAR -->
-        <div class="md:hidden flex overflow-x-auto gap-2 p-2 bg-berzerker-dark border-t border-berzerker-border text-[11px] font-bold uppercase tracking-wider">
-            <button onclick="switchTab('diario')" id="m-nav-diario" class="px-3 py-1.5 rounded-lg bg-berzerker-600 text-white whitespace-nowrap">⚡ Hoje</button>
-            <button onclick="switchTab('montador')" id="m-nav-montador" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">🎯 Montador</button>
-            <button onclick="switchTab('historico')" id="m-nav-historico" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">📜 Histórico</button>
-            <button onclick="switchTab('busca')" id="m-nav-busca" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">🔎 Buscar</button>
-            <button onclick="switchTab('boss')" id="m-nav-boss" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">⚔️ Boss</button>
-            <button onclick="switchTab('story')" id="m-nav-story" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">📸 Story</button>
-            <button onclick="switchTab('stats')" id="m-nav-stats" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">📊 Stats</button>
-            <button onclick="switchTab('calcs')" id="m-nav-calcs" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">🧮 Calcs</button>
-            <button onclick="switchTab('config')" id="m-nav-config" class="px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap">⚙️ Config</button>
         </div>
     </header>
+
+    <!-- NAVEGAÇÃO PRINCIPAL: quatro grupos, sem rolagem horizontal no celular -->
+    <nav id="group-navigation" aria-label="Navegação principal" class="sticky top-14 z-30 border-b border-berzerker-border bg-berzerker-card/95 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+            <div id="nav-groups" class="grid grid-cols-4 gap-1 py-1.5">
+                <button type="button" id="nav-group-treino" onclick="selectNavGroup('treino')" aria-current="page" class="min-w-0 px-1 py-2 rounded-lg bg-berzerker-600 text-white text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors">🏋️ Treino</button>
+                <button type="button" id="nav-group-jogo" onclick="selectNavGroup('jogo')" class="min-w-0 px-1 py-2 rounded-lg bg-berzerker-dark text-gray-300 text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors">⚔️ Jogo</button>
+                <button type="button" id="nav-group-voce" onclick="selectNavGroup('voce')" class="min-w-0 px-1 py-2 rounded-lg bg-berzerker-dark text-gray-300 text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors">📊 Você</button>
+                <button type="button" id="nav-group-config" onclick="selectNavGroup('config')" class="min-w-0 px-1 py-2 rounded-lg bg-berzerker-dark text-gray-300 text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors">⚙️ Config</button>
+            </div>
+            <div id="nav-subnav" aria-label="Seções do grupo" class="flex flex-wrap gap-1 pb-2"></div>
+        </div>
+    </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
 
