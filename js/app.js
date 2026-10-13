@@ -76,7 +76,7 @@ let activeNavGroup = 'treino';
 let activeTab = 'diario';
 const THEME_ICONS = Object.freeze({
     classico: '🦍', zodiaco: '♈', hercules: '🦁', acao: '🎬', folclore: '🌴',
-    nordica: '🛡️', roma: '🏛️', rpg: '🐉', galactica: '🚀'
+    nordica: '🛡️', roma: '🏛️', rpg: '🐉', galactica: '🚀', aneis: '💍'
 });
 const STORY_CARD_STYLES = Object.freeze({
     classico: {
@@ -114,6 +114,10 @@ const STORY_CARD_STYLES = Object.freeze({
     galactica: {
         palette: { bgStart: '#050814', bgEnd: '#0b1e3a', cardBg: 'rgba(7,21,42,.92)', cardBorder: 'rgba(103,232,249,.2)', borderPrimary: '#22d3ee', titleColor: '#e0fbff', accentColor: '#60a5fa', textDim: '#9db6d0', prColor: '#a3e635', badgeBg: '#0c2035' },
         fonts: { display: '"Oswald", sans-serif', accent: 'monospace', body: '"Inter", sans-serif', numeric: 'monospace' }
+    },
+    aneis: {
+        palette: { bgStart: '#06120a', bgEnd: '#1d2410', cardBg: 'rgba(11,27,15,.9)', cardBorder: 'rgba(226,196,110,.22)', borderPrimary: '#c9a227', titleColor: '#f7f2dd', accentColor: '#e2c46e', textDim: '#adb8a3', prColor: '#7dd3a0', badgeBg: '#122114' },
+        fonts: { display: 'Georgia, serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
     }
 });
 

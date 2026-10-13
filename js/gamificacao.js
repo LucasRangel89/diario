@@ -13,7 +13,7 @@ const MISSION_XP = { treinos: 120, biset: 80, pr: 100, corrida: 80, fraco: 90 };
 const BOSS_HP_BASE = 25000;
 const BOSS_HP_STEP = 2000;
 
-// HP e IDs são determinísticos para manter a mesma curva nos nove jogos.
+// HP e IDs são determinísticos para manter a mesma curva nos dez jogos.
 // O clássico usa boss1…boss12 para preservar os retratos originais boss1…boss4.
 const mkBosses = (list, idPrefix = 'b', idStart = 0) => list.map(([name, icon, desc, weak, weakReason], i) => ({
     id: `${idPrefix}${idStart + i}`, name, icon,
@@ -225,6 +225,27 @@ const THEMES = {
             ['Buraco Negro Vivo', '🕳️', 'Anomalia ficcional que altera a gravidade e puxa objetos para o horizonte.', 'Core', 'A energia se concentra no centro da anomalia, alvo do ataque coordenado.'],
             ['Devorador de Planetas', '🪐', 'Entidade ficcional que consome mundos e deixa órbitas vazias.', 'Glúteos', 'A criatura precisa se ancorar ao planeta; romper sua base interrompe a sucção.'],
             ['Imperador Galáctico', '👑', 'Comandante supremo que reúne as forças inimigas no centro da galáxia.', 'Bíceps', 'O cetro de comando depende da mão que o ergue; quebrar a força do braço interrompe as ordens.']
+        ])
+    },
+    aneis: {
+        id: 'aneis', name: 'Senhor dos Anéis',
+        desc: 'Do Condado ao Monte da Perdição: a Sociedade, as forças de Sauron e a jornada do Anel.',
+        arena: 'Jornada até o Monte da Perdição', bossLabel: 'DESAFIO ATIVO', stageWord: 'JORNADA',
+        missionWord: 'Prova da Sociedade', missionWordPlural: 'Provas da Sociedade', frame: 'ouro',
+        ranks: [['Hobbit do Condado', '🍀'], ['Andarilho do Norte', '🌲'], ['Companheiro da Sociedade', '🧭'], ['Guardião de Gondor', '🛡️'], ['Cavaleiro de Rohan', '🐴'], ['Caçador de Orcs', '🏹'], ['Herói do Abismo de Helm', '⚔️'], ['Portador do Anel', '💍'], ['Rei de Gondor', '👑'], ['LENDA DA TERRA MÉDIA', '🌟']],
+        bosses: mkBosses([
+            ['Goblins de Moria', '🗡️', 'Horda que guarda as galerias escuras de Khazad-dûm, acordada pelo barulho na ponte.', 'Pernas', 'Corredores e pontes estreitas vencem-se com passos ágeis.'],
+            ['Espectros do Anel', '👻', 'Os Nove servos do Anel, que farejam o portador dia e noite.', 'Costas', 'Quem caça o portador nunca vê a retaguarda.'],
+            ['Balrog de Morgoth', '🔥', 'O Flagelo de Durin: sombra e chama acordadas no fundo das minas.', 'Peito', 'Sob as chamas, o peito de sombra é o alvo.'],
+            ['Lurtz, o Uruk-hai', '🏹', 'Primeiro dos Uruk-hai de Saruman e líder da caçada à Sociedade.', 'Antebraço', 'Arco, adaga e escudo dependem do braço.'],
+            ['Wargs das Terras Bravias', '🐺', 'Lobos selvagens montados por orcs, usados para cortar a estrada.', 'Tríceps', 'As patas dianteiras que derrubam a presa exigem extensão de braço.'],
+            ['Uruk-hai do Abismo de Helm', '⚔️', 'Batalhão que marcha sobre o Forte da Trombeta com escadas e martelos.', 'Ombros', 'Escudos, escadas e martelos carregados nos ombros.'],
+            ['Saruman, o Branco', '🧙', 'Chefe da Ordem dos Istari, corrompido pelo desejo do Anel.', 'Bíceps', 'A mão do cajado conduz os encantamentos.'],
+            ['Espectros de Dunharrow', '💀', 'Os mortos do juramento quebrado, presos entre as montanhas.', 'Core', 'O medo congela o centro; firmeza abre caminho entre os mortos.'],
+            ['Laracna (Shelob)', '🕸️', 'A aranha colossal que vigia a passagem de Cirith Ungol.', 'Abdômen', 'O ponto brando sob a carapaça, por onde Sam fincou a lâmina.'],
+            ['Rei-Bruxo de Angmar', '👑', 'Senhor dos Nazgûl e comandante das forças que cercam Minas Tirith.', 'Pernas', 'A dobra do joelho, onde Merry fincou a lâmina de Dúnedain.'],
+            ['Gollum, o Portador Caído', '💍', 'Sméagol, consumido pelo Anel, guia os hobbits até Mordor.', 'Glúteos', 'O impulso agachado na borda do Monte da Perdição.'],
+            ['Sauron, o Senhor do Anel', '👁️', 'O poder de Barad-dûr: quem forjou o Um Anel e procura o portador.', 'Antebraço', 'A mão que porta o Um Anel é o elo que sustenta o poder.']
         ])
     }
 };

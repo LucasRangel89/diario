@@ -191,10 +191,10 @@ const importados = api.parseSheetLogRows(csvAntigo);
 check('planilha antiga importa sem Pescoço (catálogo → Ombros; resto → Geral)', importados.length === 2 && importados[0].muscle === 'Ombros' && importados[1].muscle === 'Geral', importados.map(l => l.muscle));
 check('séries da semana contam a cervical em Ombros', api.weeklySetsByMuscle([{ id: 1, kind: 'peso', muscle: 'Ombros', date: '2026-10-12', exercise: 'Extensão Cervical', reps: [15, 10] }], '2026-10-14')['Ombros'] === 2);
 
-console.log('\n== 13. Temas (9) ==');
+console.log('\n== 13. Temas (10) ==');
 const themeIds = Object.keys(api.THEMES);
-const expectedThemeIds = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica'];
-check('9 temas carregados', themeIds.length === 9 && expectedThemeIds.every(id => themeIds.includes(id)), themeIds);
+const expectedThemeIds = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica', 'aneis'];
+check('10 temas carregados', themeIds.length === 10 && expectedThemeIds.every(id => themeIds.includes(id)), themeIds);
 check('curva de patentes preservada', api.XP_MIN.join(',') === '0,150,500,1100,2000,3300,5000,7500,11000,16000', api.XP_MIN);
 const expectedHpCurve = Array.from({ length: 12 }, (_, i) => 25000 + 2000 * i);
 expectedThemeIds.forEach(id => {
@@ -203,6 +203,12 @@ expectedThemeIds.forEach(id => {
     check(`tema ${id}: curva suave de HP compartilhada`, t && t.bosses.map(b => b.maxHp).join(',') === expectedHpCurve.join(','), t && t.bosses.map(b => b.maxHp));
     check(`tema ${id}: fraquezas válidas e justificadas`, t && t.bosses.every(b => api.MUSCULOS_MAPA.includes(b.weak) && typeof b.weakReason === 'string' && b.weakReason.trim().length > 10), t && t.bosses.filter(b => !api.MUSCULOS_MAPA.includes(b.weak) || !b.weakReason).map(b => b.name));
 });
+const aneis = api.THEMES.aneis;
+check('Senhor dos Anéis: do Hobbit do Condado à LENDA DA TERRA MÉDIA', aneis.ranks.map(r => r[0]).join('|') === 'Hobbit do Condado|Andarilho do Norte|Companheiro da Sociedade|Guardião de Gondor|Cavaleiro de Rohan|Caçador de Orcs|Herói do Abismo de Helm|Portador do Anel|Rei de Gondor|LENDA DA TERRA MÉDIA', aneis.ranks.map(r => r[0]));
+check('Senhor dos Anéis: jornada abre nos Goblins de Moria e fecha em Sauron', aneis.bosses[0].name === 'Goblins de Moria' && aneis.bosses[11].name === 'Sauron, o Senhor do Anel' && aneis.bosses.map(b => b.name).join('|') === 'Goblins de Moria|Espectros do Anel|Balrog de Morgoth|Lurtz, o Uruk-hai|Wargs das Terras Bravias|Uruk-hai do Abismo de Helm|Saruman, o Branco|Espectros de Dunharrow|Laracna (Shelob)|Rei-Bruxo de Angmar|Gollum, o Portador Caído|Sauron, o Senhor do Anel', aneis.bosses.map(b => b.name));
+check('Senhor dos Anéis: fraquezas da jornada (pernas → costas → peito → ... → antebraço)', aneis.bosses.map(b => b.weak).join('|') === 'Pernas|Costas|Peito|Antebraço|Tríceps|Ombros|Bíceps|Core|Abdômen|Pernas|Glúteos|Antebraço', aneis.bosses.map(b => b.weak));
+check('Senhor dos Anéis: vocabulário do tema (arena, jornadas e provas)', aneis.arena === 'Jornada até o Monte da Perdição' && aneis.bossLabel === 'DESAFIO ATIVO' && aneis.stageWord === 'JORNADA' && aneis.missionWord === 'Prova da Sociedade' && aneis.missionWordPlural === 'Provas da Sociedade' && aneis.frame === 'ouro' && /Condado ao Monte da Perdição/.test(aneis.desc));
+check('missões do Senhor dos Anéis usam "Prova da Sociedade"', api.missionsState([], aneis, '2026-10-14').missions[0].title.startsWith('Prova da Sociedade ·'));
 check('clássico mantém quatro IDs/retratos originais', api.THEMES.classico.bosses.slice(0, 4).map(b => `${b.id}:${b.name}`).join('|') === 'boss1:Golem de Anilhas|boss2:Hydra de Titânio|boss3:Mecagorila Berzerker|boss4:Behemoth Devastador', api.THEMES.classico.bosses.slice(0, 4));
 check('clássico acrescenta oito monstros de fantasia pesada com emojis', api.THEMES.classico.bosses.slice(4).length === 8 && api.THEMES.classico.bosses.slice(4).every(b => !!b.icon && /ferro|aço|forja|ogro|quimera|dragão|minotauro|titã|colosso/i.test(b.name)), api.THEMES.classico.bosses.slice(4).map(b => b.name));
 check('patentes clássicas não repetem nomes de chefões', !api.THEMES.classico.ranks.some(([rank]) => api.THEMES.classico.bosses.some(b => b.name.toLowerCase() === rank.toLowerCase())));
