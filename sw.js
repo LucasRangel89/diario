@@ -2,7 +2,7 @@
 // App 100% local (Tailwind e Chart.js empacotados em /vendor) — funciona offline na academia.
 // Estratégia: rede primeiro para os arquivos do app (sempre a versão nova quando há sinal),
 // cache como reserva offline. Troque VERSION ao mudar bibliotecas locais.
-const VERSION = 'v6';
+const VERSION = 'v7';
 const CACHE = 'berzerker-' + VERSION;
 const CORE = [
   './',
@@ -15,6 +15,7 @@ const CORE = [
   './vendor/chart.umd.js',
   './js/catalogo.js',
   './js/gamificacao.js',
+  './js/assistente.js',
   './js/planilha_data.js',
   './js/historico.js',
   './js/busca.js',

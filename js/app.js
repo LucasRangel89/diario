@@ -770,14 +770,16 @@ function renderLogsTable() {
 }
 
 // ============================ RENDER: MAPA DE FADIGA ============================
+// Fase 3: fadiga REAL = recuperação (%) + volume da semana vs faixa 10–20 séries
 function renderRecoveryMap() {
     const gridEl = document.getElementById('recovery-status-grid');
     if (!gridEl) return;
     const nowMs = new Date().getTime();
+    const weekly = weeklySetsByMuscle(logs, getTodayLocalISO());
 
     gridEl.innerHTML = MUSCULOS_MAPA.map(m => {
         const muscleLogs = logs.filter(l => l.kind !== 'corrida' && l.muscle && l.muscle.toLowerCase() === m.toLowerCase());
-        const st = recoveryState(m, muscleLogs, nowMs);
+        const st = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs);
         const pctText = st.pct === null ? '—' : `${st.pct}%`;
         return `
         <div onclick="prefillMuscleFromMap('${m}')" title="Registrar exercício de ${m}" class="cursor-pointer bg-berzerker-dark border ${st.border} rounded-xl p-3.5 space-y-2.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
@@ -791,12 +793,13 @@ function renderRecoveryMap() {
             </div>
             <div>
                 <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">
-                    <span>Recuperação</span><span class="text-gray-400">${pctText}</span>
+                    <span>Prontidão real</span><span class="text-gray-400">${pctText}</span>
                 </div>
                 <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
                     <div class="h-full ${st.bar} rounded-full transition-all duration-500" style="width: ${st.pct === null ? 100 : st.pct}%"></div>
                 </div>
             </div>
+            <div class="text-[10px] font-mono ${st.volumeStatus === 'abaixo' ? 'text-amber-400/90' : st.volumeStatus === 'acima' ? 'text-orange-400/90' : 'text-emerald-400/90'}">${st.volText}</div>
             <div class="text-[10px] text-gray-600 truncate border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
         </div>`;
     }).join('');
@@ -811,6 +814,8 @@ function prefillMuscleFromMap(m) {
 }
 
 // ============================ RENDER: SUGESTÃO DO DIA ============================
+// Fase 3: próximo treino recomendado — grupos mais descansados e mais abaixo
+// da meta semanal, com o raciocínio em linguagem simples.
 function renderDaySuggestion() {
     const el = document.getElementById('suggestion-content');
     if (!el) return;
@@ -818,37 +823,19 @@ function renderDaySuggestion() {
         el.innerHTML = `<p class="text-xs text-gray-500">Monte um treino no <b>Criar Treino</b> para receber a sugestão do dia.</p>`;
         return;
     }
-    const nowMs = Date.now();
-    const scored = savedWorkouts.map(w => {
-        let score = 0;
-        const motivos = [];
-        (w.exercises || []).forEach(e => {
-            const mLogs = logs.filter(l => l.kind !== 'corrida' && l.muscle === e.muscle);
-            const st = recoveryState(e.muscle, mLogs, nowMs);
-            score += (st.pct === null ? 100 : st.pct);
-        });
-        const n = Math.max(1, (w.exercises || []).length);
-        score = score / n;
-        // Quanto mais dias sem treinar esse treino, melhor — empurra a sugestão
-        const treinosDias = [...new Set(logs.map(l => l.date))];
-        const maisRecente = treinosDias.sort().pop();
-        if (maisRecente) {
-            const dias = Math.floor((nowMs - new Date(maisRecente + 'T12:00:00')) / 864e5);
-            if (dias >= 1) score += dias * 5;
-        }
-        const groups = [...new Set((w.exercises || []).map(e => e.muscle))];
-        motivos.push(`grupos prontos: ${groups.join(', ')}`);
-        return { w, score, motivos };
-    }).sort((a, b) => b.score - a.score)[0];
-
+    const scored = suggestNextWorkout(savedWorkouts, logs, Date.now());
+    const top = scored[0];
+    const alternates = scored.slice(1, 3);
     el.innerHTML = `
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-                <div class="text-xs text-gray-400 uppercase font-bold">Sugestão de hoje (mapa de fadiga + treinos salvos)</div>
-                <div class="font-oswald text-xl font-bold text-white uppercase mt-1">${escapeHtml(scored.w.name)}</div>
-                <div class="text-[11px] text-gray-500 mt-0.5">${scored.motivos.join(' · ')} · índice de prontidão ${Math.round(scored.score)}</div>
+            <div class="min-w-0">
+                <div class="text-xs text-gray-400 uppercase font-bold">🎯 Próximo treino recomendado (recuperação + séries da semana)</div>
+                <div class="font-oswald text-xl font-bold text-white uppercase mt-1">${escapeHtml(top.w.name)}</div>
+                <div class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">Por quê: ${escapeHtml(top.motivos.slice(0, 3).join(' · '))}</div>
+                ${top.diasSemTreinar >= 1 ? `<div class="text-[11px] text-amber-400/90 mt-0.5">⏳ Sem treino registrado há ${top.diasSemTreinar} ${top.diasSemTreinar === 1 ? 'dia' : 'dias'}.</div>` : ''}
+                ${alternates.length ? `<div class="text-[10px] text-gray-600 mt-1.5">Outras opções: ${alternates.map(a => `<button type="button" onclick="startSession(${a.w.id})" class="underline hover:text-white transition-colors">${escapeHtml(a.w.name)}</button>`).join(' · ')}</div>` : ''}
             </div>
-            <button onclick="startSession(${scored.w.id})" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-emerald-600/20 whitespace-nowrap">▶ Treinar esta sugestão</button>
+            <button onclick="startSession(${top.w.id})" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-emerald-600/20 whitespace-nowrap">▶ Treinar esta sugestão</button>
         </div>`;
 }
 
@@ -885,10 +872,13 @@ function startSession(workoutId) {
     document.getElementById('log-date').value = todayStr;
     document.getElementById('filter-date').value = todayStr;
 
+    // Fase 2: ordem sugerida aplicada automaticamente (com o "porquê" de cada posição)
+    const ordered = orderWorkoutExercises(w.exercises || []);
     activeSession = {
         workoutId: w.id,
         name: w.name,
-        exercises: w.exercises.map(e => ({
+        ordenado: true,
+        exercises: ordered.map(e => ({
             muscle: e.muscle,
             exercise: e.exercise,
             type: e.type || inferExerciseType(e.exercise, e.muscle),
@@ -896,7 +886,8 @@ function startSession(workoutId) {
             repsText: e.repsText || (Array.isArray(e.reps) ? e.reps.join(', ') : ''),
             technique: e.technique || 'Convencional',
             biset: !!e.biset, done: false, logId: null, draft: null,
-            loggedWeight: null, loggedReps: null, loggedPR: false
+            loggedWeight: null, loggedReps: null, loggedPR: false,
+            orderReason: e.orderReason || ''
         }))
     };
 
@@ -934,6 +925,8 @@ function renderSession() {
     snapshotDrafts();
     const listEl = document.getElementById('session-exercises-list');
     const ex = activeSession.exercises;
+    const nowMs = Date.now();
+    const weekly = weeklySetsByMuscle(logs, getTodayLocalISO());
 
     const itemHTML = (e, i) => {
         if (e.done) {
@@ -955,6 +948,8 @@ function renderSession() {
             </div>`;
         }
         const d = e.draft || { weight: e.weight, repsText: e.repsText, type: e.type, technique: e.technique, nextGoal: '', isPR: false, notes: '' };
+        const catInfo = catalogInfo(e.exercise);
+        const fat = fatigueState(e.muscle, logs.filter(l => l.kind !== 'corrida' && l.muscle === e.muscle), weekly[e.muscle] || 0, nowMs);
         return `<div>
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div class="flex items-center gap-2 flex-wrap min-w-0">
@@ -962,8 +957,15 @@ function renderSession() {
                     <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
                     <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
                 </div>
-                <span class="text-[10px] text-gray-500 font-mono whitespace-nowrap">🎯 Meta: ${e.weight > 0 ? e.weight + ' kg' : '—'} × (${escapeHtml(e.repsText || '—')})</span>
+                <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="moveSessionUnit(${i}, -1)" title="Subir na ordem" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▲</button>
+                    <button type="button" onclick="moveSessionUnit(${i}, 1)" title="Descer na ordem" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▼</button>
+                    <span class="text-[10px] text-gray-500 font-mono whitespace-nowrap">🎯 Meta: ${e.weight > 0 ? e.weight + ' kg' : '—'} × (${escapeHtml(e.repsText || '—')})</span>
+                </div>
             </div>
+            ${e.orderReason ? `<div class="text-[10px] text-gray-500 leading-relaxed"><span class="text-berzerker-500 font-bold">📌 Por que nesta posição:</span> ${escapeHtml(e.orderReason)}</div>` : ''}
+            ${fat.pct !== null && fat.pct < 100 ? `<div class="text-[10px] text-amber-400/90 font-mono">⏳ ${escapeHtml(e.muscle)} ainda em recuperação (${fat.pct}%) — considere uma carga mais leve</div>` : ''}
+            ${catInfo && catInfo.descanso ? `<div class="text-[10px] text-gray-500 font-mono">⏱ Descanso do catálogo: ${catInfo.descanso}s · faixa ${catInfo.faixa[0]}–${catInfo.faixa[1]}${catInfo.tipo === 'isometria' ? ' s' : ' reps'}</div>` : ''}
             ${lastPerformanceHTML(e.exercise)}
             <div class="flex gap-2 flex-wrap mt-1.5">
                 <button type="button" onclick="showWarmupFor(${i})" class="px-2 py-1 text-[10px] font-bold bg-amber-900/30 border border-amber-500/30 text-amber-300 rounded-md hover:bg-amber-900/50">🔥 Aquecimento</button>
@@ -975,6 +977,9 @@ function renderSession() {
     };
 
     let html = '';
+    if (activeSession.ordenado) {
+        html += `<div class="text-[11px] text-gray-400 bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2">✨ <b class="text-white">Ordem sugerida aplicada</b> — cada exercício mostra o porquê da posição. Use ▲▼ para trocar quando quiser (o bi-set anda junto).</div>`;
+    }
     for (let i = 0; i < ex.length; i++) {
         const pair = !!(ex[i + 1] && ex[i + 1].biset);
         const idxs = pair ? [i, i + 1] : [i];
@@ -994,6 +999,43 @@ function renderSession() {
         const d = e.draft || {};
         initSetEditor(`s${i}-`, { mode: d.mode || 'simple', sets: d.sets, weight: d.weight != null ? d.weight : e.weight });
     });
+
+    // Sessão completa → sugestão do próximo treino (Fase 3)
+    const banner = document.getElementById('session-next-hint');
+    if (banner) {
+        if (total > 0 && doneCount === total) {
+            const scored = suggestNextWorkout(savedWorkouts, logs, Date.now());
+            const top = scored[0];
+            banner.classList.remove('hidden');
+            banner.innerHTML = top
+                ? `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider">✅ Treino completo! Próximo treino sugerido:</div>
+                            <div class="font-oswald text-lg font-bold text-white uppercase mt-0.5">${escapeHtml(top.w.name)}</div>
+                            <div class="text-[11px] text-gray-400 mt-0.5">Por quê: ${escapeHtml(top.motivos.slice(0, 2).join(' · '))}</div>
+                        </div>
+                        <button onclick="startSession(${top.w.id})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg whitespace-nowrap">▶ Começar este treino</button>
+                    </div>`
+                : `<div class="text-xs text-emerald-400 font-bold">✅ Treino completo! Bom trabalho.</div>`;
+        } else {
+            banner.classList.add('hidden');
+            banner.innerHTML = '';
+        }
+    }
+}
+
+// Troca blocos da sessão (bi-set anda junto) — liberdade total sobre a ordem sugerida
+function moveSessionUnit(i, dir) {
+    if (!activeSession) return;
+    snapshotDrafts();
+    const ex = activeSession.exercises;
+    const ranges = bisetBlockRanges(ex);
+    const bi = ranges.findIndex(r => r.includes(i));
+    const j = bi + dir;
+    if (bi < 0 || j < 0 || j >= ranges.length) return;
+    const tmp = ranges[bi]; ranges[bi] = ranges[j]; ranges[j] = tmp;
+    activeSession.exercises = ranges.flat().map(k => ex[k]);
+    renderSession();
 }
 
 function showWarmupFor(i) {
@@ -1064,7 +1106,10 @@ function endSession() {
         stopSessionTimer();
         releaseWakeLock();
         document.getElementById('active-session-card').classList.add('hidden');
-        alertModal('💪 Treino finalizado! Confira o resumo nas abas ⚔️ Boss e 📸 Story Card.');
+        renderDaySuggestion();
+        renderRecoveryMap();
+        if (document.getElementById('builder-week-gaps')) renderWeekGaps();
+        alertModal('💪 Treino finalizado! O mapa de fadiga e a sugestão do próximo treino já foram atualizados.');
     };
     if (remaining > 0) {
         confirmModal(`Ainda existem ${remaining} exercício(s) sem registro. Finalizar o treino mesmo assim?`, finish);
@@ -1296,7 +1341,45 @@ function moveDraftExercise(i, dir) {
     const j = i + dir;
     if (j < 0 || j >= draftExercises.length) return;
     [draftExercises[i], draftExercises[j]] = [draftExercises[j], draftExercises[i]];
+    // ordem mudou na mão — os motivos da sugestão antiga não fazem mais sentido
+    draftExercises.forEach(x => { x.orderReason = ''; });
     renderDraftList();
+}
+
+// Fase 2 no montador: reordena o rascunho pelas regras (você continua livre p/ trocar)
+function applySuggestedOrder() {
+    if (draftExercises.length < 2) { alertModal('Adicione pelo menos 2 exercícios para o assistente ordenar.'); return; }
+    const ordered = orderWorkoutExercises(draftExercises);
+    draftExercises = ordered.map(e => ({ ...e }));
+    renderDraftList();
+    alertModal('✨ Ordem sugerida aplicada! Cada exercício mostra o porquê — use ▲▼ para mudar quando quiser.');
+}
+
+// Painel "o que falta na semana" (estímulo total = 10–20 séries por grupo)
+function renderWeekGaps() {
+    const el = document.getElementById('builder-week-gaps');
+    if (!el) return;
+    const gaps = weeklyGaps(logs, getTodayLocalISO());
+    const min = FAIXA_SERIES_SEMANAIS.min, max = FAIXA_SERIES_SEMANAIS.max;
+    if (gaps.length === 0) {
+        el.innerHTML = `<div class="text-[11px] text-emerald-400/90 bg-emerald-950/20 border border-emerald-700/40 rounded-lg p-2.5">✅ Todos os grupos musculares estão dentro (ou acima) da faixa de ${min}–${max} séries/semana. Bom trabalho!</div>`;
+        return;
+    }
+    const chips = gaps.map(g => {
+        const txt = g.status === 'abaixo'
+            ? `${g.muscle}: ${g.series}/${min} min · faltam ${g.faltam}`
+            : `${g.muscle}: ${g.series}/${max} máx · +${g.excesso} acima`;
+        const cls = g.status === 'abaixo'
+            ? 'bg-amber-950/40 border-amber-700/40 text-amber-300'
+            : 'bg-orange-950/40 border-orange-700/40 text-orange-300';
+        return `<span class="text-[10px] font-mono px-2 py-1 rounded border ${cls}">${escapeHtml(txt)}</span>`;
+    }).join('');
+    el.innerHTML = `
+        <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3 space-y-2">
+            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">🎯 Estímulo da semana — o que falta (${min}–${max} séries por grupo)</div>
+            <div class="flex flex-wrap gap-1.5">${chips}</div>
+            <div class="text-[10px] text-gray-500">O assistente sugere treinos que cobrem os grupos mais abaixo da meta — mas quem manda é você.</div>
+        </div>`;
 }
 
 function renderDraftList() {
@@ -1333,6 +1416,7 @@ function renderDraftList() {
                     </div>
                     <span class="font-bold text-white text-sm block truncate">${e.biset ? '🔗 ' : ''}${escapeHtml(e.exercise)}</span>
                     <span class="text-[11px] text-gray-400 font-mono">Meta: ${e.weight > 0 ? e.weight + ' kg' : '—'} × (${escapeHtml(e.repsText || '—')})</span>
+                    ${e.orderReason ? `<div class="text-[10px] text-gray-500 mt-1 leading-relaxed">📌 ${escapeHtml(e.orderReason)}</div>` : ''}
                     ${lastPerformanceHTML(e.exercise)}
                 </div>
             </div>
@@ -2694,6 +2778,7 @@ function refreshAll() {
     renderBadgesAndStreak();
     initVolumeChart();
     updateExerciseSuggestions();
+    if (document.getElementById('builder-week-gaps')) renderWeekGaps();
     if (document.getElementById('tests-container')) renderTests();
     if (document.getElementById('history-content')) renderHistory();
 }
@@ -2746,6 +2831,7 @@ window.onload = function () {
     renderDraftList();
     updateSaveButton();
     renderSavedWorkouts();
+    renderWeekGaps();
     renderBackupReminder();
     updateTypeHint();
     renderHistory();
