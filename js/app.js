@@ -332,8 +332,6 @@ function applyTheme(id) {
     ANIMAL_RANKS = THEME.ranks.map(([name, icon], i) => ({ minXp: XP_MIN[i], level: i + 1, name, icon }));
     const set = (el, fn) => { const e = document.getElementById(el); if (e) fn(e); };
     set('arena-title', e => e.textContent = THEME.arena);
-    set('game-theme-select', e => e.value = THEME.id);
-    set('game-theme-desc', e => e.textContent = THEME.desc);
     updateStoryThemeInfo();
     const xd = computeXPCtx();
     lastRankLevel = rankFromXP(xd.xp).level;
@@ -347,11 +345,73 @@ function changeGameTheme(id) {
     alertModal(`🎭 Tema "${THEME.name}" aplicado! Seu progresso foi mantido.`);
 }
 
-function computeXPCtx(upto) {
+function computeThemeXPCtx(themeId, upto) {
+    const t = THEMES[themeId] || THEME || THEMES.classico;
     return computeXP(upto, {
         logs, bodyweight: userBodyweight, deloadWeeks,
-        missionsXpTotal, bosses: BOSSES
+        missionsXpTotal, bosses: t.bosses
     });
+}
+
+function computeXPCtx(upto) {
+    return computeThemeXPCtx(THEME?.id || 'classico', upto);
+}
+
+function themeRankList(theme) {
+    return theme.ranks.map(([name, icon], i) => ({ minXp: XP_MIN[i], level: i + 1, name, icon }));
+}
+
+function themeConfirmationName(theme) {
+    if (theme.id === 'roma') return 'Roma Antiga';
+    return theme.name.replace(/\s+\(clássico\)$/i, '');
+}
+
+function requestGameThemeChange(id) {
+    const nextTheme = THEMES[id];
+    if (!nextTheme) return;
+    document.getElementById('theme-gallery-overlay')?.remove();
+    if (nextTheme.id === THEME?.id) return;
+    confirmModal(`Trocar para ${themeConfirmationName(nextTheme)}? O progresso deste jogo será preservado.`, () => changeGameTheme(nextTheme.id));
+}
+
+function showThemeGallery() {
+    document.getElementById('theme-gallery-overlay')?.remove();
+    const cards = Object.values(THEMES).map(theme => {
+        const data = computeThemeXPCtx(theme.id);
+        const ranks = themeRankList(theme);
+        const currentRank = rankFromXP(data.xp, ranks);
+        const nextRank = ranks[currentRank.level] || null;
+        const progress = nextRank
+            ? Math.max(0, Math.min(100, Math.round((data.xp - currentRank.minXp) / (nextRank.minXp - currentRank.minXp) * 100)))
+            : 100;
+        const active = theme.id === THEME?.id;
+        const defeated = Math.min(data.prog.defeatedCount, theme.bosses.length);
+        return `<button type="button" data-theme-id="${theme.id}" onclick="requestGameThemeChange('${theme.id}')" class="text-left rounded-2xl border ${active ? 'border-berzerker-500 bg-berzerker-600/10 ring-1 ring-berzerker-500/30' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'} p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-berzerker-500">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0"><span class="text-2xl">${THEME_ICONS[theme.id] || '🎭'}</span><strong class="text-sm text-white leading-tight">${escapeHtml(theme.name)}</strong></div>
+                ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[9px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
+            </div>
+            <div class="mt-3 flex items-end justify-between gap-2">
+                <div class="min-w-0"><span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Patente atual</span><span class="block truncate text-xs font-bold text-amber-300">${currentRank.icon} ${escapeHtml(currentRank.name)}</span></div>
+                <span class="shrink-0 text-[10px] font-mono text-gray-400">Nível ${currentRank.level}/10</span>
+            </div>
+            <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-berzerker-border"><div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-300" style="width:${progress}%"></div></div>
+            <div class="mt-1.5 flex items-center justify-between gap-2 text-[9px] font-mono text-gray-500"><span>${fmtN(data.xp)} XP${nextRank ? ` / ${fmtN(nextRank.minXp)} XP` : ' · nível máximo'}</span><span>${defeated}/${theme.bosses.length} chefões</span></div>
+            <p class="mt-2 line-clamp-2 text-[10px] leading-relaxed text-gray-500">${escapeHtml(theme.desc)}</p>
+        </button>`;
+    }).join('');
+    const overlay = document.createElement('div');
+    overlay.id = 'theme-gallery-overlay';
+    overlay.className = 'fixed inset-0 z-[55] flex items-start justify-center overflow-y-auto bg-black/80 p-3 backdrop-blur-sm sm:items-center sm:p-5';
+    overlay.onclick = event => { if (event.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `<div class="my-auto max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-berzerker-border bg-berzerker-card p-4 shadow-2xl sm:p-6">
+        <div class="mb-4 flex items-center justify-between gap-3">
+            <div><h2 class="font-oswald text-xl font-bold uppercase tracking-wider text-white">🎭 Temas de gamificação</h2><p class="mt-1 text-[11px] text-gray-400">Cada jogo mantém sua patente e seu progresso.</p></div>
+            <button type="button" onclick="document.getElementById('theme-gallery-overlay').remove()" aria-label="Fechar galeria" class="rounded-lg px-3 py-2 text-gray-400 hover:bg-berzerker-dark hover:text-white">✕</button>
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">${cards}</div>
+    </div>`;
+    document.body.appendChild(overlay);
 }
 
 function checkRankUp() {
@@ -372,9 +432,8 @@ function checkRankUp() {
 
 function showRanksModal(themeId) {
     const t = THEMES[themeId] || THEME;
-    const d = computeXPCtx();
-    const cur = rankFromXP(d.xp);
-    const rankList = t.ranks.map(([name, icon], i) => ({ minXp: XP_MIN[i], level: i + 1, name, icon }));
+    const d = computeThemeXPCtx(t.id);
+    const rankList = themeRankList(t);
     const curT = rankList.reduce((a, x) => (d.xp >= x.minXp ? x : a), rankList[0]);
     const nxt = rankList[curT.level] || null;
     const pct = nxt ? Math.min(100, Math.round((d.xp - curT.minXp) / (nxt.minXp - curT.minXp) * 100)) : 100;
