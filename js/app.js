@@ -192,7 +192,7 @@ function shakeElement(el) {
 
 // ============================ CARGA/PERSISTÊNCIA DE DADOS ============================
 function migrateLog(l) {
-    // Grupos extintos são remapeados (ex.: "Pescoço" → "Ombros") sem quebrar o registro.
+    // Grupos extintos são remapeados ("Pescoço" → "Ombros"; "Glúteos" → "Posterior") sem quebrar o registro.
     if (l.muscle) l.muscle = normalizeMuscle(l.muscle);
     if (!l.kind) {
         l.kind = /corrida|esteira|bike|elíptic|remo|cardio/i.test(l.exercise || '') && l.distanceKm !== undefined ? 'corrida'
@@ -212,7 +212,7 @@ function migrateLog(l) {
 }
 
 // Treinos salvos também carregam grupos antigos (ex.: seed da planilha trazia
-// "Extensão Cervical" em Pescoço) — normaliza na hora de carregar/semeiar.
+// Glúteos no Hip Thrust e Pescoço na cervical) — normaliza ao carregar/semeiar.
 function normalizeSavedWorkouts() {
     (savedWorkouts || []).forEach(w => {
         (w.exercises || []).forEach(e => {
@@ -1131,7 +1131,8 @@ function renderRecoveryMap() {
 
     gridEl.innerHTML = MUSCULOS_MAPA.map(m => {
         const muscleLogs = logs.filter(l => l.kind !== 'corrida' && l.muscle && l.muscle.toLowerCase() === m.toLowerCase());
-        const st = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs);
+        const sin = sinergiaState(m, logs, nowMs);
+        const st = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs, sin);
         const pctText = st.pct === null ? '—' : `${st.pct}%`;
         return `
         <div onclick="prefillMuscleFromMap('${m}')" title="Registrar exercício de ${m}" class="cursor-pointer bg-berzerker-dark border ${st.border} rounded-xl p-3.5 space-y-2.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
@@ -1152,6 +1153,7 @@ function renderRecoveryMap() {
                 </div>
             </div>
             <div class="text-[10px] font-mono ${st.volumeStatus === 'abaixo' ? 'text-amber-400/90' : st.volumeStatus === 'acima' ? 'text-orange-400/90' : 'text-emerald-400/90'}">${st.volText}</div>
+            ${st.sinergia ? `<div title="${escapeHtml(st.sinergia.exercicios.join(' · '))}" class="text-[10px] font-mono text-cyan-400/80">${escapeHtml(st.sinergiaText)}</div>` : ''}
             <div class="text-[10px] text-gray-600 truncate border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
         </div>`;
     }).join('');

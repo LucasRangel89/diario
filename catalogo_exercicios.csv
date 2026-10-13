@@ -3,7 +3,7 @@ Ab Wheel;Abdômen;Roda;peso corporal do dia;1;1;reps;8;15;;60
 Abdominal Bicicleta;Abdômen;Peso corporal;peso corporal do dia;1;1;reps;15;30;;45
 Abdominal na Polia Alta;Abdômen;Polia;pino;1;1;reps;12;15;;45
 Abdominal Supra no Solo;Abdômen;Peso corporal;peso corporal do dia;1;1;reps;15;30;;45
-Abdutor;Pernas;Máquina;pino;1;1;reps;12;15;;60
+Abdutor;Posterior;Máquina;pino;1;1;reps;12;15;;60
 Afundo Búlgaro;Pernas;Halteres (par);peso de 1 haltere;2;2;reps;8;12;;90
 Afundo c/ Halteres;Pernas;Halteres (par);peso de 1 haltere;2;2;reps;8;12;;90
 Agachamento Hack;Pernas;Máquina c/ anilhas;soma das anilhas;1;1;reps;8;12;30;120
@@ -17,7 +17,7 @@ Desenvolvimento Militar;Ombros;Barra;soma das anilhas;1;1;reps;6;10;20;120
 Elevação de Pernas;Abdômen;Peso corporal;peso corporal do dia;1;1;reps;10;20;;45
 Elevação Frontal c/ Halter;Ombros;Halter (1);peso do haltere;1;2;reps;10;15;;60
 Elevação Lateral c/ Halteres;Ombros;Halteres (par);peso de 1 haltere;2;1;reps;12;20;;60
-Elevação Pélvica (Hip Thrust);Glúteos;Máquina c/ anilhas;soma das anilhas;1;1;reps;10;15;15;90
+Elevação Pélvica (Hip Thrust);Posterior;Máquina c/ anilhas;soma das anilhas;1;1;reps;10;15;15;90
 Encolhimento de Ombros;Ombros;Halteres (par);peso de 1 haltere;2;1;reps;10;15;;60
 Extensão Cervical;Ombros;A definir;a definir;1;1;reps;12;20;;45
 Extensão de Punho;Antebraço;Halteres (par);peso de 1 haltere;2;1;reps;12;20;;45
@@ -27,9 +27,9 @@ Flexão de Punho;Antebraço;Halteres (par);peso de 1 haltere;2;1;reps;12;20;;45
 Leg Press 45°;Pernas;Máquina c/ anilhas;soma das anilhas;1;1;reps;8;12;40;120
 Levantamento Terra;Costas;Barra;soma das anilhas;1;1;reps;3;8;20;150
 Manguito Rotador;Ombros;Polia;pino;1;1;reps;15;20;;45
-Mesa Flexora;Pernas;Máquina;pino;1;1;reps;10;15;;60
-Panturrilha em Pé;Pernas;Máquina;pino;1;1;reps;10;15;;60
-Panturrilha Sentado;Pernas;Máquina;pino;1;1;reps;12;20;;60
+Mesa Flexora;Posterior;Máquina;pino;1;1;reps;10;15;;60
+Panturrilha em Pé;Posterior;Máquina;pino;1;1;reps;10;15;;60
+Panturrilha Sentado;Posterior;Máquina;pino;1;1;reps;12;20;;60
 Paralelas (foco peito);Peito;Peso corporal;peso corporal do dia;1;1;reps;6;15;;90
 Paralelas (foco tríceps);Tríceps;Peso corporal;peso corporal do dia;1;1;reps;6;15;;90
 Peck Deck;Peito;Máquina;pino;1;1;reps;10;15;;60
@@ -50,7 +50,7 @@ Rosca na Polia Baixa;Bíceps;Polia;pino;1;1;reps;10;15;;60
 Rosca Scott;Bíceps;Barra W;soma das anilhas;1;1;reps;8;12;10;60
 Rotação na Polia;Abdômen;Polia;pino;1;2;reps;12;15;;45
 Russian Twist;Abdômen;Peso corporal;peso corporal do dia;1;1;reps;15;30;;45
-Stiff com Barra;Pernas;Barra;soma das anilhas;1;1;reps;6;10;20;120
+Stiff com Barra;Posterior;Barra;soma das anilhas;1;1;reps;6;10;20;120
 Supino Inclinado c/ Halteres;Peito;Halteres (par);peso de 1 haltere;2;1;reps;6;10;;90
 Supino Inclinado com Barra;Peito;Barra;soma das anilhas;1;1;reps;6;10;20;120
 Supino Reto com Barra;Peito;Barra;soma das anilhas;1;1;reps;6;10;20;120

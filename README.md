@@ -48,9 +48,14 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
   entre os compostos. Cada exercício mostra **o porquê da posição** (📌) e você reordena à
   vontade com ▲▼ (bi-set anda sempre junto). O botão **✨ Ordenar com o assistente** faz o
   mesmo no criador de treino.
-- **Fadiga real (Fase 3):** o mapa de fadiga combina **recuperação** (janela 24–72 h) com o
-  **volume da semana** (faixa-alvo 10–20 séries por grupo) — cada box mostra a prontidão real
-  e as séries da semana.
+- **Fadiga real (Fase 3):** os 10 grupos são **Peito, Costas, Pernas (quadríceps), Posterior
+  (isquiotibiais + glúteo), Ombros, Bíceps, Tríceps, Abdômen, Core e Antebraço**. O mapa combina
+  **recuperação** (janela 24–72 h) com o **volume direto da semana** (faixa-alvo 10–20 séries por
+  grupo) — cada box mostra a prontidão real e as séries registradas naquele grupo.
+- **Co-ativação (sinergia):** puxadas, empurradas e compostos podem sinalizar apoio indireto
+  (pegada, braços, ombros, core, abdômen e cadeia posterior). O app aplica fatores parciais só
+  como **aviso de recuperação** no mapa; séries equivalentes não entram na meta semanal, no XP
+  nem no bônus de fraqueza dos chefões.
 - **Próximo treino recomendado:** sugere o treino salvo cujos grupos estão **mais descansados
   e mais abaixo da meta semanal**, explicando o raciocínio em português simples ("Por quê: …").
   Ao terminar a sessão, o app já empurra a sugestão do próximo.

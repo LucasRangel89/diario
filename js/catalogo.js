@@ -64,21 +64,21 @@ const EXERCISE_CATALOG_FULL = [
     { nome: 'Pulldown na Polia',              grupo: 'Costas',   equipamento: 'Polia',              como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [8, 12],  extra: null, descanso: 90 },
     { nome: 'Remada Cavalinho',               grupo: 'Costas',   equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [8, 12],  extra: null, descanso: 90 },
 
-    // ============================== PERNAS =============================
+    // ============================== PERNAS (quadríceps) =================
     { nome: 'Leg Press 45°',                  grupo: 'Pernas',   equipamento: 'Máquina c/ anilhas', como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [8, 12],  extra: 40,  descanso: 120, obs: 'Extra = carrinho (só informativo)' },
     { nome: 'Agachamento Hack',               grupo: 'Pernas',   equipamento: 'Máquina c/ anilhas', como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [8, 12],  extra: 30,  descanso: 120, obs: 'Extra = carrinho (só informativo)' },
     { nome: 'Agachamento Livre',              grupo: 'Pernas',   equipamento: 'Barra',              como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [5, 10],  extra: 20,  descanso: 150 },
     { nome: 'Cadeira Extensora',              grupo: 'Pernas',   equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [10, 15], extra: null, descanso: 60 },
-    { nome: 'Mesa Flexora',                   grupo: 'Pernas',   equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [10, 15], extra: null, descanso: 60 },
-    { nome: 'Abdutor',                        grupo: 'Pernas',   equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [12, 15], extra: null, descanso: 60 },
-    { nome: 'Panturrilha em Pé',              grupo: 'Pernas',   equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [10, 15], extra: null, descanso: 60 },
-    { nome: 'Panturrilha Sentado',            grupo: 'Pernas',   equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [12, 20], extra: null, descanso: 60 },
-    { nome: 'Stiff com Barra',                grupo: 'Pernas',   equipamento: 'Barra',              como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [6, 10],  extra: 20,  descanso: 120 },
     { nome: 'Afundo Búlgaro',                 grupo: 'Pernas',   equipamento: 'Halteres (par)',     como: 'peso de 1 haltere',   tipo: 'par_dois_lados', fator: 2, lados: 2, unidade: 'reps', faixa: [8, 12], extra: null, descanso: 90, obs: 'Reps por perna' },
     { nome: 'Afundo c/ Halteres',             grupo: 'Pernas',   equipamento: 'Halteres (par)',     como: 'peso de 1 haltere',   tipo: 'par_dois_lados', fator: 2, lados: 2, unidade: 'reps', faixa: [8, 12], extra: null, descanso: 90, obs: 'Reps por perna' },
 
-    // ============================== GLÚTEOS ============================
-    { nome: 'Elevação Pélvica (Hip Thrust)',  grupo: 'Glúteos',  equipamento: 'Máquina c/ anilhas', como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [10, 15], extra: 15,  descanso: 90, obs: 'Extra = alavanca da máquina' },
+    // ============================== POSTERIOR (isquiotibiais + glúteo) ===
+    { nome: 'Mesa Flexora',                   grupo: 'Posterior', equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [10, 15], extra: null, descanso: 60 },
+    { nome: 'Stiff com Barra',                grupo: 'Posterior', equipamento: 'Barra',              como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [6, 10],  extra: 20,  descanso: 120 },
+    { nome: 'Elevação Pélvica (Hip Thrust)',  grupo: 'Posterior', equipamento: 'Máquina c/ anilhas', como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [10, 15], extra: 15,  descanso: 90, obs: 'Extra = alavanca da máquina' },
+    { nome: 'Abdutor',                        grupo: 'Posterior', equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [12, 15], extra: null, descanso: 60, obs: 'Glúteo médio — agrupado na cadeia posterior' },
+    { nome: 'Panturrilha em Pé',              grupo: 'Posterior', equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [10, 15], extra: null, descanso: 60 },
+    { nome: 'Panturrilha Sentado',            grupo: 'Posterior', equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [12, 20], extra: null, descanso: 60 },
 
     // ============================== OMBROS =============================
     { nome: 'Desenvolvimento Militar',        grupo: 'Ombros',   equipamento: 'Barra',              como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [6, 10],  extra: 20,  descanso: 120 },
@@ -167,8 +167,10 @@ const EXERCISE_CATALOG = (() => {
 const MUSCLE_META = {
     'Peito':     { recoveryH: 48, xpWeight: 1.0, ordem: 1 },
     'Costas':    { recoveryH: 48, xpWeight: 1.0, ordem: 2 },
+    // Pernas = quadríceps.
     'Pernas':    { recoveryH: 72, xpWeight: 0.5, ordem: 3 },
-    'Glúteos':   { recoveryH: 48, xpWeight: 0.5, ordem: 4 },
+    // Posterior = isquiotibiais + glúteo.
+    'Posterior': { recoveryH: 48, xpWeight: 0.5, ordem: 4 },
     'Ombros':    { recoveryH: 36, xpWeight: 1.0, ordem: 5 },
     'Bíceps':    { recoveryH: 36, xpWeight: 1.0, ordem: 6 },
     'Tríceps':   { recoveryH: 36, xpWeight: 1.0, ordem: 7 },
@@ -178,20 +180,20 @@ const MUSCLE_META = {
     'Geral':     { recoveryH: 24, xpWeight: 1.0, ordem: 11 },
     'Cardio':    { recoveryH: 12, xpWeight: 1.0, ordem: 12 }
 };
-// 10 grupos musculares (o antigo "Pescoço" foi absorvido por "Ombros").
-const MUSCULOS_MAPA = ['Peito', 'Costas', 'Pernas', 'Glúteos', 'Ombros', 'Bíceps', 'Tríceps', 'Abdômen', 'Core', 'Antebraço'];
+// 10 grupos musculares: quadríceps em Pernas; isquiotibiais + glúteo em Posterior.
+const MUSCULOS_MAPA = ['Peito', 'Costas', 'Pernas', 'Posterior', 'Ombros', 'Bíceps', 'Tríceps', 'Abdômen', 'Core', 'Antebraço'];
 const MUSCLE_OPTIONS_FULL = [...MUSCULOS_MAPA, 'Geral'];
 
 // Grupos que deixaram de existir: registros antigos (localStorage, backup JSON,
 // CSV da planilha) são remapeados sem erro na hora de carregar/importar.
-const LEGACY_MUSCLE_ALIASES = { 'Pescoço': 'Ombros' };
+const LEGACY_MUSCLE_ALIASES = { 'Pescoço': 'Ombros', 'Glúteos': 'Posterior' };
 function normalizeMuscle(muscle) {
     const m = String(muscle || '').trim();
     return LEGACY_MUSCLE_ALIASES[m] || m || 'Geral';
 }
 
-// XP legado: pernas contam metade
-const MUSCLE_WEIGHT = { 'Pernas': 0.5, 'Glúteos': 0.5 };
+// XP legado: pernas e cadeia posterior contam metade.
+const MUSCLE_WEIGHT = { 'Pernas': 0.5, 'Posterior': 0.5 };
 
 // ---------- Séries semanais por grupo (faixa-alvo) ----------
 const FAIXA_SERIES_SEMANAIS = { min: 10, max: 20 };
@@ -406,6 +408,48 @@ function recoveryState(muscle, muscleLogs, nowMs) {
     st.last = last.exercise;
     st.hoursNeed = hoursNeed;
     return st;
+}
+
+const SINERGIA = {
+    'Antebraço': { fator: 0.5, de: 'pegada',            re: /barra fixa|pull ?up|puxada|pulldown|remada|terra|ab wheel|agachamento livre|remo \(/i },
+    'Bíceps':    { fator: 0.5, de: 'puxadas',           re: /remada|puxada|barra fixa|pull ?up|pulldown|remo \(/i },
+    'Tríceps':   { fator: 0.5, de: 'empurradas',        re: /supino|desenvolvimento|paralela|flex[aã]o de bra/i },
+    'Ombros':    { fator: 0.4, de: 'empurradas',        re: /supino|desenvolvimento|paralela|flex[aã]o de bra/i },
+    'Core':      { fator: 0.5, de: 'compostos pesados', re: /agachamento|leg press|hack|terra|stiff|remada curvada|desenvolvimento|eleva[cç][aã]o p[eé]lvica|afundo|ab wheel/i },
+    'Abdômen':   { fator: 0.3, de: 'compostos pesados', re: /agachamento|leg press|hack|terra|stiff|remada curvada|desenvolvimento/i },
+    'Posterior': { fator: 0.4, de: 'agachamentos',      re: /agachamento|afundo|b[uú]lgaro|leg press|passada|hack/i }
+};
+
+// Logs de outros grupos que podem gerar apoio indireto para o músculo pedido.
+function sinergiaLogs(muscle, allLogs) {
+    const cfg = SINERGIA[muscle];
+    if (!cfg || !Array.isArray(allLogs)) return [];
+    return allLogs.filter(l => l && l.kind !== 'corrida' && l.muscle !== muscle && cfg.re.test(l.exercise || ''));
+}
+
+// Apoio indireto informa a recuperação; suas séries equivalentes não entram na meta semanal.
+function sinergiaState(muscle, allLogs, nowMs) {
+    const cfg = SINERGIA[muscle];
+    if (!cfg) return null;
+    const indiretos = sinergiaLogs(muscle, allLogs);
+    if (!indiretos.length) return null;
+
+    const base = recoveryState(muscle, indiretos, nowMs ?? Date.now());
+    const seriesBrutas = indiretos.reduce((total, l) => total + (
+        (Array.isArray(l.sets) && l.sets.length) ? l.sets.length
+            : (Array.isArray(l.reps) ? l.reps.length : 0)
+    ), 0);
+    const latest = [...indiretos].sort((a, b) => (
+        b.date < a.date ? -1 : b.date > a.date ? 1 : (b.id - a.id)
+    ))[0];
+    const pct = Math.max(2, Math.min(100, Math.round(100 - (100 - base.pct) * cfg.fator)));
+
+    return {
+        muscle, pct, fator: cfg.fator, de: cfg.de,
+        series: Math.round(seriesBrutas * cfg.fator * 10) / 10,
+        seriesBrutas, ultimo: base.last, ultimoEm: latest.date,
+        exercicios: [...new Set(indiretos.map(l => String(l.exercise || '').trim()).filter(Boolean))]
+    };
 }
 
 // ---------- Calculadora de anilhas ----------
@@ -658,7 +702,7 @@ function deriveTags(entry) {
     }
 
     // cadeia / região
-    if (grupo === 'Costas' || grupo === 'Glúteos' || P_POSTERIOR.test(n) || (grupo === 'Pernas' && P_DOBRADICA.test(n))) tags.add('posterior');
+    if (grupo === 'Costas' || grupo === 'Posterior' || P_POSTERIOR.test(n) || (grupo === 'Pernas' && P_DOBRADICA.test(n))) tags.add('posterior');
     if (grupo === 'Peito' || P_ANTERIOR.test(n) || (grupo === 'Pernas' && !P_DOBRADICA.test(n))) tags.add('anterior');
 
     // objetivo / estímulo (pela faixa de reps do catálogo)

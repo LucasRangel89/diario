@@ -24,21 +24,14 @@ const ATIVACAO_NOMES = ['Manguito Rotador', 'Face Pull'];
 
 // Quão "grande" é o grupo (desempate: grande primeiro, enquanto há força)
 const MUSCLE_SIZE_RANK = {
-    'Pernas': 0, 'Glúteos': 1, 'Costas': 2, 'Peito': 3, 'Ombros': 4,
+    'Pernas': 0, 'Posterior': 1, 'Costas': 2, 'Peito': 3, 'Ombros': 4,
     'Bíceps': 5, 'Tríceps': 6, 'Abdômen': 7, 'Core': 8, 'Antebraço': 9,
     'Geral': 10, 'Cardio': 11
 };
 
 // Músculo que "segura/apoia" → exercícios que precisam dele fresco.
 // (sem flag /g — regex com /g é estado e quebra o .test repetido)
-const STABILIZER_GROUPS = {
-    'Antebraço': /barra fixa|pull ?up|puxada|pulldown|remada|terra|ab wheel|agachamento livre|remo \(/i,
-    'Ombros': /supino|desenvolvimento|paralela|flex[aã]o de bra/i,
-    'Tríceps': /supino|desenvolvimento|paralela|flex[aã]o de bra/i,
-    'Bíceps': /remada|puxada|barra fixa|pull ?up|pulldown|remo \(/i,
-    'Core': /agachamento|leg press|hack|terra|stiff|remada curvada|desenvolvimento/i,
-    'Abdômen': /agachamento|leg press|hack|terra|stiff|remada curvada|desenvolvimento/i
-};
+const STABILIZER_GROUPS = Object.fromEntries(Object.entries(SINERGIA).map(([g, cfg]) => [g, cfg.re]));
 
 function isAtivacaoExercise(nome) {
     const n = normalizeText(nome || '');
@@ -291,14 +284,16 @@ function weeklySetsByMuscle(allLogs, refDateISO) {
 /* Fadiga REAL = recuperação (%) temperada pelo volume da semana.
    Volume acima da faixa (10–20 séries) pesa na recuperação:
    cada série acima do máximo tira 2% da prontidão (mínimo 60% da recuperação). */
-function fatigueState(muscle, muscleLogs, weeklySets, nowMs) {
+function fatigueState(muscle, muscleLogs, weeklySets, nowMs, sinergia) {
     const base = recoveryState(muscle, muscleLogs, nowMs);
     const series = Number(weeklySets) || 0;
     const min = FAIXA_SERIES_SEMANAIS.min, max = FAIXA_SERIES_SEMANAIS.max;
     const volumeStatus = series < min ? 'abaixo' : (series > max ? 'acima' : 'na-faixa');
     const faltam = Math.max(0, min - series);
     const excesso = Math.max(0, series - max);
-    const rec = (base.pct === null || base.pct === undefined) ? 100 : base.pct;
+    const direto = base.pct === null || base.pct === undefined ? null : base.pct;
+    const sin = sinergia || null;
+    const rec = Math.min(direto ?? 100, sin ? sin.pct : 100);
     const fadigaReal = Math.max(2, Math.min(100, Math.round(rec * Math.max(0.6, 1 - excesso * 0.02))));
 
     let st;
@@ -320,7 +315,9 @@ function fatigueState(muscle, muscleLogs, weeklySets, nowMs) {
         recuperacaoPct: rec,             // só a janela de recuperação
         seriesSemana: series, metaMin: min, metaMax: max,
         volumeStatus, faltam, excesso, volText,
-        semRegistro: base.pct === null,
+        semRegistro: direto === null && !sin,
+        sinergia: sin,
+        sinergiaText: sin ? `🤝 apoio em ${sin.de} (~${Number(sin.series).toFixed(1).replace('.', ',')} séries equivalentes)` : '',
         info: base.info, last: base.last, hoursNeed: base.hoursNeed
     };
 }
