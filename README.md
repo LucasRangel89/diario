@@ -11,6 +11,9 @@ continua funcionando **offline na academia**.
 
 ## O que o app tem
 
+### ⚡ Hoje e Montador
+A tela **Hoje** abre no registro rápido (data, grupo, exercício, carga e reps). Em **Mais detalhes** continuam disponíveis o registro série a série, tipo de carga, RIR, técnica, meta do próximo treino, sessão, conferência, observações e as ferramentas de aquecimento/anilhas. O registro de cardio fica recolhido até ser necessário; o **Montador** tem tela própria para criar e gerenciar treinos.
+
 ### 📜 Histórico no formato da planilha
 Abas **Log · Progresso · Semana a semana · Peso corporal**, com as colunas exatas da
 planilha (Data, Sessão, Exercício, Carga registrada, S1–S5, RIR, Conferir?, Unidade,

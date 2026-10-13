@@ -76,6 +76,15 @@ const cards = () => [...$('cat-results').children].filter(c => c.dataset.ex);   
 const titles = () => cards().map(c => (c.querySelector('h3') || {}).textContent || '');
 const histCards = () => [...$('hist-results').querySelectorAll('[data-log-id]')];
 const pickerRows = () => [...$('picker-results').querySelectorAll('button[data-ex]')];
+const navGroupFor = tab => ({ diario: 'treino', montador: 'treino', historico: 'treino', busca: 'treino', boss: 'jogo', story: 'jogo', stats: 'voce', calcs: 'voce', config: 'config' })[tab];
+function navTo(tab) {
+    const group = navGroupFor(tab);
+    if (group) click($(`nav-group-${group}`));
+    const button = $(`nav-${tab}`);
+    if (button) click(button);
+    else if (tab === 'config') ev("switchTab('config')");
+    else throw new Error(`navegação não encontrada para ${tab}`);
+}
 
 // ============================ BOOT ============================
 console.log('\n== UI 1. Boot ==');
@@ -83,10 +92,54 @@ let bootOk = true, bootErr = '';
 try { window.onload(); } catch (e) { bootOk = false; bootErr = e.message; }
 check('window.onload() roda sem erro', bootOk, bootErr);
 check('data de hoje no formulário', $('log-date').value === ev('getTodayLocalISO()'));
-check('aba Buscar existe (desktop e mobile)', !!$('tab-content-busca') && !!$('nav-busca') && !!$('m-nav-busca'));
+check('aba Buscar aparece no grupo Treino', !!$('tab-content-busca') && !!$('nav-busca') && !$('nav-subnav').classList.contains('hidden'));
+check('navegação tem exatamente quatro grupos, sem trilho horizontal', ['treino', 'jogo', 'voce', 'config'].every(g => !!$(`nav-group-${g}`)) && $('nav-groups').children.length === 4 && !$('group-navigation').className.includes('overflow-x-auto'));
+check('cabeçalho compacto contém título, tema, data e XP', !!$('header-theme-button') && !!$('header-today-date') && !!$('header-xp-display') && document.querySelector('header').querySelectorAll('h1').length === 1);
+check('data curta e XP atualizados no cabeçalho', /^\d{2}\/\d{2}$/.test($('header-today-date').textContent) && $('header-xp-display').textContent.endsWith(' XP'));
+check('Perfil Global soma o XP dos nove temas', !!$('global-profile-xp') && $('global-profile-xp').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP`);
+navTo('boss');
+check('grupo Jogo preserva Boss e Story Card', !$('tab-content-boss').classList.contains('hidden') && !!$('nav-boss') && !!$('nav-story'));
+check('Boss explica a brecha tática por trás da fraqueza', $('active-boss-card').textContent.includes(ev('computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).current.weakReason')));
+navTo('story');
+check('Story Card abre pelo grupo Jogo', !$('tab-content-story').classList.contains('hidden'));
+navTo('stats');
+check('grupo Você preserva Stats e Calcs', !$('tab-content-stats').classList.contains('hidden') && !!$('nav-stats') && !!$('nav-calcs'));
+navTo('calcs');
+check('Calcs abre pelo grupo Você', !$('tab-content-calcs').classList.contains('hidden'));
+navTo('config');
+check('Config continua acessível como quarto grupo', !$('tab-content-config').classList.contains('hidden') && $('nav-subnav').classList.contains('hidden'));
+navTo('diario');
+check('Meus treinos tem tela e navegação próprias', !!$('tab-content-montador') && !!$('nav-montador') && $('nav-montador').textContent.includes('Meus treinos'));
+check('registro rápido aparece antes dos painéis longos', $('tab-content-diario').firstElementChild.id === 'form-card-container');
+check('detalhes do registro começam recolhidos, sem perder campos', !!$('advanced-details') && !$('advanced-details').open && !!$('mode') && !!$('sets-box') && !!$('t') && !!$('n') && !!$('warmup-quick-box'));
+check('cardio compacto começa recolhido e conserva formulário', !!$('cardio-details') && !$('cardio-details').open && !!$('cardio-distance') && !!$('cardio-duration') && !!$('cardio-notes'));
+setSelect('mode', 'sets');
+check('selecionar série a série abre os detalhes e mostra as linhas', $('advanced-details').open && !$('sets-box').classList.contains('hidden') && $('simple-box').classList.contains('hidden'));
+setSelect('mode', 'simple');
+$('advanced-details').open = false;
+check('voltar ao modo simples restaura carga/reps rápidos', !$('simple-box').classList.contains('hidden'));
 check('seed carregou registros', ev('logs.length') > 0, ev('logs.length'));
 check('seed real: 44 logs + 5 sessões salvas', ev('logs.length') === 44 && ev('savedWorkouts.length') === 5);
-check('9 temas no select de tema', $('game-theme-select').options.length === 9);
+check('IDs e retratos originais dos quatro chefões clássicos preservados', ev("THEMES.classico.bosses.slice(0, 4).map(b => b.id).join() === 'boss1,boss2,boss3,boss4' && DEFAULT_BOSS_PORTRAITS['classico:boss1'].endsWith('golem-anilhas.jpg') && DEFAULT_BOSS_PORTRAITS['classico:boss2'].endsWith('hidra-titanio.jpg') && DEFAULT_BOSS_PORTRAITS['classico:boss3'].endsWith('mecagorila.jpg') && DEFAULT_BOSS_PORTRAITS['classico:boss4'].endsWith('behemoth.jpg') && THEMES.classico.bosses.length === 12"));
+check('seletor antigo de tema foi removido de Config', !$('game-theme-select') && !$('game-theme-desc'));
+check('Story Card remove paletas antigas', !$('btn-theme-berzerker') && !$('btn-theme-cyberpunk') && !$('btn-theme-minimal') && !/Cyberpunk|Minimalist|Berzerker Red/.test($('tab-content-story').textContent));
+check('Story Card preserva upload e controle de escurecimento', !!$('bg-image-input') && !!$('bg-overlay-opacity') && $('bg-overlay-opacity').type === 'range');
+check('paleta, moldura e fontes estão vinculadas aos nove temas', ev("Object.keys(THEMES).length === 9 && Object.keys(THEMES).every(id => STORY_CARD_STYLES[id] && STORY_CARD_STYLES[id].palette && STORY_CARD_STYLES[id].fonts)") && /THEME\.frame/.test(fs.readFileSync('js/app.js', 'utf8')));
+let legacyStoryStyleIgnored = true;
+try { ev("safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({ selectedStoryTheme: 'cyberpunk' })); loadStoredData(); generateStoryCard();"); } catch (e) { legacyStoryStyleIgnored = false; }
+check('estilo legado salvo é ignorado sem erro', legacyStoryStyleIgnored);
+check('Story Card mostra o tema de jogo atual', $('story-theme-name').textContent === ev('THEME.name') && $('story-theme-icon').textContent === '🦍');
+click($('header-theme-button'));
+check('botão do tema abre nove cartões com ícone, patente e progresso', !!$('theme-gallery-overlay') && $('theme-gallery-overlay').querySelectorAll('[data-theme-id]').length === 9 && $('theme-gallery-overlay').textContent.includes('Patente atual') && $('theme-gallery-overlay').textContent.includes('chefões'));
+click($('theme-gallery-overlay').querySelector('[data-theme-id="roma"]'));
+check('troca pede confirmação pelo nome Roma Antiga', !!$('confirm-modal-overlay') && $('confirm-modal-overlay').textContent.includes('Trocar para Roma Antiga?') && ev("THEME.id === 'classico'"));
+click($('confirm-modal-no'));
+check('cancelar mantém o tema atual', ev("THEME.id === 'classico'") && !$('confirm-modal-overlay'));
+click($('header-theme-button'));
+click($('theme-gallery-overlay').querySelector('[data-theme-id="roma"]'));
+click($('confirm-modal-yes'));
+check('confirmar troca atualiza tema, ícone e Story Card', ev("THEME.id === 'roma'") && $('header-theme-icon').textContent === '🏛️' && $('story-theme-name').textContent === ev('THEME.name'));
+ev("changeGameTheme('classico');");
 check('histórico renderizado', !!$('history-content'));
 check('CSV multi-aba com 22 colunas no Log', ev('buildPlanilhaCSV()').split(/--- Sheet: Log ---/)[1].split('\n')[1].split(';').length === 22);
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fs.readFileSync('js/app.js', 'utf8')) && /frame === 'espacial'/.test(fs.readFileSync('js/app.js', 'utf8')));
@@ -100,10 +153,14 @@ try {
 
 // ============================ NAVEGAÇÃO ============================
 console.log('\n== UI 2. Navegação ==');
-click($('nav-busca'));
+navTo('busca');
 check('clique em 🔎 Buscar abre a aba', !$('tab-content-busca').classList.contains('hidden'));
 check('e esconde o diário', $('tab-content-diario').classList.contains('hidden'));
 check('botão ativo destacado', $('nav-busca').className.includes('bg-berzerker-600'));
+navTo('montador');
+check('Montador abre em tela própria e esconde Hoje', !$('tab-content-montador').classList.contains('hidden') && $('tab-content-diario').classList.contains('hidden'));
+check('botão Montador fica destacado', $('nav-montador').className.includes('bg-berzerker-600'));
+navTo('busca');
 const totalEx = ev('EXERCISE_CATALOG_FULL.length');
 check('catálogo inteiro listado', cards().length === totalEx, cards().length);
 check('contador de resultados dinâmico', $('cat-count').textContent === `${totalEx} de ${totalEx} exercícios`, $('cat-count').textContent);
@@ -194,20 +251,20 @@ check('modo volta para "séries iguais" (carga/reps visíveis)', $('mode').value
 check('carga e reps da última vez', $('w').value !== '' && $('r').value !== '', [$('w').value, $('r').value]);
 check('linha de tags do formulário apareceu', $('log-tags-line').textContent.includes('Empurrar'), $('log-tags-line').textContent);
 
-click($('nav-busca'));
+navTo('busca');
 setInput('cat-q', 'remada curvada');
 click(btnIn(cards()[0], 'No treino'));
-check('"🎯 No treino" preenche o builder', $('wb-exercise').value === 'Remada Curvada com Barra');
+check('"🎯 No treino" abre o Montador e preenche o builder', !$('tab-content-montador').classList.contains('hidden') && $('wb-exercise').value === 'Remada Curvada com Barra');
 check('reps alvo pela faixa do catálogo', $('wb-reps').value === '12, 12, 10', $('wb-reps').value);
 
-click($('nav-busca'));
+navTo('busca');
 setInput('cat-q', 'agachamento hack');
 click(btnIn(cards()[0], 'Evolução'));
 check('"📊 Evolução" leva ao gráfico do exercício', !$('tab-content-stats').classList.contains('hidden') && $('ex-chart-select').value === 'Agachamento Hack');
 
 // ============================ SELETOR RÁPIDO (MODAL) ============================
 console.log('\n== UI 6. Seletor rápido de exercício ==');
-click($('m-nav-diario'));
+navTo('diario');
 click(btnIn($('log-exercise').parentElement, '🔎'));
 check('modal abre', !!$('picker-overlay'));
 check('modal já abre com o que estava digitado', $('picker-q').value === 'Supino Reto na Máquina', $('picker-q').value);
@@ -232,7 +289,7 @@ check('fecha sem deixar overlay', !$('picker-overlay'));
 
 // ============================ HISTÓRICO ============================
 console.log('\n== UI 7. Busca no histórico ==');
-click($('nav-busca'));
+navTo('busca');
 check('lista todos os registros', histCards().length === ev('logs.length'), histCards().length);
 setInput('hist-q', 'supino');
 check('texto filtra', histCards().length === ev('searchHistoryLogs().length') && histCards().length > 0 && $('hist-results').textContent.includes('Supino'), histCards().length);
@@ -253,14 +310,18 @@ check('cartão do histórico tem editar + ver dia + tags', /Editar/.test($('hist
 
 // ============================ REGISTRO COM TAGS ============================
 console.log('\n== UI 8. Registro diário com tags ==');
-click($('m-nav-diario'));
+navTo('diario');
 setInput('log-exercise', 'Rosca Direta com Barra');
 fire($('log-exercise'), 'input');
 check('digitar mostra as tags do exercício', $('log-tags-line').textContent.includes('Puxar') && $('log-tags-line').textContent.includes('Barra'), $('log-tags-line').textContent);
 setInput('w', '45'); setInput('r', '12, 10, 8');
+$('advanced-details').open = true;
+setInput('n', 'Banco ajustado'); setInput('rir', '2'); setInput('sessao', 'Peito/Tríceps');
+setSelect('t', 'Rest-Pause'); setSelect('g', '🎯 Ajustar Execução');
 const antes = ev('logs.length');
 fire($('workout-form'), 'submit');
 check('registro adicionado', ev('logs.length') === antes + 1);
+check('campos opcionais em Mais detalhes ficam registrados', ev(`logs[0].notes === 'Banco ajustado' && logs[0].rir === 2 && logs[0].technique === 'Rest-Pause' && logs[0].sessao === 'Peito/Tríceps' && logs[0].nextGoal === '🎯 Ajustar Execução'`));
 check('cartão do diário mostra o exercício', $('logs-container').textContent.includes('Rosca Direta com Barra'));
 check('busca passa a contar o uso', ev(`usageStats().usage['Rosca Direta com Barra']`) >= 1);
 
@@ -276,8 +337,8 @@ draftExercises = [
     { muscle: 'Ombros', exercise: 'Manguito Rotador', weight: 20, repsText: '15, 15', technique: 'Convencional', type: 'carga_total' }
 ]; renderDraftList();`);
 check('rascunho montado com 5 exercícios', $('draft-count').textContent === '5', $('draft-count').textContent);
-check('botão "Ordenar com o assistente" existe', !!btnIn($('tab-content-diario'), 'Ordenar com o assistente'));
-click(btnIn($('tab-content-diario'), 'Ordenar com o assistente'));
+check('botão "Ordenar com o assistente" existe no Montador', !!btnIn($('tab-content-montador'), 'Ordenar com o assistente'));
+click(btnIn($('tab-content-montador'), 'Ordenar com o assistente'));
 check('ordem aplicada: manguito (ativação) primeiro', ev('draftExercises[0].exercise') === 'Manguito Rotador', ev('draftExercises.map(e => e.exercise)'));
 check('composto (remada) antes do isolador (rosca)', ev("draftExercises.findIndex(e => e.exercise === 'Remada Curvada com Barra')") < ev("draftExercises.findIndex(e => e.exercise === 'Rosca Martelo')"));
 check('entre compostos, o grupo mais pronto e abaixo da meta sobe', ev("draftExercises.findIndex(e => e.exercise === 'Supino Reto na Máquina')") < ev("draftExercises.findIndex(e => e.exercise === 'Leg Press 45°')"), ev('draftExercises.map(e => e.exercise)'));
@@ -313,9 +374,48 @@ check('sessão completa → sugestão do próximo treino', !$('session-next-hint
 check('banner traz o porquê em linguagem simples', /Por quê:/.test($('session-next-hint').textContent));
 ev('endSession()');
 check('finalizar sessão recolhe o card e atualiza a sugestão', $('active-session-card').classList.contains('hidden') && $('suggestion-content').textContent.includes('Próximo treino recomendado'));
+navTo('montador');
+click(btnIn($('saved-workouts-list'), 'Iniciar'));
+check('iniciar um treino salvo no Montador leva à sessão em Hoje', !$('tab-content-diario').classList.contains('hidden') && $('active-session-card').textContent.includes('Treino em Andamento'));
+
+// ============================ SAVES POR TEMA + MIGRAÇÃO ============================
+console.log('\n== UI 11. Saves por tema e migração ==');
+const storedBeforeMigrationTest = {};
+for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i);
+    storedBeforeMigrationTest[key] = window.localStorage.getItem(key);
+}
+window.localStorage.clear();
+window.localStorage.setItem('berzerker_game_theme_v1', 'roma');
+window.localStorage.setItem('berzerker_diario_cargas_logs_v2', JSON.stringify([
+    { id: 91, date: '2026-10-01', kind: 'peso', muscle: 'Peito', exercise: 'Supino', type: 'carga_total', weight: 100, reps: [10], isPR: false }
+]));
+window.localStorage.setItem('berzerker_game_state_v1', JSON.stringify({
+    deloadWeeks: ['2026-W41'], missionsXpTotal: 123, missionsClaimed: { '2026-W41': true },
+    tests: [{ id: 'shared-test', name: 'Teste compartilhado', unit: 'kg', goal: 100, records: [] }],
+    seasons: { start: '2026-10-01', completed: [] }, bossPortraits: { b0: 'data:image/jpeg;base64,roma' },
+    weightLog: [{ date: '2026-10-10', peso: 94, obs: 'compartilhado' }]
+}));
+let migrationLoadOk = true;
+try { ev('loadStoredData(); applyTheme(activeGameThemeId);'); } catch (e) { migrationLoadOk = false; }
+check('migração do save legado roda sem erro', migrationLoadOk);
+check('logs e progresso antigo migram para o tema que estava ativo', ev("activeGameThemeId === 'roma' && logs.length === 1 && logs[0].xpTheme === 'roma' && missionsXpTotal === 123 && themeGameSaves.roma.missionsClaimed['2026-W41'] === true && themeGameSaves.roma.bossPortraits.b0.includes('roma')"));
+check('testes, peso e deload são carregados como dados compartilhados', ev("tests[0].name === 'Teste compartilhado' && weightLog[0].peso === 94 && deloadWeeks.join() === '2026-W41'"));
+const legacyRomaXP = ev("computeThemeXPCtx('roma').xp");
+check('XP de treino, missão e descanso fica somente no tema migrado', legacyRomaXP > 0 && ev("computeThemeXPCtx('classico').xp === 0") && ev("themeGameSaves.roma.deloadRestDays.length === 7"), legacyRomaXP);
+const romaSaveBeforeSwitch = ev('JSON.stringify(themeGameSaves.roma)');
+ev("changeGameTheme('classico'); missionsXpTotal = 999; missionsClaimed = { '2026-W42': true }; seasons = { start: '2026-10-12', completed: [] }; bossPortraits = { classicoOnly: 'classico' }; saveGameState();");
+check('trocar para outro jogo não altera o save de Roma', ev('JSON.stringify(themeGameSaves.roma)') === romaSaveBeforeSwitch);
+check('tema novo tem save independente e dados compartilhados intactos', ev("themeGameSaves.classico.missionsXpTotal === 999 && missionsXpTotal === 999 && tests[0].name === 'Teste compartilhado' && weightLog[0].peso === 94 && deloadWeeks.join() === '2026-W41'"));
+ev("changeGameTheme('roma');");
+check('voltar ao tema restaura XP, missão, temporada e retrato próprios', ev("missionsXpTotal === 123 && missionsClaimed['2026-W41'] === true && seasons.start === '2026-10-01' && bossPortraits.b0.includes('roma')"));
+check('XP global soma os jogos sem duplicar o save migrado', ev('getGlobalXPTotal() === Object.keys(THEMES).reduce((total, id) => total + computeThemeXPCtx(id).xp, 0)') && $('header-xp-display').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP` && $('global-profile-xp').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP`);
+window.localStorage.clear();
+Object.entries(storedBeforeMigrationTest).forEach(([key, value]) => window.localStorage.setItem(key, value));
+ev("loadStoredData(); loadWorkoutsFromStorage(); applyTheme(activeGameThemeId); refreshAll();");
 
 // ============================ CONSOLE ============================
-console.log('\n== UI 11. Console limpo ==');
+console.log('\n== UI 12. Console limpo ==');
 const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));
 check('nenhum erro não capturado', graves.length === 0, graves.slice(0, 3));
 

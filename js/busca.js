@@ -395,7 +395,7 @@ function useExerciseInBuilder(name) {
         setFieldValue('wb-reps', repsAlvoSugeridas(cat));
     }
     if (typeof onWbExerciseChange === 'function') onWbExerciseChange();
-    if (typeof switchTab === 'function') switchTab('diario');
+    if (typeof switchTab === 'function') switchTab('montador');
     document.getElementById('builder-card-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     document.getElementById('wb-weight')?.focus();
     alertModal(`🎯 ${name} pronto para entrar no treino — informe a carga alvo e adicione.`);

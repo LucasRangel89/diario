@@ -10,7 +10,6 @@ let editingWorkoutId = null;
 let activeSession = null;
 let userBodyweight = 80;
 let customBgImageData = null;
-let selectedStoryTheme = 'berzerker';
 let volumeChartInstance = null;
 let exChartInstance = null;
 let setsChartInstance = null;
@@ -26,7 +25,9 @@ let missionsXpTotal = 0;       // XP já resgatado de missões
 let missionsClaimed = {};      // { '2026-W41': true }
 let tests = [];                // Modo Testes
 let seasons = null;            // temporadas de 12 semanas
-let bossPortraits = {};        // { bossId: dataURL }
+let bossPortraits = {};        // retratos do tema ativo { bossId: dataURL }
+let themeGameSaves = {};       // progresso separado por tema
+let activeGameThemeId = 'classico';
 let selectedStoryBossId = null;
 
 let THEME = null, BOSSES = [], ANIMAL_RANKS = [];
@@ -48,8 +49,10 @@ const STORAGE_KEY_BW = 'berzerker_user_bodyweight';
 const STORAGE_KEY_WORKOUTS = 'berzerker_saved_workouts_v1';
 const STORAGE_KEY_SEEDED = 'berzerker_seeded_v2';
 const STORAGE_KEY_SETTINGS = 'berzerker_settings_v1';
-const STORAGE_KEY_GAME = 'berzerker_game_state_v1';     // deload, missões, testes, temporadas, retratos
-const STORAGE_KEY_STORY = 'berzerker_story_v1';          // tema visual do card + fundo
+const STORAGE_KEY_GAME = 'berzerker_game_state_v1';     // save legado, lido apenas para migração
+const STORAGE_KEY_THEME_GAMES = 'berzerker_game_saves_v2';
+const STORAGE_KEY_GAME_SHARED = 'berzerker_game_shared_v1';
+const STORAGE_KEY_STORY = 'berzerker_story_v1';          // foto de fundo do Story Card
 const STORAGE_KEY_BACKUP = 'berzerker_last_backup_at';
 
 const safeStorage = {
@@ -63,6 +66,56 @@ const NEXT_GOALS = [['', '— automático —'], ['📈 Aumentar Carga', '📈 A
 const INP = 'w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm focus:outline-none focus:border-berzerker-500';
 const LBL = 'block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1';
 const MUSCLE_OPTIONS = MUSCLE_OPTIONS_FULL; // catálogo completo (11 grupos + Geral + Cardio)
+const NAV_GROUPS = [
+    { id: 'treino', label: 'Treino', tabs: [['diario', 'Hoje'], ['historico', 'Histórico'], ['busca', 'Buscar'], ['montador', 'Meus treinos']] },
+    { id: 'jogo', label: 'Jogo', tabs: [['boss', 'Boss'], ['story', 'Story Card']] },
+    { id: 'voce', label: 'Você', tabs: [['stats', 'Stats'], ['calcs', 'Calcs']] },
+    { id: 'config', label: 'Config', tabs: [['config', 'Config']] }
+];
+let activeNavGroup = 'treino';
+let activeTab = 'diario';
+const THEME_ICONS = Object.freeze({
+    classico: '🦍', zodiaco: '♈', hercules: '🦁', acao: '🎬', folclore: '🌴',
+    nordica: '🛡️', roma: '🏛️', rpg: '🐉', galactica: '🚀'
+});
+const STORY_CARD_STYLES = Object.freeze({
+    classico: {
+        palette: { bgStart: '#0a0a0a', bgEnd: '#1a0303', cardBg: 'rgba(18,18,22,.88)', cardBorder: 'rgba(255,255,255,.08)', borderPrimary: '#dc2626', titleColor: '#ffffff', accentColor: '#ef4444', textDim: '#9ca3af', prColor: '#10b981', badgeBg: '#1f1f1f' },
+        fonts: { display: '"Oswald", sans-serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    zodiaco: {
+        palette: { bgStart: '#080d22', bgEnd: '#171a42', cardBg: 'rgba(16,20,48,.9)', cardBorder: 'rgba(245,206,105,.2)', borderPrimary: '#d4af37', titleColor: '#fff7dc', accentColor: '#fbbf24', textDim: '#b9c4df', prColor: '#6ee7b7', badgeBg: '#121831' },
+        fonts: { display: 'Georgia, serif', accent: 'Georgia, serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    hercules: {
+        palette: { bgStart: '#111318', bgEnd: '#27242b', cardBg: 'rgba(32,32,38,.9)', cardBorder: 'rgba(230,216,190,.18)', borderPrimary: '#d6c3a1', titleColor: '#fff9ed', accentColor: '#e5b75c', textDim: '#c2bcae', prColor: '#7dd3c7', badgeBg: '#28262b' },
+        fonts: { display: 'Georgia, serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: 'Georgia, serif' }
+    },
+    acao: {
+        palette: { bgStart: '#080b12', bgEnd: '#1d0505', cardBg: 'rgba(17,20,28,.9)', cardBorder: 'rgba(248,113,113,.18)', borderPrimary: '#ef4444', titleColor: '#fffafa', accentColor: '#fb7185', textDim: '#b1b6c2', prColor: '#fbbf24', badgeBg: '#1b1014' },
+        fonts: { display: '"Oswald", sans-serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: 'monospace' }
+    },
+    folclore: {
+        palette: { bgStart: '#071a12', bgEnd: '#162a16', cardBg: 'rgba(12,31,19,.9)', cardBorder: 'rgba(134,239,172,.17)', borderPrimary: '#34d399', titleColor: '#f5efd8', accentColor: '#facc15', textDim: '#b4b4a3', prColor: '#fb7185', badgeBg: '#102016' },
+        fonts: { display: 'Georgia, serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    nordica: {
+        palette: { bgStart: '#070d14', bgEnd: '#10243c', cardBg: 'rgba(12,24,38,.9)', cardBorder: 'rgba(147,197,253,.17)', borderPrimary: '#60a5fa', titleColor: '#e5f3ff', accentColor: '#38bdf8', textDim: '#a7b7c8', prColor: '#a3e635', badgeBg: '#0f1b2b' },
+        fonts: { display: 'Georgia, serif', accent: '"Oswald", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    roma: {
+        palette: { bgStart: '#170809', bgEnd: '#38120d', cardBg: 'rgba(39,15,14,.9)', cardBorder: 'rgba(253,186,116,.18)', borderPrimary: '#d4a44f', titleColor: '#fff1d6', accentColor: '#f59e0b', textDim: '#d2bda0', prColor: '#34d399', badgeBg: '#2b1010' },
+        fonts: { display: 'Georgia, serif', accent: 'Georgia, serif', body: '"Inter", sans-serif', numeric: 'Georgia, serif' }
+    },
+    rpg: {
+        palette: { bgStart: '#0d0817', bgEnd: '#201328', cardBg: 'rgba(27,17,39,.9)', cardBorder: 'rgba(196,181,253,.18)', borderPrimary: '#a78bfa', titleColor: '#f4e9ff', accentColor: '#f472b6', textDim: '#c0b2d3', prColor: '#86efac', badgeBg: '#1c1428' },
+        fonts: { display: 'Georgia, serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    galactica: {
+        palette: { bgStart: '#050814', bgEnd: '#0b1e3a', cardBg: 'rgba(7,21,42,.92)', cardBorder: 'rgba(103,232,249,.2)', borderPrimary: '#22d3ee', titleColor: '#e0fbff', accentColor: '#60a5fa', textDim: '#9db6d0', prColor: '#a3e635', badgeBg: '#0c2035' },
+        fonts: { display: '"Oswald", sans-serif', accent: 'monospace', body: '"Inter", sans-serif', numeric: 'monospace' }
+    }
+});
 
 // ============================ UTILITÁRIOS ============================
 function toLocalISO(d) {
@@ -83,6 +136,12 @@ function formatShortBR(isoStr) {
     if (!isoStr) return '—';
     const [, m, d] = isoStr.split('-').map(Number);
     return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
+}
+function updateHeaderDate(isoStr) {
+    const el = document.getElementById('header-today-date');
+    if (!el) return;
+    el.textContent = formatShortBR(isoStr);
+    el.title = formatDateBR(isoStr);
 }
 function escapeHtml(str) {
     return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -146,6 +205,129 @@ function migrateLog(l) {
     return l;
 }
 
+function parseStoredObject(key) {
+    try {
+        const value = JSON.parse(safeStorage.get(key));
+        return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+    } catch (e) { return null; }
+}
+
+function emptyThemeGameSave() {
+    return { missionsXpTotal: 0, missionsClaimed: {}, seasons: null, bossPortraits: {}, deloadRestDays: [] };
+}
+
+function ensureThemeGameSave(themeId) {
+    const id = THEMES[themeId] ? themeId : 'classico';
+    const raw = themeGameSaves[id] && typeof themeGameSaves[id] === 'object' ? themeGameSaves[id] : {};
+    const missionsClaimed = raw.missionsClaimed && typeof raw.missionsClaimed === 'object' && !Array.isArray(raw.missionsClaimed) ? raw.missionsClaimed : {};
+    const bossPortraits = raw.bossPortraits && typeof raw.bossPortraits === 'object' && !Array.isArray(raw.bossPortraits) ? raw.bossPortraits : {};
+    themeGameSaves[id] = {
+        ...emptyThemeGameSave(), ...raw,
+        missionsXpTotal: Math.max(0, Number(raw.missionsXpTotal) || 0),
+        missionsClaimed,
+        seasons: raw.seasons && typeof raw.seasons === 'object' ? raw.seasons : null,
+        bossPortraits,
+        deloadRestDays: Array.isArray(raw.deloadRestDays) ? [...new Set(raw.deloadRestDays.filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x)))].sort() : []
+    };
+    return themeGameSaves[id];
+}
+
+function restoreActiveThemeGameSave(themeId) {
+    activeGameThemeId = THEMES[themeId] ? themeId : 'classico';
+    const save = ensureThemeGameSave(activeGameThemeId);
+    missionsXpTotal = save.missionsXpTotal;
+    missionsClaimed = { ...save.missionsClaimed };
+    seasons = save.seasons ? JSON.parse(JSON.stringify(save.seasons)) : null;
+    bossPortraits = { ...save.bossPortraits };
+}
+
+function isoWeekDateRange(weekKey) {
+    const match = String(weekKey || '').match(/^(\d{4})-W(\d{1,2})$/);
+    if (!match) return null;
+    const year = Number(match[1]), week = Number(match[2]);
+    if (week < 1 || week > 53) return null;
+    const jan4 = new Date(year, 0, 4);
+    const start = new Date(jan4);
+    start.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (week - 1) * 7);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    return [toLocalISO(start), toLocalISO(end)];
+}
+
+function ensureDeloadRestAwards() {
+    const activeWeeks = new Set(deloadWeeks);
+    const trainingDates = new Set(logs.filter(l => l && l.date).map(l => l.date));
+    const assignedDates = new Set();
+    let changed = false;
+
+    Object.keys(THEMES).forEach(themeId => {
+        const save = ensureThemeGameSave(themeId);
+        const keep = [];
+        save.deloadRestDays.forEach(date => {
+            const valid = activeWeeks.has(isoWeekKey(date)) && !trainingDates.has(date) && !assignedDates.has(date);
+            if (valid) { keep.push(date); assignedDates.add(date); }
+            else changed = true;
+        });
+        if (keep.length !== save.deloadRestDays.length) save.deloadRestDays = keep;
+    });
+
+    deloadWeeks.forEach(weekKey => {
+        const range = isoWeekDateRange(weekKey);
+        if (!range) return;
+        const [start, end] = range;
+        for (let date = start; date <= end; ) {
+            if (!trainingDates.has(date) && !assignedDates.has(date)) {
+                ensureThemeGameSave(activeGameThemeId).deloadRestDays.push(date);
+                assignedDates.add(date);
+                changed = true;
+            }
+            const next = new Date(`${date}T12:00:00`);
+            next.setDate(next.getDate() + 1);
+            date = toLocalISO(next);
+        }
+    });
+    return changed;
+}
+
+function loadGameProgressFromStorage() {
+    const storedTheme = safeStorage.get(STORAGE_KEY_THEME);
+    activeGameThemeId = THEMES[storedTheme] ? storedTheme : 'classico';
+    const legacy = parseStoredObject(STORAGE_KEY_GAME);
+    const storedThemes = parseStoredObject(STORAGE_KEY_THEME_GAMES);
+    themeGameSaves = {};
+    if (storedThemes && Object.keys(storedThemes).some(id => THEMES[id] && storedThemes[id] && typeof storedThemes[id] === 'object')) {
+        Object.entries(storedThemes).forEach(([id, save]) => {
+            if (THEMES[id] && save && typeof save === 'object' && !Array.isArray(save)) themeGameSaves[id] = save;
+        });
+    } else {
+        // Migração única do save antigo: todo o progresso de jogo vai para o tema ativo.
+        const migrated = emptyThemeGameSave();
+        if (legacy) {
+            migrated.missionsXpTotal = Number(legacy.missionsXpTotal) || 0;
+            migrated.missionsClaimed = legacy.missionsClaimed || {};
+            migrated.seasons = legacy.seasons || null;
+            migrated.bossPortraits = legacy.bossPortraits || {};
+        }
+        themeGameSaves[activeGameThemeId] = migrated;
+    }
+
+    const shared = parseStoredObject(STORAGE_KEY_GAME_SHARED) || {};
+    deloadWeeks = Array.isArray(shared.deloadWeeks) ? shared.deloadWeeks : (Array.isArray(legacy?.deloadWeeks) ? legacy.deloadWeeks : []);
+    tests = Array.isArray(shared.tests) ? shared.tests : (Array.isArray(legacy?.tests) ? legacy.tests : defaultTests());
+    weightLog = Array.isArray(shared.weightLog) ? shared.weightLog : (Array.isArray(legacy?.weightLog) ? legacy.weightLog : []);
+    if (!tests.length) tests = defaultTests();
+
+    Object.keys(THEMES).forEach(ensureThemeGameSave);
+    restoreActiveThemeGameSave(activeGameThemeId);
+    let logsChanged = false;
+    logs.forEach(log => {
+        if (!THEMES[log.xpTheme]) { log.xpTheme = activeGameThemeId; logsChanged = true; }
+    });
+    if (logsChanged) safeStorage.set(STORAGE_KEY_LOGS, JSON.stringify(logs));
+    ensureDeloadRestAwards();
+    saveGameState();
+}
+
 function loadStoredData() {
     try {
         const storedLogs = JSON.parse(safeStorage.get(STORAGE_KEY_LOGS));
@@ -162,25 +344,12 @@ function loadStoredData() {
         const s = JSON.parse(safeStorage.get(STORAGE_KEY_SETTINGS));
         if (s && typeof s === 'object') settings = { ...settings, ...s };
     } catch (e) { /* defaults */ }
-    try {
-        const g = JSON.parse(safeStorage.get(STORAGE_KEY_GAME));
-        if (g && typeof g === 'object') {
-            deloadWeeks = Array.isArray(g.deloadWeeks) ? g.deloadWeeks : [];
-            missionsXpTotal = g.missionsXpTotal || 0;
-            missionsClaimed = g.missionsClaimed || {};
-            tests = Array.isArray(g.tests) ? g.tests : defaultTests();
-            seasons = g.seasons || null;
-            bossPortraits = g.bossPortraits || {};
-            weightLog = Array.isArray(g.weightLog) ? g.weightLog : [];
-        } else {
-            tests = defaultTests();
-        }
-    } catch (e) { tests = defaultTests(); }
-    if (!Array.isArray(tests) || tests.length === 0) tests = defaultTests();
+
+    loadGameProgressFromStorage();
     try {
         const st = JSON.parse(safeStorage.get(STORAGE_KEY_STORY));
         if (st && typeof st === 'object') {
-            if (st.selectedStoryTheme) selectedStoryTheme = st.selectedStoryTheme;
+            // Opções de paleta antigas (Berzerker/Cyberpunk/Minimal) são ignoradas.
             if (st.bgImageData) {
                 const img = new Image();
                 img.onload = () => { customBgImageData = img; generateStoryCard(); };
@@ -191,8 +360,16 @@ function loadStoredData() {
     lastBackupAt = safeStorage.get(STORAGE_KEY_BACKUP);
 }
 
+function logsForTheme(themeId = activeGameThemeId) {
+    return logs.filter(log => log && log.xpTheme === themeId);
+}
+
 function saveLogsToStorage() {
+    logs.forEach(log => {
+        if (!THEMES[log.xpTheme]) log.xpTheme = activeGameThemeId;
+    });
     safeStorage.set(STORAGE_KEY_LOGS, JSON.stringify(logs));
+    if (ensureDeloadRestAwards()) saveGameState();
     checkRankUp();
 }
 function saveWorkoutsToStorage() { safeStorage.set(STORAGE_KEY_WORKOUTS, JSON.stringify(savedWorkouts)); }
@@ -200,13 +377,16 @@ function saveSettings() {
     safeStorage.set(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
 }
 function saveGameState() {
-    safeStorage.set(STORAGE_KEY_GAME, JSON.stringify({
-        deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, weightLog
-    }));
+    const activeSave = ensureThemeGameSave(activeGameThemeId);
+    activeSave.missionsXpTotal = Math.max(0, Number(missionsXpTotal) || 0);
+    activeSave.missionsClaimed = { ...missionsClaimed };
+    activeSave.seasons = seasons ? JSON.parse(JSON.stringify(seasons)) : null;
+    activeSave.bossPortraits = { ...bossPortraits };
+    safeStorage.set(STORAGE_KEY_THEME_GAMES, JSON.stringify(themeGameSaves));
+    safeStorage.set(STORAGE_KEY_GAME_SHARED, JSON.stringify({ deloadWeeks, tests, weightLog }));
 }
 function saveStoryState() {
     safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({
-        selectedStoryTheme,
         bgImageData: customBgImageData ? customBgImageData.src : null
     }));
 }
@@ -265,31 +445,111 @@ function toggleDeloadWeek() {
 }
 
 // ============================ TEMA / PATENTES ============================
+function updateStoryThemeInfo() {
+    const icon = document.getElementById('story-theme-icon');
+    const name = document.getElementById('story-theme-name');
+    if (icon) icon.textContent = THEME_ICONS[THEME?.id] || '🎭';
+    if (name) name.textContent = THEME?.name || 'Tema atual';
+}
+
 function applyTheme(id) {
     THEME = THEMES[id] || THEMES.classico;
+    activeGameThemeId = THEME.id;
     BOSSES = THEME.bosses;
     ANIMAL_RANKS = THEME.ranks.map(([name, icon], i) => ({ minXp: XP_MIN[i], level: i + 1, name, icon }));
     const set = (el, fn) => { const e = document.getElementById(el); if (e) fn(e); };
     set('arena-title', e => e.textContent = THEME.arena);
-    set('game-theme-select', e => e.value = THEME.id);
-    set('game-theme-desc', e => e.textContent = THEME.desc);
+    updateStoryThemeInfo();
     const xd = computeXPCtx();
     lastRankLevel = rankFromXP(xd.xp).level;
     lastBossesDefeated = xd.prog.defeatedCount;
 }
 
 function changeGameTheme(id) {
+    if (!THEMES[id]) return;
+    saveGameState();
+    restoreActiveThemeGameSave(id);
+    safeStorage.set(STORAGE_KEY_THEME, id);
     applyTheme(id);
-    safeStorage.set(STORAGE_KEY_THEME, THEME.id);
     refreshAll();
-    alertModal(`🎭 Tema "${THEME.name}" aplicado! Seu progresso foi mantido.`);
+    alertModal(`🎭 Tema "${THEME.name}" aplicado! Seu progresso foi preservado.`);
+}
+
+function computeThemeXPCtx(themeId, upto) {
+    const t = THEMES[themeId] || THEME || THEMES.classico;
+    const save = ensureThemeGameSave(t.id);
+    if (ensureDeloadRestAwards()) saveGameState();
+    const gameLogs = logsForTheme(t.id);
+    const missionXP = t.id === activeGameThemeId ? missionsXpTotal : save.missionsXpTotal;
+    return computeXP(upto, {
+        logs: gameLogs, bodyweight: userBodyweight, deloadWeeks,
+        missionsXpTotal: missionXP, bosses: t.bosses, restDays: save.deloadRestDays
+    });
 }
 
 function computeXPCtx(upto) {
-    return computeXP(upto, {
-        logs, bodyweight: userBodyweight, deloadWeeks,
-        missionsXpTotal, bosses: BOSSES
-    });
+    return computeThemeXPCtx(activeGameThemeId || THEME?.id || 'classico', upto);
+}
+
+function getGlobalXPTotal() {
+    return Object.keys(THEMES).reduce((sum, themeId) => sum + computeThemeXPCtx(themeId).xp, 0);
+}
+
+function themeRankList(theme) {
+    return theme.ranks.map(([name, icon], i) => ({ minXp: XP_MIN[i], level: i + 1, name, icon }));
+}
+
+function themeConfirmationName(theme) {
+    if (theme.id === 'roma') return 'Roma Antiga';
+    return theme.name.replace(/\s+\(clássico\)$/i, '');
+}
+
+function requestGameThemeChange(id) {
+    const nextTheme = THEMES[id];
+    if (!nextTheme) return;
+    document.getElementById('theme-gallery-overlay')?.remove();
+    if (nextTheme.id === THEME?.id) return;
+    confirmModal(`Trocar para ${themeConfirmationName(nextTheme)}? O progresso deste jogo será preservado.`, () => changeGameTheme(nextTheme.id));
+}
+
+function showThemeGallery() {
+    document.getElementById('theme-gallery-overlay')?.remove();
+    const cards = Object.values(THEMES).map(theme => {
+        const data = computeThemeXPCtx(theme.id);
+        const ranks = themeRankList(theme);
+        const currentRank = rankFromXP(data.xp, ranks);
+        const nextRank = ranks[currentRank.level] || null;
+        const progress = nextRank
+            ? Math.max(0, Math.min(100, Math.round((data.xp - currentRank.minXp) / (nextRank.minXp - currentRank.minXp) * 100)))
+            : 100;
+        const active = theme.id === THEME?.id;
+        const defeated = Math.min(data.prog.defeatedCount, theme.bosses.length);
+        return `<button type="button" data-theme-id="${theme.id}" onclick="requestGameThemeChange('${theme.id}')" class="text-left rounded-2xl border ${active ? 'border-berzerker-500 bg-berzerker-600/10 ring-1 ring-berzerker-500/30' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'} p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-berzerker-500">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0"><span class="text-2xl">${THEME_ICONS[theme.id] || '🎭'}</span><strong class="text-sm text-white leading-tight">${escapeHtml(theme.name)}</strong></div>
+                ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[9px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
+            </div>
+            <div class="mt-3 flex items-end justify-between gap-2">
+                <div class="min-w-0"><span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Patente atual</span><span class="block truncate text-xs font-bold text-amber-300">${currentRank.icon} ${escapeHtml(currentRank.name)}</span></div>
+                <span class="shrink-0 text-[10px] font-mono text-gray-400">Nível ${currentRank.level}/10</span>
+            </div>
+            <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-berzerker-border"><div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-300" style="width:${progress}%"></div></div>
+            <div class="mt-1.5 flex items-center justify-between gap-2 text-[9px] font-mono text-gray-500"><span>${fmtN(data.xp)} XP${nextRank ? ` / ${fmtN(nextRank.minXp)} XP` : ' · nível máximo'}</span><span>${defeated}/${theme.bosses.length} chefões</span></div>
+            <p class="mt-2 line-clamp-2 text-[10px] leading-relaxed text-gray-500">${escapeHtml(theme.desc)}</p>
+        </button>`;
+    }).join('');
+    const overlay = document.createElement('div');
+    overlay.id = 'theme-gallery-overlay';
+    overlay.className = 'fixed inset-0 z-[55] flex items-start justify-center overflow-y-auto bg-black/80 p-3 backdrop-blur-sm sm:items-center sm:p-5';
+    overlay.onclick = event => { if (event.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `<div class="my-auto max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-berzerker-border bg-berzerker-card p-4 shadow-2xl sm:p-6">
+        <div class="mb-4 flex items-center justify-between gap-3">
+            <div><h2 class="font-oswald text-xl font-bold uppercase tracking-wider text-white">🎭 Temas de gamificação</h2><p class="mt-1 text-[11px] text-gray-400">Cada jogo mantém sua patente e seu progresso.</p></div>
+            <button type="button" onclick="document.getElementById('theme-gallery-overlay').remove()" aria-label="Fechar galeria" class="rounded-lg px-3 py-2 text-gray-400 hover:bg-berzerker-dark hover:text-white">✕</button>
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">${cards}</div>
+    </div>`;
+    document.body.appendChild(overlay);
 }
 
 function checkRankUp() {
@@ -310,9 +570,8 @@ function checkRankUp() {
 
 function showRanksModal(themeId) {
     const t = THEMES[themeId] || THEME;
-    const d = computeXPCtx();
-    const cur = rankFromXP(d.xp);
-    const rankList = t.ranks.map(([name, icon], i) => ({ minXp: XP_MIN[i], level: i + 1, name, icon }));
+    const d = computeThemeXPCtx(t.id);
+    const rankList = themeRankList(t);
     const curT = rankList.reduce((a, x) => (d.xp >= x.minXp ? x : a), rankList[0]);
     const nxt = rankList[curT.level] || null;
     const pct = nxt ? Math.min(100, Math.round((d.xp - curT.minXp) / (nxt.minXp - curT.minXp) * 100)) : 100;
@@ -348,21 +607,55 @@ function showRanksModal(themeId) {
 }
 
 // ============================ TABS ============================
-function switchTab(tab) {
-    ['diario', 'historico', 'busca', 'boss', 'story', 'stats', 'calcs', 'config'].forEach(t => {
-        const el = document.getElementById(`tab-content-${t}`);
-        const btnDesktop = document.getElementById(`nav-${t}`);
-        const btnMobile = document.getElementById(`m-nav-${t}`);
-        if (t === tab) {
-            el.classList.remove('hidden');
-            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg bg-berzerker-600 text-white transition-all';
-            if (btnMobile) btnMobile.className = 'px-3 py-1.5 rounded-lg bg-berzerker-600 text-white whitespace-nowrap';
-        } else {
-            el.classList.add('hidden');
-            if (btnDesktop) btnDesktop.className = 'px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-all';
-            if (btnMobile) btnMobile.className = 'px-3 py-1.5 rounded-lg text-gray-400 bg-berzerker-card whitespace-nowrap';
-        }
+function renderNavigation() {
+    NAV_GROUPS.forEach(group => {
+        const button = document.getElementById(`nav-group-${group.id}`);
+        if (!button) return;
+        const active = group.id === activeNavGroup;
+        button.className = `min-w-0 px-1 py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors ${active ? 'bg-berzerker-600 text-white' : 'bg-berzerker-dark text-gray-300 hover:text-white'}`;
+        if (active) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
     });
+
+    const subnav = document.getElementById('nav-subnav');
+    if (!subnav) return;
+    const group = NAV_GROUPS.find(item => item.id === activeNavGroup) || NAV_GROUPS[0];
+    if (group.id === 'config') {
+        subnav.innerHTML = '';
+        subnav.classList.add('hidden');
+        return;
+    }
+    subnav.classList.remove('hidden');
+    subnav.innerHTML = group.tabs.map(([tab, label]) => {
+        const active = tab === activeTab;
+        return `<button type="button" id="nav-${tab}" onclick="switchTab('${tab}')" ${active ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-colors ${active ? 'bg-berzerker-600/25 text-white border border-berzerker-500/50' : 'text-gray-400 bg-berzerker-dark/60 border border-transparent hover:text-white'}">${label}</button>`;
+    }).join('');
+}
+
+function selectNavGroup(groupId) {
+    const group = NAV_GROUPS.find(item => item.id === groupId);
+    if (!group) return;
+    if (group.id === 'config') {
+        switchTab('config');
+        return;
+    }
+    activeNavGroup = group.id;
+    if (!group.tabs.some(([tab]) => tab === activeTab)) switchTab(group.tabs[0][0]);
+    else renderNavigation();
+}
+
+function switchTab(tab) {
+    const tabIds = NAV_GROUPS.flatMap(group => group.tabs.map(([id]) => id));
+    if (!tabIds.includes(tab)) return;
+    activeTab = tab;
+    const group = NAV_GROUPS.find(item => item.tabs.some(([id]) => id === tab));
+    if (group) activeNavGroup = group.id;
+    tabIds.forEach(id => {
+        const el = document.getElementById(`tab-content-${id}`);
+        if (el) el.classList.toggle('hidden', id !== tab);
+    });
+    renderNavigation();
+    if (tab === 'montador') { renderDraftList(); renderSavedWorkouts(); renderWeekGaps(); }
     if (tab === 'historico') renderHistory();
     if (tab === 'busca') renderSearchScreen();
     if (tab === 'boss') { renderBossBattleUI(); renderMissions(); renderSeason(); }
@@ -425,8 +718,12 @@ function toggleSetMode(prefix) {
     const mode = document.getElementById(prefix + 'mode')?.value || 'simple';
     const box = document.getElementById(prefix + 'sets-box');
     const simpleBox = document.getElementById(prefix + 'simple-box');
+    const advanced = document.getElementById(prefix + 'advanced-details');
     if (box) box.classList.toggle('hidden', mode !== 'sets');
     if (simpleBox) simpleBox.classList.toggle('hidden', mode === 'sets');
+    // Ao escolher o registro série a série, abra os detalhes para não ocultar
+    // os campos necessários depois da mudança de modo.
+    if (mode === 'sets' && advanced) advanced.open = true;
 }
 
 function renderSetRows(prefix) {
@@ -487,8 +784,8 @@ function fieldsHTML(p, v, opts) {
     const typeOptions = Object.entries(CATALOG_TIPOS).map(([val, t]) =>
         `<option value="${val}"${val === (v.type || 'carga_total') ? ' selected' : ''}>${t.label}</option>`).join('');
     const wLabelText = (CATALOG_TIPOS[v.type || 'carga_total'] || CATALOG_TIPOS.carga_total).label;
-    return `
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-3">
+    const typeModeHTML = `
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5${o.quickCapture ? '' : ' mt-3'}">
         <div class="col-span-2"><label class="${LBL}">Tipo de registro</label>
             <select id="${p}type" onchange="onTypeChange('${p}')" class="${INP}">${typeOptions}</select>
         </div>
@@ -498,16 +795,19 @@ function fieldsHTML(p, v, opts) {
                 <option value="sets"${v.mode === 'sets' ? ' selected' : ''}>Série a série (drop-set, pirâmide)</option>
             </select>
         </div>
-    </div>
-    <div id="${p}simple-box" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-2.5">
+    </div>`;
+    const simpleHTML = `
+    <div id="${p}simple-box" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5${o.quickCapture ? ' mb-3' : ' mt-2.5'}">
         <div><label class="${LBL}" id="${p}w-label">${wLabelText}</label><input type="number" step="0.5" min="0" id="${p}w" value="${v.weight > 0 ? v.weight : ''}" placeholder="kg" class="${INP}"></div>
         <div class="sm:col-span-3"><label class="${LBL}">Reps por Série (ou segundos em isometria)</label><input type="text" id="${p}r" value="${escapeHtml(v.repsText || '')}" placeholder="12, 10, 8" class="${INP}"></div>
-    </div>
+    </div>`;
+    const setsHTML = `
     <div id="${p}sets-box" class="hidden mt-2.5 space-y-1.5">
         <div class="flex items-center justify-between"><label class="${LBL} !mb-0">Séries — carga · reps · RIR (opcional)</label>
             <button type="button" onclick="addSetRow('${p}')" class="text-[10px] font-bold text-cyan-400 hover:underline">+ série</button></div>
         <div id="${p}sets" class="space-y-1.5"></div>
-    </div>
+    </div>`;
+    const extraHTML = `
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-2.5">
         <div><label class="${LBL}">RIR (reps em reserva)</label><input type="number" min="0" max="10" id="${p}rir" value="${v.rir ?? ''}" placeholder="ex: 2" class="${INP}"></div>
         <div><label class="${LBL}">Técnica Avançada</label><select id="${p}t" class="${INP}">${optsSelect(TECHNIQUES, v.technique)}</select></div>
@@ -517,6 +817,39 @@ function fieldsHTML(p, v, opts) {
         <div class="col-span-2 sm:col-span-4"><label class="${LBL}">Observações</label><textarea id="${p}n" rows="2" placeholder="Ex: ajuste do banco, dor, sensação, regulagem da máquina..." class="${INP}">${escapeHtml(v.notes || '')}</textarea></div>
         ${o.prOverride ? `<label class="flex items-center gap-2 cursor-pointer col-span-2"><input type="checkbox" id="${p}p"${v.isPR ? ' checked' : ''} class="w-4 h-4 rounded text-emerald-500 bg-berzerker-dark border-berzerker-border"><span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">🏆 PR (auto pelo 1RM — pode forçar)</span></label>` : ''}
     </div>`;
+
+    if (o.quickCapture) {
+        return `${simpleHTML}
+        <details id="${p}advanced-details" class="border border-berzerker-border rounded-xl bg-berzerker-dark/50"${v.mode === 'sets' ? ' open' : ''}>
+            <summary class="cursor-pointer select-none px-3 py-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center justify-between gap-3">
+                <span>Mais detalhes</span>
+                <span class="text-[10px] text-gray-500 normal-case tracking-normal">séries individuais, técnica, observações e ferramentas</span>
+            </summary>
+            <div class="border-t border-berzerker-border p-3 space-y-3">
+                ${typeModeHTML}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div id="${p}type-hint" class="text-[11px] text-amber-400/90 font-mono bg-amber-950/20 border border-amber-700/30 rounded-lg px-3 py-2"></div>
+                    <div id="${p}faixa-hint" class="text-[11px] text-cyan-300/90 font-mono bg-cyan-950/20 border border-cyan-700/30 rounded-lg px-3 py-2"></div>
+                </div>
+                ${setsHTML}
+                ${extraHTML}
+                <div id="${p}warmup-quick-box" class="hidden bg-berzerker-dark/80 border border-amber-500/30 rounded-xl p-3 text-xs space-y-1">
+                    <div class="font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                        <span>🔥 Aquecimento & Anilhas</span>
+                        <button type="button" onclick="document.getElementById('${p}warmup-quick-box').classList.add('hidden')" class="text-gray-400 hover:text-white">✕</button>
+                    </div>
+                    <div id="${p}warmup-quick-content" class="font-mono text-gray-300"></div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" onclick="calculateWarmupFromForm()" class="px-3 py-2 bg-amber-900/30 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase rounded-lg hover:bg-amber-900/50">🔥 Aquecimento</button>
+                    <button type="button" onclick="calculatePlatesQuick()" class="px-3 py-2 bg-berzerker-border text-gray-200 text-xs font-bold uppercase rounded-lg hover:bg-gray-700">⚙️ Anilhas</button>
+                </div>
+                <p class="text-[10px] text-gray-500">🏆 O PR é detectado sozinho pelo 1RM estimado (ou tempo, em isometria) — sem checkbox. 💡 Quando todas as séries baterem o topo da faixa, o app sugere subir a carga.</p>
+            </div>
+        </details>`;
+    }
+
+    return `${typeModeHTML}${simpleHTML}${setsHTML}${extraHTML}`;
 }
 
 function readFields(p) {
@@ -617,7 +950,7 @@ function handleAddLog(event) {
 
     const newLog = {
         id: newLogId(), date, kind: 'peso', muscle, exercise,
-        ...f
+        xpTheme: activeGameThemeId, ...f
     };
     // PR automático pelo 1RM estimado (ou tempo, em isometria)
     newLog.isPR = detectAutoPR(newLog, logs, userBodyweight) || f.isPR;
@@ -820,7 +1153,7 @@ function renderDaySuggestion() {
     const el = document.getElementById('suggestion-content');
     if (!el) return;
     if (savedWorkouts.length === 0) {
-        el.innerHTML = `<p class="text-xs text-gray-500">Monte um treino no <b>Criar Treino</b> para receber a sugestão do dia.</p>`;
+        el.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><p class="text-xs text-gray-500">Monte um treino no <b>Montador</b> para receber a sugestão do dia.</p><button type="button" onclick="switchTab('montador')" class="px-3 py-2 bg-berzerker-600/20 border border-berzerker-500/40 text-berzerker-500 text-[10px] font-bold uppercase rounded-lg hover:bg-berzerker-600/40">🎯 Abrir Montador</button></div>`;
         return;
     }
     const scored = suggestNextWorkout(savedWorkouts, logs, Date.now());
@@ -850,7 +1183,7 @@ function registerCorrida(event) {
     if (distanceKm <= 0 && durationMin <= 0) { alertModal('Informe a distância e/ou o tempo da corrida.'); return; }
     const newLog = {
         id: newLogId(), date, kind: 'corrida', muscle: 'Cardio', exercise,
-        distanceKm, durationMin, notes, technique: 'Convencional', isPR: false, nextGoal: '', type: 'corrida', reps: []
+        xpTheme: activeGameThemeId, distanceKm, durationMin, notes, technique: 'Convencional', isPR: false, nextGoal: '', type: 'corrida', reps: []
     };
     newLog.isPR = detectAutoPR(newLog, logs, userBodyweight);
     logs.unshift(newLog);
@@ -898,6 +1231,7 @@ function startSession(workoutId) {
     const card = document.getElementById('active-session-card');
     card.classList.remove('hidden');
     renderSession();
+    switchTab('diario');
     card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     acquireWakeLock();
     alertModal(`⚔️ "${w.name}" iniciado! Bora treinar!`);
@@ -1073,7 +1407,7 @@ function registerSessionUnit(idxs, isPair) {
         const id = newLogId();
         const newLog = {
             id, date, kind: 'peso', muscle: item.muscle, exercise: item.exercise,
-            ...f, ...(isPair ? { biset: true } : {})
+            xpTheme: activeGameThemeId, ...f, ...(isPair ? { biset: true } : {})
         };
         if (!newLog.sessao) newLog.sessao = activeSession.name;
         newLog.isPR = detectAutoPR(newLog, logs, userBodyweight) || f.isPR;
@@ -1500,7 +1834,7 @@ function renderSavedWorkouts() {
     if (savedWorkouts.length === 0) {
         listEl.innerHTML = `
             <div class="col-span-full text-center py-6 text-gray-500 border border-dashed border-berzerker-border rounded-xl text-xs uppercase tracking-wider">
-                Nenhum treino salvo ainda — monte o primeiro acima! 💪
+                Nenhum treino salvo ainda — monte o primeiro no Montador! 💪
             </div>`;
         return;
     }
@@ -1549,6 +1883,21 @@ function getAnimalRankForSession(targetDate) {
     };
 }
 
+function updateHeaderChrome() {
+    const icon = document.getElementById('header-theme-icon');
+    const themeButton = document.getElementById('header-theme-button');
+    const xp = document.getElementById('header-xp-display');
+    if (icon) icon.textContent = THEME_ICONS[THEME?.id] || '🎭';
+    if (themeButton) {
+        themeButton.title = `Tema atual: ${THEME?.name || 'Gamificação'}. Abrir galeria`;
+        themeButton.setAttribute('aria-label', `Tema atual: ${THEME?.name || 'Gamificação'}. Abrir galeria de temas`);
+    }
+    const globalXP = getGlobalXPTotal();
+    if (xp) xp.textContent = `${fmtN(globalXP)} XP`;
+    const profileXP = document.getElementById('global-profile-xp');
+    if (profileXP) profileXP.textContent = `${fmtN(globalXP)} XP`;
+}
+
 function updateSummaryMetrics() {
     const filterDate = document.getElementById('filter-date').value;
     const rank = getAnimalRankForSession(filterDate);
@@ -1557,6 +1906,7 @@ function updateSummaryMetrics() {
     document.getElementById('stat-rank').textContent = `${rank.icon} ${rank.name} (Niv ${rank.level} · ${fmtN(rank.xp)} XP)`;
     const todayDmg = Math.round(rank.sessionTonnage);
     document.getElementById('stat-boss-dmg').textContent = `${todayDmg.toLocaleString()} DMG`;
+    updateHeaderChrome();
 }
 
 // ============================ BOSS BATTLE ============================
@@ -1598,10 +1948,10 @@ function getBossImg(src) {
 }
 
 function renderBossBattleUI() {
-    const prog = computeBossProgress(logs, userBodyweight, BOSSES);
+    const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
     const filterDate = document.getElementById('filter-date').value || getTodayLocalISO();
     const rank = getAnimalRankForSession(filterDate);
-    const todayDmg = Math.round(rank.dayLogs.reduce((a, l) => a + logDamageKg(l, userBodyweight, prog.current), 0));
+    const todayDmg = Math.round(rank.dayLogs.filter(l => l.xpTheme === activeGameThemeId).reduce((a, l) => a + logDamageKg(l, userBodyweight, prog.current), 0));
 
     document.getElementById('boss-today-dmg-display').textContent = `${todayDmg.toLocaleString()} DMG`;
     document.getElementById('stat-boss-dmg').textContent = `${todayDmg.toLocaleString()} DMG`;
@@ -1620,6 +1970,7 @@ function renderBossBattleUI() {
                         <span class="text-xs font-bold text-red-400 uppercase tracking-wider block">${THEME.bossLabel} — ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
                         <h3 class="font-oswald text-3xl font-bold text-white uppercase">${escapeHtml(currentBoss.name)}</h3>
                         <p class="text-xs text-gray-400 mt-0.5">${escapeHtml(currentBoss.desc)}</p>
+                        <p class="text-[10px] text-purple-200/80 mt-1"><strong>Brecha tática:</strong> ${escapeHtml(currentBoss.weakReason || 'Ataque temático.')}</p>
                         <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                             <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700 uppercase">💢 Fraqueza: ${escapeHtml(currentBoss.weak || '—')} ×1,25</span>
                             <label class="text-[10px] font-bold px-2 py-0.5 rounded bg-berzerker-border text-gray-300 cursor-pointer hover:bg-gray-700">🖼️ Retrato
@@ -1662,6 +2013,7 @@ function renderBossBattleUI() {
                     </div>
                     <h4 class="font-oswald font-bold text-white text-lg">${escapeHtml(b.name)}</h4>
                     <span class="text-[10px] font-mono text-purple-300 block">💢 fraco a ${escapeHtml(b.weak || '—')}</span>
+                    <span class="text-[10px] leading-relaxed text-gray-500 block">${escapeHtml(b.weakReason || 'Ataque temático.')}</span>
                     <span class="text-xs font-mono text-gray-400 block">${fmtN(b.maxHp)} HP · ${defeated ? '✔' : '🎁'} +${Math.round(b.maxHp / 200)} XP</span>
                 </div>`;
         }).join('');
@@ -1695,7 +2047,7 @@ function uploadBossPortrait(event, bossId) {
 function renderMissions() {
     const el = document.getElementById('missions-content');
     if (!el) return;
-    const st = missionsState(logs, THEME, getTodayLocalISO());
+    const st = missionsState(logsForTheme(activeGameThemeId), THEME, getTodayLocalISO());
     const claimed = !!missionsClaimed[st.week];
     el.innerHTML = `
         <div class="flex items-center justify-between text-[11px] text-gray-400 font-mono mb-2">
@@ -1721,7 +2073,7 @@ function renderMissions() {
 }
 
 function claimMissions() {
-    const st = missionsState(logs, THEME, getTodayLocalISO());
+    const st = missionsState(logsForTheme(activeGameThemeId), THEME, getTodayLocalISO());
     if (!st.allDone || missionsClaimed[st.week]) return;
     missionsClaimed[st.week] = true;
     missionsXpTotal += st.totalXP;
@@ -1735,7 +2087,7 @@ function renderSeason() {
     const el = document.getElementById('season-content');
     if (!el) return;
     const today = getTodayLocalISO();
-    if (!seasons) seasons = { start: today, completed: [] };
+    if (!seasons) { seasons = { start: today, completed: [] }; saveGameState(); }
     // Autocompleta temporada vencida
     let s = seasonState(seasons, today);
     if (s.finished) {
@@ -1798,20 +2150,6 @@ function removeBgImage() {
     customBgImageData = null;
     document.getElementById('bg-image-input').value = '';
     saveStoryState();
-    generateStoryCard();
-}
-
-function setTheme(theme) {
-    selectedStoryTheme = theme;
-    saveStoryState();
-    ['berzerker', 'cyberpunk', 'minimal'].forEach(t => {
-        const btn = document.getElementById(`btn-theme-${t}`);
-        if (btn) {
-            btn.className = (t === theme)
-                ? 'py-2 px-2 text-xs font-bold uppercase rounded-lg border bg-berzerker-600 border-berzerker-500 text-white'
-                : 'py-2 px-2 text-xs font-bold uppercase rounded-lg border bg-berzerker-dark border-berzerker-border text-gray-400';
-        }
-    });
     generateStoryCard();
 }
 
@@ -1963,30 +2301,9 @@ function generateStoryCard() {
     const musicVibe = document.getElementById('vibe-music')?.value.trim() || '';
     const weatherVibe = document.getElementById('vibe-weather')?.value.trim() || '';
 
-    let palette = {
-        bgStart: '#0a0a0a', bgEnd: '#1a0303',
-        cardBg: 'rgba(18, 18, 22, 0.88)', cardBorder: 'rgba(255, 255, 255, 0.08)',
-        borderPrimary: '#dc2626', titleColor: '#ffffff',
-        accentColor: '#ef4444', textDim: '#9ca3af',
-        prColor: '#10b981', badgeBg: '#1f1f1f'
-    };
-    if (selectedStoryTheme === 'cyberpunk') {
-        palette = {
-            bgStart: '#050811', bgEnd: '#11021c',
-            cardBg: 'rgba(10, 16, 31, 0.88)', cardBorder: 'rgba(0, 255, 204, 0.2)',
-            borderPrimary: '#00ffcc', titleColor: '#00ffcc',
-            accentColor: '#ff0055', textDim: '#8899ac',
-            prColor: '#ffe600', badgeBg: '#121b2d'
-        };
-    } else if (selectedStoryTheme === 'minimal') {
-        palette = {
-            bgStart: '#121212', bgEnd: '#1c1c1c',
-            cardBg: 'rgba(36, 36, 36, 0.88)', cardBorder: 'rgba(255, 255, 255, 0.12)',
-            borderPrimary: '#ffffff', titleColor: '#ffffff',
-            accentColor: '#e0e0e0', textDim: '#aaaaaa',
-            prColor: '#ffffff', badgeBg: '#2e2e2e'
-        };
-    }
+    const storyStyle = STORY_CARD_STYLES[THEME?.id] || STORY_CARD_STYLES.classico;
+    const palette = storyStyle.palette;
+    const fonts = storyStyle.fonts;
 
     if (customBgImageData) {
         ctx.drawImage(customBgImageData, 0, 0, 1080, 1920);
@@ -2026,43 +2343,43 @@ function generateStoryCard() {
     ctx.fillStyle = palette.borderPrimary;
     ctx.fillRect(70, 75, 14, 85);
     ctx.fillStyle = palette.titleColor;
-    ctx.font = 'bold 62px Oswald, sans-serif';
+    ctx.font = `bold 62px ${fonts.display}`;
     ctx.textAlign = 'left';
     ctx.fillText('DIÁRIO DE CARGAS', 100, 130);
     ctx.fillStyle = palette.accentColor;
-    ctx.font = '34px Teko, sans-serif';
+    ctx.font = `34px ${fonts.accent}`;
     ctx.fillText(`// ${THEME ? THEME.name.toUpperCase() : 'BERZERKER MODE'} · ${targetDate}`, 100, 168);
 
     drawRoundedRect(70, 200, 940, 150, 12, palette.cardBg, palette.accentColor, 2);
-    ctx.font = '72px Inter, sans-serif';
+    ctx.font = `72px ${fonts.display}`;
     ctx.fillText(rank.icon, 100, 300);
     ctx.fillStyle = palette.accentColor;
-    ctx.font = 'bold 22px Inter, sans-serif';
+    ctx.font = `bold 22px ${fonts.body}`;
     ctx.fillText(`PATENTE — NÍVEL ${rank.level}/10 · ${fmtN(rank.xp)} XP`, 200, 245);
     ctx.fillStyle = palette.titleColor;
-    ctx.font = 'bold 42px Oswald, sans-serif';
+    ctx.font = `bold 42px ${fonts.display}`;
     ctx.fillText(rank.name.toUpperCase(), 200, 305);
 
     drawRoundedRect(70, 370, 455, 150, 12, palette.cardBg, palette.cardBorder, 1);
     drawRoundedRect(555, 370, 455, 150, 12, palette.cardBg, palette.cardBorder, 1);
     ctx.fillStyle = palette.borderPrimary;
-    ctx.font = 'bold 64px Oswald, sans-serif';
+    ctx.font = `bold 64px ${fonts.numeric}`;
     ctx.fillText(`${(rank.sessionTonnage / 1000).toFixed(2)} TON`, 95, 445);
     ctx.fillStyle = palette.textDim;
-    ctx.font = 'bold 20px Inter, sans-serif';
+    ctx.font = `bold 20px ${fonts.body}`;
     ctx.fillText('VOLUME TOTAL MOVIDO', 95, 485);
     ctx.fillStyle = palette.prColor;
-    ctx.font = 'bold 64px Oswald, sans-serif';
+    ctx.font = `bold 64px ${fonts.numeric}`;
     ctx.fillText(`${rank.relativeRatio.toFixed(1)}× BW`, 580, 445);
     ctx.fillStyle = palette.textDim;
-    ctx.font = 'bold 20px Inter, sans-serif';
+    ctx.font = `bold 20px ${fonts.body}`;
     ctx.fillText(`RAZÃO FORÇA (${userBodyweight}kg BW)`, 580, 485);
 
     let currentY = 540;
     if (musicVibe || weatherVibe) {
         drawRoundedRect(70, currentY, 940, 70, 8, palette.badgeBg, palette.cardBorder, 1);
         ctx.fillStyle = palette.titleColor;
-        ctx.font = '22px Inter, sans-serif';
+        ctx.font = `22px ${fonts.body}`;
         let vibeText = '';
         if (musicVibe) vibeText += `🎵 ${musicVibe}  `;
         if (weatherVibe) vibeText += `🌩️ ${weatherVibe}`;
@@ -2071,14 +2388,14 @@ function generateStoryCard() {
     }
 
     ctx.fillStyle = palette.titleColor;
-    ctx.font = 'bold 34px Oswald, sans-serif';
+    ctx.font = `bold 34px ${fonts.display}`;
     ctx.fillText('EXERCÍCIOS & SÉRIES DA SESSÃO:', 70, currentY + 30);
     currentY += 50;
 
     if (dayLogs.length === 0) {
         drawRoundedRect(70, currentY, 940, 100, 12, palette.cardBg, palette.cardBorder, 1);
         ctx.fillStyle = palette.textDim;
-        ctx.font = '28px Inter, sans-serif';
+        ctx.font = `28px ${fonts.body}`;
         ctx.fillText('Nenhum treino registrado nesta data.', 100, currentY + 60);
     } else {
         const grouped = [];
@@ -2094,17 +2411,17 @@ function generateStoryCard() {
         for (const [muscleGroup, groupLogs] of grouped) {
             if (currentY + 100 > 1800) break;
             ctx.fillStyle = palette.borderPrimary;
-            ctx.font = 'bold 28px Oswald, sans-serif';
+            ctx.font = `bold 28px ${fonts.display}`;
             ctx.fillText(`⚔️ ${muscleGroup.toUpperCase()}`, 70, currentY + 25);
             currentY += 35;
             groupLogs.forEach(l => {
                 if (currentY + cardHeight > 1800) return;
                 drawRoundedRect(70, currentY, 940, cardHeight, 8, palette.cardBg, palette.cardBorder, 1);
                 ctx.fillStyle = palette.titleColor;
-                ctx.font = 'bold 24px Inter, sans-serif';
+                ctx.font = `bold 24px ${fonts.body}`;
                 ctx.fillText(`${l.biset ? '🔗' : '•'} ${l.exercise}`, 90, currentY + 40);
                 ctx.fillStyle = l.isPR ? palette.prColor : palette.accentColor;
-                ctx.font = 'bold 22px Monospace, sans-serif';
+                ctx.font = `bold 22px ${fonts.numeric}`;
                 let detailStr = l.kind === 'corrida'
                     ? `${String(l.distanceKm ?? 0).replace('.', ',')} km · ${l.durationMin ?? 0} min`
                     : `${formatLoadText(l)} × ${formatRepsText(l)}`;
@@ -2123,7 +2440,7 @@ function generateStoryCard() {
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(70, footerY - 30); ctx.lineTo(1010, footerY - 30); ctx.stroke();
     ctx.fillStyle = palette.borderPrimary;
-    ctx.font = 'italic bold 40px Oswald, sans-serif';
+    ctx.font = `italic bold 40px ${fonts.display}`;
     ctx.textAlign = 'center';
     ctx.fillText('@BerzerkerMode // DIÁRIO DE CARGAS', 540, footerY);
     ctx.textAlign = 'left';
@@ -2161,7 +2478,7 @@ function generateBossDefeatCard() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const prog = computeBossProgress(logs, userBodyweight, BOSSES);
+    const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
     const boss = prog.defeatedCount > 0 ? BOSSES[Math.min(prog.defeatedCount, BOSSES.length) - 1] : prog.current;
     const derrotado = prog.defeatedCount > 0;
     const portrait = bossPortraitSrc(boss.id);
@@ -2352,7 +2669,7 @@ function renderBadgesAndStreak() {
         { title: 'Maratonista', desc: '10+ km registrados', unlocked: totalKm >= 10, icon: '🏃' },
         { title: 'Tanque de Guerra', desc: 'Razão > 50x Peso Corporal', unlocked: logs.some(l => getAnimalRankForSession(l.date).relativeRatio >= 50), icon: '🛡️' },
         { title: 'Berzerker Master', desc: '50+ Treinos Registrados', unlocked: uniqueDates.length >= 50, icon: '⚡' },
-        { title: 'Caçador de Chefões', desc: '3+ Chefões Derrotados', unlocked: computeBossProgress(logs, userBodyweight, BOSSES).defeatedCount >= 3, icon: '👑' }
+        { title: 'Caçador de Chefões', desc: '3+ Chefões Derrotados', unlocked: computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).defeatedCount >= 3, icon: '👑' }
     ];
 
     const unlockedCount = badges.filter(b => b.unlocked).length;
@@ -2623,16 +2940,19 @@ function parseCSVRows(text, sep) {
 
 // ============================ BACKUP JSON ============================
 function exportJSONBackup() {
+    saveGameState();
     const backupData = {
-        version: 3,
+        version: 4,
         userBodyweight,
         logs,
         savedWorkouts,
         settings,
-        gameTheme: THEME ? THEME.id : 'classico',
-        storyTheme: selectedStoryTheme,
-        bgImageData: customBgImageData ? customBgImageData.src : null,
+        gameTheme: activeGameThemeId,
+        themeGameSaves,
+        sharedGameState: { deloadWeeks, tests, weightLog },
+        // Campos legados para que versões antigas ainda consigam importar o backup.
         deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, weightLog,
+        bgImageData: customBgImageData ? customBgImageData.src : null,
         exportDate: new Date().toISOString()
     };
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
@@ -2646,7 +2966,7 @@ function exportJSONBackup() {
     lastBackupAt = getTodayLocalISO();
     safeStorage.set(STORAGE_KEY_BACKUP, lastBackupAt);
     renderBackupReminder();
-    alertModal('📥 Backup exportado (dados, tema, configurações e retratos)!');
+    alertModal('📥 Backup exportado (dados, temas e progresso dos jogos)!');
 }
 
 function importJSONBackup(event) {
@@ -2657,22 +2977,41 @@ function importJSONBackup(event) {
         try {
             const parsed = JSON.parse(e.target.result);
             if (parsed && Array.isArray(parsed.logs)) {
+                const importedThemeId = THEMES[parsed.gameTheme] ? parsed.gameTheme : activeGameThemeId;
                 logs = parsed.logs.map(migrateLog);
                 if (parsed.userBodyweight) userBodyweight = parsed.userBodyweight;
                 if (Array.isArray(parsed.savedWorkouts)) savedWorkouts = parsed.savedWorkouts;
                 if (parsed.settings) settings = { ...settings, ...parsed.settings };
-                if (parsed.gameTheme && THEMES[parsed.gameTheme]) { applyTheme(parsed.gameTheme); safeStorage.set(STORAGE_KEY_THEME, parsed.gameTheme); }
-                if (parsed.storyTheme) selectedStoryTheme = parsed.storyTheme;
-                if (parsed.deloadWeeks) deloadWeeks = parsed.deloadWeeks;
-                if (parsed.missionsXpTotal != null) missionsXpTotal = parsed.missionsXpTotal;
-                if (parsed.missionsClaimed) missionsClaimed = parsed.missionsClaimed;
-                if (Array.isArray(parsed.tests)) tests = parsed.tests;
-                if (parsed.seasons) seasons = parsed.seasons;
-                if (parsed.bossPortraits) bossPortraits = parsed.bossPortraits;
-                if (Array.isArray(parsed.weightLog)) weightLog = parsed.weightLog;
+
+                const importedSaves = parsed.themeGameSaves && typeof parsed.themeGameSaves === 'object' ? parsed.themeGameSaves : null;
+                themeGameSaves = {};
+                if (importedSaves) {
+                    Object.entries(importedSaves).forEach(([id, save]) => {
+                        if (THEMES[id] && save && typeof save === 'object' && !Array.isArray(save)) themeGameSaves[id] = save;
+                    });
+                } else {
+                    // Backups antigos não tinham saves por tema: migrar tudo para o jogo exportado.
+                    themeGameSaves[importedThemeId] = {
+                        ...emptyThemeGameSave(),
+                        missionsXpTotal: Number(parsed.missionsXpTotal) || 0,
+                        missionsClaimed: parsed.missionsClaimed || {},
+                        seasons: parsed.seasons || null,
+                        bossPortraits: parsed.bossPortraits || {}
+                    };
+                }
+                Object.keys(THEMES).forEach(ensureThemeGameSave);
+
+                const shared = parsed.sharedGameState && typeof parsed.sharedGameState === 'object' ? parsed.sharedGameState : parsed;
+                deloadWeeks = Array.isArray(shared.deloadWeeks) ? shared.deloadWeeks : [];
+                tests = Array.isArray(shared.tests) && shared.tests.length ? shared.tests : defaultTests();
+                weightLog = Array.isArray(shared.weightLog) ? shared.weightLog : [];
+                restoreActiveThemeGameSave(importedThemeId);
+                safeStorage.set(STORAGE_KEY_THEME, importedThemeId);
+                applyTheme(importedThemeId);
+                // storyTheme de backups antigos é ignorado; o tema do jogo define o visual.
                 if (parsed.bgImageData) {
                     const img = new Image();
-                    img.onload = () => { customBgImageData = img; generateStoryCard(); };
+                    img.onload = () => { customBgImageData = img; saveStoryState(); generateStoryCard(); };
                     img.src = parsed.bgImageData;
                 }
                 lastRankLevel = null; lastBossesDefeated = null;
@@ -2748,7 +3087,7 @@ function startDateWatcher() {
         const prevISO = lastKnownTodayISO;
         lastKnownTodayISO = nowISO;
 
-        document.getElementById('header-today-date').textContent = formatDateBR(nowISO);
+        updateHeaderDate(nowISO);
         const logDateEl = document.getElementById('log-date');
         if (logDateEl.value === prevISO) logDateEl.value = nowISO;
         const filterEl = document.getElementById('filter-date');
@@ -2790,7 +3129,8 @@ window.onload = function () {
     document.getElementById('filter-date').value = todayStr;
     const cardioDate = document.getElementById('cardio-date');
     if (cardioDate) cardioDate.value = todayStr;
-    document.getElementById('header-today-date').textContent = formatDateBR(todayStr);
+    updateHeaderDate(todayStr);
+    renderNavigation();
 
     loadStoredData();
     loadWorkoutsFromStorage();
@@ -2812,7 +3152,7 @@ window.onload = function () {
 
     // Campos do formulário principal (prefixo vazio)
     const mainFields = document.getElementById('main-fields');
-    if (mainFields) mainFields.innerHTML = fieldsHTML('', { type: 'carga_total', mode: 'simple' });
+    if (mainFields) mainFields.innerHTML = fieldsHTML('', { type: 'carga_total', mode: 'simple' }, { quickCapture: true });
 
     updateExerciseSuggestions();
     initSetEditor('', { mode: 'simple', sets: [] });

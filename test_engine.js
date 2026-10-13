@@ -23,7 +23,7 @@ const api = new Function(src + `
     epleySeValido, sinalProximaSessao, logMeta,
     formatLoadText, formatRepsText, duplaProgressao, detectAutoPR, recoveryState,
     formatPlates, inferExerciseType, catalogInfo,
-    computeXP, computeBossProgress, logDamageKg, missionsState, isoWeekKey, isoWeekRange,
+    computeXP, computeBossProgress, logDamageKg, missionsState, isoWeekKey, isoWeekRange, XP_MIN,
     weeklyStreakInfo, seasonState, completeSeason, migrateLog,
     buildPlanilhaCSV, parseSheetLogRows, parseCSVRows, parseDateBRorISO, seedFromPlanilha, TYPE_META, THEMES,
     deriveTags, searchCatalog, matchesTags, exerciseTags, TAG_DEFS, EXERCISE_CATALOG_FULL,
@@ -126,6 +126,8 @@ const logsXP = [
 const xp = api.computeXP('2026-10-01', { logs: logsXP, bodyweight: BW, deloadWeeks: [], missionsXpTotal: 0, bosses: [] });
 check('teto de 60 XP de volume por grupo/dia', xp.training === 60, xp.training);
 check('cardio XP = 53 (5×8 + 25×0,5)', xp.cardio === 53, xp.cardio);
+const isolatedRestXP = api.computeXP('2026-10-13', { logs: [], bodyweight: BW, deloadWeeks: ['2026-W41'], missionsXpTotal: 0, bosses: [], restDays: ['2026-10-05', '2026-10-06'] });
+check('dias de descanso podem ser atribuídos a um jogo sem duplicar XP', isolatedRestXP.restXP === 50, isolatedRestXP.restXP);
 
 console.log('\n== 8. Missões semanais ==');
 const theme = { missionWord: 'Prova de Cosmo' };
@@ -173,13 +175,26 @@ check('grupo sem registro', recSem.label === 'SEM REGISTRO');
 
 console.log('\n== 13. Temas (9) ==');
 const themeIds = Object.keys(api.THEMES);
-check('9 temas carregados', themeIds.length === 9, themeIds);
-const esperadoChefes = { classico: 4, zodiaco: 13 }; // clássico: 4 chefões originais; zodíaco: 12 signos + chefe final
-['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica'].forEach(id => {
+const expectedThemeIds = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica'];
+check('9 temas carregados', themeIds.length === 9 && expectedThemeIds.every(id => themeIds.includes(id)), themeIds);
+check('curva de patentes preservada', api.XP_MIN.join(',') === '0,150,500,1100,2000,3300,5000,7500,11000,16000', api.XP_MIN);
+const expectedHpCurve = Array.from({ length: 12 }, (_, i) => 25000 + 2000 * i);
+expectedThemeIds.forEach(id => {
     const t = api.THEMES[id];
-    const nBoss = esperadoChefes[id] || 12;
-    check(`tema ${id}: 10 patentes + ${nBoss} chefões + frame`, t && t.ranks.length === 10 && t.bosses.length === nBoss && !!t.frame, t && { r: t.ranks.length, b: t.bosses.length, f: t.frame });
+    check(`tema ${id}: exatamente 10 patentes + 12 chefões + frame`, t && t.ranks.length === 10 && t.bosses.length === 12 && !!t.frame, t && { ranks: t.ranks.length, bosses: t.bosses.length, frame: t.frame });
+    check(`tema ${id}: curva suave de HP compartilhada`, t && t.bosses.map(b => b.maxHp).join(',') === expectedHpCurve.join(','), t && t.bosses.map(b => b.maxHp));
+    check(`tema ${id}: fraquezas válidas e justificadas`, t && t.bosses.every(b => api.MUSCULOS_MAPA.includes(b.weak) && typeof b.weakReason === 'string' && b.weakReason.trim().length > 10), t && t.bosses.filter(b => !api.MUSCULOS_MAPA.includes(b.weak) || !b.weakReason).map(b => b.name));
 });
+check('clássico mantém quatro IDs/retratos originais', api.THEMES.classico.bosses.slice(0, 4).map(b => `${b.id}:${b.name}`).join('|') === 'boss1:Golem de Anilhas|boss2:Hydra de Titânio|boss3:Mecagorila Berzerker|boss4:Behemoth Devastador', api.THEMES.classico.bosses.slice(0, 4));
+check('clássico acrescenta oito monstros de fantasia pesada com emojis', api.THEMES.classico.bosses.slice(4).length === 8 && api.THEMES.classico.bosses.slice(4).every(b => !!b.icon && /ferro|aço|forja|ogro|quimera|dragão|minotauro|titã|colosso/i.test(b.name)), api.THEMES.classico.bosses.slice(4).map(b => b.name));
+check('patentes clássicas não repetem nomes de chefões', !api.THEMES.classico.ranks.some(([rank]) => api.THEMES.classico.bosses.some(b => b.name.toLowerCase() === rank.toLowerCase())));
+check('Zodíaco usa Aprendiz do Dojo e Grande Mestre em 12 etapas', api.THEMES.zodiaco.ranks[0][0] === 'Aprendiz do Dojo' && api.THEMES.zodiaco.bosses.length === 12 && api.THEMES.zodiaco.bosses[11].name === 'Grande Mestre' && !JSON.stringify(api.THEMES.zodiaco).includes('Mestre Ares'));
+check('Ação troca patente e vilão pedidos', api.THEMES.acao.ranks[2][0] === 'Policial Veterano' && api.THEMES.acao.bosses[1].name === 'O Sicário' && !JSON.stringify(api.THEMES.acao).includes('Duro de Matar') && !JSON.stringify(api.THEMES.acao).includes('O Sequaz'));
+check('Roma vai de Escravo da Arena a IMPERADOR DE ROMA e deixa o Imperador antes do final', api.THEMES.roma.ranks[0][0] === 'Escravo da Arena' && api.THEMES.roma.ranks[9][0] === 'IMPERADOR DE ROMA' && api.THEMES.roma.bosses[10].name.includes('Imperador') && api.THEMES.roma.bosses[11].name === 'Máximo, o Gladiador');
+check('patentes romanas não repetem nomes exatos de chefões', !api.THEMES.roma.ranks.some(([rank]) => api.THEMES.roma.bosses.some(b => b.name.toLowerCase() === rank.toLowerCase())));
+check('Nórdica abre com criaturas menores', api.THEMES.nordica.bosses.slice(0, 4).map(b => b.name).join('|') === 'Draugr|Troll Jovem de Gelo|Nøkk do Fiorde|Huldra da Floresta');
+check('Nórdica termina com Ymir perto do fim e Ragnarök por último', api.THEMES.nordica.ranks[9][0] === 'ODIN, O PAI DE TODOS' && api.THEMES.nordica.bosses[10].name.includes('Ymir') && api.THEMES.nordica.bosses[11].name === 'Ragnarök');
+check('Galáctica progride de Almirante a Marechal Estelar', api.THEMES.galactica.ranks[5][0] === 'Almirante de Frota' && api.THEMES.galactica.ranks[6][0] === 'Marechal Estelar' && !JSON.stringify(api.THEMES.galactica).includes('Guardião do Setor'));
 
 console.log('\n== 14. Seed da planilha real + round-trip CSV ==');
 api.setLogs([]);
