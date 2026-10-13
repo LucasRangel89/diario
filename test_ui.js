@@ -119,6 +119,12 @@ check('voltar ao modo simples restaura carga/reps rápidos', !$('simple-box').cl
 check('seed carregou registros', ev('logs.length') > 0, ev('logs.length'));
 check('seed real: 44 logs + 5 sessões salvas', ev('logs.length') === 44 && ev('savedWorkouts.length') === 5);
 check('9 temas no select de tema', $('game-theme-select').options.length === 9);
+check('Story Card remove paletas antigas', !$('btn-theme-berzerker') && !$('btn-theme-cyberpunk') && !$('btn-theme-minimal') && !/Cyberpunk|Minimalist|Berzerker Red/.test($('tab-content-story').textContent));
+check('Story Card preserva upload e controle de escurecimento', !!$('bg-image-input') && !!$('bg-overlay-opacity') && $('bg-overlay-opacity').type === 'range');
+check('paleta, moldura e fontes estão vinculadas aos nove temas', ev("Object.keys(THEMES).length === 9 && Object.keys(THEMES).every(id => STORY_CARD_STYLES[id] && STORY_CARD_STYLES[id].palette && STORY_CARD_STYLES[id].fonts)") && /THEME\.frame/.test(fs.readFileSync('js/app.js', 'utf8')));
+let legacyStoryStyleIgnored = true;
+try { ev("safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({ selectedStoryTheme: 'cyberpunk' })); loadStoredData(); generateStoryCard();"); } catch (e) { legacyStoryStyleIgnored = false; }
+check('estilo legado salvo é ignorado sem erro', legacyStoryStyleIgnored);
 check('histórico renderizado', !!$('history-content'));
 check('CSV multi-aba com 22 colunas no Log', ev('buildPlanilhaCSV()').split(/--- Sheet: Log ---/)[1].split('\n')[1].split(';').length === 22);
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fs.readFileSync('js/app.js', 'utf8')) && /frame === 'espacial'/.test(fs.readFileSync('js/app.js', 'utf8')));

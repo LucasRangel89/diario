@@ -10,7 +10,6 @@ let editingWorkoutId = null;
 let activeSession = null;
 let userBodyweight = 80;
 let customBgImageData = null;
-let selectedStoryTheme = 'berzerker';
 let volumeChartInstance = null;
 let exChartInstance = null;
 let setsChartInstance = null;
@@ -49,7 +48,7 @@ const STORAGE_KEY_WORKOUTS = 'berzerker_saved_workouts_v1';
 const STORAGE_KEY_SEEDED = 'berzerker_seeded_v2';
 const STORAGE_KEY_SETTINGS = 'berzerker_settings_v1';
 const STORAGE_KEY_GAME = 'berzerker_game_state_v1';     // deload, missões, testes, temporadas, retratos
-const STORAGE_KEY_STORY = 'berzerker_story_v1';          // tema visual do card + fundo
+const STORAGE_KEY_STORY = 'berzerker_story_v1';          // foto de fundo do Story Card
 const STORAGE_KEY_BACKUP = 'berzerker_last_backup_at';
 
 const safeStorage = {
@@ -74,6 +73,44 @@ let activeTab = 'diario';
 const THEME_ICONS = Object.freeze({
     classico: '🦍', zodiaco: '♈', hercules: '🦁', acao: '🎬', folclore: '🌴',
     nordica: '🛡️', roma: '🏛️', rpg: '🐉', galactica: '🚀'
+});
+const STORY_CARD_STYLES = Object.freeze({
+    classico: {
+        palette: { bgStart: '#0a0a0a', bgEnd: '#1a0303', cardBg: 'rgba(18,18,22,.88)', cardBorder: 'rgba(255,255,255,.08)', borderPrimary: '#dc2626', titleColor: '#ffffff', accentColor: '#ef4444', textDim: '#9ca3af', prColor: '#10b981', badgeBg: '#1f1f1f' },
+        fonts: { display: '"Oswald", sans-serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    zodiaco: {
+        palette: { bgStart: '#080d22', bgEnd: '#171a42', cardBg: 'rgba(16,20,48,.9)', cardBorder: 'rgba(245,206,105,.2)', borderPrimary: '#d4af37', titleColor: '#fff7dc', accentColor: '#fbbf24', textDim: '#b9c4df', prColor: '#6ee7b7', badgeBg: '#121831' },
+        fonts: { display: 'Georgia, serif', accent: 'Georgia, serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    hercules: {
+        palette: { bgStart: '#111318', bgEnd: '#27242b', cardBg: 'rgba(32,32,38,.9)', cardBorder: 'rgba(230,216,190,.18)', borderPrimary: '#d6c3a1', titleColor: '#fff9ed', accentColor: '#e5b75c', textDim: '#c2bcae', prColor: '#7dd3c7', badgeBg: '#28262b' },
+        fonts: { display: 'Georgia, serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: 'Georgia, serif' }
+    },
+    acao: {
+        palette: { bgStart: '#080b12', bgEnd: '#1d0505', cardBg: 'rgba(17,20,28,.9)', cardBorder: 'rgba(248,113,113,.18)', borderPrimary: '#ef4444', titleColor: '#fffafa', accentColor: '#fb7185', textDim: '#b1b6c2', prColor: '#fbbf24', badgeBg: '#1b1014' },
+        fonts: { display: '"Oswald", sans-serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: 'monospace' }
+    },
+    folclore: {
+        palette: { bgStart: '#071a12', bgEnd: '#162a16', cardBg: 'rgba(12,31,19,.9)', cardBorder: 'rgba(134,239,172,.17)', borderPrimary: '#34d399', titleColor: '#f5efd8', accentColor: '#facc15', textDim: '#b4b4a3', prColor: '#fb7185', badgeBg: '#102016' },
+        fonts: { display: 'Georgia, serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    nordica: {
+        palette: { bgStart: '#070d14', bgEnd: '#10243c', cardBg: 'rgba(12,24,38,.9)', cardBorder: 'rgba(147,197,253,.17)', borderPrimary: '#60a5fa', titleColor: '#e5f3ff', accentColor: '#38bdf8', textDim: '#a7b7c8', prColor: '#a3e635', badgeBg: '#0f1b2b' },
+        fonts: { display: 'Georgia, serif', accent: '"Oswald", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    roma: {
+        palette: { bgStart: '#170809', bgEnd: '#38120d', cardBg: 'rgba(39,15,14,.9)', cardBorder: 'rgba(253,186,116,.18)', borderPrimary: '#d4a44f', titleColor: '#fff1d6', accentColor: '#f59e0b', textDim: '#d2bda0', prColor: '#34d399', badgeBg: '#2b1010' },
+        fonts: { display: 'Georgia, serif', accent: 'Georgia, serif', body: '"Inter", sans-serif', numeric: 'Georgia, serif' }
+    },
+    rpg: {
+        palette: { bgStart: '#0d0817', bgEnd: '#201328', cardBg: 'rgba(27,17,39,.9)', cardBorder: 'rgba(196,181,253,.18)', borderPrimary: '#a78bfa', titleColor: '#f4e9ff', accentColor: '#f472b6', textDim: '#c0b2d3', prColor: '#86efac', badgeBg: '#1c1428' },
+        fonts: { display: 'Georgia, serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    galactica: {
+        palette: { bgStart: '#050814', bgEnd: '#0b1e3a', cardBg: 'rgba(7,21,42,.92)', cardBorder: 'rgba(103,232,249,.2)', borderPrimary: '#22d3ee', titleColor: '#e0fbff', accentColor: '#60a5fa', textDim: '#9db6d0', prColor: '#a3e635', badgeBg: '#0c2035' },
+        fonts: { display: '"Oswald", sans-serif', accent: 'monospace', body: '"Inter", sans-serif', numeric: 'monospace' }
+    }
 });
 
 // ============================ UTILITÁRIOS ============================
@@ -198,7 +235,7 @@ function loadStoredData() {
     try {
         const st = JSON.parse(safeStorage.get(STORAGE_KEY_STORY));
         if (st && typeof st === 'object') {
-            if (st.selectedStoryTheme) selectedStoryTheme = st.selectedStoryTheme;
+            // Opções de paleta antigas (Berzerker/Cyberpunk/Minimal) são ignoradas.
             if (st.bgImageData) {
                 const img = new Image();
                 img.onload = () => { customBgImageData = img; generateStoryCard(); };
@@ -224,7 +261,6 @@ function saveGameState() {
 }
 function saveStoryState() {
     safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({
-        selectedStoryTheme,
         bgImageData: customBgImageData ? customBgImageData.src : null
     }));
 }
@@ -283,6 +319,13 @@ function toggleDeloadWeek() {
 }
 
 // ============================ TEMA / PATENTES ============================
+function updateStoryThemeInfo() {
+    const icon = document.getElementById('story-theme-icon');
+    const name = document.getElementById('story-theme-name');
+    if (icon) icon.textContent = THEME_ICONS[THEME?.id] || '🎭';
+    if (name) name.textContent = THEME?.name || 'Tema atual';
+}
+
 function applyTheme(id) {
     THEME = THEMES[id] || THEMES.classico;
     BOSSES = THEME.bosses;
@@ -291,6 +334,7 @@ function applyTheme(id) {
     set('arena-title', e => e.textContent = THEME.arena);
     set('game-theme-select', e => e.value = THEME.id);
     set('game-theme-desc', e => e.textContent = THEME.desc);
+    updateStoryThemeInfo();
     const xd = computeXPCtx();
     lastRankLevel = rankFromXP(xd.xp).level;
     lastBossesDefeated = xd.prog.defeatedCount;
@@ -1907,20 +1951,6 @@ function removeBgImage() {
     generateStoryCard();
 }
 
-function setTheme(theme) {
-    selectedStoryTheme = theme;
-    saveStoryState();
-    ['berzerker', 'cyberpunk', 'minimal'].forEach(t => {
-        const btn = document.getElementById(`btn-theme-${t}`);
-        if (btn) {
-            btn.className = (t === theme)
-                ? 'py-2 px-2 text-xs font-bold uppercase rounded-lg border bg-berzerker-600 border-berzerker-500 text-white'
-                : 'py-2 px-2 text-xs font-bold uppercase rounded-lg border bg-berzerker-dark border-berzerker-border text-gray-400';
-        }
-    });
-    generateStoryCard();
-}
-
 function drawThemedFrame(ctx, palette) {
     // Moldura acompanhando o tema de gamificação
     const frame = (THEME && THEME.frame) || 'ferro';
@@ -2069,30 +2099,9 @@ function generateStoryCard() {
     const musicVibe = document.getElementById('vibe-music')?.value.trim() || '';
     const weatherVibe = document.getElementById('vibe-weather')?.value.trim() || '';
 
-    let palette = {
-        bgStart: '#0a0a0a', bgEnd: '#1a0303',
-        cardBg: 'rgba(18, 18, 22, 0.88)', cardBorder: 'rgba(255, 255, 255, 0.08)',
-        borderPrimary: '#dc2626', titleColor: '#ffffff',
-        accentColor: '#ef4444', textDim: '#9ca3af',
-        prColor: '#10b981', badgeBg: '#1f1f1f'
-    };
-    if (selectedStoryTheme === 'cyberpunk') {
-        palette = {
-            bgStart: '#050811', bgEnd: '#11021c',
-            cardBg: 'rgba(10, 16, 31, 0.88)', cardBorder: 'rgba(0, 255, 204, 0.2)',
-            borderPrimary: '#00ffcc', titleColor: '#00ffcc',
-            accentColor: '#ff0055', textDim: '#8899ac',
-            prColor: '#ffe600', badgeBg: '#121b2d'
-        };
-    } else if (selectedStoryTheme === 'minimal') {
-        palette = {
-            bgStart: '#121212', bgEnd: '#1c1c1c',
-            cardBg: 'rgba(36, 36, 36, 0.88)', cardBorder: 'rgba(255, 255, 255, 0.12)',
-            borderPrimary: '#ffffff', titleColor: '#ffffff',
-            accentColor: '#e0e0e0', textDim: '#aaaaaa',
-            prColor: '#ffffff', badgeBg: '#2e2e2e'
-        };
-    }
+    const storyStyle = STORY_CARD_STYLES[THEME?.id] || STORY_CARD_STYLES.classico;
+    const palette = storyStyle.palette;
+    const fonts = storyStyle.fonts;
 
     if (customBgImageData) {
         ctx.drawImage(customBgImageData, 0, 0, 1080, 1920);
@@ -2132,43 +2141,43 @@ function generateStoryCard() {
     ctx.fillStyle = palette.borderPrimary;
     ctx.fillRect(70, 75, 14, 85);
     ctx.fillStyle = palette.titleColor;
-    ctx.font = 'bold 62px Oswald, sans-serif';
+    ctx.font = `bold 62px ${fonts.display}`;
     ctx.textAlign = 'left';
     ctx.fillText('DIÁRIO DE CARGAS', 100, 130);
     ctx.fillStyle = palette.accentColor;
-    ctx.font = '34px Teko, sans-serif';
+    ctx.font = `34px ${fonts.accent}`;
     ctx.fillText(`// ${THEME ? THEME.name.toUpperCase() : 'BERZERKER MODE'} · ${targetDate}`, 100, 168);
 
     drawRoundedRect(70, 200, 940, 150, 12, palette.cardBg, palette.accentColor, 2);
-    ctx.font = '72px Inter, sans-serif';
+    ctx.font = `72px ${fonts.display}`;
     ctx.fillText(rank.icon, 100, 300);
     ctx.fillStyle = palette.accentColor;
-    ctx.font = 'bold 22px Inter, sans-serif';
+    ctx.font = `bold 22px ${fonts.body}`;
     ctx.fillText(`PATENTE — NÍVEL ${rank.level}/10 · ${fmtN(rank.xp)} XP`, 200, 245);
     ctx.fillStyle = palette.titleColor;
-    ctx.font = 'bold 42px Oswald, sans-serif';
+    ctx.font = `bold 42px ${fonts.display}`;
     ctx.fillText(rank.name.toUpperCase(), 200, 305);
 
     drawRoundedRect(70, 370, 455, 150, 12, palette.cardBg, palette.cardBorder, 1);
     drawRoundedRect(555, 370, 455, 150, 12, palette.cardBg, palette.cardBorder, 1);
     ctx.fillStyle = palette.borderPrimary;
-    ctx.font = 'bold 64px Oswald, sans-serif';
+    ctx.font = `bold 64px ${fonts.numeric}`;
     ctx.fillText(`${(rank.sessionTonnage / 1000).toFixed(2)} TON`, 95, 445);
     ctx.fillStyle = palette.textDim;
-    ctx.font = 'bold 20px Inter, sans-serif';
+    ctx.font = `bold 20px ${fonts.body}`;
     ctx.fillText('VOLUME TOTAL MOVIDO', 95, 485);
     ctx.fillStyle = palette.prColor;
-    ctx.font = 'bold 64px Oswald, sans-serif';
+    ctx.font = `bold 64px ${fonts.numeric}`;
     ctx.fillText(`${rank.relativeRatio.toFixed(1)}× BW`, 580, 445);
     ctx.fillStyle = palette.textDim;
-    ctx.font = 'bold 20px Inter, sans-serif';
+    ctx.font = `bold 20px ${fonts.body}`;
     ctx.fillText(`RAZÃO FORÇA (${userBodyweight}kg BW)`, 580, 485);
 
     let currentY = 540;
     if (musicVibe || weatherVibe) {
         drawRoundedRect(70, currentY, 940, 70, 8, palette.badgeBg, palette.cardBorder, 1);
         ctx.fillStyle = palette.titleColor;
-        ctx.font = '22px Inter, sans-serif';
+        ctx.font = `22px ${fonts.body}`;
         let vibeText = '';
         if (musicVibe) vibeText += `🎵 ${musicVibe}  `;
         if (weatherVibe) vibeText += `🌩️ ${weatherVibe}`;
@@ -2177,14 +2186,14 @@ function generateStoryCard() {
     }
 
     ctx.fillStyle = palette.titleColor;
-    ctx.font = 'bold 34px Oswald, sans-serif';
+    ctx.font = `bold 34px ${fonts.display}`;
     ctx.fillText('EXERCÍCIOS & SÉRIES DA SESSÃO:', 70, currentY + 30);
     currentY += 50;
 
     if (dayLogs.length === 0) {
         drawRoundedRect(70, currentY, 940, 100, 12, palette.cardBg, palette.cardBorder, 1);
         ctx.fillStyle = palette.textDim;
-        ctx.font = '28px Inter, sans-serif';
+        ctx.font = `28px ${fonts.body}`;
         ctx.fillText('Nenhum treino registrado nesta data.', 100, currentY + 60);
     } else {
         const grouped = [];
@@ -2200,17 +2209,17 @@ function generateStoryCard() {
         for (const [muscleGroup, groupLogs] of grouped) {
             if (currentY + 100 > 1800) break;
             ctx.fillStyle = palette.borderPrimary;
-            ctx.font = 'bold 28px Oswald, sans-serif';
+            ctx.font = `bold 28px ${fonts.display}`;
             ctx.fillText(`⚔️ ${muscleGroup.toUpperCase()}`, 70, currentY + 25);
             currentY += 35;
             groupLogs.forEach(l => {
                 if (currentY + cardHeight > 1800) return;
                 drawRoundedRect(70, currentY, 940, cardHeight, 8, palette.cardBg, palette.cardBorder, 1);
                 ctx.fillStyle = palette.titleColor;
-                ctx.font = 'bold 24px Inter, sans-serif';
+                ctx.font = `bold 24px ${fonts.body}`;
                 ctx.fillText(`${l.biset ? '🔗' : '•'} ${l.exercise}`, 90, currentY + 40);
                 ctx.fillStyle = l.isPR ? palette.prColor : palette.accentColor;
-                ctx.font = 'bold 22px Monospace, sans-serif';
+                ctx.font = `bold 22px ${fonts.numeric}`;
                 let detailStr = l.kind === 'corrida'
                     ? `${String(l.distanceKm ?? 0).replace('.', ',')} km · ${l.durationMin ?? 0} min`
                     : `${formatLoadText(l)} × ${formatRepsText(l)}`;
@@ -2229,7 +2238,7 @@ function generateStoryCard() {
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(70, footerY - 30); ctx.lineTo(1010, footerY - 30); ctx.stroke();
     ctx.fillStyle = palette.borderPrimary;
-    ctx.font = 'italic bold 40px Oswald, sans-serif';
+    ctx.font = `italic bold 40px ${fonts.display}`;
     ctx.textAlign = 'center';
     ctx.fillText('@BerzerkerMode // DIÁRIO DE CARGAS', 540, footerY);
     ctx.textAlign = 'left';
@@ -2736,7 +2745,6 @@ function exportJSONBackup() {
         savedWorkouts,
         settings,
         gameTheme: THEME ? THEME.id : 'classico',
-        storyTheme: selectedStoryTheme,
         bgImageData: customBgImageData ? customBgImageData.src : null,
         deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, weightLog,
         exportDate: new Date().toISOString()
@@ -2768,7 +2776,7 @@ function importJSONBackup(event) {
                 if (Array.isArray(parsed.savedWorkouts)) savedWorkouts = parsed.savedWorkouts;
                 if (parsed.settings) settings = { ...settings, ...parsed.settings };
                 if (parsed.gameTheme && THEMES[parsed.gameTheme]) { applyTheme(parsed.gameTheme); safeStorage.set(STORAGE_KEY_THEME, parsed.gameTheme); }
-                if (parsed.storyTheme) selectedStoryTheme = parsed.storyTheme;
+                // storyTheme de backups antigos é ignorado; o tema do jogo define o visual.
                 if (parsed.deloadWeeks) deloadWeeks = parsed.deloadWeeks;
                 if (parsed.missionsXpTotal != null) missionsXpTotal = parsed.missionsXpTotal;
                 if (parsed.missionsClaimed) missionsClaimed = parsed.missionsClaimed;
