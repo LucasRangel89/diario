@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  testes:
+    name: Testes (motor + UI)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # histórico completo: a checagem do sw.js precisa do SHA base do diff
+          fetch-depth: 0
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Dependências
+        run: npm ci
+
+      - name: Testes (test_engine.js + test_ui.js)
+        run: npm test
+
+  cache-offline:
+    name: Versão do cache offline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Se o PR mexeu em js/** ou images/**, o VERSION do sw.js tem que subir —
+      # senão quem já tem o app instalado continua servindo o bundle velho offline.
+      - name: sw.js VERSION incrementado
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/check-sw-version.js "$BASE_SHA"
