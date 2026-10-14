@@ -80,9 +80,21 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
 ### ⚔️ Gamificação
 10 temas — **clássico, Zodíaco, Hércules, Filmes de Ação, Folclore Brasileiro, Mitologia
 Nórdica, Roma Antiga, RPG de Mesa, Galáctica, Senhor dos Anéis** — cada um com 10 patentes e
-12 chefões (retratos originais de IA em `images/bosses/` para clássico e folclore; upload por
-chefão tem prioridade). XP, missões semanais, temporadas de 12 semanas, deload e Story Card
-com moldura temática.
+12 chefões. XP, missões semanais, temporadas de 12 semanas, deload e Story Card com moldura
+temática.
+
+#### 🎨 Arte própria (protótipo, arte de IA em pixel art retrô)
+
+| Pasta | Conteúdo | Uso |
+|---|---|---|
+| `images/bosses/` | 120 retratos (22 KB cada) | arena, grade de chefões e Card do Chefão |
+| `images/patentes/` | 100 emblemas (`tema-01…10`) | modal de patentes, header e cards |
+| `images/temas/` | 10 selos | galeria de temas e selo do Story Card |
+| `images/cards/` | 10 fundos | plano de fundo dos dois cards gerados em canvas |
+| `images/bosses/reserva/` | 35 variações | banco para trocar qualquer retrato sem gerar arte nova |
+
+Upload por chefão tem prioridade sobre a arte padrão, e o `DEFAULT_BOSS_PORTRAITS` aceita
+qualquer caminho — inclusive os arquivos de `reserva/`.
 
 ---
 

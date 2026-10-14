@@ -478,5 +478,32 @@ check('grupos na faixa saem da lista de faltas', !gaps.some(g => g.muscle === 'P
 check('maior falta vem primeiro', gaps[0].faltam >= (gaps[gaps.length - 1] || { faltam: 0 }).faltam, gaps.map(g => g.faltam));
 check('dias desde o último treino', api.diasDesdeUltimoTreino(fakeLogs, nowSug) === 0 && api.diasDesdeUltimoTreino([{ date: '2026-10-10' }], nowSug) === 6, api.diasDesdeUltimoTreino(fakeLogs, nowSug));
 
+console.log('\n== 22. Arte própria: emblemas de patente, selos, cards e retratos ==');
+{
+    const THEME_IDS = ['classico','zodiaco','hercules','acao','folclore','nordica','roma','rpg','galactica','aneis'];
+    const missing = [];
+    let heavy = [];
+    for (const t of THEME_IDS) {
+        for (let lvl = 1; lvl <= 10; lvl++) {
+            const f = `images/patentes/${t}-${String(lvl).padStart(2,'0')}.webp`;
+            if (!fs.existsSync(f)) missing.push(f);
+            else if (fs.statSync(f).size > 60 * 1024) heavy.push(f);
+        }
+        for (const f of [`images/temas/${t}.webp`, `images/cards/${t}.webp`]) if (!fs.existsSync(f)) missing.push(f);
+    }
+    check('100 emblemas de patente + 10 selos + 10 fundos de card existem', missing.length === 0, missing.slice(0, 6));
+    check('emblemas de patente ficam leves (<= 60 KB cada)', heavy.length === 0, heavy.slice(0, 4));
+    const appSrc = fs.readFileSync('js/app.js', 'utf8');
+    const s0 = appSrc.indexOf('const DEFAULT_BOSS_PORTRAITS');
+    const block = appSrc.slice(s0, appSrc.indexOf('};', s0));
+    const entries = [...block.matchAll(/'([a-z]+):([a-zA-Z0-9]+)':\s*'([^']+)'/g)];
+    check('120 retratos mapeados, um por chefão, e todos existem no disco',
+        entries.length === 120 && entries.every(([, t, id, file]) => !!api.THEMES[t] && !!api.THEMES[t].bosses.find(b => b.id === id) && fs.existsSync(file)),
+        { encontrados: entries.length });
+    check('cada tema cobre os 12 chefões com retrato próprio',
+        THEME_IDS.every(t => entries.filter(([, th]) => th === t).length === 12),
+        THEME_IDS.map(t => `${t}:${entries.filter(([, th]) => th === t).length}`));
+}
+
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);

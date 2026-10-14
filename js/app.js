@@ -78,6 +78,48 @@ const THEME_ICONS = Object.freeze({
     classico: '🦍', zodiaco: '♈', hercules: '🦁', acao: '🎬', folclore: '🌴',
     nordica: '🛡️', roma: '🏛️', rpg: '🐉', galactica: '🚀', aneis: '💍'
 });
+
+// Arte própria dos temas: ícone (selo) e fundo dos cards. Patente = 10 níveis × 10 temas.
+const THEME_IDS_LIST = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica', 'aneis'];
+const THEME_ICON_IMGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/temas/${id}.webp`])));
+const THEME_CARD_BGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/cards/${id}.webp`])));
+
+function themeIconImg(themeId, cls = 'h-6 w-6 rounded-md') {
+    const src = THEME_ICON_IMGS[themeId];
+    return src ? `<img src="${src}" alt="" class="${cls}">` : `<span class="text-2xl">${THEME_ICONS[themeId] || '🎭'}</span>`;
+}
+
+// Emblema de patente desenhado em arte própria (círculo de ferro + símbolo).
+function rankEmblemSrc(themeId, level) {
+    const t = THEME_ICON_IMGS[themeId] ? themeId : 'classico';
+    const lvl = Math.min(10, Math.max(1, Number(level) || 1));
+    return `images/patentes/${t}-${String(lvl).padStart(2, '0')}.webp`;
+}
+
+function rankEmblemImg(themeId, level, cls = 'h-7 w-7 rounded-full') {
+    return `<img src="${rankEmblemSrc(themeId, level)}" alt="" class="${cls}">`;
+}
+
+// Cache de imagens para os cards em canvas (fundo do tema + emblema da patente).
+const _cardImgCache = {};
+function getCardImg(src) {
+    if (!src) return null;
+    if (_cardImgCache[src]) return _cardImgCache[src];
+    const img = new Image();
+    img.src = src;
+    _cardImgCache[src] = img;
+    return img;
+}
+
+function drawCoverImg(ctx, img, w, h) {
+    // Desenha preenchendo o quadro mantendo o enquadramento (crop central).
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    if (!iw || !ih) return false;
+    const scale = Math.max(w / iw, h / ih);
+    const dw = iw * scale, dh = ih * scale;
+    ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    return true;
+}
 const STORY_CARD_STYLES = Object.freeze({
     classico: {
         palette: { bgStart: '#0a0a0a', bgEnd: '#1a0303', cardBg: 'rgba(18,18,22,.88)', cardBorder: 'rgba(255,255,255,.08)', borderPrimary: '#dc2626', titleColor: '#ffffff', accentColor: '#ef4444', textDim: '#9ca3af', prColor: '#10b981', badgeBg: '#1f1f1f' },
@@ -466,7 +508,7 @@ function toggleDeloadWeek() {
 function updateStoryThemeInfo() {
     const icon = document.getElementById('story-theme-icon');
     const name = document.getElementById('story-theme-name');
-    if (icon) icon.textContent = THEME_ICONS[THEME?.id] || '🎭';
+    if (icon) icon.innerHTML = themeIconImg(THEME?.id, 'h-7 w-7 rounded-lg');
     if (name) name.textContent = THEME?.name || 'Tema atual';
 }
 
@@ -544,7 +586,7 @@ function showThemeGallery() {
         const defeated = Math.min(data.prog.defeatedCount, theme.bosses.length);
         return `<button type="button" data-theme-id="${theme.id}" onclick="requestGameThemeChange('${theme.id}')" class="text-left rounded-2xl border ${active ? 'border-berzerker-500 bg-berzerker-600/10 ring-1 ring-berzerker-500/30' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'} p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-berzerker-500">
             <div class="flex items-start justify-between gap-2">
-                <div class="flex items-center gap-2 min-w-0"><span class="text-2xl">${THEME_ICONS[theme.id] || '🎭'}</span><strong class="text-sm text-white leading-tight">${escapeHtml(theme.name)}</strong></div>
+                <div class="flex items-center gap-2 min-w-0">${themeIconImg(theme.id, 'h-8 w-8 rounded-lg border border-berzerker-border')}<strong class="text-sm text-white leading-tight">${escapeHtml(theme.name)}</strong></div>
                 ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[9px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
             </div>
             <div class="mt-3 flex items-end justify-between gap-2">
@@ -600,7 +642,7 @@ function showRanksModal(themeId) {
         const cls = ['border-emerald-600/40 bg-emerald-950/10', 'border-berzerker-500 bg-berzerker-600/10', 'border-berzerker-border opacity-60'][st];
         const tag = ['✔ conquistada', '◀ você está aqui', '🔒'][st];
         return `<div class="flex items-center justify-between gap-2 border ${cls} rounded-lg px-3 py-2">
-            <div class="flex items-center gap-2 min-w-0"><span class="text-xl">${x.icon}</span><span class="text-xs font-bold text-white truncate">${escapeHtml(x.name)}</span></div>
+            <div class="flex items-center gap-2 min-w-0">${rankEmblemImg(t.id, lvl)}<span class="text-xs font-bold text-white truncate">${escapeHtml(x.name)}</span></div>
             <div class="text-right shrink-0"><div class="text-[10px] font-mono text-gray-400">${fmt(x.minXp)} XP</div><div class="text-[9px] font-bold text-gray-500 uppercase">${tag}</div></div>
         </div>`;
     }).join('');
@@ -1940,7 +1982,7 @@ function updateHeaderChrome() {
     const icon = document.getElementById('header-theme-icon');
     const themeButton = document.getElementById('header-theme-button');
     const xp = document.getElementById('header-xp-display');
-    if (icon) icon.textContent = THEME_ICONS[THEME?.id] || '🎭';
+    if (icon) icon.innerHTML = themeIconImg(THEME?.id, 'h-7 w-7 rounded-lg');
     if (themeButton) {
         themeButton.title = `Tema atual: ${THEME?.name || 'Gamificação'}. Abrir galeria`;
         themeButton.setAttribute('aria-label', `Tema atual: ${THEME?.name || 'Gamificação'}. Abrir galeria de temas`);
@@ -1956,7 +1998,7 @@ function updateSummaryMetrics() {
     const rank = getAnimalRankForSession(filterDate);
     document.getElementById('stat-tonnage').textContent = `${(rank.sessionTonnage / 1000).toFixed(2)} TON`;
     document.getElementById('stat-relative').textContent = `${rank.relativeRatio.toFixed(1)}× BW`;
-    document.getElementById('stat-rank').textContent = `${rank.icon} ${rank.name} (Niv ${rank.level} · ${fmtN(rank.xp)} XP)`;
+    document.getElementById('stat-rank').innerHTML = `${rankEmblemImg(activeGameThemeId || THEME?.id, rank.level, 'inline-block h-5 w-5 rounded-full align-[-4px] mr-1')}${escapeHtml(rank.name)} (Niv ${rank.level} · ${fmtN(rank.xp)} XP)`;
     const todayDmg = Math.round(rank.sessionTonnage);
     document.getElementById('stat-boss-dmg').textContent = `${todayDmg.toLocaleString()} DMG`;
     updateHeaderChrome();
@@ -1965,23 +2007,139 @@ function updateSummaryMetrics() {
 // ============================ BOSS BATTLE ============================
 // Retratos padrão dos chefões (arte original embutida no app).
 // O upload do usuário (bossPortraits) tem prioridade sobre estes.
+// Os 120 chefões têm retrato em pixel art retrô (grade 160, paleta de 64 cores) em WebP lossless.
+// Reservas/variações ficam em images/bosses/reserva/ e podem ser ligadas trocando o caminho aqui.
 const DEFAULT_BOSS_PORTRAITS = {
-    'classico:boss1': 'images/bosses/golem-anilhas.jpg',
-    'classico:boss2': 'images/bosses/hidra-titanio.jpg',
-    'classico:boss3': 'images/bosses/mecagorila.jpg',
-    'classico:boss4': 'images/bosses/behemoth.jpg',
-    'folclore:b0': 'images/bosses/saci.jpg',
-    'folclore:b1': 'images/bosses/curupira.jpg',
-    'folclore:b2': 'images/bosses/caipora.jpg',
-    'folclore:b3': 'images/bosses/lobisomem.jpg',
-    'folclore:b4': 'images/bosses/cuca.jpg',
-    'folclore:b5': 'images/bosses/mula-sem-cabeca.jpg',
-    'folclore:b6': 'images/bosses/iara.jpg',
-    'folclore:b7': 'images/bosses/boto.jpg',
-    'folclore:b8': 'images/bosses/boitata.jpg',
-    'folclore:b9': 'images/bosses/naia.jpg',
-    'folclore:b10': 'images/bosses/mapinguari.jpg',
-    'folclore:b11': 'images/bosses/anhanguera.jpg'
+    // classico
+    'classico:boss1': 'images/bosses/golem-anilhas.webp',
+    'classico:boss2': 'images/bosses/hidra-titanio.webp',
+    'classico:boss3': 'images/bosses/mecagorila.webp',
+    'classico:boss4': 'images/bosses/behemoth.webp',
+    'classico:boss5': 'images/bosses/cavaleiro-de-ferro.webp',
+    'classico:boss6': 'images/bosses/ogro-da-bigorna.webp',
+    'classico:boss7': 'images/bosses/quimera-blindada.webp',
+    'classico:boss8': 'images/bosses/dragao-de-aco.webp',
+    'classico:boss9': 'images/bosses/minotauro-das-forjas.webp',
+    'classico:boss10': 'images/bosses/leviatan-de-ferro.webp',
+    'classico:boss11': 'images/bosses/tita-de-escorcia.webp',
+    'classico:boss12': 'images/bosses/colosso-das-forjas.webp',
+    // zodiaco
+    'zodiaco:b0': 'images/bosses/mu-de-aries.webp',
+    'zodiaco:b1': 'images/bosses/aldebaran-de-touro.webp',
+    'zodiaco:b2': 'images/bosses/saga-de-gemeos.webp',
+    'zodiaco:b3': 'images/bosses/mascara-da-morte-de-cancer.webp',
+    'zodiaco:b4': 'images/bosses/aiolia-de-leao.webp',
+    'zodiaco:b5': 'images/bosses/shaka-de-virgem.webp',
+    'zodiaco:b6': 'images/bosses/dohko-de-libra.webp',
+    'zodiaco:b7': 'images/bosses/milo-de-escorpiao.webp',
+    'zodiaco:b8': 'images/bosses/aiolos-de-sagitario.webp',
+    'zodiaco:b9': 'images/bosses/shura-de-capricornio.webp',
+    'zodiaco:b10': 'images/bosses/camus-de-aquario.webp',
+    'zodiaco:b11': 'images/bosses/grande-mestre.webp',
+    // hercules
+    'hercules:b0': 'images/bosses/leao-de-nemeia.webp',
+    'hercules:b1': 'images/bosses/hidra-de-lerna.webp',
+    'hercules:b2': 'images/bosses/corca-de-cerineia.webp',
+    'hercules:b3': 'images/bosses/javali-de-erimanto.webp',
+    'hercules:b4': 'images/bosses/estabulos-de-augias.webp',
+    'hercules:b5': 'images/bosses/passaros-do-estinfalo.webp',
+    'hercules:b6': 'images/bosses/touro-de-crete.webp',
+    'hercules:b7': 'images/bosses/eguas-de-diomedes.webp',
+    'hercules:b8': 'images/bosses/cinturao-de-hipolita.webp',
+    'hercules:b9': 'images/bosses/rebanho-de-geriao.webp',
+    'hercules:b10': 'images/bosses/macas-das-hesperides.webp',
+    'hercules:b11': 'images/bosses/cerbero.webp',
+    // acao
+    'acao:b0': 'images/bosses/o-predador.webp',
+    'acao:b1': 'images/bosses/o-exterminador.webp',
+    'acao:b2': 'images/bosses/tubarao.webp',
+    'acao:b3': 'images/bosses/hans-gruber.webp',
+    'acao:b4': 'images/bosses/ivan-drago.webp',
+    'acao:b5': 'images/bosses/chucky.webp',
+    'acao:b6': 'images/bosses/o-coringa.webp',
+    'acao:b7': 'images/bosses/freddy-krueger.webp',
+    'acao:b8': 'images/bosses/agent-smith.webp',
+    'acao:b9': 'images/bosses/pennywise.webp',
+    'acao:b10': 'images/bosses/thanos.webp',
+    'acao:b11': 'images/bosses/darth-vader.webp',
+    // folclore
+    'folclore:b0': 'images/bosses/saci.webp',
+    'folclore:b1': 'images/bosses/curupira.webp',
+    'folclore:b2': 'images/bosses/caipora.webp',
+    'folclore:b3': 'images/bosses/lobisomem.webp',
+    'folclore:b4': 'images/bosses/cuca.webp',
+    'folclore:b5': 'images/bosses/mula-sem-cabeca.webp',
+    'folclore:b6': 'images/bosses/iara.webp',
+    'folclore:b7': 'images/bosses/boto.webp',
+    'folclore:b8': 'images/bosses/boitata.webp',
+    'folclore:b9': 'images/bosses/naia.webp',
+    'folclore:b10': 'images/bosses/mapinguari.webp',
+    'folclore:b11': 'images/bosses/anhanguera.webp',
+    // nordica
+    'nordica:b0': 'images/bosses/draugr.webp',
+    'nordica:b1': 'images/bosses/troll-jovem-de-gelo.webp',
+    'nordica:b2': 'images/bosses/nokk-do-fiorde.webp',
+    'nordica:b3': 'images/bosses/huldra-da-floresta.webp',
+    'nordica:b4': 'images/bosses/fenrir.webp',
+    'nordica:b5': 'images/bosses/jormungandr.webp',
+    'nordica:b6': 'images/bosses/surtr.webp',
+    'nordica:b7': 'images/bosses/fafnir.webp',
+    'nordica:b8': 'images/bosses/nidhogg.webp',
+    'nordica:b9': 'images/bosses/skoll.webp',
+    'nordica:b10': 'images/bosses/ymir.webp',
+    'nordica:b11': 'images/bosses/ragnarok.webp',
+    // roma
+    'roma:b0': 'images/bosses/provocador-da-arena.webp',
+    'roma:b1': 'images/bosses/mirmilao-feroz.webp',
+    'roma:b2': 'images/bosses/retiario-mestre.webp',
+    'roma:b3': 'images/bosses/dupla-de-dimachaeri.webp',
+    'roma:b4': 'images/bosses/hoplomaco.webp',
+    'roma:b5': 'images/bosses/bestiario-e-pantera.webp',
+    'roma:b6': 'images/bosses/venator-e-urso.webp',
+    'roma:b7': 'images/bosses/leao-da-numidia.webp',
+    'roma:b8': 'images/bosses/touro-da-arena.webp',
+    'roma:b9': 'images/bosses/capitao-dos-pretorianos.webp',
+    'roma:b10': 'images/bosses/comodo-o-imperador.webp',
+    'roma:b11': 'images/bosses/maximo-o-gladiador.webp',
+    // rpg
+    'rpg:b0': 'images/bosses/goblin-chefe.webp',
+    'rpg:b1': 'images/bosses/ogro-da-ponte.webp',
+    'rpg:b2': 'images/bosses/golem-de-pedra.webp',
+    'rpg:b3': 'images/bosses/necromante.webp',
+    'rpg:b4': 'images/bosses/hidra-do-pantano.webp',
+    'rpg:b5': 'images/bosses/grifo-guardiao.webp',
+    'rpg:b6': 'images/bosses/minotauro-da-masmorra.webp',
+    'rpg:b7': 'images/bosses/mago-negro.webp',
+    'rpg:b8': 'images/bosses/dragao-anciao.webp',
+    'rpg:b9': 'images/bosses/tita-de-ferro.webp',
+    'rpg:b10': 'images/bosses/rei-demonio.webp',
+    'rpg:b11': 'images/bosses/mestre-do-jogo.webp',
+    // galactica
+    'galactica:b0': 'images/bosses/enxame-de-drones.webp',
+    'galactica:b1': 'images/bosses/pirata-espacial.webp',
+    'galactica:b2': 'images/bosses/androide-rebelde.webp',
+    'galactica:b3': 'images/bosses/mutante-das-luas.webp',
+    'galactica:b4': 'images/bosses/rainha-dos-insetos.webp',
+    'galactica:b5': 'images/bosses/colosso-estelar.webp',
+    'galactica:b6': 'images/bosses/leviatan-do-espaco.webp',
+    'galactica:b7': 'images/bosses/nucleo-de-ia-rebelde.webp',
+    'galactica:b8': 'images/bosses/dominio-sombrio.webp',
+    'galactica:b9': 'images/bosses/buraco-negro-vivo.webp',
+    'galactica:b10': 'images/bosses/devorador-de-planetas.webp',
+    'galactica:b11': 'images/bosses/imperador-galactico.webp',
+    // aneis
+    'aneis:b0': 'images/bosses/goblins-de-moria.webp',
+    'aneis:b1': 'images/bosses/espectros-do-anel.webp',
+    'aneis:b2': 'images/bosses/balrog-de-morgoth.webp',
+    'aneis:b3': 'images/bosses/lurtz-o-uruk-hai.webp',
+    'aneis:b4': 'images/bosses/wargs-das-terras-bravias.webp',
+    'aneis:b5': 'images/bosses/uruk-hai-do-abismo-de-helm.webp',
+    'aneis:b6': 'images/bosses/saruman-o-branco.webp',
+    'aneis:b7': 'images/bosses/espectros-de-dunharrow.webp',
+    'aneis:b8': 'images/bosses/laracna.webp',
+    'aneis:b9': 'images/bosses/rei-bruxo-de-angmar.webp',
+    'aneis:b10': 'images/bosses/gollum-o-portador-caido.webp',
+    'aneis:b11': 'images/bosses/sauron-o-senhor-do-anel.webp'
 };
 
 function bossPortraitSrc(bossId) {
@@ -2017,7 +2175,7 @@ function renderBossBattleUI() {
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
                     <div class="w-20 h-20 sm:w-24 sm:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0">
-                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl" alt="retrato">` : `<span class="text-6xl">${currentBoss.icon}</span>`}
+                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl" style="image-rendering:pixelated" alt="retrato">` : `<span class="text-6xl">${currentBoss.icon}</span>`}
                     </div>
                     <div>
                         <span class="text-xs font-bold text-red-400 uppercase tracking-wider block">${THEME.bossLabel} — ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
@@ -2059,7 +2217,7 @@ function renderBossBattleUI() {
             return `
                 <div class="p-4 rounded-xl border ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
                     <div class="flex justify-between items-center">
-                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" class="w-10 h-10 rounded-lg object-cover border border-berzerker-border">` : `<span class="text-2xl">${b.icon}</span>`}
+                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" class="w-10 h-10 rounded-lg object-cover border border-berzerker-border" style="image-rendering:pixelated">` : `<span class="text-2xl">${b.icon}</span>`}
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
                             ${defeated ? 'DERROTADO 🏆' : (idx === prog.currentIdx ? 'EM BATALHA ⚔️' : 'BLOQUEADO 🔒')}
                         </span>
@@ -2369,6 +2527,16 @@ function generateStoryCard() {
         grad.addColorStop(1, palette.bgEnd);
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 1080, 1920);
+        // fundo de arte do tema (com véu escuro para o texto continuar legível)
+        const bgImg = getCardImg(THEME_CARD_BGS[THEME?.id]);
+        if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
+            ctx.save(); ctx.globalAlpha = 0.5; drawCoverImg(ctx, bgImg, 1080, 1920); ctx.restore();
+            const veil = ctx.createLinearGradient(0, 0, 0, 1920);
+            veil.addColorStop(0, 'rgba(0,0,0,.55)'); veil.addColorStop(0.5, 'rgba(0,0,0,.35)'); veil.addColorStop(1, 'rgba(0,0,0,.6)');
+            ctx.fillStyle = veil; ctx.fillRect(0, 0, 1080, 1920);
+        } else if (bgImg && !bgImg.complete) {
+            bgImg.onload = () => generateStoryCard();
+        }
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
         ctx.lineWidth = 2;
         for (let x = 60; x < 1080; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1920); ctx.stroke(); }
@@ -2405,7 +2573,16 @@ function generateStoryCard() {
 
     drawRoundedRect(70, 200, 940, 150, 12, palette.cardBg, palette.accentColor, 2);
     ctx.font = `72px ${fonts.display}`;
-    ctx.fillText(rank.icon, 100, 300);
+    const rankImg = getCardImg(rankEmblemSrc(THEME?.id, rank.level));
+    if (rankImg && rankImg.complete && rankImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(150, 275, 52, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+        ctx.drawImage(rankImg, 98, 223, 104, 104);
+        ctx.restore();
+    } else {
+        ctx.fillText(rank.icon, 100, 300);
+        if (rankImg && !rankImg.complete) rankImg.onload = () => generateStoryCard();
+    }
     ctx.fillStyle = palette.accentColor;
     ctx.font = `bold 22px ${fonts.body}`;
     ctx.fillText(`PATENTE — NÍVEL ${rank.level}/10 · ${fmtN(rank.xp)} XP`, 200, 245);
@@ -2541,6 +2718,15 @@ function generateBossDefeatCard() {
     const g = ctx.createLinearGradient(0, 0, 0, 1080);
     g.addColorStop(0, '#14080a'); g.addColorStop(1, '#08080a');
     ctx.fillStyle = g; ctx.fillRect(0, 0, 1080, 1080);
+    const bossBg = getCardImg(THEME_CARD_BGS[activeGameThemeId || THEME?.id]);
+    if (bossBg && bossBg.complete && bossBg.naturalWidth > 0) {
+        ctx.save(); ctx.globalAlpha = 0.45; drawCoverImg(ctx, bossBg, 1080, 1080); ctx.restore();
+        const veil = ctx.createLinearGradient(0, 0, 0, 1080);
+        veil.addColorStop(0, 'rgba(0,0,0,.6)'); veil.addColorStop(0.55, 'rgba(0,0,0,.35)'); veil.addColorStop(1, 'rgba(0,0,0,.7)');
+        ctx.fillStyle = veil; ctx.fillRect(0, 0, 1080, 1080);
+    } else if (bossBg && !bossBg.complete) {
+        bossBg.onload = () => generateBossDefeatCard();
+    }
 
     drawThemedFrame(ctx, { borderPrimary: '#dc2626' });
 
@@ -2556,6 +2742,7 @@ function generateBossDefeatCard() {
     ctx.closePath();
     ctx.clip();
     if (portraitImg && portraitImg.complete && portraitImg.naturalWidth > 0) {
+        ctx.imageSmoothingEnabled = false; // mantém os pixels da arte retrô nítidos
         ctx.drawImage(portraitImg, 350, 230, 380, 380);
     } else {
         ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(350, 230, 380, 380);
@@ -2584,7 +2771,14 @@ function generateBossDefeatCard() {
 
     ctx.fillStyle = '#9ca3af';
     ctx.font = '26px Inter, sans-serif';
-    ctx.fillText(`${rank.icon} ${rank.name} · Nível ${rank.level}`, 540, 910);
+    const rankImg = getCardImg(rankEmblemSrc(activeGameThemeId || THEME?.id, rank.level));
+    if (rankImg && rankImg.complete && rankImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(360, 902, 26, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+        ctx.drawImage(rankImg, 334, 876, 52, 52);
+        ctx.restore();
+    }
+    ctx.fillText(`${rank.name} · Nível ${rank.level}`, 540, 910);
     ctx.font = '22px Inter, sans-serif';
     ctx.fillText(`Diário de Cargas · ${getTodayLocalISO()}`, 540, 960);
     ctx.textAlign = 'left';
