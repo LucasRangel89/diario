@@ -522,6 +522,27 @@ console.log('\n== 23. Badges: 16 medalhões de arte própria ==');
     check('badge sem arquivo volta pro emoji (fallback no onerror)', /badgeArtFallback/.test(appSrc) && /data-fallback/.test(appSrc));
 }
 
+// Dimensões de um WebP lendo o cabeçalho (VP8/VP8L/VP8X) — sem depender de
+// ImageMagick, que não existe no runner do CI.
+function webpSize(file) {
+    const b = fs.readFileSync(file);
+    if (b.length < 16 || b.toString('ascii', 0, 4) !== 'RIFF' || b.toString('ascii', 8, 12) !== 'WEBP') return null;
+    let off = 12;
+    while (off + 8 <= b.length) {
+        const fourcc = b.toString('ascii', off, off + 4);
+        const size = b.readUInt32LE(off + 4);
+        const data = b.subarray(off + 8, off + 8 + size);
+        if (fourcc === 'VP8X') return { w: 1 + data.readUIntLE(4, 3), h: 1 + data.readUIntLE(7, 3) };
+        if (fourcc === 'VP8 ') return { w: data.readUInt16LE(6) & 0x3fff, h: data.readUInt16LE(8) & 0x3fff };
+        if (fourcc === 'VP8L') {
+            const bits = data.readUInt32LE(1);
+            return { w: 1 + (bits & 0x3fff), h: 1 + ((bits >>> 14) & 0x3fff) };
+        }
+        off += 8 + size + (size % 2);
+    }
+    return null;
+}
+
 console.log('\n== 24. Manifest com screenshots (prompt de instalação rico) ==');
 {
     const manifest = JSON.parse(fs.readFileSync('manifest.webmanifest', 'utf8'));
@@ -532,8 +553,8 @@ console.log('\n== 24. Manifest com screenshots (prompt de instalação rico) =='
         shots.every(s => {
             const want = dims[s.form_factor];
             if (!want || s.sizes !== want) return false;
-            const out = require('child_process').execSync(`identify -format '%wx%h' '${s.src}'`).toString().trim();
-            return out === want;
+            const dim = webpSize(s.src);
+            return !!dim && `${dim.w}x${dim.h}` === want;
         }), shots.map(s => `${s.form_factor}:${s.sizes}`));
     check('screenshots ficam leves para o prompt de instalação', shots.every(s => fs.statSync(s.src).size <= 400 * 1024), shots.map(s => fs.statSync(s.src).size));
 }
