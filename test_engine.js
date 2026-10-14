@@ -522,5 +522,21 @@ console.log('\n== 23. Badges: 16 medalhões de arte própria ==');
     check('badge sem arquivo volta pro emoji (fallback no onerror)', /badgeArtFallback/.test(appSrc) && /data-fallback/.test(appSrc));
 }
 
+console.log('\n== 24. Manifest com screenshots (prompt de instalação rico) ==');
+{
+    const manifest = JSON.parse(fs.readFileSync('manifest.webmanifest', 'utf8'));
+    const shots = manifest.screenshots || [];
+    const dims = { 'narrow': '1080x1920', 'wide': '1920x1080' };
+    check('manifest declara 2 screenshots (retrato + paisagem)', shots.length === 2 && shots.every(s => fs.existsSync(s.src)), shots.map(s => s.src));
+    check('screenshots têm o form_factor e o tamanho certos no disco',
+        shots.every(s => {
+            const want = dims[s.form_factor];
+            if (!want || s.sizes !== want) return false;
+            const out = require('child_process').execSync(`identify -format '%wx%h' '${s.src}'`).toString().trim();
+            return out === want;
+        }), shots.map(s => `${s.form_factor}:${s.sizes}`));
+    check('screenshots ficam leves para o prompt de instalação', shots.every(s => fs.statSync(s.src).size <= 400 * 1024), shots.map(s => fs.statSync(s.src).size));
+}
+
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);
