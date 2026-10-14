@@ -179,6 +179,16 @@ check('histórico renderizado', !!$('history-content'));
 check('CSV multi-aba com 22 colunas no Log', ev('buildPlanilhaCSV()').split(/--- Sheet: Log ---/)[1].split('\n')[1].split(';').length === 22);
 check('todos os 120 chefões têm retrato padrão (Ação e Anéis inclusive)', ev("Object.keys(THEMES).every(id => THEMES[id].bosses.every(b => !!DEFAULT_BOSS_PORTRAITS[id + ':' + b.id]))"));
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fs.readFileSync('js/app.js', 'utf8')) && /frame === 'espacial'/.test(fs.readFileSync('js/app.js', 'utf8')));
+const appSrcFrames = fs.readFileSync('js/app.js', 'utf8');
+check('molduras de ferro (clássico) e de anel (Senhor dos Anéis) desenhadas à mão', /frame === 'ferro'/.test(appSrcFrames) && /frame === 'anel'/.test(appSrcFrames));
+check('clássico usa ferro e Anéis não divide mais o ouro do Zodíaco', ev("THEMES.classico.frame === 'ferro' && THEMES.aneis.frame === 'anel' && THEMES.zodiaco.frame === 'ouro'"));
+check('nenhum tema cai no else genérico de drawThemedFrame', ev("[...new Set(Object.values(THEMES).map(t => t.frame))]").every(f => new RegExp(`frame === '${f}'`).test(appSrcFrames)), ev("[...new Set(Object.values(THEMES).map(t => t.frame))]"));
+check('moldura de ferro traz rebites e corrente; a de anel traz o Um Anel gravado', /rebites/.test(appSrcFrames) && /corrente/.test(appSrcFrames) && /Um Anel/.test(appSrcFrames));
+let framesOk = true, framesErr = '';
+try {
+    ev("openBossDefeatCard(); window.__themeBackup = THEME; THEME_IDS_LIST.forEach(id => { THEME = THEMES[id]; drawThemedFrame(document.getElementById('story-canvas').getContext('2d'), STORY_CARD_STYLES[id].palette); drawThemedFrame(document.getElementById('boss-card-canvas').getContext('2d'), { borderPrimary: '#dc2626' }); }); generateStoryCard(); generateBossDefeatCard(); THEME = window.__themeBackup; delete window.__themeBackup; document.getElementById('boss-card-overlay')?.remove();");
+} catch (e) { framesOk = false; framesErr = e.message; }
+check('as dez molduras desenham sem erro (story card + card do chefão)', framesOk && !!ev('THEME'), framesErr);
 
 // ============================ LIGHTBOX DOS CHEFÕES ============================
 console.log('\n== UI 1b. Lightbox dos chefões ==');

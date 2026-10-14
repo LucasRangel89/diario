@@ -2612,6 +2612,90 @@ function drawThemedFrame(ctx, palette) {
             ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
             ctx.fillStyle = i % 3 ? '#9ad8ff' : '#ffffff'; ctx.fill();
         }
+    } else if (frame === 'anel') {
+        // Senhor dos Anéis: ouro envelhecido com o Um Anel gravado no topo,
+        // a inscrição da Língua Negra correndo pelas laterais e a brasa de
+        // Orodruin fechando a base. (Antes dividia a moldura 'ouro' do Zodíaco.)
+        const g = ctx.createLinearGradient(0, 0, 1080, 1920);
+        g.addColorStop(0, '#4a3a12'); g.addColorStop(0.5, '#c9a227'); g.addColorStop(1, '#4a3a12');
+        ctx.strokeStyle = g; ctx.lineWidth = 16; ctx.strokeRect(24, 24, 1032, 1872);
+        ctx.strokeStyle = '#2b2110'; ctx.lineWidth = 2; ctx.strokeRect(44, 44, 992, 1832);
+        // o Um Anel: aro duplo com a inscrição gravada entre os dois círculos
+        ctx.save();
+        ctx.translate(540, 92);
+        ctx.strokeStyle = '#e2c46e'; ctx.lineWidth = 7;
+        ctx.beginPath(); ctx.arc(0, 0, 46, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = '#8a6a20'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, 33, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = '#f0d98a'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+        for (let i = 0; i < 20; i++) {
+            const a = (i / 20) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * 35, Math.sin(a) * 35);
+            ctx.lineTo(Math.cos(a) * 44, Math.sin(a) * 44);
+            ctx.stroke();
+        }
+        ctx.restore();
+        // inscrição gravada nas laterais (glifos ondulados, traço fino)
+        ctx.save();
+        ctx.strokeStyle = '#c9a227'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+        for (let y = 200; y < 1800; y += 74) {
+            [[34, y], [1046, y]].forEach(([x, ry]) => {
+                ctx.beginPath();
+                ctx.moveTo(x - 6, ry);
+                ctx.quadraticCurveTo(x, ry - 9, x + 6, ry);
+                ctx.quadraticCurveTo(x, ry + 9, x - 6, ry);
+                ctx.stroke();
+            });
+        }
+        ctx.restore();
+        // anéis menores nos cantos e brasa do Monte da Perdição na base
+        [[64, 64], [1016, 64], [64, 1856], [1016, 1856]].forEach(([x, y]) => {
+            ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2);
+            ctx.strokeStyle = '#e2c46e'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#8a2c2c'; ctx.fill();
+        });
+        ctx.save();
+        ctx.shadowColor = '#ff4500'; ctx.shadowBlur = 26;
+        ctx.strokeStyle = '#c2410c'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(60, 1886); ctx.lineTo(1020, 1886); ctx.stroke();
+        ctx.restore();
+    } else if (frame === 'ferro') {
+        // Berzerker (clássico): ferro forjado rebitado, com corrente nos cantos
+        // e sangria carmesim por dentro da ferragem. Antes caía no else genérico.
+        const g = ctx.createLinearGradient(0, 0, 1080, 1920);
+        g.addColorStop(0, '#161618'); g.addColorStop(0.35, '#4c4c52'); g.addColorStop(0.65, '#3a3a3f'); g.addColorStop(1, '#161618');
+        ctx.strokeStyle = g; ctx.lineWidth = 24; ctx.strokeRect(19, 19, 1042, 1882);
+        ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 5; ctx.strokeRect(38, 38, 1004, 1844);
+        ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.strokeRect(48, 48, 984, 1824);
+        // rebites ao longo dos quatro lados (esfera + ponto de luz)
+        ctx.save();
+        for (let i = 0; i < 26; i++) {
+            const t = i / 25;
+            [[31 + t * 1018, 31], [31 + t * 1018, 1889], [31, 31 + t * 1858], [1049, 31 + t * 1858]].forEach(([x, y]) => {
+                ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2);
+                ctx.fillStyle = '#5f5f66'; ctx.fill();
+                ctx.beginPath(); ctx.arc(x - 2, y - 2, 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = '#a3a3ab'; ctx.fill();
+            });
+        }
+        ctx.restore();
+        // elos de corrente saindo dos quatro cantos
+        ctx.save();
+        ctx.strokeStyle = '#8a1f1f'; ctx.lineWidth = 4;
+        [[68, 68, 1, 1], [1012, 68, -1, 1], [68, 1852, 1, -1], [1012, 1852, -1, -1]].forEach(([x, y, dx, dy]) => {
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.ellipse(x + dx * i * 20, y + dy * i * 20, 11, 6, dx === dy ? Math.PI / 4 : -Math.PI / 4, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2);
+            ctx.fillStyle = '#2a2a2e'; ctx.fill();
+            ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.strokeStyle = '#8a1f1f'; ctx.lineWidth = 4;
+        });
+        ctx.restore();
     } else {
         ctx.strokeStyle = palette.borderPrimary;
         ctx.lineWidth = 10;
