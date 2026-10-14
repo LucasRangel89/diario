@@ -165,6 +165,54 @@ check('CSV multi-aba com 22 colunas no Log', ev('buildPlanilhaCSV()').split(/---
 check('todos os 120 chefões têm retrato padrão (Ação e Anéis inclusive)', ev("Object.keys(THEMES).every(id => THEMES[id].bosses.every(b => !!DEFAULT_BOSS_PORTRAITS[id + ':' + b.id]))"));
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fs.readFileSync('js/app.js', 'utf8')) && /frame === 'espacial'/.test(fs.readFileSync('js/app.js', 'utf8')));
 
+// ============================ LIGHTBOX DOS CHEFÕES ============================
+console.log('\n== UI 1b. Lightbox dos chefões ==');
+const key = k => document.dispatchEvent(new window.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+navTo('boss');
+const lbOverlay = () => $('boss-lightbox-overlay');
+const lbCard = id => $('bosses-grid').querySelector(`[data-boss-id="${id}"]`);
+const lbImg = () => lbOverlay() && lbOverlay().querySelector('#boss-lightbox-img');
+const lbDownload = () => lbOverlay() && lbOverlay().querySelector('#boss-lightbox-download');
+check('lightbox não existe antes do clique', !lbOverlay());
+check('os 12 cards da grade são clicáveis e trazem o id do chefão', $('bosses-grid').querySelectorAll('[data-boss-id]').length === 12 && $('bosses-grid').querySelectorAll('[onclick^="openBossLightbox("]').length === 12);
+check('miniaturas da grade carregam de forma preguiçosa (lazy + async)', [...$('bosses-grid').querySelectorAll('img')].length === 12 && [...$('bosses-grid').querySelectorAll('img')].every(i => i.getAttribute('loading') === 'lazy' && i.getAttribute('decoding') === 'async'));
+const idxAtual = ev('computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).currentIdx');
+const retratoAtivo = $('active-boss-card').querySelector('button[onclick^="openBossLightbox("]');
+check('retrato do chefão ativo (w-20) também é clicável e aponta para o boss em batalha', !!retratoAtivo && retratoAtivo.className.includes('w-20') && retratoAtivo.getAttribute('onclick') === `openBossLightbox('${ev('BOSSES[' + idxAtual + '].id')}')`, retratoAtivo && retratoAtivo.getAttribute('onclick'));
+
+const bossAlvo = ev('BOSSES[5].id');
+click(lbCard(bossAlvo));
+check('clicar no card abre o modal', !!lbOverlay() && lbOverlay().className.includes('z-[60]') && lbOverlay().className.includes('bg-black/80') && lbOverlay().className.includes('backdrop-blur-sm'));
+check('arte grande vem do retrato padrão do tema (512×512, pixelado)', !!lbImg() && lbImg().getAttribute('src') === ev(`DEFAULT_BOSS_PORTRAITS['${ev('activeGameThemeId')}:' + '${bossAlvo}']`) && lbImg().getAttribute('style').includes('image-rendering:pixelated'), lbImg() && lbImg().getAttribute('src'));
+check('nome do chefão no cabeçalho do modal', $('boss-lightbox-name').textContent === ev(`BOSSES[5].name`));
+check('status do combate no modal (DERROTADO/EM BATALHA/BLOQUEADO)', /DERROTADO 🏆|EM BATALHA ⚔️|BLOQUEADO 🔒/.test($('boss-lightbox-status').textContent));
+check('modal traz HP máximo, fraqueza, brecha tática e XP de recompensa', lbOverlay().textContent.includes(ev('fmtN(BOSSES[5].maxHp)') + ' HP') && lbOverlay().textContent.includes(ev('BOSSES[5].weak')) && lbOverlay().textContent.includes(ev('BOSSES[5].weakReason')) && lbOverlay().textContent.includes('+' + ev('fmtN(Math.round(BOSSES[5].maxHp / 200))') + ' XP'));
+check('botão de baixar a imagem usa o atributo download', !!lbDownload() && lbDownload().getAttribute('download').endsWith('.webp') && lbDownload().getAttribute('href') === lbImg().getAttribute('src'));
+
+click(btnIn(lbOverlay(), '›') || lbOverlay().querySelector('[aria-label="Próximo chefão"]'));
+check('› avança para o chefão seguinte', $('boss-lightbox-name').textContent === ev('BOSSES[6].name') && lbImg().getAttribute('src') === ev(`DEFAULT_BOSS_PORTRAITS['${ev('activeGameThemeId')}:' + BOSSES[6].id]`), $('boss-lightbox-name').textContent);
+key('ArrowRight');
+check('seta → do teclado também avança', $('boss-lightbox-name').textContent === ev('BOSSES[7].name'));
+key('ArrowLeft'); key('ArrowLeft');
+check('seta ← do teclado volta', $('boss-lightbox-name').textContent === ev('BOSSES[5].name'));
+lbOverlay().querySelector('[aria-label="Chefão anterior"]').click();
+check('‹ volta e dá a volta no fim da lista (b11 → b0)', $('boss-lightbox-name').textContent === ev('BOSSES[4].name'));
+ev("bossLightboxIdx = 0; renderBossLightbox(); navBossLightbox(-1);");
+check('navegação é circular (antes do 1º volta ao último)', $('boss-lightbox-name').textContent === ev('BOSSES[11].name'));
+key('Escape');
+check('ESC fecha o lightbox', !lbOverlay());
+
+ev("openBossLightbox(BOSSES[3].id);");
+check('openBossLightbox(id) abre já no chefão certo', !!lbOverlay() && $('boss-lightbox-name').textContent === ev('BOSSES[3].name'));
+lbOverlay().dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
+check('clique no fundo fecha o modal', !lbOverlay());
+
+click(retratoAtivo);
+check('retrato do card ativo abre o modal já no boss em batalha', !!lbOverlay() && $('boss-lightbox-name').textContent === ev('BOSSES[' + idxAtual + '].name') && /EM BATALHA ⚔️/.test($('boss-lightbox-status').textContent), $('boss-lightbox-name').textContent);
+btnIn(lbOverlay(), '✕').click();
+check('botão ✕ fecha o lightbox', !lbOverlay());
+check('lightbox fecha sem deixar rastro no DOM', !document.body.querySelector('#boss-lightbox-overlay'));
+
 // vistas do histórico
 try {
     ev("switchHistoryView('progresso')"); ev("switchHistoryView('semanas')");

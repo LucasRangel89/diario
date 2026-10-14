@@ -2174,9 +2174,9 @@ function renderBossBattleUI() {
         activeCard.innerHTML = `
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
-                    <div class="w-20 h-20 sm:w-24 sm:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0">
-                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl" style="image-rendering:pixelated" alt="retrato">` : `<span class="text-6xl">${currentBoss.icon}</span>`}
-                    </div>
+                    <button type="button" onclick="openBossLightbox('${currentBoss.id}')" title="Ampliar retrato de ${escapeHtml(currentBoss.name)}" aria-label="Ampliar retrato de ${escapeHtml(currentBoss.name)}" class="w-20 h-20 sm:w-24 sm:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500">
+                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl" style="image-rendering:pixelated" alt="retrato de ${escapeHtml(currentBoss.name)}">` : `<span class="text-6xl">${currentBoss.icon}</span>`}
+                    </button>
                     <div>
                         <span class="text-xs font-bold text-red-400 uppercase tracking-wider block">${THEME.bossLabel} — ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
                         <h3 class="font-oswald text-3xl font-bold text-white uppercase">${escapeHtml(currentBoss.name)}</h3>
@@ -2215,9 +2215,9 @@ function renderBossBattleUI() {
             const defeated = idx < prog.defeatedCount;
             const thumb = bossPortraitSrc(b.id);
             return `
-                <div class="p-4 rounded-xl border ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
+                <div role="button" tabindex="0" data-boss-id="${escapeHtml(b.id)}" onclick="openBossLightbox('${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBossLightbox('${b.id}')}" title="Ampliar retrato de ${escapeHtml(b.name)}" class="p-4 rounded-xl border cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500 ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
                     <div class="flex justify-between items-center">
-                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" class="w-10 h-10 rounded-lg object-cover border border-berzerker-border" style="image-rendering:pixelated">` : `<span class="text-2xl">${b.icon}</span>`}
+                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" loading="lazy" decoding="async" class="w-10 h-10 rounded-lg object-cover border border-berzerker-border" style="image-rendering:pixelated">` : `<span class="text-2xl">${b.icon}</span>`}
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
                             ${defeated ? 'DERROTADO 🏆' : (idx === prog.currentIdx ? 'EM BATALHA ⚔️' : 'BLOQUEADO 🔒')}
                         </span>
@@ -2230,6 +2230,125 @@ function renderBossBattleUI() {
         }).join('');
     }
 }
+
+// ============================ LIGHTBOX DOS CHEFÕES ============================
+// Os retratos já são 512×512 e já estão no cache offline: clicar em qualquer card
+// da grade (ou no retrato do chefão ativo) abre a arte grande com os dados do
+// combate. Navegação por setas (botão ou teclado), ESC fecha, clique no fundo fecha.
+const BOSS_LIGHTBOX_ID = 'boss-lightbox-overlay';
+let bossLightboxIdx = 0;
+
+function bossStatusLabel(idx, prog) {
+    if (idx < prog.defeatedCount) return 'DERROTADO 🏆';
+    if (idx === prog.currentIdx) return 'EM BATALHA ⚔️';
+    return 'BLOQUEADO 🔒';
+}
+
+function bossStatusClass(idx, prog) {
+    if (idx < prog.defeatedCount) return 'bg-emerald-500 text-black border-emerald-400';
+    if (idx === prog.currentIdx) return 'bg-berzerker-600 text-white border-berzerker-500';
+    return 'bg-berzerker-border text-gray-300 border-gray-600';
+}
+
+// Nome de arquivo do download: tema + id + nome do chefão (data URL de upload vira .jpg)
+function bossPortraitDownloadName(boss, src) {
+    const ext = /^data:image\/(png|webp|jpeg|jpg)/i.test(String(src)) ? (RegExp.$1 === 'jpeg' ? 'jpg' : RegExp.$1.toLowerCase()) : 'webp';
+    const slug = String(boss.name || boss.id).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return `${(THEME ? THEME.id : 'berzerker')}-${boss.id}-${slug}.${ext}`;
+}
+
+function openBossLightbox(bossId) {
+    if (!Array.isArray(BOSSES) || !BOSSES.length) return;
+    const found = BOSSES.findIndex(b => b.id === bossId);
+    bossLightboxIdx = found >= 0 ? found : 0;
+    renderBossLightbox();
+}
+
+function closeBossLightbox() {
+    const overlay = document.getElementById(BOSS_LIGHTBOX_ID);
+    if (!overlay) return false;
+    overlay.remove();
+    return true;
+}
+
+function navBossLightbox(delta) {
+    if (!Array.isArray(BOSSES) || !BOSSES.length) return;
+    const step = Number(delta) || 0;
+    bossLightboxIdx = ((bossLightboxIdx + step) % BOSSES.length + BOSSES.length) % BOSSES.length;
+    renderBossLightbox();
+}
+
+function renderBossLightbox() {
+    if (!Array.isArray(BOSSES) || !BOSSES.length) return;
+    const idx = Math.min(Math.max(0, bossLightboxIdx), BOSSES.length - 1);
+    bossLightboxIdx = idx;
+    const b = BOSSES[idx];
+    if (!b) return;
+    const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
+    const src = bossPortraitSrc(b.id);
+    const xpReward = Math.round(b.maxHp / 200);
+
+    document.getElementById(BOSS_LIGHTBOX_ID)?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = BOSS_LIGHTBOX_ID;
+    overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-3 overflow-y-auto';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', `Retrato de ${b.name}`);
+    overlay.onclick = ev => { if (ev.target === overlay) closeBossLightbox(); };
+    overlay.innerHTML = `
+        <div class="my-auto w-full max-w-2xl bg-berzerker-card border border-berzerker-border rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4">
+            <div class="flex items-start justify-between gap-3 border-b border-berzerker-border pb-3">
+                <div class="min-w-0">
+                    <h3 id="boss-lightbox-name" class="font-oswald text-xl sm:text-2xl font-bold text-white uppercase tracking-wider leading-tight">${escapeHtml(b.name)}</h3>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mt-0.5">${escapeHtml(THEME ? THEME.name : '')} · ${escapeHtml(THEME ? THEME.bossLabel : 'CHEFÃO')} ${idx + 1}/${BOSSES.length}</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <span id="boss-lightbox-status" class="text-[10px] font-bold uppercase px-2 py-1 rounded border ${bossStatusClass(idx, prog)}">${bossStatusLabel(idx, prog)}</span>
+                    <button type="button" onclick="closeBossLightbox()" aria-label="Fechar (ESC)" title="Fechar (ESC)" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✕</button>
+                </div>
+            </div>
+            <div class="flex items-center justify-center gap-2 sm:gap-4">
+                <button type="button" onclick="navBossLightbox(-1)" aria-label="Chefão anterior" title="Anterior (←)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">‹</button>
+                <div class="w-56 h-56 sm:w-72 sm:h-72 rounded-2xl border border-berzerker-border bg-black/60 overflow-hidden flex items-center justify-center">
+                    ${src
+                        ? `<img id="boss-lightbox-img" src="${escapeHtml(src)}" alt="Retrato de ${escapeHtml(b.name)}" class="w-full h-full object-contain" style="image-rendering:pixelated">`
+                        : `<span id="boss-lightbox-icon" class="text-8xl">${b.icon || '👹'}</span>`}
+                </div>
+                <button type="button" onclick="navBossLightbox(1)" aria-label="Próximo chefão" title="Próximo (→)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">›</button>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
+                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Vida máxima</span>
+                    <span class="block font-oswald text-lg font-bold text-red-400">${fmtN(b.maxHp)} HP</span>
+                </div>
+                <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
+                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">💢 Fraqueza ×1,25</span>
+                    <span class="block font-oswald text-lg font-bold text-purple-300">${escapeHtml(b.weak || '—')}</span>
+                </div>
+                <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
+                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Recompensa</span>
+                    <span class="block font-oswald text-lg font-bold text-amber-300">+${fmtN(xpReward)} XP</span>
+                </div>
+            </div>
+            <p class="text-[11px] leading-relaxed text-purple-200/80"><strong class="uppercase tracking-wider text-gray-400">Brecha tática:</strong> ${escapeHtml(b.weakReason || 'Ataque temático.')}</p>
+            ${b.desc ? `<p class="text-[11px] leading-relaxed text-gray-500">${escapeHtml(b.desc)}</p>` : ''}
+            <div class="flex flex-wrap items-center gap-2">
+                ${src ? `<a id="boss-lightbox-download" href="${escapeHtml(src)}" download="${escapeHtml(bossPortraitDownloadName(b, src))}" class="flex-1 text-center px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-200 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">⬇️ Baixar retrato</a>` : ''}
+                <button type="button" onclick="navBossLightbox(-1)" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">‹ Anterior</button>
+                <button type="button" onclick="navBossLightbox(1)" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">Próximo ›</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+}
+
+// Setas navegam, ESC fecha — só quando o lightbox está aberto.
+document.addEventListener('keydown', e => {
+    if (!document.getElementById(BOSS_LIGHTBOX_ID)) return;
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeBossLightbox(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); navBossLightbox(1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); navBossLightbox(-1); }
+});
 
 function uploadBossPortrait(event, bossId) {
     const file = event.target.files[0];
