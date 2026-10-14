@@ -2,7 +2,7 @@
 // App 100% local (Tailwind e Chart.js empacotados em /vendor) — funciona offline na academia.
 // Estratégia: rede primeiro para os arquivos do app (sempre a versão nova quando há sinal),
 // cache como reserva offline. Incremente VERSION ao atualizar app/ativos para renovar o cache offline.
-const VERSION = 'v13';
+const VERSION = 'v14';
 const CACHE = 'berzerker-' + VERSION;
 const CORE = [
   './',
@@ -21,22 +21,36 @@ const CORE = [
   './js/busca.js',
   './js/custom_exercises.js',
   './js/app.js',
-  './images/bosses/golem-anilhas.jpg',
-  './images/bosses/hidra-titanio.jpg',
-  './images/bosses/mecagorila.jpg',
-  './images/bosses/behemoth.jpg',
-  './images/bosses/saci.jpg',
-  './images/bosses/curupira.jpg',
-  './images/bosses/caipora.jpg',
-  './images/bosses/lobisomem.jpg',
-  './images/bosses/cuca.jpg',
-  './images/bosses/mula-sem-cabeca.jpg',
-  './images/bosses/iara.jpg',
-  './images/bosses/boto.jpg',
-  './images/bosses/boitata.jpg',
-  './images/bosses/naia.jpg',
-  './images/bosses/mapinguari.jpg',
-  './images/bosses/anhanguera.jpg'
+  './images/bosses/golem-anilhas.webp',
+  './images/bosses/hidra-titanio.webp',
+  './images/bosses/mecagorila.webp',
+  './images/bosses/behemoth.webp',
+  './images/bosses/cavaleiro-de-ferro.webp',
+  './images/bosses/ogro-da-bigorna.webp',
+  './images/bosses/quimera-blindada.webp',
+  './images/bosses/dragao-de-aco.webp',
+  './images/bosses/minotauro-das-forjas.webp',
+  './images/bosses/leviatan-de-ferro.webp',
+  './images/bosses/tita-de-escorcia.webp',
+  './images/bosses/colosso-das-forjas.webp',
+  './images/bosses/saci.webp',
+  './images/bosses/curupira.webp',
+  './images/bosses/caipora.webp',
+  './images/bosses/lobisomem.webp',
+  './images/bosses/cuca.webp',
+  './images/bosses/mula-sem-cabeca.webp',
+  './images/bosses/iara.webp',
+  './images/bosses/boto.webp',
+  './images/bosses/boitata.webp',
+  './images/bosses/naia.webp',
+  './images/bosses/mapinguari.webp',
+  './images/bosses/anhanguera.webp',
+  './images/bosses/mu-de-aries.webp',
+  './images/bosses/aldebaran-de-touro.webp',
+  './images/bosses/leao-de-nemeia.webp',
+  './images/bosses/hidra-de-lerna.webp',
+  './images/bosses/o-predador.webp',
+  './images/bosses/retiario-mestre.webp'
 ];
 const EXTERNAL = [
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Oswald:wght@500;600;700&family=Teko:wght@500;600;700&display=swap'

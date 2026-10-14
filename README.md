@@ -80,8 +80,8 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
 ### ⚔️ Gamificação
 10 temas — **clássico, Zodíaco, Hércules, Filmes de Ação, Folclore Brasileiro, Mitologia
 Nórdica, Roma Antiga, RPG de Mesa, Galáctica, Senhor dos Anéis** — cada um com 10 patentes e
-12 chefões (retratos originais de IA em `images/bosses/` para clássico e folclore; upload por
-chefão tem prioridade). XP, missões semanais, temporadas de 12 semanas, deload e Story Card
+12 chefões (30 retratos originais de IA em pixel art retrô, em `images/bosses/*.webp` — todos os
+12 do clássico, os 12 do folclore e mais 6 chefões avulsos; upload por chefão tem prioridade). XP, missões semanais, temporadas de 12 semanas, deload e Story Card
 com moldura temática.
 
 ---

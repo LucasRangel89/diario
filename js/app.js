@@ -1965,23 +1965,38 @@ function updateSummaryMetrics() {
 // ============================ BOSS BATTLE ============================
 // Retratos padrão dos chefões (arte original embutida no app).
 // O upload do usuário (bossPortraits) tem prioridade sobre estes.
+// Todos os retratos são pixel art retrô (grade 160, paleta de 64 cores) em WebP lossless.
 const DEFAULT_BOSS_PORTRAITS = {
-    'classico:boss1': 'images/bosses/golem-anilhas.jpg',
-    'classico:boss2': 'images/bosses/hidra-titanio.jpg',
-    'classico:boss3': 'images/bosses/mecagorila.jpg',
-    'classico:boss4': 'images/bosses/behemoth.jpg',
-    'folclore:b0': 'images/bosses/saci.jpg',
-    'folclore:b1': 'images/bosses/curupira.jpg',
-    'folclore:b2': 'images/bosses/caipora.jpg',
-    'folclore:b3': 'images/bosses/lobisomem.jpg',
-    'folclore:b4': 'images/bosses/cuca.jpg',
-    'folclore:b5': 'images/bosses/mula-sem-cabeca.jpg',
-    'folclore:b6': 'images/bosses/iara.jpg',
-    'folclore:b7': 'images/bosses/boto.jpg',
-    'folclore:b8': 'images/bosses/boitata.jpg',
-    'folclore:b9': 'images/bosses/naia.jpg',
-    'folclore:b10': 'images/bosses/mapinguari.jpg',
-    'folclore:b11': 'images/bosses/anhanguera.jpg'
+    'classico:boss1': 'images/bosses/golem-anilhas.webp',
+    'classico:boss2': 'images/bosses/hidra-titanio.webp',
+    'classico:boss3': 'images/bosses/mecagorila.webp',
+    'classico:boss4': 'images/bosses/behemoth.webp',
+    'classico:boss5': 'images/bosses/cavaleiro-de-ferro.webp',
+    'classico:boss6': 'images/bosses/ogro-da-bigorna.webp',
+    'classico:boss7': 'images/bosses/quimera-blindada.webp',
+    'classico:boss8': 'images/bosses/dragao-de-aco.webp',
+    'classico:boss9': 'images/bosses/minotauro-das-forjas.webp',
+    'classico:boss10': 'images/bosses/leviatan-de-ferro.webp',
+    'classico:boss11': 'images/bosses/tita-de-escorcia.webp',
+    'classico:boss12': 'images/bosses/colosso-das-forjas.webp',
+    'folclore:b0': 'images/bosses/saci.webp',
+    'folclore:b1': 'images/bosses/curupira.webp',
+    'folclore:b2': 'images/bosses/caipora.webp',
+    'folclore:b3': 'images/bosses/lobisomem.webp',
+    'folclore:b4': 'images/bosses/cuca.webp',
+    'folclore:b5': 'images/bosses/mula-sem-cabeca.webp',
+    'folclore:b6': 'images/bosses/iara.webp',
+    'folclore:b7': 'images/bosses/boto.webp',
+    'folclore:b8': 'images/bosses/boitata.webp',
+    'folclore:b9': 'images/bosses/naia.webp',
+    'folclore:b10': 'images/bosses/mapinguari.webp',
+    'folclore:b11': 'images/bosses/anhanguera.webp',
+    'zodiaco:b0': 'images/bosses/mu-de-aries.webp',
+    'zodiaco:b1': 'images/bosses/aldebaran-de-touro.webp',
+    'hercules:b0': 'images/bosses/leao-de-nemeia.webp',
+    'hercules:b1': 'images/bosses/hidra-de-lerna.webp',
+    'acao:b0': 'images/bosses/o-predador.webp',
+    'roma:b2': 'images/bosses/retiario-mestre.webp'
 };
 
 function bossPortraitSrc(bossId) {
@@ -2017,7 +2032,7 @@ function renderBossBattleUI() {
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
                     <div class="w-20 h-20 sm:w-24 sm:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0">
-                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl" alt="retrato">` : `<span class="text-6xl">${currentBoss.icon}</span>`}
+                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl" style="image-rendering:pixelated" alt="retrato">` : `<span class="text-6xl">${currentBoss.icon}</span>`}
                     </div>
                     <div>
                         <span class="text-xs font-bold text-red-400 uppercase tracking-wider block">${THEME.bossLabel} — ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
@@ -2059,7 +2074,7 @@ function renderBossBattleUI() {
             return `
                 <div class="p-4 rounded-xl border ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
                     <div class="flex justify-between items-center">
-                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" class="w-10 h-10 rounded-lg object-cover border border-berzerker-border">` : `<span class="text-2xl">${b.icon}</span>`}
+                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" class="w-10 h-10 rounded-lg object-cover border border-berzerker-border" style="image-rendering:pixelated">` : `<span class="text-2xl">${b.icon}</span>`}
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
                             ${defeated ? 'DERROTADO 🏆' : (idx === prog.currentIdx ? 'EM BATALHA ⚔️' : 'BLOQUEADO 🔒')}
                         </span>
@@ -2556,6 +2571,7 @@ function generateBossDefeatCard() {
     ctx.closePath();
     ctx.clip();
     if (portraitImg && portraitImg.complete && portraitImg.naturalWidth > 0) {
+        ctx.imageSmoothingEnabled = false; // mantém os pixels da arte retrô nítidos
         ctx.drawImage(portraitImg, 350, 230, 380, 380);
     } else {
         ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(350, 230, 380, 380);
