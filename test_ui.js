@@ -141,6 +141,21 @@ ev("showRanksModal('classico');");
 check('modal de patentes mostra os dez emblemas próprios', ($('ranks-overlay')?.querySelectorAll('img')?.length || 0) >= 10 && $('ranks-overlay').innerHTML.includes('images/patentes/classico-10.webp'));
 ev("document.getElementById('ranks-overlay')?.remove();");
 check('botão do tema abre dez cartões com ícone, patente e progresso', !!$('theme-gallery-overlay') && $('theme-gallery-overlay').querySelectorAll('[data-theme-id]').length === 10 && $('theme-gallery-overlay').textContent.includes('Patente atual') && $('theme-gallery-overlay').textContent.includes('chefões'));
+const galleryIds = ev('THEME_IDS_LIST');
+const galleryEmblemSrc = id => ev(`rankEmblemSrc('${id}', rankFromXP(computeThemeXPCtx('${id}').xp, themeRankList(THEMES['${id}'])).level)`);
+check('galeria de temas mostra emblema de patente em vez de emoji residual',
+    galleryIds.every(id => {
+        const card = $('theme-gallery-overlay').querySelector(`[data-theme-id="${id}"]`);
+        const img = card && card.querySelector('img[src^="images/patentes/"]');
+        return !!img && img.getAttribute('src') === galleryEmblemSrc(id);
+    }),
+    galleryIds.map(id => (id + ':' + ($('theme-gallery-overlay').querySelector(`[data-theme-id="${id}"] img[src^="images/patentes/"]`) || {}).getAttribute?.('src'))));
+check('nenhum cartão da galeria repete o emoji da patente no texto',
+    galleryIds.every(id => {
+        const card = $('theme-gallery-overlay').querySelector(`[data-theme-id="${id}"]`);
+        const emoji = ev(`rankFromXP(computeThemeXPCtx('${id}').xp, themeRankList(THEMES['${id}'])).icon`);
+        return !!card && !card.textContent.includes(emoji);
+    }));
 check('galeria traz o Senhor dos Anéis (💍) com patentes próprias', !!$('theme-gallery-overlay').querySelector('[data-theme-id="aneis"]') && $('theme-gallery-overlay').textContent.includes('Senhor dos Anéis') && ev("THEME_ICONS.aneis === '💍' && THEMES.aneis.ranks[9][0] === 'LENDA DA TERRA MÉDIA'"));
 click($('theme-gallery-overlay').querySelector('[data-theme-id="roma"]'));
 check('troca pede confirmação pelo nome Roma Antiga', !!$('confirm-modal-overlay') && $('confirm-modal-overlay').textContent.includes('Trocar para Roma Antiga?') && ev("THEME.id === 'classico'"));
