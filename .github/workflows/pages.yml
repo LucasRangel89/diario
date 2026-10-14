@@ -1,0 +1,53 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Empacota o site estático
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # O app é 100% estático (sem build em produção): basta copiar os arquivos
+      # de runtime. Testes, fontes do repo e CI ficam de fora do artefato.
+      - name: Monta _site
+        run: |
+          mkdir -p _site
+          cp -r index.html manifest.webmanifest sw.js _site/
+          cp -r icon-192.png icon-512.png apple-touch-icon.png _site/
+          cp -r js vendor images _site/
+          du -sh _site
+
+      - name: Configura o Pages
+        uses: actions/configure-pages@v5
+
+      - name: Sobe o artefato
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Publica no GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

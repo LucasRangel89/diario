@@ -590,7 +590,7 @@ function showThemeGallery() {
                 ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[9px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
             </div>
             <div class="mt-3 flex items-end justify-between gap-2">
-                <div class="min-w-0"><span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Patente atual</span><span class="block truncate text-xs font-bold text-amber-300">${currentRank.icon} ${escapeHtml(currentRank.name)}</span></div>
+                <div class="min-w-0"><span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Patente atual</span><span class="block truncate text-xs font-bold text-amber-300">${rankEmblemImg(theme.id, currentRank.level, 'inline-block h-4 w-4 rounded-full align-[-3px] mr-1')} ${escapeHtml(currentRank.name)}</span></div>
                 <span class="shrink-0 text-[10px] font-mono text-gray-400">Nível ${currentRank.level}/10</span>
             </div>
             <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-berzerker-border"><div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-300" style="width:${progress}%"></div></div>
@@ -2174,9 +2174,9 @@ function renderBossBattleUI() {
         activeCard.innerHTML = `
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
-                    <div class="w-20 h-20 sm:w-24 sm:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0">
-                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl" style="image-rendering:pixelated" alt="retrato">` : `<span class="text-6xl">${currentBoss.icon}</span>`}
-                    </div>
+                    <button type="button" onclick="openBossLightbox('${currentBoss.id}')" title="Ampliar retrato de ${escapeHtml(currentBoss.name)}" aria-label="Ampliar retrato de ${escapeHtml(currentBoss.name)}" class="w-20 h-20 sm:w-24 sm:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500">
+                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl" style="image-rendering:pixelated" alt="retrato de ${escapeHtml(currentBoss.name)}">` : `<span class="text-6xl">${currentBoss.icon}</span>`}
+                    </button>
                     <div>
                         <span class="text-xs font-bold text-red-400 uppercase tracking-wider block">${THEME.bossLabel} — ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
                         <h3 class="font-oswald text-3xl font-bold text-white uppercase">${escapeHtml(currentBoss.name)}</h3>
@@ -2215,9 +2215,9 @@ function renderBossBattleUI() {
             const defeated = idx < prog.defeatedCount;
             const thumb = bossPortraitSrc(b.id);
             return `
-                <div class="p-4 rounded-xl border ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
+                <div role="button" tabindex="0" data-boss-id="${escapeHtml(b.id)}" onclick="openBossLightbox('${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBossLightbox('${b.id}')}" title="Ampliar retrato de ${escapeHtml(b.name)}" class="p-4 rounded-xl border cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500 ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
                     <div class="flex justify-between items-center">
-                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" class="w-10 h-10 rounded-lg object-cover border border-berzerker-border" style="image-rendering:pixelated">` : `<span class="text-2xl">${b.icon}</span>`}
+                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" loading="lazy" decoding="async" class="w-10 h-10 rounded-lg object-cover border border-berzerker-border" style="image-rendering:pixelated">` : `<span class="text-2xl">${b.icon}</span>`}
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
                             ${defeated ? 'DERROTADO 🏆' : (idx === prog.currentIdx ? 'EM BATALHA ⚔️' : 'BLOQUEADO 🔒')}
                         </span>
@@ -2229,7 +2229,150 @@ function renderBossBattleUI() {
                 </div>`;
         }).join('');
     }
+    renderReservaStudio();
 }
+
+// ============================ LIGHTBOX DOS CHEFÕES ============================
+// Os retratos já são 512×512 e já estão no cache offline: clicar em qualquer card
+// da grade (ou no retrato do chefão ativo) abre a arte grande com os dados do
+// combate. Navegação por setas (botão ou teclado), ESC fecha, clique no fundo fecha.
+const BOSS_LIGHTBOX_ID = 'boss-lightbox-overlay';
+let bossLightboxIdx = 0;
+
+function bossStatusLabel(idx, prog) {
+    if (idx < prog.defeatedCount) return 'DERROTADO 🏆';
+    if (idx === prog.currentIdx) return 'EM BATALHA ⚔️';
+    return 'BLOQUEADO 🔒';
+}
+
+function bossStatusClass(idx, prog) {
+    if (idx < prog.defeatedCount) return 'bg-emerald-500 text-black border-emerald-400';
+    if (idx === prog.currentIdx) return 'bg-berzerker-600 text-white border-berzerker-500';
+    return 'bg-berzerker-border text-gray-300 border-gray-600';
+}
+
+// Nome de arquivo do download: tema + id + nome do chefão (data URL de upload vira .jpg)
+function bossPortraitDownloadName(boss, src) {
+    const ext = /^data:image\/(png|webp|jpeg|jpg)/i.test(String(src)) ? (RegExp.$1 === 'jpeg' ? 'jpg' : RegExp.$1.toLowerCase()) : 'webp';
+    const slug = String(boss.name || boss.id).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return `${(THEME ? THEME.id : 'berzerker')}-${boss.id}-${slug}.${ext}`;
+}
+
+function openBossLightbox(bossId) {
+    if (!Array.isArray(BOSSES) || !BOSSES.length) return;
+    const found = BOSSES.findIndex(b => b.id === bossId);
+    bossLightboxIdx = found >= 0 ? found : 0;
+    renderBossLightbox();
+}
+
+function closeBossLightbox() {
+    const overlay = document.getElementById(BOSS_LIGHTBOX_ID);
+    if (!overlay) return false;
+    overlay.remove();
+    return true;
+}
+
+function navBossLightbox(delta) {
+    if (!Array.isArray(BOSSES) || !BOSSES.length) return;
+    const step = Number(delta) || 0;
+    bossLightboxIdx = ((bossLightboxIdx + step) % BOSSES.length + BOSSES.length) % BOSSES.length;
+    renderBossLightbox();
+}
+
+function renderBossLightbox() {
+    if (!Array.isArray(BOSSES) || !BOSSES.length) return;
+    const idx = Math.min(Math.max(0, bossLightboxIdx), BOSSES.length - 1);
+    bossLightboxIdx = idx;
+    const b = BOSSES[idx];
+    if (!b) return;
+    const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
+    const src = bossPortraitSrc(b.id);
+    const xpReward = Math.round(b.maxHp / 200);
+
+    document.getElementById(BOSS_LIGHTBOX_ID)?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = BOSS_LIGHTBOX_ID;
+    overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-3 overflow-y-auto';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', `Retrato de ${b.name}`);
+    overlay.onclick = ev => { if (ev.target === overlay) closeBossLightbox(); };
+    overlay.innerHTML = `
+        <div class="my-auto w-full max-w-2xl bg-berzerker-card border border-berzerker-border rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4">
+            <div class="flex items-start justify-between gap-3 border-b border-berzerker-border pb-3">
+                <div class="min-w-0">
+                    <h3 id="boss-lightbox-name" class="font-oswald text-xl sm:text-2xl font-bold text-white uppercase tracking-wider leading-tight">${escapeHtml(b.name)}</h3>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mt-0.5">${escapeHtml(THEME ? THEME.name : '')} · ${escapeHtml(THEME ? THEME.bossLabel : 'CHEFÃO')} ${idx + 1}/${BOSSES.length}</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <span id="boss-lightbox-status" class="text-[10px] font-bold uppercase px-2 py-1 rounded border ${bossStatusClass(idx, prog)}">${bossStatusLabel(idx, prog)}</span>
+                    <button type="button" onclick="closeBossLightbox()" aria-label="Fechar (ESC)" title="Fechar (ESC)" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✕</button>
+                </div>
+            </div>
+            <div class="flex items-center justify-center gap-2 sm:gap-4">
+                <button type="button" onclick="navBossLightbox(-1)" aria-label="Chefão anterior" title="Anterior (←)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">‹</button>
+                <div class="w-56 h-56 sm:w-72 sm:h-72 rounded-2xl border border-berzerker-border bg-black/60 overflow-hidden flex items-center justify-center">
+                    ${src
+                        ? `<img id="boss-lightbox-img" src="${escapeHtml(src)}" alt="Retrato de ${escapeHtml(b.name)}" class="w-full h-full object-contain" style="image-rendering:pixelated">`
+                        : `<span id="boss-lightbox-icon" class="text-8xl">${b.icon || '👹'}</span>`}
+                </div>
+                <button type="button" onclick="navBossLightbox(1)" aria-label="Próximo chefão" title="Próximo (→)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">›</button>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
+                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Vida máxima</span>
+                    <span class="block font-oswald text-lg font-bold text-red-400">${fmtN(b.maxHp)} HP</span>
+                </div>
+                <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
+                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">💢 Fraqueza ×1,25</span>
+                    <span class="block font-oswald text-lg font-bold text-purple-300">${escapeHtml(b.weak || '—')}</span>
+                </div>
+                <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
+                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Recompensa</span>
+                    <span class="block font-oswald text-lg font-bold text-amber-300">+${fmtN(xpReward)} XP</span>
+                </div>
+            </div>
+            <p class="text-[11px] leading-relaxed text-purple-200/80"><strong class="uppercase tracking-wider text-gray-400">Brecha tática:</strong> ${escapeHtml(b.weakReason || 'Ataque temático.')}</p>
+            ${b.desc ? `<p class="text-[11px] leading-relaxed text-gray-500">${escapeHtml(b.desc)}</p>` : ''}
+            <div class="flex flex-wrap items-center gap-2">
+                ${src ? `<a id="boss-lightbox-download" href="${escapeHtml(src)}" download="${escapeHtml(bossPortraitDownloadName(b, src))}" class="flex-1 text-center px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-200 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">⬇️ Baixar retrato</a>` : ''}
+                <button type="button" onclick="navBossLightbox(-1)" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">‹ Anterior</button>
+                <button type="button" onclick="navBossLightbox(1)" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">Próximo ›</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+}
+
+// Setas navegam entre os chefões — só quando o lightbox está aberto.
+document.addEventListener('keydown', e => {
+    if (!document.getElementById(BOSS_LIGHTBOX_ID)) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); navBossLightbox(1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); navBossLightbox(-1); }
+});
+
+// ============================ ESC FECHA TUDO ============================
+// Um handler só para todas as camadas: fecha a de cima (na ordem de
+// empilhamento da UI) e deixa as de baixo intactas.
+const OVERLAY_CLOSE_ORDER = [
+    BOSS_LIGHTBOX_ID,          // z-[60], por cima de tudo enquanto aberto
+    'confirm-modal-overlay',   // confirmação bloqueia qualquer coisa atrás
+    'picker-overlay',           // seletor rápido de exercício
+    'edit-log-overlay',         // edição de registro
+    'boss-card-overlay',        // Card do Chefão
+    'ranks-overlay',            // modal de patentes
+    'theme-gallery-overlay'     // galeria de temas (z-[55])
+];
+function closeTopOverlay() {
+    for (const id of OVERLAY_CLOSE_ORDER) {
+        const el = document.getElementById(id);
+        if (el) { el.remove(); return id; }
+    }
+    return null;
+}
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' && e.key !== 'Esc') return;
+    if (closeTopOverlay()) e.preventDefault();
+});
 
 function uploadBossPortrait(event, bossId) {
     const file = event.target.files[0];
@@ -2252,6 +2395,100 @@ function uploadBossPortrait(event, bossId) {
         img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+}
+
+// ============================ ESTÚDIO DE RESERVAS ============================
+// Troca a arte de qualquer chefão pelas reservas de images/bosses/reserva/
+// (35 artes prontas, agrupadas por tema no index.json) reaproveitando o
+// mecanismo de upload por chefão (bossPortraits no save do tema).
+let reservaManifest = null;
+let reservaBossId = null;
+
+function loadReservaManifest() {
+    if (reservaManifest) return Promise.resolve(reservaManifest);
+    return fetch('images/bosses/reserva/index.json')
+        .then(r => (r && r.ok ? r.json() : null))
+        .then(j => { reservaManifest = (j && j.temas) ? j : null; return reservaManifest; })
+        .catch(() => null);
+}
+
+function reservaGroups(themeId) {
+    const temas = (reservaManifest && reservaManifest.temas) || {};
+    const doTema = temas[themeId] || [];
+    // tema sem reserva própria (ex.: clássico) ainda pode emprestar as outras
+    if (doTema.length) return [{ tema: themeId, itens: doTema }];
+    return Object.keys(temas).sort().map(t => ({ tema: t, itens: temas[t] })).filter(g => g.itens.length);
+}
+
+function selectReservaBoss(bossId) {
+    reservaBossId = bossId;
+    renderReservaStudio();
+}
+
+function applyReservaPortrait(src) {
+    if (!reservaBossId || !src) return;
+    bossPortraits[reservaBossId] = src;
+    saveGameState();
+    renderBossBattleUI();
+    renderReservaStudio();
+    alertModal('🎨 Retrato trocado! Vale para este chefe neste aparelho.');
+}
+
+function resetBossPortraitToDefault() {
+    if (!reservaBossId) return;
+    delete bossPortraits[reservaBossId];
+    saveGameState();
+    renderBossBattleUI();
+    renderReservaStudio();
+    alertModal('↩ Retrato padrão restaurado.');
+}
+
+function renderReservaStudio() {
+    const sel = document.getElementById('reserva-boss-select');
+    const grid = document.getElementById('reserva-grid');
+    const status = document.getElementById('reserva-status');
+    if (!sel || !grid) return;
+    if (!Array.isArray(BOSSES) || !BOSSES.length) return;
+    // o manifesto chega por fetch: desenha o seletor já e completa no redraw
+    if (!reservaManifest && !renderReservaStudio._carregando) {
+        renderReservaStudio._carregando = true;
+        loadReservaManifest().then(m => { renderReservaStudio._carregando = false; if (m) renderReservaStudio(); });
+    }
+    if (!reservaBossId || !BOSSES.some(b => b.id === reservaBossId)) {
+        const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
+        reservaBossId = (prog.current && prog.current.id) || BOSSES[0].id;
+    }
+    sel.innerHTML = BOSSES.map(b =>
+        `<option value="${escapeHtml(b.id)}"${b.id === reservaBossId ? ' selected' : ''}>${escapeHtml(b.name)}${bossPortraits[b.id] ? ' · 🎨' : ''}</option>`).join('');
+
+    const atual = bossPortraits[reservaBossId] || null;
+    const padrao = DEFAULT_BOSS_PORTRAITS[(THEME ? THEME.id : 'classico') + ':' + reservaBossId] || null;
+    const tileCls = on => `text-left rounded-xl border p-1.5 transition-colors ${on ? 'border-berzerker-500 bg-berzerker-600/15 ring-1 ring-berzerker-500/40' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'}`;
+
+    let html = padrao ? `
+        <button type="button" onclick="resetBossPortraitToDefault()" title="Retrato padrão do tema" class="${tileCls(!atual)}">
+            <img src="${padrao}" alt="retrato padrão" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
+            <span class="block text-[9px] font-bold uppercase tracking-wide mt-1 ${!atual ? 'text-berzerker-300' : 'text-gray-500'}">Padrão</span>
+        </button>` : '';
+
+    const grupos = reservaGroups(THEME ? THEME.id : 'classico');
+    if (!grupos.length) {
+        html += `<div class="col-span-full text-center text-[11px] text-gray-500 border border-dashed border-berzerker-border rounded-xl py-6">Sem reservas por enquanto — o index.json ainda não carregou.</div>`;
+    }
+    grupos.forEach(g => {
+        if (grupos.length > 1) html += `<div class="col-span-full text-[9px] font-bold uppercase tracking-wider text-gray-500 pt-1">${escapeHtml((THEMES[g.tema] || {}).name || g.tema)}</div>`;
+        g.itens.forEach(item => {
+            html += `
+            <button type="button" onclick="applyReservaPortrait('${escapeHtml(item.file)}')" title="${escapeHtml(item.label)}" class="${tileCls(atual === item.file)}">
+                <img src="${escapeHtml(item.file)}" alt="${escapeHtml(item.label)}" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
+                <span class="block truncate text-[9px] font-bold uppercase tracking-wide mt-1 ${atual === item.file ? 'text-berzerker-300' : 'text-gray-400'}">${escapeHtml(item.label)}</span>
+            </button>`;
+        });
+    });
+    grid.innerHTML = html;
+    if (status) status.textContent = atual
+        ? `🎨 arte personalizada neste chefe`
+        : 'usando o retrato padrão do tema';
 }
 
 // ============================ MISSÕES SEMANAIS ============================
@@ -2493,6 +2730,90 @@ function drawThemedFrame(ctx, palette) {
             ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
             ctx.fillStyle = i % 3 ? '#9ad8ff' : '#ffffff'; ctx.fill();
         }
+    } else if (frame === 'anel') {
+        // Senhor dos Anéis: ouro envelhecido com o Um Anel gravado no topo,
+        // a inscrição da Língua Negra correndo pelas laterais e a brasa de
+        // Orodruin fechando a base. (Antes dividia a moldura 'ouro' do Zodíaco.)
+        const g = ctx.createLinearGradient(0, 0, 1080, 1920);
+        g.addColorStop(0, '#4a3a12'); g.addColorStop(0.5, '#c9a227'); g.addColorStop(1, '#4a3a12');
+        ctx.strokeStyle = g; ctx.lineWidth = 16; ctx.strokeRect(24, 24, 1032, 1872);
+        ctx.strokeStyle = '#2b2110'; ctx.lineWidth = 2; ctx.strokeRect(44, 44, 992, 1832);
+        // o Um Anel: aro duplo com a inscrição gravada entre os dois círculos
+        ctx.save();
+        ctx.translate(540, 92);
+        ctx.strokeStyle = '#e2c46e'; ctx.lineWidth = 7;
+        ctx.beginPath(); ctx.arc(0, 0, 46, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = '#8a6a20'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, 33, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = '#f0d98a'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+        for (let i = 0; i < 20; i++) {
+            const a = (i / 20) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * 35, Math.sin(a) * 35);
+            ctx.lineTo(Math.cos(a) * 44, Math.sin(a) * 44);
+            ctx.stroke();
+        }
+        ctx.restore();
+        // inscrição gravada nas laterais (glifos ondulados, traço fino)
+        ctx.save();
+        ctx.strokeStyle = '#c9a227'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+        for (let y = 200; y < 1800; y += 74) {
+            [[34, y], [1046, y]].forEach(([x, ry]) => {
+                ctx.beginPath();
+                ctx.moveTo(x - 6, ry);
+                ctx.quadraticCurveTo(x, ry - 9, x + 6, ry);
+                ctx.quadraticCurveTo(x, ry + 9, x - 6, ry);
+                ctx.stroke();
+            });
+        }
+        ctx.restore();
+        // anéis menores nos cantos e brasa do Monte da Perdição na base
+        [[64, 64], [1016, 64], [64, 1856], [1016, 1856]].forEach(([x, y]) => {
+            ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2);
+            ctx.strokeStyle = '#e2c46e'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#8a2c2c'; ctx.fill();
+        });
+        ctx.save();
+        ctx.shadowColor = '#ff4500'; ctx.shadowBlur = 26;
+        ctx.strokeStyle = '#c2410c'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(60, 1886); ctx.lineTo(1020, 1886); ctx.stroke();
+        ctx.restore();
+    } else if (frame === 'ferro') {
+        // Berzerker (clássico): ferro forjado rebitado, com corrente nos cantos
+        // e sangria carmesim por dentro da ferragem. Antes caía no else genérico.
+        const g = ctx.createLinearGradient(0, 0, 1080, 1920);
+        g.addColorStop(0, '#161618'); g.addColorStop(0.35, '#4c4c52'); g.addColorStop(0.65, '#3a3a3f'); g.addColorStop(1, '#161618');
+        ctx.strokeStyle = g; ctx.lineWidth = 24; ctx.strokeRect(19, 19, 1042, 1882);
+        ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 5; ctx.strokeRect(38, 38, 1004, 1844);
+        ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.strokeRect(48, 48, 984, 1824);
+        // rebites ao longo dos quatro lados (esfera + ponto de luz)
+        ctx.save();
+        for (let i = 0; i < 26; i++) {
+            const t = i / 25;
+            [[31 + t * 1018, 31], [31 + t * 1018, 1889], [31, 31 + t * 1858], [1049, 31 + t * 1858]].forEach(([x, y]) => {
+                ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2);
+                ctx.fillStyle = '#5f5f66'; ctx.fill();
+                ctx.beginPath(); ctx.arc(x - 2, y - 2, 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = '#a3a3ab'; ctx.fill();
+            });
+        }
+        ctx.restore();
+        // elos de corrente saindo dos quatro cantos
+        ctx.save();
+        ctx.strokeStyle = '#8a1f1f'; ctx.lineWidth = 4;
+        [[68, 68, 1, 1], [1012, 68, -1, 1], [68, 1852, 1, -1], [1012, 1852, -1, -1]].forEach(([x, y, dx, dy]) => {
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.ellipse(x + dx * i * 20, y + dy * i * 20, 11, 6, dx === dy ? Math.PI / 4 : -Math.PI / 4, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2);
+            ctx.fillStyle = '#2a2a2e'; ctx.fill();
+            ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.strokeStyle = '#8a1f1f'; ctx.lineWidth = 4;
+        });
+        ctx.restore();
     } else {
         ctx.strokeStyle = palette.borderPrimary;
         ctx.lineWidth = 10;
@@ -2500,9 +2821,23 @@ function drawThemedFrame(ctx, palette) {
     }
 }
 
+// O Story Card e o Card do Chefão escrevem em Oswald/Teko/Inter. Se o webfont
+// ainda está baixando, o primeiro traço sai com a fonte de fallback do sistema.
+// document.fonts.ready resolve UMA vez quando o loading termina, então agendar
+// um único redraw aqui não entra em loop com os onload de imagem já existentes.
+let _fontsRedrawScheduled = false;
+function withWebFonts(redraw) {
+    const fonts = document.fonts;
+    if (!fonts || _fontsRedrawScheduled || fonts.status === 'loaded') return;
+    _fontsRedrawScheduled = true;
+    const run = () => { _fontsRedrawScheduled = false; redraw(); };
+    fonts.ready.then(run, run);
+}
+
 function generateStoryCard() {
     const canvas = document.getElementById('story-canvas');
     if (!canvas) return;
+    withWebFonts(generateStoryCard);
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const targetDate = document.getElementById('filter-date').value || getTodayLocalISO();
@@ -2706,6 +3041,7 @@ function openBossDefeatCard() {
 function generateBossDefeatCard() {
     const canvas = document.getElementById('boss-card-canvas');
     if (!canvas) return;
+    withWebFonts(generateBossDefeatCard);
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
@@ -2890,6 +3226,46 @@ function weeklyStreakInfo() {
     return { streak, goal, currentWeekCount };
 }
 
+// ============================ ARTE DOS BADGES ============================
+// 16 medalhões de ferro na mesma série dos emblemas de patente (fundo quase
+// preto, brilho carmesim). Se o arquivo não existir na instalação/cache, o
+// onerror devolve o emoji original — o badge nunca fica sem ícone.
+const BADGE_ART = Object.freeze(Object.fromEntries([
+    'primeiro-sangue', 'ofensiva-semanal', 'mover-titan', 'cacador-de-prs',
+    'maratonista', 'tanque-de-guerra', 'berzerker-master', 'cacador-de-chefoes',
+    'primeiro-deload', 'semana-completa', 'colecionador', 'mestre-dos-chefoes',
+    'mes-de-ferro', 'corredor', 'sequencia-de-aco', 'nivel-10'
+].map(slug => [slug, `images/badges/${slug}.webp`])));
+
+function badgeArtSrc(slug) {
+    return BADGE_ART[slug] || null;
+}
+
+function badgeArtImg(slug, icon, unlocked) {
+    const src = badgeArtSrc(slug);
+    if (!src) return `<span class="text-3xl" role="img" aria-label="${escapeHtml(icon)}">${icon}</span>`;
+    return `<img src="${src}" alt="emblema da conquista" data-fallback="${escapeHtml(icon)}" loading="lazy" decoding="async" onerror="badgeArtFallback(this)" class="h-12 w-12 rounded-full object-cover border ${unlocked ? 'border-emerald-500/50' : 'border-berzerker-border'}" style="image-rendering:auto">`;
+}
+
+function badgeArtFallback(img) {
+    const span = document.createElement('span');
+    span.className = 'text-3xl';
+    span.setAttribute('role', 'img');
+    span.textContent = img.getAttribute('data-fallback') || '🏅';
+    img.replaceWith(span);
+}
+
+// Maior número de dias treinados dentro de uma mesma semana ISO (badge Semana Completa)
+function bestWeekWorkouts() {
+    const perWeek = {};
+    logs.forEach(l => {
+        if (!l || !l.date) return;
+        const w = isoWeekKey(l.date);
+        (perWeek[w] = perWeek[w] || new Set()).add(l.date);
+    });
+    return Object.values(perWeek).reduce((m, s) => Math.max(m, s.size), 0);
+}
+
 function renderBadgesAndStreak() {
     const ws = weeklyStreakInfo();
     const streakEl = document.getElementById('stat-streak-days');
@@ -2908,15 +3284,25 @@ function renderBadgesAndStreak() {
     const totalTonEl = document.getElementById('stat-total-tonnage');
     if (totalTonEl) totalTonEl.textContent = `${totalTon.toFixed(1)} TON`;
 
+    const defeatedCount = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).defeatedCount;
+    const rankTema = rankFromXP(computeThemeXPCtx(activeGameThemeId).xp, themeRankList(THEME));
     const badges = [
-        { title: 'Primeiro Sangue', desc: '1º Exercício Registrado', unlocked: logs.length > 0, icon: '⚔️' },
-        { title: 'Ofensiva Semanal', desc: '3 Semanas seguidas na meta', unlocked: ws.streak >= 3, icon: '🔥' },
-        { title: 'Mover Titan', desc: '10+ Toneladas Acumuladas', unlocked: totalTon >= 10, icon: '🐘' },
-        { title: 'Caçador de PRs', desc: '5+ Recordes Pessoais', unlocked: totalPRs >= 5, icon: '🏆' },
-        { title: 'Maratonista', desc: '10+ km registrados', unlocked: totalKm >= 10, icon: '🏃' },
-        { title: 'Tanque de Guerra', desc: 'Razão > 50x Peso Corporal', unlocked: logs.some(l => getAnimalRankForSession(l.date).relativeRatio >= 50), icon: '🛡️' },
-        { title: 'Berzerker Master', desc: '50+ Treinos Registrados', unlocked: uniqueDates.length >= 50, icon: '⚡' },
-        { title: 'Caçador de Chefões', desc: '3+ Chefões Derrotados', unlocked: computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).defeatedCount >= 3, icon: '👑' }
+        { slug: 'primeiro-sangue', title: 'Primeiro Sangue', desc: '1º Exercício Registrado', unlocked: logs.length > 0, icon: '⚔️' },
+        { slug: 'ofensiva-semanal', title: 'Ofensiva Semanal', desc: '3 Semanas seguidas na meta', unlocked: ws.streak >= 3, icon: '🔥' },
+        { slug: 'mover-titan', title: 'Mover Titan', desc: '10+ Toneladas Acumuladas', unlocked: totalTon >= 10, icon: '🐘' },
+        { slug: 'cacador-de-prs', title: 'Caçador de PRs', desc: '5+ Recordes Pessoais', unlocked: totalPRs >= 5, icon: '🏆' },
+        { slug: 'maratonista', title: 'Maratonista', desc: '10+ km registrados', unlocked: totalKm >= 10, icon: '🏃' },
+        { slug: 'tanque-de-guerra', title: 'Tanque de Guerra', desc: 'Razão > 50x Peso Corporal', unlocked: logs.some(l => getAnimalRankForSession(l.date).relativeRatio >= 50), icon: '🛡️' },
+        { slug: 'berzerker-master', title: 'Berzerker Master', desc: '50+ Treinos Registrados', unlocked: uniqueDates.length >= 50, icon: '⚡' },
+        { slug: 'cacador-de-chefoes', title: 'Caçador de Chefões', desc: '3+ Chefões Derrotados', unlocked: defeatedCount >= 3, icon: '👑' },
+        { slug: 'primeiro-deload', title: 'Primeiro Deload', desc: '1ª semana de deload marcada', unlocked: deloadWeeks.length >= 1, icon: '🌙' },
+        { slug: 'semana-completa', title: 'Semana Completa', desc: '4 treinos na mesma semana', unlocked: bestWeekWorkouts() >= 4, icon: '📅' },
+        { slug: 'colecionador', title: 'Colecionador', desc: '5 chefões derrotados no tema', unlocked: defeatedCount >= 5, icon: '🧰' },
+        { slug: 'mestre-dos-chefoes', title: 'Mestre dos Chefões', desc: `${BOSSES.length}/${BOSSES.length} chefões do tema`, unlocked: defeatedCount >= BOSSES.length, icon: '🐲' },
+        { slug: 'mes-de-ferro', title: 'Mês de Ferro', desc: '20 treinos registrados', unlocked: uniqueDates.length >= 20, icon: '🔩' },
+        { slug: 'corredor', title: 'Corredor', desc: '25 km acumulados', unlocked: totalKm >= 25, icon: '🛣️' },
+        { slug: 'sequencia-de-aco', title: 'Sequência de Aço', desc: '8 semanas seguidas na meta', unlocked: ws.streak >= 8, icon: '🔗' },
+        { slug: 'nivel-10', title: 'Nível 10 no Tema', desc: 'Patente máxima no jogo ativo', unlocked: rankTema.level >= 10, icon: '🌟' }
     ];
 
     const unlockedCount = badges.filter(b => b.unlocked).length;
@@ -2926,9 +3312,9 @@ function renderBadgesAndStreak() {
     const grid = document.getElementById('badges-grid');
     if (grid) grid.innerHTML = badges.map(b => `
         <div class="p-3 rounded-xl border text-center transition-all ${b.unlocked ? 'bg-berzerker-dark border-emerald-500/50 text-white' : 'bg-berzerker-dark/40 border-berzerker-border text-gray-600 opacity-60'}">
-            <div class="text-3xl mb-1">${b.icon}</div>
-            <div class="font-bold text-xs uppercase ${b.unlocked ? 'text-emerald-400' : 'text-gray-500'}">${b.title}</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">${b.desc}</div>
+            <div class="mb-1 flex h-12 items-center justify-center">${badgeArtImg(b.slug, b.icon, b.unlocked)}</div>
+            <div class="font-bold text-xs uppercase ${b.unlocked ? 'text-emerald-400' : 'text-gray-500'}">${escapeHtml(b.title)}</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">${escapeHtml(b.desc)}</div>
         </div>`).join('');
 }
 

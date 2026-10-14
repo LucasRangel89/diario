@@ -71,14 +71,17 @@ const EXERCISE_CATALOG_FULL = [
     { nome: 'Cadeira Extensora',              grupo: 'Pernas',   equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [10, 15], extra: null, descanso: 60 },
     { nome: 'Afundo Búlgaro',                 grupo: 'Pernas',   equipamento: 'Halteres (par)',     como: 'peso de 1 haltere',   tipo: 'par_dois_lados', fator: 2, lados: 2, unidade: 'reps', faixa: [8, 12], extra: null, descanso: 90, obs: 'Reps por perna' },
     { nome: 'Afundo c/ Halteres',             grupo: 'Pernas',   equipamento: 'Halteres (par)',     como: 'peso de 1 haltere',   tipo: 'par_dois_lados', fator: 2, lados: 2, unidade: 'reps', faixa: [8, 12], extra: null, descanso: 90, obs: 'Reps por perna' },
+    { nome: 'Agachamento Sumô',               grupo: 'Pernas',   equipamento: 'Barra',              como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [8, 12],  extra: 20,  descanso: 120, obs: 'Base aberta e pés para fora — puxa adutores e glúteo junto do quadríceps' },
 
     // ============================== POSTERIOR (isquiotibiais + glúteo) ===
     { nome: 'Mesa Flexora',                   grupo: 'Posterior', equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [10, 15], extra: null, descanso: 60 },
     { nome: 'Stiff com Barra',                grupo: 'Posterior', equipamento: 'Barra',              como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [6, 10],  extra: 20,  descanso: 120 },
     { nome: 'Elevação Pélvica (Hip Thrust)',  grupo: 'Posterior', equipamento: 'Máquina c/ anilhas', como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [10, 15], extra: 15,  descanso: 90, obs: 'Extra = alavanca da máquina' },
     { nome: 'Abdutor',                        grupo: 'Posterior', equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [12, 15], extra: null, descanso: 60, obs: 'Glúteo médio — agrupado na cadeia posterior' },
+    { nome: 'Cadeira Adutora',                grupo: 'Posterior', equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [12, 15], extra: null, descanso: 60, obs: 'Adutores — agrupada na cadeia posterior, junto do Abdutor' },
     { nome: 'Panturrilha em Pé',              grupo: 'Posterior', equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [10, 15], extra: null, descanso: 60 },
     { nome: 'Panturrilha Sentado',            grupo: 'Posterior', equipamento: 'Máquina',            como: 'pino',                tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [12, 20], extra: null, descanso: 60 },
+    { nome: 'Swing de Kettlebell',            grupo: 'Posterior', equipamento: 'Kettlebell',         como: 'peso do kettlebell',  tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [12, 20], extra: null, descanso: 60, obs: 'Dobradiça de quadril explosiva — cadeia posterior inteira' },
 
     // ============================== OMBROS =============================
     { nome: 'Desenvolvimento Militar',        grupo: 'Ombros',   equipamento: 'Barra',              como: 'soma das anilhas',    tipo: 'carga_total',  fator: 1, lados: 1, unidade: 'reps', faixa: [6, 10],  extra: 20,  descanso: 120 },
@@ -530,6 +533,8 @@ const EQUIP_KIND = {
     'Máquina': 'maquina', 'Máquina articulada': 'maquina', 'Máquina c/ anilhas': 'maquina',
     'Esteira': 'maquina', 'Elíptico': 'maquina', 'Remo': 'maquina', 'Bike': 'maquina',
     'Peso corporal': 'peso-corporal', 'Roda': 'peso-corporal',
+    // Kettlebell é peso livre como o halter: mesma família de tags (halter/casa/academia).
+    'Kettlebell': 'halter',
     'Livre': 'ar-livre'
 };
 
@@ -557,11 +562,11 @@ const KIND_FROM_NAME = [
 const P_EMPURRAR   = /supino|desenvolviment|flexao de braco|paralela|triceps|elevacao lateral|elevacao frontal|crucifixo|peck deck|crossover|voador inverso|face pull/;
 const P_PUXAR      = /puxada|remada|barra fixa|pull ?up|pulldown|face pull|rosca|biceps|encolhimento|levantamento terra|voador inverso/;
 const P_AGACHAR    = /agachamento|leg press|afundo|passada|bulgaro|cadeira extensora|hack|abdutor|adutor/;
-const P_DOBRADICA  = /terra|stiff|elevacao pelvica|hip thrust|mesa flexora|good morning/;
+const P_DOBRADICA  = /terra|stiff|elevacao pelvica|hip thrust|mesa flexora|good morning|swing|kettlebell/;
 const P_CORE       = /prancha|abdominal|elevacao de pernas|russian twist|ab wheel|rodinha|rotacao na polia/;
-const P_COMPOSTO   = /supino|desenvolviment|agachamento|leg press|hack|terra|stiff|remada|puxada|pulldown|barra fixa|pull ?up|paralela|elevacao pelvica|hip thrust|afundo|bulgaro|passada|ab wheel|levantamento|remo \(/;
+const P_COMPOSTO   = /supino|desenvolviment|agachamento|leg press|hack|terra|stiff|remada|puxada|pulldown|barra fixa|pull ?up|paralela|elevacao pelvica|hip thrust|afundo|bulgaro|passada|ab wheel|levantamento|remo \(|swing/;
 const P_UNI        = /unilateral|alternada|concentrada|martelo|bulgaro|afundo|passada|prancha lateral/;
-const P_POSTERIOR  = /terra|stiff|flexora|elevacao pelvica|hip thrust|gluteo|panturrilha|face pull|encolhimento|good morning|voador inverso/;
+const P_POSTERIOR  = /terra|stiff|flexora|elevacao pelvica|hip thrust|gluteo|panturrilha|face pull|encolhimento|good morning|voador inverso|sumo|adutor|swing|kettlebell/;
 const P_ANTERIOR   = /supino|crucifixo|peck deck|crossover|flexao de braco|agachamento|leg press|cadeira extensora|hack|afundo|bulgaro|passada|abdominal|prancha|elevacao de pernas|desenvolviment|elevacao frontal|abdutor/;
 const P_AVANCADO   = /terra|agachamento livre|bulgaro|paralela|barra fixa|pull ?up|ab wheel|desenvolvimento militar|remada curvada|stiff|elevacao pelvica|hip thrust|hack|remo \(/;
 const P_BASICO     = /prancha|abdominal|elevacao de pernas|russian twist|bicicleta|flexao de braco|panturrilha|encolhimento|face pull|puxada frontal|triceps polia|triceps corda|rosca na polia|crucifixo|peck deck|crossover|cadeira extensora|mesa flexora|abdutor|maquina/;
@@ -592,7 +597,10 @@ const TAG_OVERRIDES = {
     'Abdutor':                          ['isolado', 'iniciante'],
     'Panturrilha em Pé':                ['isolado', 'posterior'],
     'Cadeira Extensora':                ['isolado', 'anterior'],
-    'Mesa Flexora':                     ['isolado', 'posterior', 'dobradica']
+    'Mesa Flexora':                     ['isolado', 'posterior', 'dobradica'],
+    'Agachamento Sumô':                 ['agachar', 'composto', 'posterior', 'intermediario'],
+    'Cadeira Adutora':                  ['isolado', 'iniciante', 'posterior'],
+    'Swing de Kettlebell':              ['composto', 'dobradica', 'posterior', 'condicionamento', 'casa']
 };
 
 // Sinônimos comuns — entram no índice de busca (pt/en e apelidos). Chaves = nomes do catálogo.
@@ -649,7 +657,10 @@ const SINONIMOS = {
     'Corrida (Esteira)': 'running corrida esteira treadmill',
     'Corrida (Rua)': 'running corrida rua',
     'Bike / Ergométrico': 'bike cycling ergometrica pedal',
-    'Remo (Ergômetro)': 'rowing remo ergometro'
+    'Remo (Ergômetro)': 'rowing remo ergometro',
+    'Agachamento Sumô': 'sumo squat agachamento sumo base aberta adutor',
+    'Cadeira Adutora': 'adductor machine cadeira adutora aducao adutores',
+    'Swing de Kettlebell': 'kettlebell swing kb swing balanco dobradica'
 };
 
 // Texto sem acento/caixa — usado em TODA a busca (tolera "supino inclinado halter")

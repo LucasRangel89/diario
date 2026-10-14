@@ -1,0 +1,197 @@
+{
+  "descricao": "Reservas de retrato de chefão por tema, usadas pelo Estúdio de Retratos do painel do Boss.",
+  "total": 35,
+  "temas": {
+    "acao": [
+      {
+        "file": "images/bosses/reserva/acao-assassino.webp",
+        "slug": "assassino",
+        "label": "Assassino"
+      },
+      {
+        "file": "images/bosses/reserva/acao-cultista.webp",
+        "slug": "cultista",
+        "label": "Cultista"
+      },
+      {
+        "file": "images/bosses/reserva/acao-experimento.webp",
+        "slug": "experimento",
+        "label": "Experimento"
+      },
+      {
+        "file": "images/bosses/reserva/acao-mercenario.webp",
+        "slug": "mercenario",
+        "label": "Mercenario"
+      },
+      {
+        "file": "images/bosses/reserva/acao-pistoleiro.webp",
+        "slug": "pistoleiro",
+        "label": "Pistoleiro"
+      }
+    ],
+    "aneis": [
+      {
+        "file": "images/bosses/reserva/aneis-barrow-wight.webp",
+        "slug": "barrow-wight",
+        "label": "Barrow Wight"
+      },
+      {
+        "file": "images/bosses/reserva/aneis-olifante.webp",
+        "slug": "olifante",
+        "label": "Olifante"
+      },
+      {
+        "file": "images/bosses/reserva/aneis-rastreador-orc.webp",
+        "slug": "rastreador-orc",
+        "label": "Rastreador Orc"
+      },
+      {
+        "file": "images/bosses/reserva/aneis-troll-das-cavernas.webp",
+        "slug": "troll-das-cavernas",
+        "label": "Troll Das Cavernas"
+      }
+    ],
+    "galactica": [
+      {
+        "file": "images/bosses/reserva/galactica-caminhante.webp",
+        "slug": "caminhante",
+        "label": "Caminhante"
+      },
+      {
+        "file": "images/bosses/reserva/galactica-ciborgue.webp",
+        "slug": "ciborgue",
+        "label": "Ciborgue"
+      },
+      {
+        "file": "images/bosses/reserva/galactica-comandante-alienigena.webp",
+        "slug": "comandante-alienigena",
+        "label": "Comandante Alienigena"
+      },
+      {
+        "file": "images/bosses/reserva/galactica-fuzileiros.webp",
+        "slug": "fuzileiros",
+        "label": "Fuzileiros"
+      }
+    ],
+    "hercules": [
+      {
+        "file": "images/bosses/reserva/hercules-cavalo-sombrio.webp",
+        "slug": "cavalo-sombrio",
+        "label": "Cavalo Sombrio"
+      },
+      {
+        "file": "images/bosses/reserva/hercules-ciclope-ferreiro.webp",
+        "slug": "ciclope-ferreiro",
+        "label": "Ciclope Ferreiro"
+      },
+      {
+        "file": "images/bosses/reserva/hercules-gigante-de-bronze.webp",
+        "slug": "gigante-de-bronze",
+        "label": "Gigante De Bronze"
+      },
+      {
+        "file": "images/bosses/reserva/hercules-harpia.webp",
+        "slug": "harpia",
+        "label": "Harpia"
+      },
+      {
+        "file": "images/bosses/reserva/hercules-satiro-gigante.webp",
+        "slug": "satiro-gigante",
+        "label": "Satiro Gigante"
+      },
+      {
+        "file": "images/bosses/reserva/hercules-vidente-cego.webp",
+        "slug": "vidente-cego",
+        "label": "Vidente Cego"
+      }
+    ],
+    "nordica": [
+      {
+        "file": "images/bosses/reserva/nordica-fenrir-alt.webp",
+        "slug": "fenrir-alt",
+        "label": "Fenrir Alt"
+      }
+    ],
+    "roma": [
+      {
+        "file": "images/bosses/reserva/roma-escravo.webp",
+        "slug": "escravo",
+        "label": "Escravo"
+      },
+      {
+        "file": "images/bosses/reserva/roma-lanista.webp",
+        "slug": "lanista",
+        "label": "Lanista"
+      },
+      {
+        "file": "images/bosses/reserva/roma-leao-egipcio.webp",
+        "slug": "leao-egipcio",
+        "label": "Leao Egipcio"
+      },
+      {
+        "file": "images/bosses/reserva/roma-retiario.webp",
+        "slug": "retiario",
+        "label": "Retiario"
+      },
+      {
+        "file": "images/bosses/reserva/roma-samnita.webp",
+        "slug": "samnita",
+        "label": "Samnita"
+      }
+    ],
+    "rpg": [
+      {
+        "file": "images/bosses/reserva/rpg-aranha.webp",
+        "slug": "aranha",
+        "label": "Aranha"
+      },
+      {
+        "file": "images/bosses/reserva/rpg-cultista.webp",
+        "slug": "cultista",
+        "label": "Cultista"
+      },
+      {
+        "file": "images/bosses/reserva/rpg-esqueleto.webp",
+        "slug": "esqueleto",
+        "label": "Esqueleto"
+      },
+      {
+        "file": "images/bosses/reserva/rpg-slime.webp",
+        "slug": "slime",
+        "label": "Slime"
+      }
+    ],
+    "zodiaco": [
+      {
+        "file": "images/bosses/reserva/zodiaco-aiolia2.webp",
+        "slug": "aiolia2",
+        "label": "Aiolia2"
+      },
+      {
+        "file": "images/bosses/reserva/zodiaco-camus2.webp",
+        "slug": "camus2",
+        "label": "Camus2"
+      },
+      {
+        "file": "images/bosses/reserva/zodiaco-dohko2.webp",
+        "slug": "dohko2",
+        "label": "Dohko2"
+      },
+      {
+        "file": "images/bosses/reserva/zodiaco-mestre2.webp",
+        "slug": "mestre2",
+        "label": "Mestre2"
+      },
+      {
+        "file": "images/bosses/reserva/zodiaco-saga2.webp",
+        "slug": "saga2",
+        "label": "Saga2"
+      },
+      {
+        "file": "images/bosses/reserva/zodiaco-shaka2.webp",
+        "slug": "shaka2",
+        "label": "Shaka2"
+      }
+    ]
+  }
+}

@@ -245,7 +245,7 @@ const aneis = api.THEMES.aneis;
 check('Senhor dos Anéis: do Hobbit do Condado à LENDA DA TERRA MÉDIA', aneis.ranks.map(r => r[0]).join('|') === 'Hobbit do Condado|Andarilho do Norte|Companheiro da Sociedade|Guardião de Gondor|Cavaleiro de Rohan|Caçador de Orcs|Herói do Abismo de Helm|Portador do Anel|Rei de Gondor|LENDA DA TERRA MÉDIA', aneis.ranks.map(r => r[0]));
 check('Senhor dos Anéis: jornada abre nos Goblins de Moria e fecha em Sauron', aneis.bosses[0].name === 'Goblins de Moria' && aneis.bosses[11].name === 'Sauron, o Senhor do Anel' && aneis.bosses.map(b => b.name).join('|') === 'Goblins de Moria|Espectros do Anel|Balrog de Morgoth|Lurtz, o Uruk-hai|Wargs das Terras Bravias|Uruk-hai do Abismo de Helm|Saruman, o Branco|Espectros de Dunharrow|Laracna (Shelob)|Rei-Bruxo de Angmar|Gollum, o Portador Caído|Sauron, o Senhor do Anel', aneis.bosses.map(b => b.name));
 check('Senhor dos Anéis: fraquezas da jornada (pernas → costas → peito → ... → antebraço)', aneis.bosses.map(b => b.weak).join('|') === 'Pernas|Costas|Peito|Antebraço|Tríceps|Ombros|Bíceps|Core|Abdômen|Pernas|Posterior|Antebraço', aneis.bosses.map(b => b.weak));
-check('Senhor dos Anéis: vocabulário do tema (arena, jornadas e provas)', aneis.arena === 'Jornada até o Monte da Perdição' && aneis.bossLabel === 'DESAFIO ATIVO' && aneis.stageWord === 'JORNADA' && aneis.missionWord === 'Prova da Sociedade' && aneis.missionWordPlural === 'Provas da Sociedade' && aneis.frame === 'ouro' && /Condado ao Monte da Perdição/.test(aneis.desc));
+check('Senhor dos Anéis: vocabulário do tema (arena, jornadas e provas)', aneis.arena === 'Jornada até o Monte da Perdição' && aneis.bossLabel === 'DESAFIO ATIVO' && aneis.stageWord === 'JORNADA' && aneis.missionWord === 'Prova da Sociedade' && aneis.missionWordPlural === 'Provas da Sociedade' && aneis.frame === 'anel' && /Condado ao Monte da Perdição/.test(aneis.desc));
 check('missões do Senhor dos Anéis usam "Prova da Sociedade"', api.missionsState([], aneis, '2026-10-14').missions[0].title.startsWith('Prova da Sociedade ·'));
 check('clássico mantém quatro IDs/retratos originais', api.THEMES.classico.bosses.slice(0, 4).map(b => `${b.id}:${b.name}`).join('|') === 'boss1:Golem de Anilhas|boss2:Hydra de Titânio|boss3:Mecagorila Berzerker|boss4:Behemoth Devastador', api.THEMES.classico.bosses.slice(0, 4));
 check('clássico acrescenta oito monstros de fantasia pesada com emojis', api.THEMES.classico.bosses.slice(4).length === 8 && api.THEMES.classico.bosses.slice(4).every(b => !!b.icon && /ferro|aço|forja|ogro|quimera|dragão|minotauro|titã|colosso/i.test(b.name)), api.THEMES.classico.bosses.slice(4).map(b => b.name));
@@ -503,6 +503,71 @@ console.log('\n== 22. Arte própria: emblemas de patente, selos, cards e retrato
     check('cada tema cobre os 12 chefões com retrato próprio',
         THEME_IDS.every(t => entries.filter(([, th]) => th === t).length === 12),
         THEME_IDS.map(t => `${t}:${entries.filter(([, th]) => th === t).length}`));
+}
+
+console.log('\n== 23. Badges: 16 medalhões de arte própria ==');
+{
+    const BADGE_SLUGS = ['primeiro-sangue','ofensiva-semanal','mover-titan','cacador-de-prs',
+        'maratonista','tanque-de-guerra','berzerker-master','cacador-de-chefoes',
+        'primeiro-deload','semana-completa','colecionador','mestre-dos-chefoes',
+        'mes-de-ferro','corredor','sequencia-de-aco','nivel-10'];
+    const missing = BADGE_SLUGS.filter(s => !fs.existsSync(`images/badges/${s}.webp`));
+    const heavy = BADGE_SLUGS.filter(s => fs.existsSync(`images/badges/${s}.webp`) && fs.statSync(`images/badges/${s}.webp`).size > 60 * 1024);
+    check('16 medalhões de badge existem no disco e ficam leves (<= 60 KB)', missing.length === 0 && heavy.length === 0, { missing, heavy });
+    const swSrc = fs.readFileSync('sw.js', 'utf8');
+    check('os 16 badges entram no CORE do service worker', BADGE_SLUGS.every(s => swSrc.includes(`'./images/badges/${s}.webp'`)));
+    const appSrc = fs.readFileSync('js/app.js', 'utf8');
+    const m = appSrc.match(/const BADGE_ART = [\s\S]*?\]\)/);
+    check('BADGE_ART do app lista exatamente os 16 slugs com arte', !!m && BADGE_SLUGS.every(s => m[0].includes(`'${s}'`)) && (m[0].match(/'[a-z0-9-]+'/g) || []).length === 16, m && (m[0].match(/'[a-z0-9-]+'/g) || []).length);
+    check('badge sem arquivo volta pro emoji (fallback no onerror)', /badgeArtFallback/.test(appSrc) && /data-fallback/.test(appSrc));
+}
+
+// Dimensões de um WebP lendo o cabeçalho (VP8/VP8L/VP8X) — sem depender de
+// ImageMagick, que não existe no runner do CI.
+function webpSize(file) {
+    const b = fs.readFileSync(file);
+    if (b.length < 16 || b.toString('ascii', 0, 4) !== 'RIFF' || b.toString('ascii', 8, 12) !== 'WEBP') return null;
+    let off = 12;
+    while (off + 8 <= b.length) {
+        const fourcc = b.toString('ascii', off, off + 4);
+        const size = b.readUInt32LE(off + 4);
+        const data = b.subarray(off + 8, off + 8 + size);
+        if (fourcc === 'VP8X') return { w: 1 + data.readUIntLE(4, 3), h: 1 + data.readUIntLE(7, 3) };
+        if (fourcc === 'VP8 ') return { w: data.readUInt16LE(6) & 0x3fff, h: data.readUInt16LE(8) & 0x3fff };
+        if (fourcc === 'VP8L') {
+            const bits = data.readUInt32LE(1);
+            return { w: 1 + (bits & 0x3fff), h: 1 + ((bits >>> 14) & 0x3fff) };
+        }
+        off += 8 + size + (size % 2);
+    }
+    return null;
+}
+
+console.log('\n== 24. Manifest com screenshots (prompt de instalação rico) ==');
+{
+    const manifest = JSON.parse(fs.readFileSync('manifest.webmanifest', 'utf8'));
+    const shots = manifest.screenshots || [];
+    const dims = { 'narrow': '1080x1920', 'wide': '1920x1080' };
+    check('manifest declara 2 screenshots (retrato + paisagem)', shots.length === 2 && shots.every(s => fs.existsSync(s.src)), shots.map(s => s.src));
+    check('screenshots têm o form_factor e o tamanho certos no disco',
+        shots.every(s => {
+            const want = dims[s.form_factor];
+            if (!want || s.sizes !== want) return false;
+            const dim = webpSize(s.src);
+            return !!dim && `${dim.w}x${dim.h}` === want;
+        }), shots.map(s => `${s.form_factor}:${s.sizes}`));
+    check('screenshots ficam leves para o prompt de instalação', shots.every(s => fs.statSync(s.src).size <= 400 * 1024), shots.map(s => fs.statSync(s.src).size));
+}
+
+console.log('\n== 25. Estúdio de reservas: manifesto e integração ==');
+{
+    const idx = JSON.parse(fs.readFileSync('images/bosses/reserva/index.json', 'utf8'));
+    const itens = Object.values(idx.temas).flat();
+    check('index.json lista as 35 reservas e todas existem no disco', idx.total === 35 && itens.length === 35 && itens.every(i => fs.existsSync(i.file)), itens.length);
+    check('cada reserva cai no tema certo pelo prefixo do arquivo', Object.entries(idx.temas).every(([t, lista]) => lista.every(i => i.file.includes(`/reserva/${t}-`) && i.label && i.slug)));
+    const appSrc25 = fs.readFileSync('js/app.js', 'utf8');
+    check('app lê o manifesto e reaproveita bossPortraits (upload por chefão)', /loadReservaManifest\(\)/.test(appSrc25) && /function applyReservaPortrait/.test(appSrc25) && /bossPortraits\[reservaBossId\] = src/.test(appSrc25) && /delete bossPortraits\[reservaBossId\]/.test(appSrc25));
+    check('index.json das reservas entra no CORE do service worker', fs.readFileSync('sw.js', 'utf8').includes("'./images/bosses/reserva/index.json'"));
 }
 
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));

@@ -9,7 +9,8 @@
     "serve": "python3 -m http.server 8080 --bind 0.0.0.0",
     "test": "node test_engine.js && node test_ui.js",
     "test:engine": "node test_engine.js",
-    "test:ui": "node test_ui.js"
+    "test:ui": "node test_ui.js",
+    "check:sw": "node scripts/check-sw-version.js"
   },
   "devDependencies": {
     "jsdom": "^30.1.2",

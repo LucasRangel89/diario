@@ -2,7 +2,7 @@
 // App 100% local (Tailwind e Chart.js empacotados em /vendor) — funciona offline na academia.
 // Estratégia: rede primeiro para os arquivos do app (sempre a versão nova quando há sinal),
 // cache como reserva offline. Incremente VERSION ao atualizar app/ativos para renovar o cache offline.
-const VERSION = 'v16';
+const VERSION = 'v24';
 const CACHE = 'berzerker-' + VERSION;
 const CORE = [
   './',
@@ -151,7 +151,24 @@ const CORE = [
   './images/temas/roma.webp',
   './images/temas/rpg.webp',
   './images/temas/galactica.webp',
-  './images/temas/aneis.webp'
+  './images/temas/aneis.webp',
+  './images/bosses/reserva/index.json',
+  './images/badges/primeiro-sangue.webp'
+  './images/badges/ofensiva-semanal.webp'
+  './images/badges/mover-titan.webp'
+  './images/badges/cacador-de-prs.webp'
+  './images/badges/maratonista.webp'
+  './images/badges/tanque-de-guerra.webp'
+  './images/badges/berzerker-master.webp'
+  './images/badges/cacador-de-chefoes.webp'
+  './images/badges/primeiro-deload.webp'
+  './images/badges/semana-completa.webp'
+  './images/badges/colecionador.webp'
+  './images/badges/mestre-dos-chefoes.webp'
+  './images/badges/mes-de-ferro.webp'
+  './images/badges/corredor.webp'
+  './images/badges/sequencia-de-aco.webp'
+  './images/badges/nivel-10.webp'
 ];
 const EXTERNAL = [
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Oswald:wght@500;600;700&family=Teko:wght@500;600;700&display=swap'

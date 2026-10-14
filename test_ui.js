@@ -51,6 +51,14 @@ window.alert = () => { };
 Object.defineProperty(window.navigator, 'vibrate', { value: () => true, configurable: true });
 Object.defineProperty(window.navigator, 'serviceWorker', { value: { register: () => Promise.resolve() }, configurable: true });
 Object.defineProperty(window.navigator, 'storage', { value: { persist: () => Promise.resolve() }, configurable: true });
+// fetch mínimo para o Estúdio de Reservas (lê o index.json do disco)
+window.fetch = url => {
+    const file = String(url).replace(/^\.?\//, '');
+    if (fs.existsSync(file)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(fs.readFileSync(file, 'utf8'))) });
+    }
+    return Promise.resolve({ ok: false, json: () => Promise.resolve(null) });
+};
 
 // ---------- carrega os módulos na ordem do index.html ----------
 // vm.runInContext mantém o escopo léxico global entre scripts (como no navegador),
@@ -141,6 +149,21 @@ ev("showRanksModal('classico');");
 check('modal de patentes mostra os dez emblemas próprios', ($('ranks-overlay')?.querySelectorAll('img')?.length || 0) >= 10 && $('ranks-overlay').innerHTML.includes('images/patentes/classico-10.webp'));
 ev("document.getElementById('ranks-overlay')?.remove();");
 check('botão do tema abre dez cartões com ícone, patente e progresso', !!$('theme-gallery-overlay') && $('theme-gallery-overlay').querySelectorAll('[data-theme-id]').length === 10 && $('theme-gallery-overlay').textContent.includes('Patente atual') && $('theme-gallery-overlay').textContent.includes('chefões'));
+const galleryIds = ev('THEME_IDS_LIST');
+const galleryEmblemSrc = id => ev(`rankEmblemSrc('${id}', rankFromXP(computeThemeXPCtx('${id}').xp, themeRankList(THEMES['${id}'])).level)`);
+check('galeria de temas mostra emblema de patente em vez de emoji residual',
+    galleryIds.every(id => {
+        const card = $('theme-gallery-overlay').querySelector(`[data-theme-id="${id}"]`);
+        const img = card && card.querySelector('img[src^="images/patentes/"]');
+        return !!img && img.getAttribute('src') === galleryEmblemSrc(id);
+    }),
+    galleryIds.map(id => (id + ':' + ($('theme-gallery-overlay').querySelector(`[data-theme-id="${id}"] img[src^="images/patentes/"]`) || {}).getAttribute?.('src'))));
+check('nenhum cartão da galeria repete o emoji da patente no texto',
+    galleryIds.every(id => {
+        const card = $('theme-gallery-overlay').querySelector(`[data-theme-id="${id}"]`);
+        const emoji = ev(`rankFromXP(computeThemeXPCtx('${id}').xp, themeRankList(THEMES['${id}'])).icon`);
+        return !!card && !card.textContent.includes(emoji);
+    }));
 check('galeria traz o Senhor dos Anéis (💍) com patentes próprias', !!$('theme-gallery-overlay').querySelector('[data-theme-id="aneis"]') && $('theme-gallery-overlay').textContent.includes('Senhor dos Anéis') && ev("THEME_ICONS.aneis === '💍' && THEMES.aneis.ranks[9][0] === 'LENDA DA TERRA MÉDIA'"));
 click($('theme-gallery-overlay').querySelector('[data-theme-id="roma"]'));
 check('troca pede confirmação pelo nome Roma Antiga', !!$('confirm-modal-overlay') && $('confirm-modal-overlay').textContent.includes('Trocar para Roma Antiga?') && ev("THEME.id === 'classico'"));
@@ -164,6 +187,96 @@ check('histórico renderizado', !!$('history-content'));
 check('CSV multi-aba com 22 colunas no Log', ev('buildPlanilhaCSV()').split(/--- Sheet: Log ---/)[1].split('\n')[1].split(';').length === 22);
 check('todos os 120 chefões têm retrato padrão (Ação e Anéis inclusive)', ev("Object.keys(THEMES).every(id => THEMES[id].bosses.every(b => !!DEFAULT_BOSS_PORTRAITS[id + ':' + b.id]))"));
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fs.readFileSync('js/app.js', 'utf8')) && /frame === 'espacial'/.test(fs.readFileSync('js/app.js', 'utf8')));
+const appSrcFrames = fs.readFileSync('js/app.js', 'utf8');
+check('molduras de ferro (clássico) e de anel (Senhor dos Anéis) desenhadas à mão', /frame === 'ferro'/.test(appSrcFrames) && /frame === 'anel'/.test(appSrcFrames));
+check('clássico usa ferro e Anéis não divide mais o ouro do Zodíaco', ev("THEMES.classico.frame === 'ferro' && THEMES.aneis.frame === 'anel' && THEMES.zodiaco.frame === 'ouro'"));
+check('nenhum tema cai no else genérico de drawThemedFrame', ev("[...new Set(Object.values(THEMES).map(t => t.frame))]").every(f => new RegExp(`frame === '${f}'`).test(appSrcFrames)), ev("[...new Set(Object.values(THEMES).map(t => t.frame))]"));
+check('moldura de ferro traz rebites e corrente; a de anel traz o Um Anel gravado', /rebites/.test(appSrcFrames) && /corrente/.test(appSrcFrames) && /Um Anel/.test(appSrcFrames));
+let framesOk = true, framesErr = '';
+try {
+    ev("openBossDefeatCard(); window.__themeBackup = THEME; THEME_IDS_LIST.forEach(id => { THEME = THEMES[id]; drawThemedFrame(document.getElementById('story-canvas').getContext('2d'), STORY_CARD_STYLES[id].palette); drawThemedFrame(document.getElementById('boss-card-canvas').getContext('2d'), { borderPrimary: '#dc2626' }); }); generateStoryCard(); generateBossDefeatCard(); THEME = window.__themeBackup; delete window.__themeBackup; document.getElementById('boss-card-overlay')?.remove();");
+} catch (e) { framesOk = false; framesErr = e.message; }
+check('as dez molduras desenham sem erro (story card + card do chefão)', framesOk && !!ev('THEME'), framesErr);
+
+// ============================ LIGHTBOX DOS CHEFÕES ============================
+console.log('\n== UI 1b. Lightbox dos chefões ==');
+const key = k => document.dispatchEvent(new window.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+navTo('boss');
+const lbOverlay = () => $('boss-lightbox-overlay');
+const lbCard = id => $('bosses-grid').querySelector(`[data-boss-id="${id}"]`);
+const lbImg = () => lbOverlay() && lbOverlay().querySelector('#boss-lightbox-img');
+const lbDownload = () => lbOverlay() && lbOverlay().querySelector('#boss-lightbox-download');
+check('lightbox não existe antes do clique', !lbOverlay());
+check('os 12 cards da grade são clicáveis e trazem o id do chefão', $('bosses-grid').querySelectorAll('[data-boss-id]').length === 12 && $('bosses-grid').querySelectorAll('[onclick^="openBossLightbox("]').length === 12);
+check('miniaturas da grade carregam de forma preguiçosa (lazy + async)', [...$('bosses-grid').querySelectorAll('img')].length === 12 && [...$('bosses-grid').querySelectorAll('img')].every(i => i.getAttribute('loading') === 'lazy' && i.getAttribute('decoding') === 'async'));
+const idxAtual = ev('computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).currentIdx');
+const retratoAtivo = $('active-boss-card').querySelector('button[onclick^="openBossLightbox("]');
+check('retrato do chefão ativo (w-20) também é clicável e aponta para o boss em batalha', !!retratoAtivo && retratoAtivo.className.includes('w-20') && retratoAtivo.getAttribute('onclick') === `openBossLightbox('${ev('BOSSES[' + idxAtual + '].id')}')`, retratoAtivo && retratoAtivo.getAttribute('onclick'));
+
+const bossAlvo = ev('BOSSES[5].id');
+click(lbCard(bossAlvo));
+check('clicar no card abre o modal', !!lbOverlay() && lbOverlay().className.includes('z-[60]') && lbOverlay().className.includes('bg-black/80') && lbOverlay().className.includes('backdrop-blur-sm'));
+check('arte grande vem do retrato padrão do tema (512×512, pixelado)', !!lbImg() && lbImg().getAttribute('src') === ev(`DEFAULT_BOSS_PORTRAITS['${ev('activeGameThemeId')}:' + '${bossAlvo}']`) && lbImg().getAttribute('style').includes('image-rendering:pixelated'), lbImg() && lbImg().getAttribute('src'));
+check('nome do chefão no cabeçalho do modal', $('boss-lightbox-name').textContent === ev(`BOSSES[5].name`));
+check('status do combate no modal (DERROTADO/EM BATALHA/BLOQUEADO)', /DERROTADO 🏆|EM BATALHA ⚔️|BLOQUEADO 🔒/.test($('boss-lightbox-status').textContent));
+check('modal traz HP máximo, fraqueza, brecha tática e XP de recompensa', lbOverlay().textContent.includes(ev('fmtN(BOSSES[5].maxHp)') + ' HP') && lbOverlay().textContent.includes(ev('BOSSES[5].weak')) && lbOverlay().textContent.includes(ev('BOSSES[5].weakReason')) && lbOverlay().textContent.includes('+' + ev('fmtN(Math.round(BOSSES[5].maxHp / 200))') + ' XP'));
+check('botão de baixar a imagem usa o atributo download', !!lbDownload() && lbDownload().getAttribute('download').endsWith('.webp') && lbDownload().getAttribute('href') === lbImg().getAttribute('src'));
+
+click(btnIn(lbOverlay(), '›') || lbOverlay().querySelector('[aria-label="Próximo chefão"]'));
+check('› avança para o chefão seguinte', $('boss-lightbox-name').textContent === ev('BOSSES[6].name') && lbImg().getAttribute('src') === ev(`DEFAULT_BOSS_PORTRAITS['${ev('activeGameThemeId')}:' + BOSSES[6].id]`), $('boss-lightbox-name').textContent);
+key('ArrowRight');
+check('seta → do teclado também avança', $('boss-lightbox-name').textContent === ev('BOSSES[7].name'));
+key('ArrowLeft'); key('ArrowLeft');
+check('seta ← do teclado volta', $('boss-lightbox-name').textContent === ev('BOSSES[5].name'));
+lbOverlay().querySelector('[aria-label="Chefão anterior"]').click();
+check('‹ volta e dá a volta no fim da lista (b11 → b0)', $('boss-lightbox-name').textContent === ev('BOSSES[4].name'));
+ev("bossLightboxIdx = 0; renderBossLightbox(); navBossLightbox(-1);");
+check('navegação é circular (antes do 1º volta ao último)', $('boss-lightbox-name').textContent === ev('BOSSES[11].name'));
+key('Escape');
+check('ESC fecha o lightbox', !lbOverlay());
+
+ev("openBossLightbox(BOSSES[3].id);");
+check('openBossLightbox(id) abre já no chefão certo', !!lbOverlay() && $('boss-lightbox-name').textContent === ev('BOSSES[3].name'));
+lbOverlay().dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
+check('clique no fundo fecha o modal', !lbOverlay());
+
+click(retratoAtivo);
+check('retrato do card ativo abre o modal já no boss em batalha', !!lbOverlay() && $('boss-lightbox-name').textContent === ev('BOSSES[' + idxAtual + '].name') && /EM BATALHA ⚔️/.test($('boss-lightbox-status').textContent), $('boss-lightbox-name').textContent);
+btnIn(lbOverlay(), '✕').click();
+check('botão ✕ fecha o lightbox', !lbOverlay());
+check('lightbox fecha sem deixar rastro no DOM', !document.body.querySelector('#boss-lightbox-overlay'));
+
+// ============================ ESC + WEBFONTS ============================
+console.log('\n== UI 1c. ESC fecha todos os overlays + webfonts antes do canvas ==');
+click($('header-theme-button'));
+check('galeria de temas aberta para o teste de ESC', !!$('theme-gallery-overlay'));
+key('Escape');
+check('ESC fecha a galeria de temas', !$('theme-gallery-overlay'));
+ev("showRanksModal('classico');");
+check('modal de patentes aberto para o teste de ESC', !!$('ranks-overlay'));
+key('Escape');
+check('ESC fecha o modal de patentes', !$('ranks-overlay'));
+ev("confirmModal('Trocar de tema?', () => { window.__confirmRodou = true; });");
+check('confirmação aberta para o teste de ESC', !!$('confirm-modal-overlay'));
+key('Escape');
+check('ESC fecha a confirmação sem executar o callback', !$('confirm-modal-overlay') && !ev('window.__confirmRodou'));
+ev("openExercisePicker('log');");
+check('seletor rápido aberto para o teste de ESC', !!$('picker-overlay'));
+key('Escape');
+check('ESC fecha o seletor rápido', !$('picker-overlay'));
+ev("openBossDefeatCard(); openBossLightbox(BOSSES[0].id);");
+check('Card do Chefão + lightbox empilhados', !!$('boss-card-overlay') && !!$('boss-lightbox-overlay'));
+key('Escape');
+check('com dois overlays, ESC fecha só o de cima (lightbox)', !$('boss-lightbox-overlay') && !!$('boss-card-overlay'));
+key('Escape');
+check('segundo ESC fecha o Card do Chefão', !$('boss-card-overlay'));
+const corpoAntes = document.body.children.length;
+key('Escape');
+check('ESC sem overlay aberto não remove nada nem quebra', document.body.children.length === corpoAntes);
+const appSrcEsc = fs.readFileSync('js/app.js', 'utf8');
+check('um único handler de ESC cobre todos os overlays na ordem de empilhamento', /OVERLAY_CLOSE_ORDER/.test(appSrcEsc) && /closeTopOverlay/.test(appSrcEsc));
+check('cards em canvas esperam document.fonts.ready antes do traço definitivo', /withWebFonts\(generateStoryCard\)/.test(appSrcEsc) && /withWebFonts\(generateBossDefeatCard\)/.test(appSrcEsc) && /fonts\.ready\.then/.test(appSrcEsc));
+check('redraw de fontes é agendado uma vez só (sem loop com os onload de imagem)', (appSrcEsc.match(/_fontsRedrawScheduled = true/g) || []).length === 1);
 
 // vistas do histórico
 try {
@@ -447,10 +560,60 @@ window.localStorage.clear();
 Object.entries(storedBeforeMigrationTest).forEach(([key, value]) => window.localStorage.setItem(key, value));
 ev("loadStoredData(); loadWorkoutsFromStorage(); applyTheme(activeGameThemeId); refreshAll();");
 
-// ============================ CONSOLE ============================
-console.log('\n== UI 12. Console limpo ==');
-const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));
-check('nenhum erro não capturado', graves.length === 0, graves.slice(0, 3));
+// ============================ BADGES ============================
+console.log('\n== UI 12b. Badges com arte própria ==');
+navTo('stats');
+ev('renderBadgesAndStreak();');
+const badgeCards = [...$('badges-grid').children];
+const badgeSlugs = ev('Object.keys(BADGE_ART)');
+check('grade de conquistas tem 16 badges', badgeCards.length === 16 && badgeSlugs.length === 16, badgeCards.length);
+check('contador de desbloqueios acompanha os 16', $('stat-unlocked-badges').textContent.endsWith('/ 16'), $('stat-unlocked-badges').textContent);
+check('todo badge com arte própria renderiza <img> da série', badgeCards.length === 16 && badgeCards.every(c => !!c.querySelector('img[src^="images/badges/"]')), badgeCards.filter(c => !c.querySelector('img')).length);
+check('cada <img> de badge aponta para um arquivo que existe no disco', badgeSlugs.every(slug => fs.existsSync(ev(`BADGE_ART['${slug}']`))), badgeSlugs.filter(slug => !fs.existsSync(ev(`BADGE_ART['${slug}']`))));
+check('img de badge carrega preguiçosa e com fallback de emoji no onerror', badgeCards.every(c => { const i = c.querySelector('img'); return i && i.getAttribute('loading') === 'lazy' && i.getAttribute('onerror') === 'badgeArtFallback(this)' && !!i.getAttribute('data-fallback'); }));
+const imgSemArquivo = document.createElement('img');
+imgSemArquivo.setAttribute('data-fallback', '🐘');
+document.body.appendChild(imgSemArquivo);
+ev('badgeArtFallback')(imgSemArquivo);
+const spanFallback = [...document.body.children].find(el => el.tagName === 'SPAN' && el.textContent === '🐘');
+check('onerror devolve o emoji quando a arte não existe', !document.body.contains(imgSemArquivo) && !!spanFallback);
+if (spanFallback) spanFallback.remove();
+check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexistente', '🎯', true)").includes('🎯') && !ev("badgeArtImg('slug-inexistente', '🎯', true)").includes('<img'));
 
-console.log('\n' + (failures === 0 ? '✅ SMOKE TEST DE UI PASSOU' : `❌ ${failures} FALHA(S) DE UI`));
-process.exit(failures === 0 ? 0 : 1);
+// ============================ ESTÚDIO DE RESERVAS ============================
+// (async de propósito: o manifesto chega por fetch, então o bloco espera o
+//  event loop antes de conferir a grade — e só então fecha o processo)
+(async () => {
+    console.log('\n== UI 12c. Estúdio de reservas ==');
+    navTo('boss');
+    await new Promise(r => setTimeout(r, 0));
+    check('manifesto das reservas carregou pelo index.json (35 artes)', ev('reservaManifest && reservaManifest.total') === 35, ev('reservaManifest && reservaManifest.total'));
+    check('seletor do estúdio lista os 12 chefões do tema', $('reserva-boss-select').options.length === 12, $('reserva-boss-select').options.length);
+    const nReservas = ev("reservaGroups(THEME.id).reduce((n, g) => n + g.itens.length, 0)");
+    check('grade do estúdio = padrão + as reservas do tema', $('reserva-grid').querySelectorAll('button').length === nReservas + 1 && nReservas > 0, { tiles: $('reserva-grid').querySelectorAll('button').length, nReservas });
+    check('todo tile de reserva aponta para arquivo que existe no disco', ev("reservaGroups(THEME.id).flatMap(g => g.itens.map(i => i.file))").every(f => fs.existsSync(f)));
+    check('tile do padrão usa o retrato oficial do tema', $('reserva-grid').querySelector('img').getAttribute('src') === ev("DEFAULT_BOSS_PORTRAITS[THEME.id + ':' + reservaBossId]"));
+
+    const alvo = ev("reservaGroups(THEME.id)[0].itens[0].file");
+    ev(`applyReservaPortrait('${alvo}')`);
+    const bossAlvo = ev('reservaBossId');
+    check('escolher reserva grava em bossPortraits (mesmo mecanismo do upload)', ev('bossPortraits[reservaBossId]') === alvo, ev('bossPortraits[reservaBossId]'));
+    check('a grade do Boss passa a mostrar a reserva escolhida', $('bosses-grid').querySelector(`[data-boss-id="${bossAlvo}"] img`).getAttribute('src') === alvo);
+    check('select marca o chefão personalizado com 🎨', [...$('reserva-boss-select').options].some(o => o.value === bossAlvo && o.textContent.includes('🎨')));
+    check('tile da reserva ativa fica destacado', [...$('reserva-grid').querySelectorAll('button')].some(b => b.getAttribute('onclick') === `applyReservaPortrait('${alvo}')` && b.className.includes('ring-1')));
+    ev('resetBossPortraitToDefault()');
+    check('voltar ao padrão limpa o bossPortraits e restaura a arte oficial', ev('bossPortraits[reservaBossId]') === undefined && $('bosses-grid').querySelector(`[data-boss-id="${bossAlvo}"] img`).getAttribute('src') === ev(`DEFAULT_BOSS_PORTRAITS[THEME.id + ':' + reservaBossId]`));
+
+    ev("window.__manifestBackup = JSON.stringify(reservaManifest); reservaManifest = { total: 1, temas: { zodiaco: [{ file: 'images/bosses/reserva/zodiaco-saga2.webp', slug: 'saga2', label: 'Saga 2' }] } }; renderReservaStudio();");
+    check('tema sem reserva própria empresta os grupos dos outros temas', $('reserva-grid').querySelectorAll('button').length === 2 && $('reserva-grid').textContent.includes('Saga 2'), $('reserva-grid').querySelectorAll('button').length);
+    ev("reservaManifest = JSON.parse(window.__manifestBackup); delete window.__manifestBackup; renderReservaStudio();");
+    check('trocar de chefão no select redesenha a grade do estúdio', (ev("selectReservaBoss(BOSSES[3].id)"), ev('reservaBossId')) === ev('BOSSES[3].id') && $('reserva-boss-select').value === ev('BOSSES[3].id'));
+
+    // ============================ CONSOLE ============================
+    console.log('\n== UI 12. Console limpo ==');
+    const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));
+    check('nenhum erro não capturado', graves.length === 0, graves.slice(0, 3));
+
+    console.log('\n' + (failures === 0 ? '✅ SMOKE TEST DE UI PASSOU' : `❌ ${failures} FALHA(S) DE UI`));
+    process.exit(failures === 0 ? 0 : 1);
+})();

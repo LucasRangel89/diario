@@ -232,7 +232,7 @@ const THEMES = {
         id: 'aneis', name: 'Senhor dos Anéis',
         desc: 'Do Condado ao Monte da Perdição: a Sociedade, as forças de Sauron e a jornada do Anel.',
         arena: 'Jornada até o Monte da Perdição', bossLabel: 'DESAFIO ATIVO', stageWord: 'JORNADA',
-        missionWord: 'Prova da Sociedade', missionWordPlural: 'Provas da Sociedade', frame: 'ouro',
+        missionWord: 'Prova da Sociedade', missionWordPlural: 'Provas da Sociedade', frame: 'anel',
         ranks: [['Hobbit do Condado', '🍀'], ['Andarilho do Norte', '🌲'], ['Companheiro da Sociedade', '🧭'], ['Guardião de Gondor', '🛡️'], ['Cavaleiro de Rohan', '🐴'], ['Caçador de Orcs', '🏹'], ['Herói do Abismo de Helm', '⚔️'], ['Portador do Anel', '💍'], ['Rei de Gondor', '👑'], ['LENDA DA TERRA MÉDIA', '🌟']],
         bosses: mkBosses([
             ['Goblins de Moria', '🗡️', 'Horda que guarda as galerias escuras de Khazad-dûm, acordada pelo barulho na ponte.', 'Pernas', 'Corredores e pontes estreitas vencem-se com passos ágeis.'],
