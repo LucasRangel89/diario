@@ -538,5 +538,16 @@ console.log('\n== 24. Manifest com screenshots (prompt de instalação rico) =='
     check('screenshots ficam leves para o prompt de instalação', shots.every(s => fs.statSync(s.src).size <= 400 * 1024), shots.map(s => fs.statSync(s.src).size));
 }
 
+console.log('\n== 25. Estúdio de reservas: manifesto e integração ==');
+{
+    const idx = JSON.parse(fs.readFileSync('images/bosses/reserva/index.json', 'utf8'));
+    const itens = Object.values(idx.temas).flat();
+    check('index.json lista as 35 reservas e todas existem no disco', idx.total === 35 && itens.length === 35 && itens.every(i => fs.existsSync(i.file)), itens.length);
+    check('cada reserva cai no tema certo pelo prefixo do arquivo', Object.entries(idx.temas).every(([t, lista]) => lista.every(i => i.file.includes(`/reserva/${t}-`) && i.label && i.slug)));
+    const appSrc25 = fs.readFileSync('js/app.js', 'utf8');
+    check('app lê o manifesto e reaproveita bossPortraits (upload por chefão)', /loadReservaManifest\(\)/.test(appSrc25) && /function applyReservaPortrait/.test(appSrc25) && /bossPortraits\[reservaBossId\] = src/.test(appSrc25) && /delete bossPortraits\[reservaBossId\]/.test(appSrc25));
+    check('index.json das reservas entra no CORE do service worker', fs.readFileSync('sw.js', 'utf8').includes("'./images/bosses/reserva/index.json'"));
+}
+
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);

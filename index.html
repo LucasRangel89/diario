@@ -642,6 +642,25 @@
                     <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">👹 Lista de Titans & Bosses</h3>
                     <div id="bosses-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
                 </div>
+
+                <!-- ESTÚDIO DE RESERVAS -->
+                <div class="mt-6 bg-berzerker-dark/40 border border-berzerker-border rounded-2xl p-5 space-y-3">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">🎨 Estúdio de retratos</h3>
+                            <p class="text-xs text-gray-400 mt-0.5">Troque a arte de qualquer chefão pelas reservas do tema — ou volte ao retrato padrão. A escolha fica salva neste aparelho.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label for="reserva-boss-select" class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Chefão</label>
+                            <select id="reserva-boss-select" onchange="selectReservaBoss(this.value)" class="bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500 max-w-[220px]"></select>
+                        </div>
+                    </div>
+                    <div id="reserva-grid" class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 gap-2"></div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" onclick="resetBossPortraitToDefault()" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">↩ Voltar ao padrão</button>
+                        <span id="reserva-status" class="text-[10px] font-mono text-gray-500"></span>
+                    </div>
+                </div>
             </div>
 
             <!-- MISSÕES SEMANAIS -->

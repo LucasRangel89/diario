@@ -2,7 +2,7 @@
 // App 100% local (Tailwind e Chart.js empacotados em /vendor) — funciona offline na academia.
 // Estratégia: rede primeiro para os arquivos do app (sempre a versão nova quando há sinal),
 // cache como reserva offline. Incremente VERSION ao atualizar app/ativos para renovar o cache offline.
-const VERSION = 'v23';
+const VERSION = 'v24';
 const CACHE = 'berzerker-' + VERSION;
 const CORE = [
   './',
@@ -152,6 +152,7 @@ const CORE = [
   './images/temas/rpg.webp',
   './images/temas/galactica.webp',
   './images/temas/aneis.webp',
+  './images/bosses/reserva/index.json',
   './images/badges/primeiro-sangue.webp'
   './images/badges/ofensiva-semanal.webp'
   './images/badges/mover-titan.webp'

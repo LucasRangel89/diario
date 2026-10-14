@@ -51,6 +51,14 @@ window.alert = () => { };
 Object.defineProperty(window.navigator, 'vibrate', { value: () => true, configurable: true });
 Object.defineProperty(window.navigator, 'serviceWorker', { value: { register: () => Promise.resolve() }, configurable: true });
 Object.defineProperty(window.navigator, 'storage', { value: { persist: () => Promise.resolve() }, configurable: true });
+// fetch mínimo para o Estúdio de Reservas (lê o index.json do disco)
+window.fetch = url => {
+    const file = String(url).replace(/^\.?\//, '');
+    if (fs.existsSync(file)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(fs.readFileSync(file, 'utf8'))) });
+    }
+    return Promise.resolve({ ok: false, json: () => Promise.resolve(null) });
+};
 
 // ---------- carrega os módulos na ordem do index.html ----------
 // vm.runInContext mantém o escopo léxico global entre scripts (como no navegador),
@@ -572,10 +580,40 @@ check('onerror devolve o emoji quando a arte não existe', !document.body.contai
 if (spanFallback) spanFallback.remove();
 check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexistente', '🎯', true)").includes('🎯') && !ev("badgeArtImg('slug-inexistente', '🎯', true)").includes('<img'));
 
-// ============================ CONSOLE ============================
-console.log('\n== UI 12. Console limpo ==');
-const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));
-check('nenhum erro não capturado', graves.length === 0, graves.slice(0, 3));
+// ============================ ESTÚDIO DE RESERVAS ============================
+// (async de propósito: o manifesto chega por fetch, então o bloco espera o
+//  event loop antes de conferir a grade — e só então fecha o processo)
+(async () => {
+    console.log('\n== UI 12c. Estúdio de reservas ==');
+    navTo('boss');
+    await new Promise(r => setTimeout(r, 0));
+    check('manifesto das reservas carregou pelo index.json (35 artes)', ev('reservaManifest && reservaManifest.total') === 35, ev('reservaManifest && reservaManifest.total'));
+    check('seletor do estúdio lista os 12 chefões do tema', $('reserva-boss-select').options.length === 12, $('reserva-boss-select').options.length);
+    const nReservas = ev("reservaGroups(THEME.id).reduce((n, g) => n + g.itens.length, 0)");
+    check('grade do estúdio = padrão + as reservas do tema', $('reserva-grid').querySelectorAll('button').length === nReservas + 1 && nReservas > 0, { tiles: $('reserva-grid').querySelectorAll('button').length, nReservas });
+    check('todo tile de reserva aponta para arquivo que existe no disco', ev("reservaGroups(THEME.id).flatMap(g => g.itens.map(i => i.file))").every(f => fs.existsSync(f)));
+    check('tile do padrão usa o retrato oficial do tema', $('reserva-grid').querySelector('img').getAttribute('src') === ev("DEFAULT_BOSS_PORTRAITS[THEME.id + ':' + reservaBossId]"));
 
-console.log('\n' + (failures === 0 ? '✅ SMOKE TEST DE UI PASSOU' : `❌ ${failures} FALHA(S) DE UI`));
-process.exit(failures === 0 ? 0 : 1);
+    const alvo = ev("reservaGroups(THEME.id)[0].itens[0].file");
+    ev(`applyReservaPortrait('${alvo}')`);
+    const bossAlvo = ev('reservaBossId');
+    check('escolher reserva grava em bossPortraits (mesmo mecanismo do upload)', ev('bossPortraits[reservaBossId]') === alvo, ev('bossPortraits[reservaBossId]'));
+    check('a grade do Boss passa a mostrar a reserva escolhida', $('bosses-grid').querySelector(`[data-boss-id="${bossAlvo}"] img`).getAttribute('src') === alvo);
+    check('select marca o chefão personalizado com 🎨', [...$('reserva-boss-select').options].some(o => o.value === bossAlvo && o.textContent.includes('🎨')));
+    check('tile da reserva ativa fica destacado', [...$('reserva-grid').querySelectorAll('button')].some(b => b.getAttribute('onclick') === `applyReservaPortrait('${alvo}')` && b.className.includes('ring-1')));
+    ev('resetBossPortraitToDefault()');
+    check('voltar ao padrão limpa o bossPortraits e restaura a arte oficial', ev('bossPortraits[reservaBossId]') === undefined && $('bosses-grid').querySelector(`[data-boss-id="${bossAlvo}"] img`).getAttribute('src') === ev(`DEFAULT_BOSS_PORTRAITS[THEME.id + ':' + reservaBossId]`));
+
+    ev("window.__manifestBackup = JSON.stringify(reservaManifest); reservaManifest = { total: 1, temas: { zodiaco: [{ file: 'images/bosses/reserva/zodiaco-saga2.webp', slug: 'saga2', label: 'Saga 2' }] } }; renderReservaStudio();");
+    check('tema sem reserva própria empresta os grupos dos outros temas', $('reserva-grid').querySelectorAll('button').length === 2 && $('reserva-grid').textContent.includes('Saga 2'), $('reserva-grid').querySelectorAll('button').length);
+    ev("reservaManifest = JSON.parse(window.__manifestBackup); delete window.__manifestBackup; renderReservaStudio();");
+    check('trocar de chefão no select redesenha a grade do estúdio', (ev("selectReservaBoss(BOSSES[3].id)"), ev('reservaBossId')) === ev('BOSSES[3].id') && $('reserva-boss-select').value === ev('BOSSES[3].id'));
+
+    // ============================ CONSOLE ============================
+    console.log('\n== UI 12. Console limpo ==');
+    const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));
+    check('nenhum erro não capturado', graves.length === 0, graves.slice(0, 3));
+
+    console.log('\n' + (failures === 0 ? '✅ SMOKE TEST DE UI PASSOU' : `❌ ${failures} FALHA(S) DE UI`));
+    process.exit(failures === 0 ? 0 : 1);
+})();

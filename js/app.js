@@ -2229,6 +2229,7 @@ function renderBossBattleUI() {
                 </div>`;
         }).join('');
     }
+    renderReservaStudio();
 }
 
 // ============================ LIGHTBOX DOS CHEFÕES ============================
@@ -2394,6 +2395,100 @@ function uploadBossPortrait(event, bossId) {
         img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+}
+
+// ============================ ESTÚDIO DE RESERVAS ============================
+// Troca a arte de qualquer chefão pelas reservas de images/bosses/reserva/
+// (35 artes prontas, agrupadas por tema no index.json) reaproveitando o
+// mecanismo de upload por chefão (bossPortraits no save do tema).
+let reservaManifest = null;
+let reservaBossId = null;
+
+function loadReservaManifest() {
+    if (reservaManifest) return Promise.resolve(reservaManifest);
+    return fetch('images/bosses/reserva/index.json')
+        .then(r => (r && r.ok ? r.json() : null))
+        .then(j => { reservaManifest = (j && j.temas) ? j : null; return reservaManifest; })
+        .catch(() => null);
+}
+
+function reservaGroups(themeId) {
+    const temas = (reservaManifest && reservaManifest.temas) || {};
+    const doTema = temas[themeId] || [];
+    // tema sem reserva própria (ex.: clássico) ainda pode emprestar as outras
+    if (doTema.length) return [{ tema: themeId, itens: doTema }];
+    return Object.keys(temas).sort().map(t => ({ tema: t, itens: temas[t] })).filter(g => g.itens.length);
+}
+
+function selectReservaBoss(bossId) {
+    reservaBossId = bossId;
+    renderReservaStudio();
+}
+
+function applyReservaPortrait(src) {
+    if (!reservaBossId || !src) return;
+    bossPortraits[reservaBossId] = src;
+    saveGameState();
+    renderBossBattleUI();
+    renderReservaStudio();
+    alertModal('🎨 Retrato trocado! Vale para este chefe neste aparelho.');
+}
+
+function resetBossPortraitToDefault() {
+    if (!reservaBossId) return;
+    delete bossPortraits[reservaBossId];
+    saveGameState();
+    renderBossBattleUI();
+    renderReservaStudio();
+    alertModal('↩ Retrato padrão restaurado.');
+}
+
+function renderReservaStudio() {
+    const sel = document.getElementById('reserva-boss-select');
+    const grid = document.getElementById('reserva-grid');
+    const status = document.getElementById('reserva-status');
+    if (!sel || !grid) return;
+    if (!Array.isArray(BOSSES) || !BOSSES.length) return;
+    // o manifesto chega por fetch: desenha o seletor já e completa no redraw
+    if (!reservaManifest && !renderReservaStudio._carregando) {
+        renderReservaStudio._carregando = true;
+        loadReservaManifest().then(m => { renderReservaStudio._carregando = false; if (m) renderReservaStudio(); });
+    }
+    if (!reservaBossId || !BOSSES.some(b => b.id === reservaBossId)) {
+        const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
+        reservaBossId = (prog.current && prog.current.id) || BOSSES[0].id;
+    }
+    sel.innerHTML = BOSSES.map(b =>
+        `<option value="${escapeHtml(b.id)}"${b.id === reservaBossId ? ' selected' : ''}>${escapeHtml(b.name)}${bossPortraits[b.id] ? ' · 🎨' : ''}</option>`).join('');
+
+    const atual = bossPortraits[reservaBossId] || null;
+    const padrao = DEFAULT_BOSS_PORTRAITS[(THEME ? THEME.id : 'classico') + ':' + reservaBossId] || null;
+    const tileCls = on => `text-left rounded-xl border p-1.5 transition-colors ${on ? 'border-berzerker-500 bg-berzerker-600/15 ring-1 ring-berzerker-500/40' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'}`;
+
+    let html = padrao ? `
+        <button type="button" onclick="resetBossPortraitToDefault()" title="Retrato padrão do tema" class="${tileCls(!atual)}">
+            <img src="${padrao}" alt="retrato padrão" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
+            <span class="block text-[9px] font-bold uppercase tracking-wide mt-1 ${!atual ? 'text-berzerker-300' : 'text-gray-500'}">Padrão</span>
+        </button>` : '';
+
+    const grupos = reservaGroups(THEME ? THEME.id : 'classico');
+    if (!grupos.length) {
+        html += `<div class="col-span-full text-center text-[11px] text-gray-500 border border-dashed border-berzerker-border rounded-xl py-6">Sem reservas por enquanto — o index.json ainda não carregou.</div>`;
+    }
+    grupos.forEach(g => {
+        if (grupos.length > 1) html += `<div class="col-span-full text-[9px] font-bold uppercase tracking-wider text-gray-500 pt-1">${escapeHtml((THEMES[g.tema] || {}).name || g.tema)}</div>`;
+        g.itens.forEach(item => {
+            html += `
+            <button type="button" onclick="applyReservaPortrait('${escapeHtml(item.file)}')" title="${escapeHtml(item.label)}" class="${tileCls(atual === item.file)}">
+                <img src="${escapeHtml(item.file)}" alt="${escapeHtml(item.label)}" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
+                <span class="block truncate text-[9px] font-bold uppercase tracking-wide mt-1 ${atual === item.file ? 'text-berzerker-300' : 'text-gray-400'}">${escapeHtml(item.label)}</span>
+            </button>`;
+        });
+    });
+    grid.innerHTML = html;
+    if (status) status.textContent = atual
+        ? `🎨 arte personalizada neste chefe`
+        : 'usando o retrato padrão do tema';
 }
 
 // ============================ MISSÕES SEMANAIS ============================
