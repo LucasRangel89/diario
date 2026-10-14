@@ -238,6 +238,38 @@ btnIn(lbOverlay(), '✕').click();
 check('botão ✕ fecha o lightbox', !lbOverlay());
 check('lightbox fecha sem deixar rastro no DOM', !document.body.querySelector('#boss-lightbox-overlay'));
 
+// ============================ ESC + WEBFONTS ============================
+console.log('\n== UI 1c. ESC fecha todos os overlays + webfonts antes do canvas ==');
+click($('header-theme-button'));
+check('galeria de temas aberta para o teste de ESC', !!$('theme-gallery-overlay'));
+key('Escape');
+check('ESC fecha a galeria de temas', !$('theme-gallery-overlay'));
+ev("showRanksModal('classico');");
+check('modal de patentes aberto para o teste de ESC', !!$('ranks-overlay'));
+key('Escape');
+check('ESC fecha o modal de patentes', !$('ranks-overlay'));
+ev("confirmModal('Trocar de tema?', () => { window.__confirmRodou = true; });");
+check('confirmação aberta para o teste de ESC', !!$('confirm-modal-overlay'));
+key('Escape');
+check('ESC fecha a confirmação sem executar o callback', !$('confirm-modal-overlay') && !ev('window.__confirmRodou'));
+ev("openExercisePicker('log');");
+check('seletor rápido aberto para o teste de ESC', !!$('picker-overlay'));
+key('Escape');
+check('ESC fecha o seletor rápido', !$('picker-overlay'));
+ev("openBossDefeatCard(); openBossLightbox(BOSSES[0].id);");
+check('Card do Chefão + lightbox empilhados', !!$('boss-card-overlay') && !!$('boss-lightbox-overlay'));
+key('Escape');
+check('com dois overlays, ESC fecha só o de cima (lightbox)', !$('boss-lightbox-overlay') && !!$('boss-card-overlay'));
+key('Escape');
+check('segundo ESC fecha o Card do Chefão', !$('boss-card-overlay'));
+const corpoAntes = document.body.children.length;
+key('Escape');
+check('ESC sem overlay aberto não remove nada nem quebra', document.body.children.length === corpoAntes);
+const appSrcEsc = fs.readFileSync('js/app.js', 'utf8');
+check('um único handler de ESC cobre todos os overlays na ordem de empilhamento', /OVERLAY_CLOSE_ORDER/.test(appSrcEsc) && /closeTopOverlay/.test(appSrcEsc));
+check('cards em canvas esperam document.fonts.ready antes do traço definitivo', /withWebFonts\(generateStoryCard\)/.test(appSrcEsc) && /withWebFonts\(generateBossDefeatCard\)/.test(appSrcEsc) && /fonts\.ready\.then/.test(appSrcEsc));
+check('redraw de fontes é agendado uma vez só (sem loop com os onload de imagem)', (appSrcEsc.match(/_fontsRedrawScheduled = true/g) || []).length === 1);
+
 // vistas do histórico
 try {
     ev("switchHistoryView('progresso')"); ev("switchHistoryView('semanas')");

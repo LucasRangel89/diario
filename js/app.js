@@ -2342,12 +2342,35 @@ function renderBossLightbox() {
     document.body.appendChild(overlay);
 }
 
-// Setas navegam, ESC fecha — só quando o lightbox está aberto.
+// Setas navegam entre os chefões — só quando o lightbox está aberto.
 document.addEventListener('keydown', e => {
     if (!document.getElementById(BOSS_LIGHTBOX_ID)) return;
-    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeBossLightbox(); }
-    else if (e.key === 'ArrowRight') { e.preventDefault(); navBossLightbox(1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); navBossLightbox(1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); navBossLightbox(-1); }
+});
+
+// ============================ ESC FECHA TUDO ============================
+// Um handler só para todas as camadas: fecha a de cima (na ordem de
+// empilhamento da UI) e deixa as de baixo intactas.
+const OVERLAY_CLOSE_ORDER = [
+    BOSS_LIGHTBOX_ID,          // z-[60], por cima de tudo enquanto aberto
+    'confirm-modal-overlay',   // confirmação bloqueia qualquer coisa atrás
+    'picker-overlay',           // seletor rápido de exercício
+    'edit-log-overlay',         // edição de registro
+    'boss-card-overlay',        // Card do Chefão
+    'ranks-overlay',            // modal de patentes
+    'theme-gallery-overlay'     // galeria de temas (z-[55])
+];
+function closeTopOverlay() {
+    for (const id of OVERLAY_CLOSE_ORDER) {
+        const el = document.getElementById(id);
+        if (el) { el.remove(); return id; }
+    }
+    return null;
+}
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' && e.key !== 'Esc') return;
+    if (closeTopOverlay()) e.preventDefault();
 });
 
 function uploadBossPortrait(event, bossId) {
@@ -2703,9 +2726,23 @@ function drawThemedFrame(ctx, palette) {
     }
 }
 
+// O Story Card e o Card do Chefão escrevem em Oswald/Teko/Inter. Se o webfont
+// ainda está baixando, o primeiro traço sai com a fonte de fallback do sistema.
+// document.fonts.ready resolve UMA vez quando o loading termina, então agendar
+// um único redraw aqui não entra em loop com os onload de imagem já existentes.
+let _fontsRedrawScheduled = false;
+function withWebFonts(redraw) {
+    const fonts = document.fonts;
+    if (!fonts || _fontsRedrawScheduled || fonts.status === 'loaded') return;
+    _fontsRedrawScheduled = true;
+    const run = () => { _fontsRedrawScheduled = false; redraw(); };
+    fonts.ready.then(run, run);
+}
+
 function generateStoryCard() {
     const canvas = document.getElementById('story-canvas');
     if (!canvas) return;
+    withWebFonts(generateStoryCard);
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const targetDate = document.getElementById('filter-date').value || getTodayLocalISO();
@@ -2909,6 +2946,7 @@ function openBossDefeatCard() {
 function generateBossDefeatCard() {
     const canvas = document.getElementById('boss-card-canvas');
     if (!canvas) return;
+    withWebFonts(generateBossDefeatCard);
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
