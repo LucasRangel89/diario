@@ -552,6 +552,26 @@ window.localStorage.clear();
 Object.entries(storedBeforeMigrationTest).forEach(([key, value]) => window.localStorage.setItem(key, value));
 ev("loadStoredData(); loadWorkoutsFromStorage(); applyTheme(activeGameThemeId); refreshAll();");
 
+// ============================ BADGES ============================
+console.log('\n== UI 12b. Badges com arte própria ==');
+navTo('stats');
+ev('renderBadgesAndStreak();');
+const badgeCards = [...$('badges-grid').children];
+const badgeSlugs = ev('Object.keys(BADGE_ART)');
+check('grade de conquistas tem 16 badges', badgeCards.length === 16 && badgeSlugs.length === 16, badgeCards.length);
+check('contador de desbloqueios acompanha os 16', $('stat-unlocked-badges').textContent.endsWith('/ 16'), $('stat-unlocked-badges').textContent);
+check('todo badge com arte própria renderiza <img> da série', badgeCards.length === 16 && badgeCards.every(c => !!c.querySelector('img[src^="images/badges/"]')), badgeCards.filter(c => !c.querySelector('img')).length);
+check('cada <img> de badge aponta para um arquivo que existe no disco', badgeSlugs.every(slug => fs.existsSync(ev(`BADGE_ART['${slug}']`))), badgeSlugs.filter(slug => !fs.existsSync(ev(`BADGE_ART['${slug}']`))));
+check('img de badge carrega preguiçosa e com fallback de emoji no onerror', badgeCards.every(c => { const i = c.querySelector('img'); return i && i.getAttribute('loading') === 'lazy' && i.getAttribute('onerror') === 'badgeArtFallback(this)' && !!i.getAttribute('data-fallback'); }));
+const imgSemArquivo = document.createElement('img');
+imgSemArquivo.setAttribute('data-fallback', '🐘');
+document.body.appendChild(imgSemArquivo);
+ev('badgeArtFallback')(imgSemArquivo);
+const spanFallback = [...document.body.children].find(el => el.tagName === 'SPAN' && el.textContent === '🐘');
+check('onerror devolve o emoji quando a arte não existe', !document.body.contains(imgSemArquivo) && !!spanFallback);
+if (spanFallback) spanFallback.remove();
+check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexistente', '🎯', true)").includes('🎯') && !ev("badgeArtImg('slug-inexistente', '🎯', true)").includes('<img'));
+
 // ============================ CONSOLE ============================
 console.log('\n== UI 12. Console limpo ==');
 const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));

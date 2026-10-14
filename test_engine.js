@@ -505,5 +505,22 @@ console.log('\n== 22. Arte própria: emblemas de patente, selos, cards e retrato
         THEME_IDS.map(t => `${t}:${entries.filter(([, th]) => th === t).length}`));
 }
 
+console.log('\n== 23. Badges: 16 medalhões de arte própria ==');
+{
+    const BADGE_SLUGS = ['primeiro-sangue','ofensiva-semanal','mover-titan','cacador-de-prs',
+        'maratonista','tanque-de-guerra','berzerker-master','cacador-de-chefoes',
+        'primeiro-deload','semana-completa','colecionador','mestre-dos-chefoes',
+        'mes-de-ferro','corredor','sequencia-de-aco','nivel-10'];
+    const missing = BADGE_SLUGS.filter(s => !fs.existsSync(`images/badges/${s}.webp`));
+    const heavy = BADGE_SLUGS.filter(s => fs.existsSync(`images/badges/${s}.webp`) && fs.statSync(`images/badges/${s}.webp`).size > 60 * 1024);
+    check('16 medalhões de badge existem no disco e ficam leves (<= 60 KB)', missing.length === 0 && heavy.length === 0, { missing, heavy });
+    const swSrc = fs.readFileSync('sw.js', 'utf8');
+    check('os 16 badges entram no CORE do service worker', BADGE_SLUGS.every(s => swSrc.includes(`'./images/badges/${s}.webp'`)));
+    const appSrc = fs.readFileSync('js/app.js', 'utf8');
+    const m = appSrc.match(/const BADGE_ART = [\s\S]*?\]\)/);
+    check('BADGE_ART do app lista exatamente os 16 slugs com arte', !!m && BADGE_SLUGS.every(s => m[0].includes(`'${s}'`)) && (m[0].match(/'[a-z0-9-]+'/g) || []).length === 16, m && (m[0].match(/'[a-z0-9-]+'/g) || []).length);
+    check('badge sem arquivo volta pro emoji (fallback no onerror)', /badgeArtFallback/.test(appSrc) && /data-fallback/.test(appSrc));
+}
+
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);

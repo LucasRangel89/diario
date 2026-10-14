@@ -3131,6 +3131,46 @@ function weeklyStreakInfo() {
     return { streak, goal, currentWeekCount };
 }
 
+// ============================ ARTE DOS BADGES ============================
+// 16 medalhões de ferro na mesma série dos emblemas de patente (fundo quase
+// preto, brilho carmesim). Se o arquivo não existir na instalação/cache, o
+// onerror devolve o emoji original — o badge nunca fica sem ícone.
+const BADGE_ART = Object.freeze(Object.fromEntries([
+    'primeiro-sangue', 'ofensiva-semanal', 'mover-titan', 'cacador-de-prs',
+    'maratonista', 'tanque-de-guerra', 'berzerker-master', 'cacador-de-chefoes',
+    'primeiro-deload', 'semana-completa', 'colecionador', 'mestre-dos-chefoes',
+    'mes-de-ferro', 'corredor', 'sequencia-de-aco', 'nivel-10'
+].map(slug => [slug, `images/badges/${slug}.webp`])));
+
+function badgeArtSrc(slug) {
+    return BADGE_ART[slug] || null;
+}
+
+function badgeArtImg(slug, icon, unlocked) {
+    const src = badgeArtSrc(slug);
+    if (!src) return `<span class="text-3xl" role="img" aria-label="${escapeHtml(icon)}">${icon}</span>`;
+    return `<img src="${src}" alt="emblema da conquista" data-fallback="${escapeHtml(icon)}" loading="lazy" decoding="async" onerror="badgeArtFallback(this)" class="h-12 w-12 rounded-full object-cover border ${unlocked ? 'border-emerald-500/50' : 'border-berzerker-border'}" style="image-rendering:auto">`;
+}
+
+function badgeArtFallback(img) {
+    const span = document.createElement('span');
+    span.className = 'text-3xl';
+    span.setAttribute('role', 'img');
+    span.textContent = img.getAttribute('data-fallback') || '🏅';
+    img.replaceWith(span);
+}
+
+// Maior número de dias treinados dentro de uma mesma semana ISO (badge Semana Completa)
+function bestWeekWorkouts() {
+    const perWeek = {};
+    logs.forEach(l => {
+        if (!l || !l.date) return;
+        const w = isoWeekKey(l.date);
+        (perWeek[w] = perWeek[w] || new Set()).add(l.date);
+    });
+    return Object.values(perWeek).reduce((m, s) => Math.max(m, s.size), 0);
+}
+
 function renderBadgesAndStreak() {
     const ws = weeklyStreakInfo();
     const streakEl = document.getElementById('stat-streak-days');
@@ -3149,15 +3189,25 @@ function renderBadgesAndStreak() {
     const totalTonEl = document.getElementById('stat-total-tonnage');
     if (totalTonEl) totalTonEl.textContent = `${totalTon.toFixed(1)} TON`;
 
+    const defeatedCount = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).defeatedCount;
+    const rankTema = rankFromXP(computeThemeXPCtx(activeGameThemeId).xp, themeRankList(THEME));
     const badges = [
-        { title: 'Primeiro Sangue', desc: '1º Exercício Registrado', unlocked: logs.length > 0, icon: '⚔️' },
-        { title: 'Ofensiva Semanal', desc: '3 Semanas seguidas na meta', unlocked: ws.streak >= 3, icon: '🔥' },
-        { title: 'Mover Titan', desc: '10+ Toneladas Acumuladas', unlocked: totalTon >= 10, icon: '🐘' },
-        { title: 'Caçador de PRs', desc: '5+ Recordes Pessoais', unlocked: totalPRs >= 5, icon: '🏆' },
-        { title: 'Maratonista', desc: '10+ km registrados', unlocked: totalKm >= 10, icon: '🏃' },
-        { title: 'Tanque de Guerra', desc: 'Razão > 50x Peso Corporal', unlocked: logs.some(l => getAnimalRankForSession(l.date).relativeRatio >= 50), icon: '🛡️' },
-        { title: 'Berzerker Master', desc: '50+ Treinos Registrados', unlocked: uniqueDates.length >= 50, icon: '⚡' },
-        { title: 'Caçador de Chefões', desc: '3+ Chefões Derrotados', unlocked: computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).defeatedCount >= 3, icon: '👑' }
+        { slug: 'primeiro-sangue', title: 'Primeiro Sangue', desc: '1º Exercício Registrado', unlocked: logs.length > 0, icon: '⚔️' },
+        { slug: 'ofensiva-semanal', title: 'Ofensiva Semanal', desc: '3 Semanas seguidas na meta', unlocked: ws.streak >= 3, icon: '🔥' },
+        { slug: 'mover-titan', title: 'Mover Titan', desc: '10+ Toneladas Acumuladas', unlocked: totalTon >= 10, icon: '🐘' },
+        { slug: 'cacador-de-prs', title: 'Caçador de PRs', desc: '5+ Recordes Pessoais', unlocked: totalPRs >= 5, icon: '🏆' },
+        { slug: 'maratonista', title: 'Maratonista', desc: '10+ km registrados', unlocked: totalKm >= 10, icon: '🏃' },
+        { slug: 'tanque-de-guerra', title: 'Tanque de Guerra', desc: 'Razão > 50x Peso Corporal', unlocked: logs.some(l => getAnimalRankForSession(l.date).relativeRatio >= 50), icon: '🛡️' },
+        { slug: 'berzerker-master', title: 'Berzerker Master', desc: '50+ Treinos Registrados', unlocked: uniqueDates.length >= 50, icon: '⚡' },
+        { slug: 'cacador-de-chefoes', title: 'Caçador de Chefões', desc: '3+ Chefões Derrotados', unlocked: defeatedCount >= 3, icon: '👑' },
+        { slug: 'primeiro-deload', title: 'Primeiro Deload', desc: '1ª semana de deload marcada', unlocked: deloadWeeks.length >= 1, icon: '🌙' },
+        { slug: 'semana-completa', title: 'Semana Completa', desc: '4 treinos na mesma semana', unlocked: bestWeekWorkouts() >= 4, icon: '📅' },
+        { slug: 'colecionador', title: 'Colecionador', desc: '5 chefões derrotados no tema', unlocked: defeatedCount >= 5, icon: '🧰' },
+        { slug: 'mestre-dos-chefoes', title: 'Mestre dos Chefões', desc: `${BOSSES.length}/${BOSSES.length} chefões do tema`, unlocked: defeatedCount >= BOSSES.length, icon: '🐲' },
+        { slug: 'mes-de-ferro', title: 'Mês de Ferro', desc: '20 treinos registrados', unlocked: uniqueDates.length >= 20, icon: '🔩' },
+        { slug: 'corredor', title: 'Corredor', desc: '25 km acumulados', unlocked: totalKm >= 25, icon: '🛣️' },
+        { slug: 'sequencia-de-aco', title: 'Sequência de Aço', desc: '8 semanas seguidas na meta', unlocked: ws.streak >= 8, icon: '🔗' },
+        { slug: 'nivel-10', title: 'Nível 10 no Tema', desc: 'Patente máxima no jogo ativo', unlocked: rankTema.level >= 10, icon: '🌟' }
     ];
 
     const unlockedCount = badges.filter(b => b.unlocked).length;
@@ -3167,9 +3217,9 @@ function renderBadgesAndStreak() {
     const grid = document.getElementById('badges-grid');
     if (grid) grid.innerHTML = badges.map(b => `
         <div class="p-3 rounded-xl border text-center transition-all ${b.unlocked ? 'bg-berzerker-dark border-emerald-500/50 text-white' : 'bg-berzerker-dark/40 border-berzerker-border text-gray-600 opacity-60'}">
-            <div class="text-3xl mb-1">${b.icon}</div>
-            <div class="font-bold text-xs uppercase ${b.unlocked ? 'text-emerald-400' : 'text-gray-500'}">${b.title}</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">${b.desc}</div>
+            <div class="mb-1 flex h-12 items-center justify-center">${badgeArtImg(b.slug, b.icon, b.unlocked)}</div>
+            <div class="font-bold text-xs uppercase ${b.unlocked ? 'text-emerald-400' : 'text-gray-500'}">${escapeHtml(b.title)}</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">${escapeHtml(b.desc)}</div>
         </div>`).join('');
 }
 
