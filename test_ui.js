@@ -124,7 +124,7 @@ check('seletores têm grupos na ordem certa + Cardio no histórico, sem Glúteos
 check('nenhum log ou treino salvo mantém Pescoço ou Glúteos', !ev("logs.some(l => l.muscle === 'Pescoço' || l.muscle === 'Glúteos')") && !ev("savedWorkouts.some(w => (w.exercises || []).some(e => e.muscle === 'Pescoço' || e.muscle === 'Glúteos'))"));
 check('cervical do seed aparece como Ombros', ev("savedWorkouts.some(w => (w.exercises || []).some(e => e.exercise === 'Extensão Cervical' && e.muscle === 'Ombros'))"));
 check('Hip Thrust do seed migra para Posterior em logs e treino salvo', ev("logs.some(l => l.exercise === 'Elevação Pélvica (Hip Thrust)' && l.muscle === 'Posterior') && savedWorkouts.some(w => (w.exercises || []).some(e => e.exercise === 'Elevação Pélvica (Hip Thrust)' && e.muscle === 'Posterior'))"));
-check('IDs e retratos originais dos quatro chefões clássicos preservados', ev("THEMES.classico.bosses.slice(0, 4).map(b => b.id).join() === 'boss1,boss2,boss3,boss4' && DEFAULT_BOSS_PORTRAITS['classico:boss1'].endsWith('golem-anilhas.jpg') && DEFAULT_BOSS_PORTRAITS['classico:boss2'].endsWith('hidra-titanio.jpg') && DEFAULT_BOSS_PORTRAITS['classico:boss3'].endsWith('mecagorila.jpg') && DEFAULT_BOSS_PORTRAITS['classico:boss4'].endsWith('behemoth.jpg') && THEMES.classico.bosses.length === 12"));
+check('IDs e retratos (webp) dos quatro chefões clássicos preservados', ev("THEMES.classico.bosses.slice(0, 4).map(b => b.id).join() === 'boss1,boss2,boss3,boss4' && DEFAULT_BOSS_PORTRAITS['classico:boss1'].endsWith('golem-anilhas.webp') && DEFAULT_BOSS_PORTRAITS['classico:boss2'].endsWith('hidra-titanio.webp') && DEFAULT_BOSS_PORTRAITS['classico:boss3'].endsWith('mecagorila.webp') && DEFAULT_BOSS_PORTRAITS['classico:boss4'].endsWith('behemoth.webp') && THEMES.classico.bosses.length === 12"));
 check('seletor antigo de tema foi removido de Config', !$('game-theme-select') && !$('game-theme-desc'));
 check('Story Card remove paletas antigas', !$('btn-theme-berzerker') && !$('btn-theme-cyberpunk') && !$('btn-theme-minimal') && !/Cyberpunk|Minimalist|Berzerker Red/.test($('tab-content-story').textContent));
 check('Story Card preserva upload e controle de escurecimento', !!$('bg-image-input') && !!$('bg-overlay-opacity') && $('bg-overlay-opacity').type === 'range');
@@ -132,8 +132,14 @@ check('paleta, moldura e fontes estão vinculadas aos dez temas', ev("Object.key
 let legacyStoryStyleIgnored = true;
 try { ev("safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({ selectedStoryTheme: 'cyberpunk' })); loadStoredData(); generateStoryCard();"); } catch (e) { legacyStoryStyleIgnored = false; }
 check('estilo legado salvo é ignorado sem erro', legacyStoryStyleIgnored);
-check('Story Card mostra o tema de jogo atual', $('story-theme-name').textContent === ev('THEME.name') && $('story-theme-icon').textContent === '🦍');
+check('selo do tema usa a arte própria (não emoji)', !!$('story-theme-icon').querySelector('img'));
+check('emblema de patente aponta para a arte do tema e nível certos', ev("rankEmblemSrc('aneis',10)") === 'images/patentes/aneis-10.webp' && ev("rankEmblemSrc('zodiaco',1)") === 'images/patentes/zodiaco-01.webp' && ev("rankEmblemSrc('tema-inexistente',3)") === 'images/patentes/classico-03.webp');
+check('arte própria dos 10 temas tem ícone e fundo de card', ev("THEME_IDS_LIST.every(id => !!THEME_ICON_IMGS[id] && !!THEME_CARD_BGS[id])") && ev("THEME_IDS_LIST.length") === 10);
+check('Story Card mostra o tema de jogo atual', $('story-theme-name').textContent === ev('THEME.name') && $('story-theme-icon').querySelector('img').getAttribute('src') === 'images/temas/classico.webp');
 click($('header-theme-button'));
+ev("showRanksModal('classico');");
+check('modal de patentes mostra os dez emblemas próprios', ($('ranks-overlay')?.querySelectorAll('img')?.length || 0) >= 10 && $('ranks-overlay').innerHTML.includes('images/patentes/classico-10.webp'));
+ev("document.getElementById('ranks-overlay')?.remove();");
 check('botão do tema abre dez cartões com ícone, patente e progresso', !!$('theme-gallery-overlay') && $('theme-gallery-overlay').querySelectorAll('[data-theme-id]').length === 10 && $('theme-gallery-overlay').textContent.includes('Patente atual') && $('theme-gallery-overlay').textContent.includes('chefões'));
 check('galeria traz o Senhor dos Anéis (💍) com patentes próprias', !!$('theme-gallery-overlay').querySelector('[data-theme-id="aneis"]') && $('theme-gallery-overlay').textContent.includes('Senhor dos Anéis') && ev("THEME_ICONS.aneis === '💍' && THEMES.aneis.ranks[9][0] === 'LENDA DA TERRA MÉDIA'"));
 click($('theme-gallery-overlay').querySelector('[data-theme-id="roma"]'));
@@ -143,20 +149,20 @@ check('cancelar mantém o tema atual', ev("THEME.id === 'classico'") && !$('conf
 click($('header-theme-button'));
 click($('theme-gallery-overlay').querySelector('[data-theme-id="roma"]'));
 click($('confirm-modal-yes'));
-check('confirmar troca atualiza tema, ícone e Story Card', ev("THEME.id === 'roma'") && $('header-theme-icon').textContent === '🏛️' && $('story-theme-name').textContent === ev('THEME.name'));
+check('confirmar troca atualiza tema, ícone e Story Card', ev("THEME.id === 'roma'") && $('header-theme-icon').querySelector('img').getAttribute('src') === 'images/temas/roma.webp' && $('story-theme-name').textContent === ev('THEME.name'));
 ev("changeGameTheme('classico');");
 click($('header-theme-button'));
 click($('theme-gallery-overlay').querySelector('[data-theme-id="aneis"]'));
 click($('confirm-modal-yes'));
 navTo('boss');
-check('Senhor dos Anéis aplica tema, ícone, arena e jornadas no Boss', ev("THEME.id === 'aneis'") && $('header-theme-icon').textContent === '💍' && $('arena-title').textContent === 'Jornada até o Monte da Perdição' && $('tab-content-boss').textContent.includes('DESAFIO ATIVO — JORNADA 1/12'), ev('THEME.id'));
+check('Senhor dos Anéis aplica tema, ícone, arena e jornadas no Boss', ev("THEME.id === 'aneis'") && $('header-theme-icon').querySelector('img').getAttribute('src') === 'images/temas/aneis.webp' && $('arena-title').textContent === 'Jornada até o Monte da Perdição' && $('tab-content-boss').textContent.includes('DESAFIO ATIVO — JORNADA 1/12'), ev('THEME.id'));
 check('Boss do Senhor dos Anéis explica a fraqueza e o porquê', $('active-boss-card').textContent.includes('Goblins de Moria') && $('active-boss-card').textContent.includes('passos ágeis'));
 navTo('story');
-check('Story Card segue o tema Senhor dos Anéis', $('story-theme-name').textContent === 'Senhor dos Anéis' && $('story-theme-icon').textContent === '💍');
+check('Story Card segue o tema Senhor dos Anéis', $('story-theme-name').textContent === 'Senhor dos Anéis' && $('story-theme-icon').querySelector('img').getAttribute('src') === 'images/temas/aneis.webp');
 ev("changeGameTheme('classico');");
 check('histórico renderizado', !!$('history-content'));
 check('CSV multi-aba com 22 colunas no Log', ev('buildPlanilhaCSV()').split(/--- Sheet: Log ---/)[1].split('\n')[1].split(';').length === 22);
-check('vilões de Ação são só texto (nenhum retrato padrão)', ev("THEMES.acao.bosses.every(b => !DEFAULT_BOSS_PORTRAITS['acao:' + b.id]) && THEMES.aneis.bosses.every(b => !DEFAULT_BOSS_PORTRAITS['aneis:' + b.id])"));
+check('todos os 120 chefões têm retrato padrão (Ação e Anéis inclusive)', ev("Object.keys(THEMES).every(id => THEMES[id].bosses.every(b => !!DEFAULT_BOSS_PORTRAITS[id + ':' + b.id]))"));
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fs.readFileSync('js/app.js', 'utf8')) && /frame === 'espacial'/.test(fs.readFileSync('js/app.js', 'utf8')));
 
 // vistas do histórico

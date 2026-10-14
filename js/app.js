@@ -78,6 +78,48 @@ const THEME_ICONS = Object.freeze({
     classico: '🦍', zodiaco: '♈', hercules: '🦁', acao: '🎬', folclore: '🌴',
     nordica: '🛡️', roma: '🏛️', rpg: '🐉', galactica: '🚀', aneis: '💍'
 });
+
+// Arte própria dos temas: ícone (selo) e fundo dos cards. Patente = 10 níveis × 10 temas.
+const THEME_IDS_LIST = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica', 'aneis'];
+const THEME_ICON_IMGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/temas/${id}.webp`])));
+const THEME_CARD_BGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/cards/${id}.webp`])));
+
+function themeIconImg(themeId, cls = 'h-6 w-6 rounded-md') {
+    const src = THEME_ICON_IMGS[themeId];
+    return src ? `<img src="${src}" alt="" class="${cls}">` : `<span class="text-2xl">${THEME_ICONS[themeId] || '🎭'}</span>`;
+}
+
+// Emblema de patente desenhado em arte própria (círculo de ferro + símbolo).
+function rankEmblemSrc(themeId, level) {
+    const t = THEME_ICON_IMGS[themeId] ? themeId : 'classico';
+    const lvl = Math.min(10, Math.max(1, Number(level) || 1));
+    return `images/patentes/${t}-${String(lvl).padStart(2, '0')}.webp`;
+}
+
+function rankEmblemImg(themeId, level, cls = 'h-7 w-7 rounded-full') {
+    return `<img src="${rankEmblemSrc(themeId, level)}" alt="" class="${cls}">`;
+}
+
+// Cache de imagens para os cards em canvas (fundo do tema + emblema da patente).
+const _cardImgCache = {};
+function getCardImg(src) {
+    if (!src) return null;
+    if (_cardImgCache[src]) return _cardImgCache[src];
+    const img = new Image();
+    img.src = src;
+    _cardImgCache[src] = img;
+    return img;
+}
+
+function drawCoverImg(ctx, img, w, h) {
+    // Desenha preenchendo o quadro mantendo o enquadramento (crop central).
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    if (!iw || !ih) return false;
+    const scale = Math.max(w / iw, h / ih);
+    const dw = iw * scale, dh = ih * scale;
+    ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    return true;
+}
 const STORY_CARD_STYLES = Object.freeze({
     classico: {
         palette: { bgStart: '#0a0a0a', bgEnd: '#1a0303', cardBg: 'rgba(18,18,22,.88)', cardBorder: 'rgba(255,255,255,.08)', borderPrimary: '#dc2626', titleColor: '#ffffff', accentColor: '#ef4444', textDim: '#9ca3af', prColor: '#10b981', badgeBg: '#1f1f1f' },
@@ -466,7 +508,7 @@ function toggleDeloadWeek() {
 function updateStoryThemeInfo() {
     const icon = document.getElementById('story-theme-icon');
     const name = document.getElementById('story-theme-name');
-    if (icon) icon.textContent = THEME_ICONS[THEME?.id] || '🎭';
+    if (icon) icon.innerHTML = themeIconImg(THEME?.id, 'h-7 w-7 rounded-lg');
     if (name) name.textContent = THEME?.name || 'Tema atual';
 }
 
@@ -544,7 +586,7 @@ function showThemeGallery() {
         const defeated = Math.min(data.prog.defeatedCount, theme.bosses.length);
         return `<button type="button" data-theme-id="${theme.id}" onclick="requestGameThemeChange('${theme.id}')" class="text-left rounded-2xl border ${active ? 'border-berzerker-500 bg-berzerker-600/10 ring-1 ring-berzerker-500/30' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'} p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-berzerker-500">
             <div class="flex items-start justify-between gap-2">
-                <div class="flex items-center gap-2 min-w-0"><span class="text-2xl">${THEME_ICONS[theme.id] || '🎭'}</span><strong class="text-sm text-white leading-tight">${escapeHtml(theme.name)}</strong></div>
+                <div class="flex items-center gap-2 min-w-0">${themeIconImg(theme.id, 'h-8 w-8 rounded-lg border border-berzerker-border')}<strong class="text-sm text-white leading-tight">${escapeHtml(theme.name)}</strong></div>
                 ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[9px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
             </div>
             <div class="mt-3 flex items-end justify-between gap-2">
@@ -600,7 +642,7 @@ function showRanksModal(themeId) {
         const cls = ['border-emerald-600/40 bg-emerald-950/10', 'border-berzerker-500 bg-berzerker-600/10', 'border-berzerker-border opacity-60'][st];
         const tag = ['✔ conquistada', '◀ você está aqui', '🔒'][st];
         return `<div class="flex items-center justify-between gap-2 border ${cls} rounded-lg px-3 py-2">
-            <div class="flex items-center gap-2 min-w-0"><span class="text-xl">${x.icon}</span><span class="text-xs font-bold text-white truncate">${escapeHtml(x.name)}</span></div>
+            <div class="flex items-center gap-2 min-w-0">${rankEmblemImg(t.id, lvl)}<span class="text-xs font-bold text-white truncate">${escapeHtml(x.name)}</span></div>
             <div class="text-right shrink-0"><div class="text-[10px] font-mono text-gray-400">${fmt(x.minXp)} XP</div><div class="text-[9px] font-bold text-gray-500 uppercase">${tag}</div></div>
         </div>`;
     }).join('');
@@ -1940,7 +1982,7 @@ function updateHeaderChrome() {
     const icon = document.getElementById('header-theme-icon');
     const themeButton = document.getElementById('header-theme-button');
     const xp = document.getElementById('header-xp-display');
-    if (icon) icon.textContent = THEME_ICONS[THEME?.id] || '🎭';
+    if (icon) icon.innerHTML = themeIconImg(THEME?.id, 'h-7 w-7 rounded-lg');
     if (themeButton) {
         themeButton.title = `Tema atual: ${THEME?.name || 'Gamificação'}. Abrir galeria`;
         themeButton.setAttribute('aria-label', `Tema atual: ${THEME?.name || 'Gamificação'}. Abrir galeria de temas`);
@@ -1956,7 +1998,7 @@ function updateSummaryMetrics() {
     const rank = getAnimalRankForSession(filterDate);
     document.getElementById('stat-tonnage').textContent = `${(rank.sessionTonnage / 1000).toFixed(2)} TON`;
     document.getElementById('stat-relative').textContent = `${rank.relativeRatio.toFixed(1)}× BW`;
-    document.getElementById('stat-rank').textContent = `${rank.icon} ${rank.name} (Niv ${rank.level} · ${fmtN(rank.xp)} XP)`;
+    document.getElementById('stat-rank').innerHTML = `${rankEmblemImg(activeGameThemeId || THEME?.id, rank.level, 'inline-block h-5 w-5 rounded-full align-[-4px] mr-1')}${escapeHtml(rank.name)} (Niv ${rank.level} · ${fmtN(rank.xp)} XP)`;
     const todayDmg = Math.round(rank.sessionTonnage);
     document.getElementById('stat-boss-dmg').textContent = `${todayDmg.toLocaleString()} DMG`;
     updateHeaderChrome();
@@ -2485,6 +2527,16 @@ function generateStoryCard() {
         grad.addColorStop(1, palette.bgEnd);
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 1080, 1920);
+        // fundo de arte do tema (com véu escuro para o texto continuar legível)
+        const bgImg = getCardImg(THEME_CARD_BGS[THEME?.id]);
+        if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
+            ctx.save(); ctx.globalAlpha = 0.5; drawCoverImg(ctx, bgImg, 1080, 1920); ctx.restore();
+            const veil = ctx.createLinearGradient(0, 0, 0, 1920);
+            veil.addColorStop(0, 'rgba(0,0,0,.55)'); veil.addColorStop(0.5, 'rgba(0,0,0,.35)'); veil.addColorStop(1, 'rgba(0,0,0,.6)');
+            ctx.fillStyle = veil; ctx.fillRect(0, 0, 1080, 1920);
+        } else if (bgImg && !bgImg.complete) {
+            bgImg.onload = () => generateStoryCard();
+        }
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
         ctx.lineWidth = 2;
         for (let x = 60; x < 1080; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1920); ctx.stroke(); }
@@ -2521,7 +2573,16 @@ function generateStoryCard() {
 
     drawRoundedRect(70, 200, 940, 150, 12, palette.cardBg, palette.accentColor, 2);
     ctx.font = `72px ${fonts.display}`;
-    ctx.fillText(rank.icon, 100, 300);
+    const rankImg = getCardImg(rankEmblemSrc(THEME?.id, rank.level));
+    if (rankImg && rankImg.complete && rankImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(150, 275, 52, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+        ctx.drawImage(rankImg, 98, 223, 104, 104);
+        ctx.restore();
+    } else {
+        ctx.fillText(rank.icon, 100, 300);
+        if (rankImg && !rankImg.complete) rankImg.onload = () => generateStoryCard();
+    }
     ctx.fillStyle = palette.accentColor;
     ctx.font = `bold 22px ${fonts.body}`;
     ctx.fillText(`PATENTE — NÍVEL ${rank.level}/10 · ${fmtN(rank.xp)} XP`, 200, 245);
@@ -2657,6 +2718,15 @@ function generateBossDefeatCard() {
     const g = ctx.createLinearGradient(0, 0, 0, 1080);
     g.addColorStop(0, '#14080a'); g.addColorStop(1, '#08080a');
     ctx.fillStyle = g; ctx.fillRect(0, 0, 1080, 1080);
+    const bossBg = getCardImg(THEME_CARD_BGS[activeGameThemeId || THEME?.id]);
+    if (bossBg && bossBg.complete && bossBg.naturalWidth > 0) {
+        ctx.save(); ctx.globalAlpha = 0.45; drawCoverImg(ctx, bossBg, 1080, 1080); ctx.restore();
+        const veil = ctx.createLinearGradient(0, 0, 0, 1080);
+        veil.addColorStop(0, 'rgba(0,0,0,.6)'); veil.addColorStop(0.55, 'rgba(0,0,0,.35)'); veil.addColorStop(1, 'rgba(0,0,0,.7)');
+        ctx.fillStyle = veil; ctx.fillRect(0, 0, 1080, 1080);
+    } else if (bossBg && !bossBg.complete) {
+        bossBg.onload = () => generateBossDefeatCard();
+    }
 
     drawThemedFrame(ctx, { borderPrimary: '#dc2626' });
 
@@ -2701,7 +2771,14 @@ function generateBossDefeatCard() {
 
     ctx.fillStyle = '#9ca3af';
     ctx.font = '26px Inter, sans-serif';
-    ctx.fillText(`${rank.icon} ${rank.name} · Nível ${rank.level}`, 540, 910);
+    const rankImg = getCardImg(rankEmblemSrc(activeGameThemeId || THEME?.id, rank.level));
+    if (rankImg && rankImg.complete && rankImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(360, 902, 26, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+        ctx.drawImage(rankImg, 334, 876, 52, 52);
+        ctx.restore();
+    }
+    ctx.fillText(`${rank.name} · Nível ${rank.level}`, 540, 910);
     ctx.font = '22px Inter, sans-serif';
     ctx.fillText(`Diário de Cargas · ${getTodayLocalISO()}`, 540, 960);
     ctx.textAlign = 'left';
