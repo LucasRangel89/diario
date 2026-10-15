@@ -83,6 +83,10 @@ Automatizado já foi: instalar v36 por cima de v35 e ver o cache antigo ser apag
       com a tela bloqueada/bloqueando durante o descanso.
 - [ ] Rotação de tela e modo escuro do sistema não quebram layout.
 - [ ] Compartilhar/baixar o Story Card e o Card do Chefão (download de PNG).
+- [ ] Aba Buscar → **➕ Novo exercício**: a janela abre; Cancelar, ESC e toque fora do
+      cartão fecham; criar um exercício faz ele aparecer na busca e no seletor rápido e
+      continuar lá depois de recarregar. (Automatizado no jsdom: `tests/ui/60_csv_mapa_delegacao.js`,
+      seção `UI 13b`; teclado virtual e toque real só no aparelho.)
 - [ ] **Não validado automaticamente**: toque real, teclado do sistema, bloqueio de tela,
       câmera/galeria para a foto do chefão, e armazenamento sob pressão (aba anônima).
 
@@ -106,7 +110,9 @@ falha de gravação de imagem (IndexedDB recusando).
 
 ## 6. Pendências conhecidas (não são deste checklist)
 
-- `js/custom_exercises.js` chama `openModal`/`closeModal`/`renderSearchTab`, que **não
-  existem** em nenhum módulo: o botão "➕ Novo exercício" (`index.html`) lança
-  `ReferenceError` ao ser clicado. Achado registrado no relatório da auditoria;
-  não foi corrigido nesta rodada.
+- ~~`js/custom_exercises.js` chama `openModal`/`closeModal`/`renderSearchTab`, que não
+  existem~~ — **resolvido** na manutenção pós-PR #16 (I2): a janela passou a existir no
+  próprio módulo (mesmo padrão de overlay do app) e a aba Buscar é redesenhada com
+  `renderSearchScreen`. Ver o item "➕ Novo exercício" na seção 4.
+- Edição/exclusão de exercício personalizado: o formulário tem esse modo
+  (`openCustomExModal(id)`), mas nenhum botão da interface o abre hoje.

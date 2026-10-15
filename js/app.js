@@ -2175,6 +2175,7 @@ const OVERLAY_CLOSE_ORDER = [
     BOSS_LIGHTBOX_ID,          // z-[60], por cima de tudo enquanto aberto
     'confirm-modal-overlay',   // confirmação bloqueia qualquer coisa atrás
     'picker-overlay',           // seletor rápido de exercício
+    'custom-ex-overlay',        // formulário de exercício personalizado (js/custom_exercises.js)
     'edit-log-overlay',         // edição de registro
     'boss-card-overlay',        // Card do Chefão
     'ranks-overlay',            // modal de patentes

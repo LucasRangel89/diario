@@ -92,8 +92,9 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
   e inputs de texto focam corretamente para abrir o teclado virtual (fonte 16px no mobile evita zoom).
 - **Cadastro de exercício manual:** botão "➕ Novo exercício" na aba Buscar permite criar
   seus próprios exercícios (nome, grupo, equipamento, tipo, faixa, descanso, sinônimos, tags extras,
-  marcação se carrega lombar), salvos em localStorage, editáveis/excluíveis, aparecendo na busca e
-  no seletor.
+  marcação se carrega lombar), salvos em localStorage, aparecendo na busca e no seletor rápido.
+  O formulário tem modo de edição/exclusão (`openCustomExModal(id)`), mas ainda não há botão na
+  interface que o abra.
 - Novos exercícios: Extensão Lombar (Banco Romano), Cadeira Adutora, Desenvolvimento Arnold,
   Swing de Kettlebell, Caminhada do Fazendeiro, Empurrar Trenó, Superman, Agachamento Sumô, Pullover.
 - **Co-ativação (sinergia):** puxadas, empurradas e compostos podem sinalizar apoio indireto
@@ -162,6 +163,7 @@ npm test             # motor + UI + módulos + Service Worker
 - `js/planilha_data.js` — seed com o histórico real
 - `js/historico.js` — aba Histórico + CSV multi-aba
 - `js/busca.js` — aba Buscar + seletor rápido
+- `js/custom_exercises.js` — exercícios personalizados (cadastro, índice de busca e a janela "➕ Novo exercício")
 - `js/datas.js` — regra única de data válida (backup, CSV e recuperação)
 - `js/persistencia.js` — gravação do estado (logs, treinos, ajustes, jogo, Story Card)
 - `js/backup.js` — validação do backup JSON, montagem do pacote e parser de CSV

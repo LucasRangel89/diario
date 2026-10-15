@@ -1,6 +1,7 @@
 import { CATALOG_ALIASES, CATALOG_BY_NAME, CATALOG_BY_SEARCH, CATALOG_TIPOS, EXERCISE_CATALOG_FULL, MUSCLE_OPTIONS_FULL, SINONIMOS, TAG_DEFS, TAG_IDS, catalogInfo, deriveTags, normalizeText, setCustomExercisesRef } from './catalogo.js';
 import { exercicioCarregaLombar } from './assistente.js';
 import { alertModal, escapeHtml, refreshAll, safeStorage, updateExerciseSuggestions } from './app.js';
+import { renderSearchScreen } from './busca.js';
 /* ============================================================
    EXERCÍCIOS CUSTOMIZADOS PELO USUÁRIO
    ------------------------------------------------------------
@@ -323,6 +324,35 @@ function updateCustomExFormHint() {
     hint.textContent = meta ? meta.hint : '';
 }
 
+// Janela do formulário de exercício personalizado.
+// O formulário (customExerciseFormHTML) e o botão "➕ Novo exercício" (aba Buscar)
+// já existiam, mas openModal/closeModal nunca tinham sido declarados: o clique
+// lançava ReferenceError e nada abria. Mesmo padrão de overlay dos outros modais
+// do app (edição de registro, seletor rápido): criado sob demanda e removido ao
+// fechar — no Cancelar, no clique fora e no ESC (OVERLAY_CLOSE_ORDER em js/app.js).
+const CUSTOM_EX_OVERLAY_ID = 'custom-ex-overlay';
+
+function openModal(titulo, conteudoHTML) {
+    closeModal();
+    const o = document.createElement('div');
+    o.id = CUSTOM_EX_OVERLAY_ID;
+    o.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-start sm:items-center justify-center p-4 overflow-y-auto';
+    o.setAttribute('role', 'dialog');
+    o.setAttribute('aria-modal', 'true');
+    o.setAttribute('aria-label', titulo);
+    o.innerHTML = `
+        <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 max-w-lg w-full shadow-2xl">
+            <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider mb-3">${escapeHtml(titulo)}</h3>
+            ${conteudoHTML}
+        </div>`;
+    o.addEventListener('click', ev => { if (ev.target === o) closeModal(); });
+    document.body.appendChild(o);
+}
+
+function closeModal() {
+    document.getElementById(CUSTOM_EX_OVERLAY_ID)?.remove();
+}
+
 function openCustomExModal(existingId = null) {
     const existing = existingId ? customExercises.find(e => e.id === existingId) : null;
     openModal(existing ? '✏️ Editar exercício' : '➕ Novo exercício', customExerciseFormHTML(existing));
@@ -364,7 +394,7 @@ function submitCustomExForm(ev) {
     if (ok) {
         closeModal();
         alertModal(editing ? '✅ Exercício atualizado!' : '✅ Exercício criado com sucesso! Ele aparece na busca e no seletor.');
-        renderSearchTab();
+        renderSearchScreen();
         updateExerciseSuggestions();
     }
 }
@@ -374,7 +404,7 @@ function submitDeleteCustomEx(id) {
     deleteCustomExercise(id);
     closeModal();
     alertModal('🗑️ Exercício excluído.');
-    renderSearchTab();
+    renderSearchScreen();
 }
 
 // ============================================================

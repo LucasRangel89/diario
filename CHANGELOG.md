@@ -4,6 +4,16 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Não lançado] — manutenção pós-PR #16 (branch `arena/ffba3b1d-diario`)
 
+### CORRIGIDO
+- **"➕ Novo exercício" voltou a abrir (I2):** `js/custom_exercises.js` chamava `openModal`,
+  `closeModal` e `renderSearchTab`, que nunca existiram em nenhum commit (desde `a6c8735`): o
+  botão da aba Buscar lançava `ReferenceError` e nada abria. A janela agora é criada no próprio
+  módulo com o padrão de overlay do app (mesmas classes do modal de edição de registro), fecha
+  no Cancelar, no clique fora e no ESC (`custom-ex-overlay` entrou em `OVERLAY_CLOSE_ORDER`), e
+  a aba Buscar é redesenhada com `renderSearchScreen` (de `js/busca.js`). Nenhuma tela nova: o
+  formulário (`customExerciseFormHTML`) e o cadastro já existiam. Teste novo de ponta a ponta em
+  `tests/ui/60_csv_mapa_delegacao.js` (seção `UI 13b`). `sw.js` sobe para `v37`.
+
 ### DOCUMENTADO
 - **Ponteiros de teste atualizados (I4):** `docs/FORMATO_CSV.md`, `docs/RECUPERACAO.md`,
   `DIAGNOSTICO.md`, `js/datas.js`, `js/assistente.js` e `test_modules.js` apontavam para

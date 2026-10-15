@@ -38,6 +38,70 @@
     const inlineNoIndex = (fs.readFileSync('index.html', 'utf8').match(/on(click|change|input|submit|keydown)="[^"]*"/g) || []);
     check('index.html não tem mais handlers inline (onclick/onchange/oninput/onsubmit)', inlineNoIndex.length === 0, inlineNoIndex.slice(0, 3));
 
+    // ============================ ➕ NOVO EXERCÍCIO (I2) ============================
+    // js/custom_exercises.js chamava openModal/closeModal/renderSearchTab, que nunca
+    // existiram: o botão da aba Buscar lançava ReferenceError e nada abria. Este bloco
+    // exercita o caminho REAL (clique → janela → criar → busca redesenhada → excluir).
+    console.log('\n== UI 13b. ➕ Novo exercício: o botão da aba Buscar abre, cria e fecha ==');
+    const esperaFormCex = () => new Promise(r => setTimeout(r, 80));   // o form liga o submit num setTimeout(50)
+    const errosAntesCex = jsErrors.length;
+    const novosErrosCex = () => jsErrors.slice(errosAntesCex, errosAntesCex + 2);
+    const nomeNovoEx = 'Remada Sintética de Teste UI';
+    const cardNovoEx = () => cards().some(c => c.dataset.ex === nomeNovoEx);
+    const textoDe = id => ($(id) || {}).textContent || '';
+    try {
+        navTo('busca');
+        ev('clearSearchFilters()');
+        const nCustomAntesCex = ev('customExercises.length');
+        const btnNovoEx = document.querySelector('#tab-content-busca [data-action="openCustomExModal"]');
+        check('botão "➕ Novo exercício" está na aba Buscar e ligado a openCustomExModal', !!btnNovoEx && typeof window.getDiarioAction('openCustomExModal') === 'function');
+        click(btnNovoEx);
+        await esperaFormCex();
+        check('clicar abre o formulário numa janela, sem erro', !!$('custom-ex-overlay') && !!$('custom-ex-form') && jsErrors.length === errosAntesCex, novosErrosCex());
+        check('janela mostra "➕ Novo exercício" e a dica do tipo de carga', textoDe('custom-ex-overlay').includes('➕ Novo exercício') && textoDe('cex-tipo-hint').length > 0);
+        click(btnIn($('custom-ex-form'), 'Cancelar'));
+        check('"Cancelar" fecha a janela (closeCustomExModal), sem erro', !$('custom-ex-overlay') && jsErrors.length === errosAntesCex, novosErrosCex());
+        click(btnNovoEx);
+        await esperaFormCex();
+        key('Escape');
+        check('ESC fecha a janela do exercício personalizado', !$('custom-ex-overlay'));
+        click(btnNovoEx);
+        await esperaFormCex();
+        click($('custom-ex-overlay'));
+        check('clique fora do cartão fecha a janela', !$('custom-ex-overlay'));
+        ev(`setSearchQuery(${JSON.stringify(nomeNovoEx)})`);
+        check('antes de criar, a busca não encontra o exercício', !cardNovoEx());
+        click(btnNovoEx);
+        await esperaFormCex();
+        $('cex-nome').value = nomeNovoEx;
+        $('cex-grupo').value = 'Costas';
+        click($('custom-ex-form').querySelector('button[type="submit"]'));
+        check('"Criar exercício" grava o personalizado e fecha a janela',
+            ev('customExercises.length') === nCustomAntesCex + 1 && ev(`customExercises.some(e => e.nome === ${JSON.stringify(nomeNovoEx)} && e.grupo === 'Costas')`) && !$('custom-ex-overlay'));
+        check('a aba Buscar é redesenhada com o exercício novo (renderSearchScreen)', cardNovoEx(), titles().slice(0, 3));
+        check('a confirmação de criação aparece para o usuário', document.body.textContent.includes('Exercício criado com sucesso'));
+        check('nenhum erro não capturado no fluxo de criação', jsErrors.length === errosAntesCex, novosErrosCex());
+        ev(`openExercisePicker('log'); setPickerQuery(${JSON.stringify(nomeNovoEx)});`);
+        check('o seletor rápido também oferece o exercício novo', pickerRows().some(r => r.dataset.ex === nomeNovoEx));
+        ev('closeExercisePicker()');
+        // limpeza pelo caminho de exclusão do mesmo módulo (deixa o estado como estava)
+        const idNovoEx = ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeNovoEx)}).id`);
+        ev(`openCustomExModal(${JSON.stringify(idNovoEx)})`);
+        await esperaFormCex();
+        check('abrir com um id existente mostra "✏️ Editar exercício" com o botão Excluir', textoDe('custom-ex-overlay').includes('✏️ Editar exercício') && !!btnIn($('custom-ex-form'), 'Excluir'));
+        const confirmOriginalCex = window.confirm;
+        window.confirm = () => true;
+        try { click(btnIn($('custom-ex-form'), 'Excluir')); } finally { window.confirm = confirmOriginalCex; }
+        check('"Excluir" remove o personalizado, fecha a janela e redesenha a busca, sem erro',
+            ev('customExercises.length') === nCustomAntesCex && !$('custom-ex-overlay') && !cardNovoEx() && jsErrors.length === errosAntesCex, novosErrosCex());
+    } catch (e) {
+        check('fluxo "➕ Novo exercício" roda até o fim sem exceção', false, e.message);
+        document.getElementById('custom-ex-overlay')?.remove();
+        document.getElementById('picker-overlay')?.remove();
+    } finally {
+        ev('clearSearchFilters()');
+    }
+
     // ============================ CONSOLE ============================
     console.log('\n== UI 12. Console limpo ==');
     const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));
