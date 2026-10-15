@@ -775,6 +775,16 @@ check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexis
     check('treinos salvos restaurados idênticos', ev('JSON.stringify(savedWorkouts.map(w => w.id || w.name))') === treinosAntes);
     check('estado do jogo restaurado (saves por tema recriados)', ev("Object.keys(themeGameSaves).length") === Object.keys(payload.themeGameSaves || {}).length);
 
+    // ============================ DELEGAÇÃO DE EVENTOS ============================
+    console.log('\n== UI 13. Delegação de eventos (js/actions.js) ==');
+    const btnMais30 = [...document.querySelectorAll('[data-action="addSessionTimer"]')].find(b => b.textContent.trim() === '+30');
+    check('botão +30 do descanso usa data-action', !!btnMais30);
+    if (btnMais30) { click(btnMais30); }
+    check('clique delegado dispara a ação (+30 s no cronômetro)', $('session-timer-display').textContent === '00:30', $('session-timer-display').textContent);
+    ev('stopSessionTimer();');
+    const inlineNoIndex = (fs.readFileSync('index.html', 'utf8').match(/on(click|change|input|submit|keydown)="[^"]*"/g) || []);
+    check('index.html não tem mais handlers inline (onclick/onchange/oninput/onsubmit)', inlineNoIndex.length === 0, inlineNoIndex.slice(0, 3));
+
     // ============================ CONSOLE ============================
     console.log('\n== UI 12. Console limpo ==');
     const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));
