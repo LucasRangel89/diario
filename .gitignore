@@ -10,3 +10,6 @@ dist/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Dados pessoais do usuário (não versionar)
+planilha_diario.csv
