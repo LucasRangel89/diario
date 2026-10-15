@@ -538,3 +538,42 @@ function importPlanilhaCSV(text) {
     refreshAll();
     alertModal(`✅ CSV importado — ${imported} lançamentos.`);
 }
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+(function (g) {
+    const exports_ = {
+        historyView,
+    switchHistoryView,
+    historyFilteredLogs,
+    histDataBR,
+    metricaProgresso,
+    histGrupoChipHTML,
+    histSessaoDetalheHTML,
+    renderHistory,
+    historyLogHTML,
+    historyProgressoHTML,
+    getWeek1Start,
+    setWeek1Start,
+    historySemanasHTML,
+    historyPesoHTML,
+    addWeightLog,
+    removeWeightLog,
+    setBodyweightFromLog,
+    drawVolumeChartMini,
+    csvNum,
+    buildPlanilhaCSV,
+    exportCSV,
+    parseDateBRorISO,
+    importCSV,
+    parseSheetLogRows,
+    importPlanilhaCSV
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/historico.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);

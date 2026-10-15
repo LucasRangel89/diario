@@ -309,3 +309,37 @@ function submitDeleteCustomEx(id) {
     alertModal('🗑️ Exercício excluído.');
     renderSearchTab();
 }
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+(function (g) {
+    const exports_ = {
+        STORAGE_KEY_CUSTOM_EX,
+    customExercises,
+    loadCustomExercises,
+    saveCustomExercises,
+    customBySearch,
+    customByName,
+    rebuildCustomCatalog,
+    rebuildFullSearchIndex,
+    allExercisesList,
+    catalogInfoCustom,
+    exercicioCarregaLombarCustom,
+    addCustomExercise,
+    updateCustomExercise,
+    deleteCustomExercise,
+    customExerciseFormHTML,
+    updateCustomExFormHint,
+    openCustomExModal,
+    closeCustomExModal,
+    submitCustomExForm,
+    submitDeleteCustomEx
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/custom_exercises.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);

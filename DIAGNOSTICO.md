@@ -67,3 +67,37 @@ com PR e testes próprios:
 
 Não foi implementada nesta rodada para não arriscar a estabilidade offline de
 quem já usa (restrição 4) num golpe só.
+
+### Progresso — sub-etapa 1 concluída
+
+Cada um dos 9 arquivos declara agora um manifesto explícito de exports
+(bloco `__diarioExports` no fim do arquivo) e há teste automatizado que
+valida os símbolos críticos. Este manifesto é a fonte para gerar os
+`import`/`export` da sub-etapa 2.
+
+### Bloqueios mapeados para a sub-etapa 2 (descobertos na análise)
+
+1. **jsdom não executa `<script type="module">`** — o smoke test de UI
+   (test_ui.js) sobe o app inteiro com `runScripts: 'dangerously'`, que só
+   roda scripts clássicos. A sub-etapa 2 exige reescrever o harness de
+   testes (ex.: gerar bundle clássico em runtime tirando import/export, ou
+   migrar para um runner com navegador de verdade).
+2. **Escritas cross-file**: `planilha_data.js`, `historico.js`,
+   `gamificacao.js` e `assistente.js` ATRIBUEM variáveis declaradas em
+   `app.js` (`logs`, `weightLog`, `userBodyweight`, `savedWorkouts`,
+   `deloadWeeks`, `missionsXpTotal`, `histVolChartInstance`). Em módulos ES,
+   imports são somente leitura → essas ~13 atribuições precisam virar
+   setters exportados pelo app.
+3. **Monkey-patch entre arquivos**: `custom_exercises.js` SOBRESCREVE
+   `allExercisesList()` do `catalogo.js` (o catálogo passa a enxergar
+   exercícios customizados). Em módulos cada arquivo tem escopo próprio —
+   esse override precisa virar injeção explícita, senão o catálogo volta a
+   ignorar exercícios personalizados em silêncio.
+4. **Handlers inline**: os `onclick="..."` (index.html + HTML gerado em
+   app.js) resolvem funções pelo escopo global, que módulos não populam.
+   A sub-etapa 3 (delegação de eventos) tem que vir ANTES da troca para
+   `type="module"`, ou cada função referenciada precisa ser exposta em
+   `window` temporariamente.
+
+Ordem corrigida da migração: 1 (manifestos) → 3 (delegação de eventos) →
+2 (módulos + setters + harness novo) → 4 (sw/cache).

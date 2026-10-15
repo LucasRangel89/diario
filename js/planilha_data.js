@@ -125,3 +125,20 @@ function seedFromPlanilha() {
     });
     savedWorkouts = JSON.parse(JSON.stringify(PLANILHA_SESSOES));
 }
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+(function (g) {
+    const exports_ = {
+        PLANILHA_LOG,
+    PLANILHA_SESSOES,
+    seedFromPlanilha
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/planilha_data.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);

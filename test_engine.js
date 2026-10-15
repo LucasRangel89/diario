@@ -52,7 +52,7 @@ function makeFakeIDB() {
 global.indexedDB = makeFakeIDB();
 
 // ---- Carrega os módulos (mesmo escopo) ----
-const src = ['js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
+const src = ['js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/app.js']
     .map(p => fs.readFileSync(p, 'utf8')).join('\n');
 const api = new Function(src + `
   return {
@@ -903,6 +903,25 @@ check('lombar carregada apresenta horas restantes aproximadas', lombarCarregada.
         rec && rec.ok && rec.restored >= 2 && storage.get('berzerker_legado_a') === antes && storage.get('berzerker_legado_b') === '2', rec);
     const rec2 = await storage.recoverFromIndexedDB();
     check('recuperação repetida não restaura nada (idempotente)', rec2 && rec2.ok && rec2.restored === 0, rec2);
+
+    // ---- Etapa 5.1: manifestos de export (fundação ES modules) ----
+    console.log('\n== 5.1. Manifestos de export por arquivo ==');
+    const ex = window.__diarioExports || {};
+    const files = window.__diarioExportFiles || {};
+    check('os 9 arquivos registram manifesto', Object.keys(files).length === 9, Object.keys(files));
+    const criticos = ['storage','safeStorage',
+        'catalogInfo','logVolumeKg','duplaProgressao','sinalProximaSessao','recoveryState','normalizeMuscle',
+        'THEMES','computeXP','computeBossProgress',
+        'fatigueState','orderWorkoutExercises','suggestNextWorkout','regiaoLombarState',
+        'PLANILHA_LOG','seedFromPlanilha','PLANILHA_SESSOES',
+        'buildPlanilhaCSV','exportCSV',
+        'searchCatalog','deriveTags','exerciseTags',
+        'loadCustomExercises','catalogInfoCustom',
+        'loadStoredData','renderSession','renderRecoveryMap','renderHistory','fieldsHTML'];
+    const faltando = criticos.filter(n => !(n in ex));
+    check('símbolos críticos presentes nos manifestos', faltando.length === 0, faltando);
+    check('manifesto expõe mais de 400 símbolos (superfície completa)', Object.keys(ex).length > 400, Object.keys(ex).length);
+    check('storage do manifesto tem migrate/persist/compressImage', typeof ex.storage.migrate === 'function' && typeof ex.storage.persist === 'function' && typeof ex.storage.compressImage === 'function');
 
     console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
     process.exit(failures === 0 ? 0 : 1);

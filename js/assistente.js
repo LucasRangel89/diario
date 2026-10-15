@@ -613,3 +613,43 @@ function aplicaPenalidadeLombar(score, treino, estadoLombar) {
 }
 
 
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+(function (g) {
+    const exports_ = {
+        ATIVACAO_NOMES,
+    MUSCLE_SIZE_RANK,
+    STABILIZER_GROUPS,
+    isAtivacaoExercise,
+    classifyExercicio,
+    faseDe,
+    bisetBlockRanges,
+    blockPattern,
+    rangeUsaComoApoio,
+    orderWorkoutExercises,
+    assistenteTodayISO,
+    weeklySetsByMuscle,
+    fatigueState,
+    diasDesdeUltimoTreino,
+    suggestNextWorkout,
+    seriesIndiretasSemana,
+    weeklyGaps,
+    LOMBAR_HORAS_POR_SERIE,
+    LOMBAR_HORAS_BASE,
+    LOMBAR_NIVEL,
+    LOMBAR_REGEX_NIVEL,
+    LOMBAR_EXCLUSAO,
+    nivelCargaLombar,
+    exercicioCarregaLombar,
+    regiaoLombarState,
+    aplicaPenalidadeLombar
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/assistente.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);

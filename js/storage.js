@@ -324,3 +324,35 @@ const storage = {
 // Expor globalmente
 try { if (typeof window !== 'undefined') window.storage = storage; } catch (e) { /* ignore */ }
 try { if (typeof global !== 'undefined') global.storage = storage; } catch (e) { /* ignore */ }
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+(function (g) {
+    const exports_ = {
+        STORAGE_DB_NAME,
+    STORAGE_DB_VERSION,
+    STORAGE_STORE,
+    STORAGE_SCHEMA_VERSION,
+    STORAGE_MIGRATED_FLAG,
+    STORAGE_SCHEMA_KEY,
+    _storageCache,
+    _storageDB,
+    _storageReady,
+    _hasIndexedDB,
+    _openDB,
+    _idbGet,
+    _idbSet,
+    _idbKeys,
+    STORAGE_MIGRATIONS,
+    _runMigrations,
+    _hydrateCacheFromLocalStorage,
+    storage
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/storage.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);

@@ -978,3 +978,90 @@ function matchesQuery(text, q) {
     const hay = normalizeText(text);
     return tokens.every(t => hay.includes(t));
 }
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+(function (g) {
+    const exports_ = {
+        TYPE_META,
+    CATALOG_TIPOS,
+    EXERCISE_CATALOG_FULL,
+    CATALOG_ALIASES,
+    CATALOG_BY_NAME,
+    CATALOG_ALIAS_BY_NORM,
+    catalogPrefixMatch,
+    catalogInfo,
+    EXERCISE_CATALOG,
+    MUSCLE_META,
+    MUSCULOS_MAPA,
+    MUSCLE_OPTIONS_FULL,
+    LEGACY_MUSCLE_ALIASES,
+    MUSCLE_CANONICAL,
+    normalizeMuscle,
+    MUSCLE_WEIGHT,
+    FAIXA_SERIES_SEMANAIS,
+    FAIXA_SERIES_POR_GRUPO,
+    faixaSeriesDoGrupo,
+    RECOVERY_CONSTANTS,
+    RECOVERY_CONFIG,
+    PLATES,
+    DEFAULT_BAR_WEIGHT,
+    DEFAULT_SLED_WEIGHT,
+    inferExerciseType,
+    logMeta,
+    logCargaEfetiva,
+    logFullMeta,
+    logVolumeKg,
+    logTstSeconds,
+    logBestSet,
+    logWorstSet,
+    logEst1RM,
+    epleySeValido,
+    formatLoadText,
+    formatRepsText,
+    duplaProgressao,
+    sinalProximaSessao,
+    detectAutoPR,
+    recoveryState,
+    SINERGIA,
+    sinergiaLogs,
+    sinergiaState,
+    formatPlates,
+    TAG_CATEGORIAS,
+    TAG_DEFS,
+    EQUIP_KIND,
+    KIND_TAGS,
+    KIND_FROM_NAME,
+    P_EMPURRAR,
+    P_PUXAR,
+    P_AGACHAR,
+    P_DOBRADICA,
+    P_CORE,
+    P_COMPOSTO,
+    P_UNI,
+    P_POSTERIOR,
+    P_ANTERIOR,
+    P_AVANCADO,
+    P_BASICO,
+    TAG_OVERRIDES,
+    SINONIMOS,
+    normalizeText,
+    CATALOG_BY_SEARCH,
+    TAG_IDS,
+    allExercisesList,
+    TAG_BY_CATEGORY,
+    deriveTags,
+    exerciseTags,
+    catalogFacets,
+    searchCatalog,
+    matchesTags,
+    matchesQuery
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/catalogo.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);
