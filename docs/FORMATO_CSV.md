@@ -33,8 +33,14 @@ Versão do formato: **2** (aba `Formato`). Arquivos sem a aba `Formato` são o
 - **Calculadas (ignoradas na importação; o app recalcula):** `Unidade`, `Fator`,
   `Lados`, `Carga efetiva (kg)`, `Total reps (ou segundos)`, `Volume (kg)`,
   `Melhor série`, `Menor série`, `1RM Epley (kg)`, `Métrica de progresso`.
-- **Não reimportadas (metadado não restaurado):** `isPR` (marca de recorde é
-  recalculada pelo app ao registrar).
+- **Informativa (não decide PR, XP nem gamificação na importação):** `PR (informativo)`
+  — última coluna da aba `Log`, com `Sim`/`Não` conforme o app marcou o recorde. Na
+  importação o valor é **ignorado**: os registros entram com `isPR = false` e o PR
+  volta a ser decidido pelo app (`detectAutoPR`, no momento de registrar) ou pelo flag
+  manual do formulário. Motivo: PR multiplica o dano no chefão por 2, soma `XP_PR` e
+  cumpre missão semanal — aceitar `PR = Sim` de um arquivo daria XP e gamificação sem
+  treino. A coluna é exportada para leitura humana na planilha; versões anteriores do
+  app simplesmente ignoram a coluna (o formato continua 2).
 
 ### Regras de escrita
 
@@ -74,6 +80,9 @@ Cada registro exportado tem um **ID do registro** (`L` + id local). Ao importar:
 
 Consequência: reimportar o mesmo arquivo não duplica nada, e dois treinos iguais
 registrados de propósito continuam sendo dois.
+
+A coluna `PR (informativo)` **não entra** na identidade do registro: dois treinos com o
+mesmo conteúdo continuam sendo o mesmo registro, com ou sem PR.
 
 Limitação conhecida: o ID é local ao aparelho. Dois aparelhos que gerarem o mesmo ID
 para registros diferentes produzirão um *conflito* (informado, não sobrescrito).

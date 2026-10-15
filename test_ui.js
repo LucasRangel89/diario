@@ -67,7 +67,7 @@ window.fetch = url => {
 const stripModuleSyntax = s => s
     .replace(/^import [^\n]*;\n/gm, '')
     .replace(/^export \{[^\n]*\};?\n/gm, '');
-['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/app.js']
+['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/datas.js', 'js/app.js']
     .forEach(f => vm.runInContext(stripModuleSyntax(fs.readFileSync(f, 'utf8')), ctx, { filename: f }));
 
 // ---------- helpers ----------
@@ -190,7 +190,7 @@ navTo('story');
 check('Story Card segue o tema Senhor dos Anéis', $('story-theme-name').textContent === 'Senhor dos Anéis' && $('story-theme-icon').querySelector('img').getAttribute('src') === 'images/temas/aneis.webp');
 ev("changeGameTheme('classico');");
 check('histórico renderizado', !!$('history-content'));
-check('CSV multi-aba: Log com 22 colunas v1 + colunas do formato 2 (parser com aspas)', (() => { const r = ev("parseCSVRows(buildPlanilhaCSV().split(/--- Sheet: Log ---/)[1].split(/--- Sheet:/)[0].trim(), ';')"); return r[0].length === 28 && r[1].length === 28; })());
+check('CSV multi-aba: Log com 22 colunas v1 + 6 do formato 2 + PR informativo (parser com aspas)', (() => { const r = ev("parseCSVRows(buildPlanilhaCSV().split(/--- Sheet: Log ---/)[1].split(/--- Sheet:/)[0].trim(), ';')"); return r[0].length === 29 && r[1].length === 29; })());
 check('todos os 120 chefões têm retrato padrão (Ação e Anéis inclusive)', ev("Object.keys(THEMES).every(id => THEMES[id].bosses.every(b => !!DEFAULT_BOSS_PORTRAITS[id + ':' + b.id]))"));
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fs.readFileSync('js/app.js', 'utf8')) && /frame === 'espacial'/.test(fs.readFileSync('js/app.js', 'utf8')));
 const appSrcFrames = fs.readFileSync('js/app.js', 'utf8');

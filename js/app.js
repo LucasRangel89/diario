@@ -7,6 +7,7 @@ import './planilha_data.js';
 import './historico.js';
 import './busca.js';
 import './custom_exercises.js';
+import './datas.js';
 import { storage } from './storage.js';
 import { DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, FAIXA_SERIES_SEMANAIS, MUSCLE_META, MUSCLE_OPTIONS_FULL, MUSCULOS_MAPA, formatLoadText, formatPlates, formatRepsText, logEst1RM, logVolumeKg, CATALOG_TIPOS, EXERCISE_CATALOG, FAIXA_SERIES_POR_GRUPO, MUSCLE_WEIGHT, catalogInfo, detectAutoPR, duplaProgressao, inferExerciseType, logTstSeconds, normalizeMuscle, sinergiaState } from './catalogo.js';
 import { SEASON_WEEKS, STORAGE_KEY_THEME, THEMES, XP_REST_PER_DAY, completeSeason, computeBossProgress, isoWeekKey, isoWeekRange, missionsState, rankFromXP, seasonState, XP_GROUP_DAY_CAP, XP_MIN, XP_PR, autoDeloadWeekKeys, cardioXP, computeXP, logDamageKg } from './gamificacao.js';
@@ -15,6 +16,7 @@ import { getCustomExercises, normalizarExerciciosPersonalizados, saveCustomExerc
 import { renderExerciseTagLine, renderSearchScreen } from './busca.js';
 import { bisetBlockRanges, exercicioCarregaLombar, fatigueState, orderWorkoutExercises, regiaoLombarState, suggestNextWorkout, weeklyGaps, weeklySetsByMuscle } from './assistente.js';
 import { seedFromPlanilha } from './planilha_data.js';
+import { isoDataValida } from './datas.js';
 /* ============================================================
    DIÁRIO DE CARGAS — núcleo do app (estado, sessão, UI, dados)
    ============================================================ */
@@ -4052,12 +4054,8 @@ async function exportJSONBackup() {
 // campos AUSENTES mantêm o valor atual (savedWorkouts, settings, customExercises) ou
 // recebem o padrão do formato antigo (deloadWeeks, tests, weightLog). Campos PRESENTES
 // e com tipo errado fazem o backup inteiro ser rejeitado, sem alterar nada.
-function isoDataValida(s) {
-    if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-    const [y, m, d] = s.split('-').map(Number);
-    const dt = new Date(Date.UTC(y, m - 1, d));
-    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
-}
+// A regra de data válida vive em js/datas.js (módulo único, compartilhado com o
+// catálogo e o CSV): antes havia uma cópia aqui e outra em js/catalogo.js.
 function isObjetoSimples(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
 
 function validarBackupJSON(parsed) {
