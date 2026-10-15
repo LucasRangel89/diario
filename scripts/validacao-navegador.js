@@ -49,9 +49,14 @@ const vm = require('vm');
 // ---------- dependências opcionais (FORA do package.json) ----------
 const DEPS = process.env.DIARIO_BROWSER_DEPS || process.cwd();
 const EXIGIR = process.env.DIARIO_EXIGIR_NAVEGADOR === '1';
+// Comandos de workflow do GitHub Actions (anotações visíveis na PR e legíveis pela API).
+const NA_CI = process.env.GITHUB_ACTIONS === 'true';
+const escDado = t => String(t).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+const escProp = t => escDado(t).replace(/:/g, '%3A').replace(/,/g, '%2C');
+const anotar = (nivel, titulo, msg) => { if (NA_CI) console.log(`::${nivel} title=${escProp(titulo)}::${escDado(msg)}`); };
 function pular(motivo) {
   console.log(`⏭️  validação em navegador pulada: ${motivo}`);
-  if (process.env.GITHUB_ACTIONS === 'true') console.log(`::warning title=Validação em navegador pulada::${motivo}`);
+  anotar('warning', 'Validação em navegador pulada', motivo);
   if (EXIGIR) { console.error('❌ DIARIO_EXIGIR_NAVEGADOR=1: pular não é aceito.'); process.exit(1); }
   process.exit(0);
 }
@@ -439,6 +444,11 @@ const server = http.createServer((req, res) => {
   fs.mkdirSync(path.dirname(REPORT), { recursive: true });
   fs.writeFileSync(REPORT, JSON.stringify(relatorio, null, 2));
   console.log(`📝 relatório: ${REPORT}`);
+  // Na CI, o resultado vira anotação (o log e o artefato podem não estar acessíveis a quem revisa).
+  resultados.filter(r => !r.ok).forEach(r => anotar('error', 'Navegador: ' + r.nome, r.detalhe || 'falhou'));
+  anotar(falhas === 0 ? 'notice' : 'error', 'Validação em navegador real',
+    `${resultados.length - falhas}/${resultados.length} checagens OK · ${navegador} · ${browserVersao} · cache ${VERSAO}` +
+    (lacunasOffline.length ? ` · lacuna conhecida offline (não reprova): ${lacunasOffline.join(' ')}` : ''));
   console.log(`\n${falhas === 0 ? '✅ VALIDAÇÃO EM NAVEGADOR REAL: TUDO OK' : '❌ FALHAS: ' + falhas} (${resultados.length} checagens)`);
   process.exit(falhas === 0 ? 0 : 1);
 })().catch(e => { console.error('❌ erro na validação:', e); server.close(); process.exit(1); });
