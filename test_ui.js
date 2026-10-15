@@ -873,6 +873,99 @@ check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexis
     window.Storage.prototype.setItem = setItemOrig;
     ev("localStorage.removeItem('berzerker_teste_falha');");
 
+    console.log('\n== UI 12i. Falha de gravação no IndexedDB (imagens e fundo) é observável ==');
+    // IndexedDB simulado: modo 'ok' | 'falha' (put dispara onerror) | 'abort' (transação aborta).
+    window.__idbMode = 'ok';
+    window.__fakeIDB = function () {
+        const req = () => ({ onsuccess: null, onerror: null, onupgradeneeded: null, result: undefined });
+        const db = {
+            objectStoreNames: { contains: () => true },
+            transaction() {
+                if (window.__idbMode === 'abort') throw new Error('transação abortada (simulada)');
+                return {
+                    objectStore: () => ({
+                        get: () => { const r = req(); queueMicrotask(() => { r.result = undefined; if (r.onsuccess) r.onsuccess({ target: r }); }); return r; },
+                        put: () => { const r = req(); queueMicrotask(() => { if (window.__idbMode === 'falha') { if (r.onerror) r.onerror(new Error('put falhou (simulado)')); } else { r.result = 'k'; if (r.onsuccess) r.onsuccess({ target: r }); } }); return r; },
+                        getAllKeys: () => { const r = req(); queueMicrotask(() => { r.result = []; if (r.onsuccess) r.onsuccess({ target: r }); }); return r; }
+                    })
+                };
+            }
+        };
+        return { open() { const r = req(); queueMicrotask(() => { r.result = db; if (r.onsuccess) r.onsuccess({ target: r }); }); return r; } };
+    };
+    const idbBanners = () => [...document.body.children].filter(d => String(d.className).includes('bottom-5')).map(d => d.textContent).join(' | ');
+    const limpaBanners = () => [...document.body.children].filter(d => String(d.className).includes('bottom-5')).forEach(d => d.remove());
+    ev("window.indexedDB = window.__fakeIDB();");
+    check('com IndexedDB funcionando, saveBlobChecked confirma a gravação (true)', (await ev("saveBlobChecked('teste:blob', new Blob(['a']))")) === true);
+    limpaBanners();
+    ev("window.__idbMode = 'falha';");
+    check('erro no put: saveBlobChecked devolve false (não confirma o salvamento)', (await ev("saveBlobChecked('teste:blob', new Blob(['a']))")) === false);
+    check('erro no put: o usuário é avisado', /não confirmou o salvamento/i.test(idbBanners()), idbBanners().slice(0, 120));
+    const bannersAntes = [...document.body.children].filter(d => String(d.className).includes('bottom-5')).length;
+    await ev("saveBlobChecked('teste:blob2', new Blob(['b'])); saveBlobChecked('teste:blob3', new Blob(['c']));");
+    check('falhas seguidas no IndexedDB NÃO geram um aviso por imagem (aviso único por sequência)',
+        [...document.body.children].filter(d => String(d.className).includes('bottom-5')).length === bannersAntes);
+    ev("window.__idbMode = 'abort';");
+    check('transação abortada: saveBlobChecked também devolve false', (await ev("saveBlobChecked('teste:blob', new Blob(['a']))")) === false);
+    limpaBanners();
+    ev("window.__idbMode = 'ok';");
+    check('com a gravação restabelecida, saveBlobChecked volta a confirmar (true)', (await ev("saveBlobChecked('teste:blob', new Blob(['a']))")) === true);
+    ev("window.__idbMode = 'falha';");
+    await ev("saveBlobChecked('teste:blob', new Blob(['a']))");
+    check('uma nova sequência de falhas volta a avisar (aviso rearmado após sucesso)', /não confirmou o salvamento/i.test(idbBanners()));
+    limpaBanners();
+
+    // Nunca "salvo" falso: a mensagem de sucesso do upload só sai com confirmação.
+    check('imagem não confirmada NÃO vira "atualizado!" na mensagem',
+        /não confirmou o salvamento/i.test(ev("mensagemImagemSalva(false, '🖼️ Retrato do chefão atualizado!')")) &&
+        !/atualizado/i.test(ev("mensagemImagemSalva(false, '🖼️ Retrato do chefão atualizado!')")));
+    check('imagem confirmada mantém a mensagem de sucesso', ev("mensagemImagemSalva(true, '🖼️ Retrato do chefão atualizado!')") === '🖼️ Retrato do chefão atualizado!');
+
+    // Migração de retrato legado (dataURL → Blob): sem confirmação, nada de perder a imagem.
+    window.__compressOriginal = ev('window.storage.compressImage');   // host: devolve a função de volta no fim
+    window.__objURLOriginal = window.URL.createObjectURL;
+    window.URL.createObjectURL = () => 'blob:jsdom';
+    ev("window.storage.compressImage = async () => new Blob(['x']);");
+    // rearma o aviso (o último aviso veio de mensagemImagemSalva) e limpa os banners
+    ev("window.__idbMode = 'ok';");
+    await ev("saveBlobChecked('teste:rearme', new Blob(['a']))");
+    limpaBanners();
+    ev("window.__idbMode = 'falha';");
+    ev("bossPortraits.boss1 = 'data:image/png;base64,AAA';");
+    await ev('hydratePortraitBlobs()');
+    check('IndexedDB recusando: o retrato legado continua em dataURL (sem perda) e o usuário é avisado',
+        ev("bossPortraits.boss1") === 'data:image/png;base64,AAA' && /não confirmou o salvamento/i.test(idbBanners()), { valor: ev("bossPortraits.boss1"), banner: idbBanners() });
+    ev("window.__idbMode = 'ok';");
+    await ev('hydratePortraitBlobs()');
+    check('IndexedDB funcionando: o retrato legado migra para Blob (marcador idb:)', /^idb:portrait:/.test(ev("bossPortraits.boss1")), ev("bossPortraits.boss1"));
+    delete ev("bossPortraits")['boss1'];
+    ev('window.storage.compressImage = window.__compressOriginal;');
+    window.URL.createObjectURL = window.__objURLOriginal;
+
+    // Importação de backup com imagem que o IndexedDB não confirma: a mensagem final não diz "sucesso".
+    limpaBanners();
+    ev("window.__idbMode = 'falha';");
+    window.__dataURLtoBlobOriginal = ev('window.storage.dataURLToBlob');
+    ev("window.storage.dataURLToBlob = async () => new Blob(['x']);");
+    const backupComImagem = JSON.parse(JSON.stringify(await ev('buildBackupPayload()')));
+    backupComImagem.portraitImages = { 'classico:boss1': 'data:image/png;base64,AAA' };
+    const okComImagemRuim = await ev(`applyImportedBackup(${JSON.stringify(backupComImagem)})`);
+    const textoImportacao = idbBanners();
+    check('importação com imagem não confirmada: dados entram, mas a mensagem NÃO diz "sucesso"',
+        okComImagemRuim === true && /não confirmou o salvamento/i.test(textoImportacao) && !/importado com sucesso/i.test(textoImportacao), textoImportacao.slice(0, 160));
+    ev("window.storage.dataURLToBlob = window.__dataURLtoBlobOriginal;");
+    ev("window.__idbMode = 'ok';");
+    limpaBanners();
+
+    // Nenhuma gravação de imagem pode fugir do caminho que confirma (regressão do P3).
+    // O único lugar que pode chamar window.storage.saveBlob é o próprio saveBlobChecked.
+    const fontesImagem = ['js/app.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/assistente.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/planilha_data.js'];
+    const srcApp = fs.readFileSync('js/app.js', 'utf8').replace(/async function saveBlobChecked[\s\S]*?\n}\n/, '');
+    const diretas = fontesImagem.filter(f => /window\.storage\.saveBlob\(/.test(f === 'js/app.js' ? srcApp : fs.readFileSync(f, 'utf8')));
+    check('toda gravação de imagem passa por saveBlobChecked (nada de saveBlob direto)', diretas.length === 0, diretas);
+    check('o helper que confirma a gravação de Blob chama saveBlob de verdade (não é stub)',
+        /window\.storage\.saveBlob\(key, blob\)/.test(fs.readFileSync('js/app.js', 'utf8')));
+
     console.log('\n== UI 12e. CSV: importação validada, sem duplicar e com cardio/personalizados ==');
     const csvAtual = ev('buildPlanilhaCSV()');
     check('CSV traz o exercício personalizado no Catálogo (campo com aspas dobradas)', csvAtual.includes('"' + nomeCustom.replace(/"/g, '""') + '"'));

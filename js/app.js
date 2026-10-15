@@ -111,6 +111,42 @@ const safeStorage = {
     }
 };
 
+// Imagens e fundo vivem como Blob no IndexedDB. Falha de gravação aqui também é
+// OBSERVÁVEL (mesmo padrão do safeStorage.set): avisa uma vez por sequência, rearma
+// após sucesso e nunca deixa a UI dizer "salvo" sem confirmação. O app continua
+// utilizável — o registro/treino não depende da imagem.
+let _blobFailureNotified = false;
+const TEXTO_BLOB_NAO_CONFIRMADO = 'não confirmou o salvamento';
+function notifyBlobFailure() {
+    if (_blobFailureNotified) return;
+    _blobFailureNotified = true;
+    try {
+        if (typeof alertModal === 'function') alertModal(`⚠️ A imagem ${TEXTO_BLOB_NAO_CONFIRMADO} (armazenamento de imagens indisponível ou sem espaço). O app continua funcionando, mas a imagem pode desaparecer ao recarregar — exporte um backup JSON.`);
+    } catch (e) { /* sem UI disponível */ }
+}
+
+// Grava um Blob confirmando o resultado. Devolve true SÓ quando o IndexedDB
+// confirmou a gravação; false = não confirmado (nunca "salvo" falso).
+// opts.silencioso: quem chama já vai avisar o usuário (ex.: importação de backup
+// e upload com caminho reserva) — não dispara o aviso genérico.
+async function saveBlobChecked(key, blob, opts) {
+    let ok = false;
+    try {
+        if (window.storage && typeof window.storage.saveBlob === 'function') ok = (await window.storage.saveBlob(key, blob)) === true;
+    } catch (e) { ok = false; }
+    if (ok) _blobFailureNotified = false;
+    else if (!(opts && opts.silencioso)) notifyBlobFailure();
+    return ok;
+}
+
+// Mensagem final de um upload de imagem: só anuncia sucesso se a gravação foi
+// confirmada. Sem confirmação, diz exatamente isso (nada de "atualizado!").
+function mensagemImagemSalva(confirmado, textoSucesso) {
+    if (confirmado) return textoSucesso;
+    try { notifyBlobFailure(); } catch (e) { /* sem UI */ }
+    return `⚠️ A imagem foi aplicada na tela, mas o navegador ${TEXTO_BLOB_NAO_CONFIRMADO}. Exporte um backup JSON agora.`;
+}
+
 // ============================ CONSTANTES UI ============================
 const TECHNIQUES = [['Convencional', 'Convencional'], ['Rest-Pause', 'Rest-Pause'], ['Drop-Set', 'Drop-Set'], ['Cluster', 'Cluster Set'], ['Isometria', 'Isometria Focus'], ['Excêntrica Lenta', 'Excêntrica Lenta']];
 const NEXT_GOALS = [['', '— automático —'], ['📈 Aumentar Carga', '📈 Aumentar Carga (+kg)'], ['➕ Aumentar Reps', '➕ Mais Repetições'], ['⚖️ Manter Carga', '⚖️ Manter Carga'], ['🎯 Ajustar Execução', '🎯 Ajustar Técnica'], ['📉 Reduzir Carga', '📉 Reduzir Peso']];
@@ -534,7 +570,8 @@ function loadStoredData() {
                         try {
                             if (window.storage && typeof window.storage.compressImage === 'function' && typeof window.storage.saveBlob === 'function') {
                                 const blob = await window.storage.compressImage(dataURL, 1080, 0.82, 'image/webp');
-                                if (await window.storage.saveBlob(STORY_BG_BLOB_KEY, blob)) saveStoryState();
+                                // Não confirmou o Blob? Avisa (uma vez) e MANTÉM o dataURL legado.
+                                if (await saveBlobChecked(STORY_BG_BLOB_KEY, blob)) saveStoryState();
                             }
                         } catch (e) { /* mantém o legado */ }
                     })();
@@ -2430,8 +2467,9 @@ async function hydratePortraitBlobs() {
         try {
             const blob = await window.storage.compressImage(v, 512, 0.82, 'image/webp', { square: true });
             const key = 'portrait:' + activeGameThemeId + ':' + bossId;
-            const ok = await window.storage.saveBlob(key, blob);
-            if (!ok) continue; // IndexedDB indisponível: mantém o dataURL (sem perda)
+            // IndexedDB indisponível: mantém o dataURL (sem perda) e avisa uma vez.
+            const ok = await saveBlobChecked(key, blob);
+            if (!ok) continue;
             const marker = 'idb:' + key;
             portraitObjectURLs[marker] = URL.createObjectURL(blob);
             bossPortraits[bossId] = marker;
@@ -2681,7 +2719,7 @@ async function uploadBossPortrait(event, bossId) {
         if (window.storage && typeof window.storage.compressImage === 'function' && typeof window.storage.saveBlob === 'function') {
             const blob = await window.storage.compressImage(file, 512, 0.82, 'image/webp', { square: true });
             const key = 'portrait:' + activeGameThemeId + ':' + bossId;
-            const ok = await window.storage.saveBlob(key, blob);
+            const ok = await saveBlobChecked(key, blob, { silencioso: true });
             if (ok) {
                 const marker = 'idb:' + key;
                 if (portraitObjectURLs[marker]) URL.revokeObjectURL(portraitObjectURLs[marker]);
@@ -2705,9 +2743,11 @@ async function uploadBossPortrait(event, bossId) {
             const ctx = c.getContext('2d');
             ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 512, 512);
             bossPortraits[bossId] = c.toDataURL('image/jpeg', 0.8);
-            saveGameState();
+            // Caminho reserva (dataURL no localStorage): a mensagem só afirma "atualizado"
+            // quando essa gravação também foi confirmada.
+            const salvoNoLegado = saveGameState();
             renderBossBattleUI();
-            alertModal('🖼️ Retrato do chefão atualizado!');
+            alertModal(mensagemImagemSalva(salvoNoLegado, '🖼️ Retrato do chefão atualizado!'));
         };
         img.src = e.target.result;
     };
@@ -2909,7 +2949,7 @@ async function handleBgImageUpload(event) {
     try {
         if (window.storage && typeof window.storage.compressImage === 'function' && typeof window.storage.saveBlob === 'function') {
             const blob = await window.storage.compressImage(file, 1080, 0.82, 'image/webp');
-            const ok = await window.storage.saveBlob(STORY_BG_BLOB_KEY, blob);
+            const ok = await saveBlobChecked(STORY_BG_BLOB_KEY, blob, { silencioso: true });
             if (ok) {
                 const url = URL.createObjectURL(blob);
                 const img = new Image();
@@ -2924,8 +2964,10 @@ async function handleBgImageUpload(event) {
         const img = new Image();
         img.onload = function () {
             customBgImageData = img;
-            saveStoryState();
+            // Reserva (dataURL no localStorage): só anuncia sucesso se confirmada.
+            const salvoNoLegado = saveStoryState();
             generateStoryCard();
+            if (!salvoNoLegado) alertModal(`⚠️ O fundo foi aplicado na tela, mas o navegador ${TEXTO_BLOB_NAO_CONFIRMADO}. Exporte um backup JSON agora.`);
         };
         img.src = e.target.result;
     };
@@ -4126,6 +4168,8 @@ async function applyImportedBackup(parsed) {
         return false;
     }
     const importedThemeId = (parsed.gameTheme && THEMES[parsed.gameTheme]) ? parsed.gameTheme : activeGameThemeId;
+    // Imagens que o IndexedDB não confirmou gravar (aparece na mensagem final).
+    let imagensNaoSalvas = 0;
     const snapshot = {
         logs, savedWorkouts, settings, userBodyweight, deloadWeeks, tests, weightLog, themeGameSaves,
         activeGameThemeId, lastRankLevel, lastBossesDefeated,
@@ -4165,7 +4209,8 @@ async function applyImportedBackup(parsed) {
         lastRankLevel = null; lastBossesDefeated = null;
 
         // Imagens do backup (dataURL portáteis) → Blob no IndexedDB + marcador no save.
-        // Falha de imagem não cancela a importação dos dados (como antes), mas é contada.
+        // Falha de imagem não cancela a importação dos dados (como antes), mas é CONTADA
+        // e aparece na mensagem final: sem confirmação, nada de "importado com sucesso".
         try {
             if (window.storage && typeof window.storage.saveBlob === 'function') {
                 const imgs = isObjetoSimples(parsed.portraitImages) ? parsed.portraitImages : {};
@@ -4177,14 +4222,14 @@ async function applyImportedBackup(parsed) {
                     const blob = await window.storage.dataURLToBlob(dataURL);
                     if (!blob) continue;
                     const key = `portrait:${tema}:${bossId}`;
-                    if (await window.storage.saveBlob(key, blob)) {
+                    if (await saveBlobChecked(key, blob, { silencioso: true })) {
                         const save = ensureThemeGameSave(tema);
                         save.bossPortraits[bossId] = 'idb:' + key;
-                    }
+                    } else imagensNaoSalvas++;
                 }
                 if (parsed.storyBgImageData) {
                     const blob = await window.storage.dataURLToBlob(parsed.storyBgImageData);
-                    if (blob) await window.storage.saveBlob(STORY_BG_BLOB_KEY, blob);
+                    if (blob && !(await saveBlobChecked(STORY_BG_BLOB_KEY, blob, { silencioso: true }))) imagensNaoSalvas++;
                 }
             }
         } catch (e) { /* segue sem imagens */ }
@@ -4209,8 +4254,8 @@ async function applyImportedBackup(parsed) {
     if (v.custom.presente) saveCustomExercises();
     refreshAll();
     const conflitos = v.custom.conflitos;
-    if (okParts.some(ok => !ok)) {
-        alertModal('⚠️ Backup aplicado na tela, mas o navegador não confirmou o salvamento. Exporte um backup agora.');
+    if (okParts.some(ok => !ok) || imagensNaoSalvas > 0) {
+        alertModal(`⚠️ Backup aplicado na tela, mas o navegador ${TEXTO_BLOB_NAO_CONFIRMADO}${imagensNaoSalvas > 0 ? ` (${imagensNaoSalvas} imagem(ns) incluída(s))` : ''}. Exporte um backup agora.`);
     } else if (conflitos.length) {
         alertModal(`✅ Backup importado. ${conflitos.length} exercício(s) personalizado(s) não importado(s): ${conflitos[0]}`);
     } else {
@@ -4493,6 +4538,9 @@ window.onload = function () {
     setWeightLog,
     setHistVolChartInstance,
     safeStorage,
+    saveBlobChecked,
+    notifyBlobFailure,
+    mensagemImagemSalva,
     TECHNIQUES,
     NEXT_GOALS,
     INP,
@@ -4716,4 +4764,4 @@ window.onload = function () {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/app.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
-export { logs, savedWorkouts, draftExercises, editingWorkoutId, activeSession, userBodyweight, customBgImageData, volumeChartInstance, exChartInstance, setsChartInstance, weightLog, histVolChartInstance, settings, deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, portraitObjectURLs, STORY_BG_BLOB_KEY, themeGameSaves, activeGameThemeId, selectedStoryBossId, THEME, BOSSES, ANIMAL_RANKS, lastRankLevel, timer, wakeLock, lastKnownTodayISO, lastBackupAt, setEditorState, STORAGE_KEY_LOGS, STORAGE_KEY_BW, STORAGE_KEY_WORKOUTS, STORAGE_KEY_SEEDED, STORAGE_KEY_SETTINGS, STORAGE_KEY_GAME, STORAGE_KEY_THEME_GAMES, STORAGE_KEY_GAME_SHARED, STORAGE_KEY_STORY, STORAGE_KEY_BACKUP, safeStorage, TECHNIQUES, NEXT_GOALS, INP, LBL, MUSCLE_OPTIONS, NAV_GROUPS, activeNavGroup, activeTab, THEME_ICONS, THEME_IDS_LIST, THEME_ICON_IMGS, THEME_CARD_BGS, TAILWIND_SPACING_PX, imgSizeAttrs, themeIconImg, rankEmblemSrc, rankEmblemImg, _cardImgCache, getCardImg, drawCoverImg, STORY_CARD_STYLES, toLocalISO, getTodayLocalISO, formatDateBR, formatShortBR, updateHeaderDate, escapeHtml, setLogs, setSavedWorkouts, setUserBodyweight, setWeightLog, setHistVolChartInstance, closeElementById, hideElementById, fmtN, alertModal, confirmModal, shakeElement, migrateLog, normalizeSavedWorkouts, parseStoredObject, emptyThemeGameSave, ensureThemeGameSave, restoreActiveThemeGameSave, isoWeekDateRange, seasonsDoTema, deloadWeeksEfetivos, ensureDeloadRestAwards, loadGameProgressFromStorage, loadStoredData, logsForTheme, saveLogsToStorage, saveWorkoutsToStorage, saveSettings, saveGameState, saveStoryState, snapshotStoryBgDataURL, defaultTests, loadWorkoutsFromStorage, saveBodyweight, saveTrainingSettings, toggleDeloadWeek, updateStoryThemeInfo, applyTheme, changeGameTheme, computeThemeXPCtx, computeXPCtx, getGlobalXPTotal, themeRankList, themeConfirmationName, requestGameThemeChange, showThemeGallery, checkRankUp, showRanksModal, renderNavigation, selectNavGroup, switchTab, initStorageMigration, renderStorageStatus, seedInitialMockData, updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, saveEditedLog, deleteLog, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida, startSession, renderSession, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, endSession, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, stopSessionTimer, vibrate, playBeepSound, acquireWakeLock, releaseWakeLock, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, updateExerciseSuggestions, onWbExerciseChange, addExerciseToDraft, removeDraftExercise, moveDraftExercise, applySuggestedOrder, renderWeekGaps, renderDraftList, updateSaveButton, saveWorkout, clearDraft, editWorkout, deleteWorkout, renderSavedWorkouts, getAnimalRankForSession, updateHeaderChrome, updateSummaryMetrics, DEFAULT_BOSS_PORTRAITS, bossPortraitSrc, resolvePortraitSrc, hydratePortraitBlobs, _bossImgCache, getBossImg, renderBossBattleUI, BOSS_LIGHTBOX_ID, bossLightboxIdx, bossStatusLabel, bossStatusClass, bossPortraitDownloadName, openBossLightbox, closeBossLightbox, navBossLightbox, renderBossLightbox, OVERLAY_CLOSE_ORDER, closeTopOverlay, uploadBossPortrait, reservaManifest, reservaBossId, loadReservaManifest, reservaGroups, selectReservaBoss, applyReservaPortrait, resetBossPortraitToDefault, renderReservaStudio, renderMissions, claimMissions, renderSeason, finishSeasonNow, handleBgImageUpload, removeBgImage, wrapCanvasText, canvasMeasure, drawThemedFrame, drawThemedFrameArt, _fontsRedrawScheduled, withWebFonts, generateStoryCard, downloadStoryCard, openBossDefeatCard, generateBossDefeatCard, downloadBossDefeatCard, calculate1RM, renderWarmupCalculator, calculateWarmupFromForm, calculatePlatesFromForm, calculatePlatesQuick, weeklyStreakInfo, BADGE_ART, badgeArtSrc, badgeArtImg, badgeArtFallback, bestWeekWorkouts, renderBadgesAndStreak, initVolumeChart, renderExerciseChart, renderWeeklySetsChart, renderTests, addTestRecord, deleteTestRecord, addCustomTest, deleteTest, parseCSVRows, buildBackupPayload, exportJSONBackup, applyImportedBackup, importJSONBackup, renderBackupReminder, clearAllData, startDateWatcher, refreshAll };
+export { logs, savedWorkouts, draftExercises, editingWorkoutId, activeSession, userBodyweight, customBgImageData, volumeChartInstance, exChartInstance, setsChartInstance, weightLog, histVolChartInstance, settings, deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, portraitObjectURLs, STORY_BG_BLOB_KEY, themeGameSaves, activeGameThemeId, selectedStoryBossId, THEME, BOSSES, ANIMAL_RANKS, lastRankLevel, timer, wakeLock, lastKnownTodayISO, lastBackupAt, setEditorState, STORAGE_KEY_LOGS, STORAGE_KEY_BW, STORAGE_KEY_WORKOUTS, STORAGE_KEY_SEEDED, STORAGE_KEY_SETTINGS, STORAGE_KEY_GAME, STORAGE_KEY_THEME_GAMES, STORAGE_KEY_GAME_SHARED, STORAGE_KEY_STORY, STORAGE_KEY_BACKUP, safeStorage, saveBlobChecked, notifyBlobFailure, mensagemImagemSalva, TECHNIQUES, NEXT_GOALS, INP, LBL, MUSCLE_OPTIONS, NAV_GROUPS, activeNavGroup, activeTab, THEME_ICONS, THEME_IDS_LIST, THEME_ICON_IMGS, THEME_CARD_BGS, TAILWIND_SPACING_PX, imgSizeAttrs, themeIconImg, rankEmblemSrc, rankEmblemImg, _cardImgCache, getCardImg, drawCoverImg, STORY_CARD_STYLES, toLocalISO, getTodayLocalISO, formatDateBR, formatShortBR, updateHeaderDate, escapeHtml, setLogs, setSavedWorkouts, setUserBodyweight, setWeightLog, setHistVolChartInstance, closeElementById, hideElementById, fmtN, alertModal, confirmModal, shakeElement, migrateLog, normalizeSavedWorkouts, parseStoredObject, emptyThemeGameSave, ensureThemeGameSave, restoreActiveThemeGameSave, isoWeekDateRange, seasonsDoTema, deloadWeeksEfetivos, ensureDeloadRestAwards, loadGameProgressFromStorage, loadStoredData, logsForTheme, saveLogsToStorage, saveWorkoutsToStorage, saveSettings, saveGameState, saveStoryState, snapshotStoryBgDataURL, defaultTests, loadWorkoutsFromStorage, saveBodyweight, saveTrainingSettings, toggleDeloadWeek, updateStoryThemeInfo, applyTheme, changeGameTheme, computeThemeXPCtx, computeXPCtx, getGlobalXPTotal, themeRankList, themeConfirmationName, requestGameThemeChange, showThemeGallery, checkRankUp, showRanksModal, renderNavigation, selectNavGroup, switchTab, initStorageMigration, renderStorageStatus, seedInitialMockData, updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, saveEditedLog, deleteLog, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida, startSession, renderSession, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, endSession, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, stopSessionTimer, vibrate, playBeepSound, acquireWakeLock, releaseWakeLock, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, updateExerciseSuggestions, onWbExerciseChange, addExerciseToDraft, removeDraftExercise, moveDraftExercise, applySuggestedOrder, renderWeekGaps, renderDraftList, updateSaveButton, saveWorkout, clearDraft, editWorkout, deleteWorkout, renderSavedWorkouts, getAnimalRankForSession, updateHeaderChrome, updateSummaryMetrics, DEFAULT_BOSS_PORTRAITS, bossPortraitSrc, resolvePortraitSrc, hydratePortraitBlobs, _bossImgCache, getBossImg, renderBossBattleUI, BOSS_LIGHTBOX_ID, bossLightboxIdx, bossStatusLabel, bossStatusClass, bossPortraitDownloadName, openBossLightbox, closeBossLightbox, navBossLightbox, renderBossLightbox, OVERLAY_CLOSE_ORDER, closeTopOverlay, uploadBossPortrait, reservaManifest, reservaBossId, loadReservaManifest, reservaGroups, selectReservaBoss, applyReservaPortrait, resetBossPortraitToDefault, renderReservaStudio, renderMissions, claimMissions, renderSeason, finishSeasonNow, handleBgImageUpload, removeBgImage, wrapCanvasText, canvasMeasure, drawThemedFrame, drawThemedFrameArt, _fontsRedrawScheduled, withWebFonts, generateStoryCard, downloadStoryCard, openBossDefeatCard, generateBossDefeatCard, downloadBossDefeatCard, calculate1RM, renderWarmupCalculator, calculateWarmupFromForm, calculatePlatesFromForm, calculatePlatesQuick, weeklyStreakInfo, BADGE_ART, badgeArtSrc, badgeArtImg, badgeArtFallback, bestWeekWorkouts, renderBadgesAndStreak, initVolumeChart, renderExerciseChart, renderWeeklySetsChart, renderTests, addTestRecord, deleteTestRecord, addCustomTest, deleteTest, parseCSVRows, buildBackupPayload, exportJSONBackup, applyImportedBackup, importJSONBackup, renderBackupReminder, clearAllData, startDateWatcher, refreshAll };

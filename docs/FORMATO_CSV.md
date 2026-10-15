@@ -122,5 +122,9 @@ Regras:
 
 ## 4. Limitações
 
-- A imagem de fundo e os retratos dependem do IndexedDB; isso não é coberto pelos testes de UI (jsdom não tem IndexedDB). Validar manualmente.
+- A imagem de fundo e os retratos dependem do IndexedDB. O **caminho de falha** é coberto por teste de UI
+  com IndexedDB simulado que recusa a gravação (`test_ui.js`, seção `UI 12i`: erro no `put`, transação
+  abortada, aviso único por sequência, rearme após sucesso e mensagem de importação sem "sucesso").
+  O comportamento num navegador real (cota, aba anônima, troca de aparelho) segue dependendo de
+  validação manual — checklist em `docs/VALIDACAO_MANUAL.md`.
 - `deloadRestDays` é um campo derivado (recalculado a partir dos registros e da data de hoje); não é comparado como dado de origem.
