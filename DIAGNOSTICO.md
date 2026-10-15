@@ -45,3 +45,25 @@ aprovado pelo dono): manter o sinal atual como padrão; adicionar modo opcional
 "progressão assistida por RIR" onde topo da faixa com RIR ≥ 3 sugere incremento
 maior e RIR 0 sugere manter, sem alterar o cálculo base. Requer aprovação
 explícita antes de implementar.
+
+## Plano para a Etapa 5.1 (ES modules) — aguardando aprovação do dono
+
+A migração para `<script type="module">` exige reescrever os 8 scripts de uma
+vez: hoje os arquivos compartilham variáveis globais entre si (o motor de
+volume, o catálogo e a UI trocam dezenas de símbolos sem import/export), os
+testes dependem desse escopo compartilhado (`vm.runInContext` soma os arquivos)
+e o sw.js pré-cacheia cada arquivo. Plano proposto em 4 sub-etapas, cada uma
+com PR e testes próprios:
+
+1. Introduzir imports/exports mantendo o carregamento clássico (ESM dual):
+   arquivos passam a declarar exports e um bundle de compatibilidade os expõe
+   no escopo global. Nada muda para o usuário.
+2. Trocar para `<script type="module">` com um único entry point; testes
+   passam a importar os módulos em vez de concatenar fontes.
+3. Delegação de eventos: substituir `onclick="..."` inline por
+   `addEventListener`/delegação, um arquivo por PR (app.js é o maior).
+4. Revisar o CORE do sw.js (modules são cacheados igualmente, mas o entry
+   point muda) e bumpar o VERSION.
+
+Não foi implementada nesta rodada para não arriscar a estabilidade offline de
+quem já usa (restrição 4) num golpe só.
