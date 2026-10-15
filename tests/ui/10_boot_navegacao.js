@@ -48,7 +48,7 @@ check('IDs e retratos (webp) dos quatro chefões clássicos preservados', ev("TH
 check('seletor antigo de tema foi removido de Config', !$('game-theme-select') && !$('game-theme-desc'));
 check('Story Card remove paletas antigas', !$('btn-theme-berzerker') && !$('btn-theme-cyberpunk') && !$('btn-theme-minimal') && !/Cyberpunk|Minimalist|Berzerker Red/.test($('tab-content-story').textContent));
 check('Story Card preserva upload e controle de escurecimento', !!$('bg-image-input') && !!$('bg-overlay-opacity') && $('bg-overlay-opacity').type === 'range');
-check('paleta, moldura e fontes estão vinculadas aos dez temas', ev("Object.keys(THEMES).length === 10 && Object.keys(THEMES).every(id => STORY_CARD_STYLES[id] && STORY_CARD_STYLES[id].palette && STORY_CARD_STYLES[id].fonts && THEME_ICONS[id])") && /THEME\.frame/.test(fs.readFileSync('js/app.js', 'utf8')));
+check('paleta, moldura e fontes estão vinculadas aos dez temas', ev("Object.keys(THEMES).length === 10 && Object.keys(THEMES).every(id => STORY_CARD_STYLES[id] && STORY_CARD_STYLES[id].palette && STORY_CARD_STYLES[id].fonts && THEME_ICONS[id])") && /THEME\.frame/.test(fonteJs()));
 let legacyStoryStyleIgnored = true;
 try { ev("safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({ selectedStoryTheme: 'cyberpunk' })); loadStoredData(); generateStoryCard();"); } catch (e) { legacyStoryStyleIgnored = false; }
 check('estilo legado salvo é ignorado sem erro', legacyStoryStyleIgnored);
@@ -98,8 +98,8 @@ ev("changeGameTheme('classico');");
 check('histórico renderizado', !!$('history-content'));
 check('CSV multi-aba: Log com 22 colunas v1 + 6 do formato 2 + PR informativo (parser com aspas)', (() => { const r = ev("parseCSVRows(buildPlanilhaCSV().split(/--- Sheet: Log ---/)[1].split(/--- Sheet:/)[0].trim(), ';')"); return r[0].length === 29 && r[1].length === 29; })());
 check('todos os 120 chefões têm retrato padrão (Ação e Anéis inclusive)', ev("Object.keys(THEMES).every(id => THEMES[id].bosses.every(b => !!DEFAULT_BOSS_PORTRAITS[id + ':' + b.id]))"));
-check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fs.readFileSync('js/app.js', 'utf8')) && /frame === 'espacial'/.test(fs.readFileSync('js/app.js', 'utf8')));
-const appSrcFrames = fs.readFileSync('js/app.js', 'utf8');
+check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fonteJs()) && /frame === 'espacial'/.test(fonteJs()));
+const appSrcFrames = fonteJs();
 check('molduras de ferro (clássico) e de anel (Senhor dos Anéis) desenhadas à mão', /frame === 'ferro'/.test(appSrcFrames) && /frame === 'anel'/.test(appSrcFrames));
 check('clássico usa ferro e Anéis não divide mais o ouro do Zodíaco', ev("THEMES.classico.frame === 'ferro' && THEMES.aneis.frame === 'anel' && THEMES.zodiaco.frame === 'ouro'"));
 check('nenhum tema cai no else genérico de drawThemedFrame', ev("[...new Set(Object.values(THEMES).map(t => t.frame))]").every(f => new RegExp(`frame === '${f}'`).test(appSrcFrames)), ev("[...new Set(Object.values(THEMES).map(t => t.frame))]"));
@@ -185,7 +185,7 @@ check('segundo ESC fecha o Card do Chefão', !$('boss-card-overlay'));
 const corpoAntes = document.body.children.length;
 key('Escape');
 check('ESC sem overlay aberto não remove nada nem quebra', document.body.children.length === corpoAntes);
-const appSrcEsc = fs.readFileSync('js/app.js', 'utf8');
+const appSrcEsc = fonteJs();
 check('um único handler de ESC cobre todos os overlays na ordem de empilhamento', /OVERLAY_CLOSE_ORDER/.test(appSrcEsc) && /closeTopOverlay/.test(appSrcEsc));
 check('cards em canvas esperam document.fonts.ready antes do traço definitivo', /withWebFonts\(generateStoryCard\)/.test(appSrcEsc) && /withWebFonts\(generateBossDefeatCard\)/.test(appSrcEsc) && /fonts\.ready\.then/.test(appSrcEsc));
 check('redraw de fontes é agendado uma vez só (sem loop com os onload de imagem)', (appSrcEsc.match(/_fontsRedrawScheduled = true/g) || []).length === 1);

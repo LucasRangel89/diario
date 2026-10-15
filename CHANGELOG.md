@@ -50,6 +50,18 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
   de checagens, então apagar/renomear/esvaziar um trecho falha em vez de reduzir cobertura
   em silêncio.
 
+- **`js/app.js` dividido em módulos (R2):** o núcleo tinha ~4.770 linhas. Saíram
+  para arquivos próprios, carregados pelo entry na ordem do grafo:
+  `js/persistencia.js` (gravação do estado: logs, treinos, ajustes, jogo, Story Card),
+  `js/backup.js` (validação do backup JSON, montagem do pacote, parser de CSV),
+  `js/cartoes.js` (Story Card e Card do Chefão: canvas, arte temática, emblemas) e
+  `js/calculadoras.js` (aba Cálculos, recordes e medalhas). `js/app.js` ficou com
+  3.632 linhas (estado, sessão e UI de núcleo) e passa a importar essas funções.
+  Nenhuma linha de lógica foi reescrita: os corpos das 50 declarações movidas foram
+  comparados e são byte a byte iguais aos originais, e nenhuma função movida
+  reatribui estado do app (estado continua sendo escrito por quem o possui).
+  `sw.js` sobe para `v35` e inclui os novos módulos no CORE.
+
 ### ALTERADO
 - **`PR` no CSV é informativa (R4):** a coluna continua sendo exportada (agora como
   `PR (informativo)`) e a importação **ignora** o valor do arquivo — quem decide PR

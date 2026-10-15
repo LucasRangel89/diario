@@ -67,7 +67,7 @@ window.fetch = url => {
 const stripModuleSyntax = s => s
     .replace(/^import [^\n]*;\n/gm, '')
     .replace(/^export \{[^\n]*\};?\n/gm, '');
-['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/datas.js', 'js/app.js']
+['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/datas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/app.js']
     .forEach(f => vm.runInContext(stripModuleSyntax(fs.readFileSync(f, 'utf8')), ctx, { filename: f }));
 
 // ---- Runner por área -------------------------------------------------------
@@ -82,6 +82,10 @@ globalThis.ctx = ctx;
 globalThis.html = html;
 globalThis.jsErrors = jsErrors;
 globalThis.fs = fs;
+// R2: o código do app está distribuído em js/*.js — checagens de PRESENÇA de código
+// (regex) leem o conjunto dos módulos, não um arquivo específico.
+globalThis.fonteJs = () => fs.readdirSync('js').filter(f => f.endsWith('.js')).sort()
+    .map(f => fs.readFileSync('js/' + f, 'utf8')).join('\n');
 globalThis.failures = 0;
 globalThis.totalChecks = 0;
 globalThis.check = function check(nome, cond, extra) {

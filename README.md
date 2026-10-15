@@ -160,4 +160,9 @@ npm test             # motor + UI + módulos + Service Worker
 - `js/planilha_data.js` — seed com o histórico real
 - `js/historico.js` — aba Histórico + CSV multi-aba
 - `js/busca.js` — aba Buscar + seletor rápido
-- `js/app.js` — estado, sessão, UI (núcleo)
+- `js/datas.js` — regra única de data válida (backup, CSV e recuperação)
+- `js/persistencia.js` — gravação do estado (logs, treinos, ajustes, jogo, Story Card)
+- `js/backup.js` — validação do backup JSON, montagem do pacote e parser de CSV
+- `js/cartoes.js` — Story Card e Card do Chefão (canvas, arte temática e símbolos)
+- `js/calculadoras.js` — aba Cálculos (1RM, aquecimento, anilhas), recordes e medalhas
+- `js/app.js` — entry: importa os demais módulos e concentra estado, sessão e UI (núcleo)

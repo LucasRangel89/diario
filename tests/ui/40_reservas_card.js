@@ -72,7 +72,9 @@
 
     // ============================ GRADES NO CELULAR ============================
     console.log('\n== UI 12e. Grades estáveis e legíveis no celular ==');
-    const appSrcMobile = fs.readFileSync('js/app.js', 'utf8');
+    // R2: o card do chefão é desenhado em js/app.js + js/cartoes.js (os chips de
+    // tag de js/busca.js usam 9px de propósito e não entram nesta checagem).
+    const appSrcMobile = ['js/app.js', 'js/cartoes.js'].map(f => fs.readFileSync(f, 'utf8')).join('\n');
     navTo('boss');
     ev('renderBossBattleUI(); renderBadgesAndStreak(); showThemeGallery();');
     const thumbBosses = [...document.querySelectorAll('#bosses-grid img')];

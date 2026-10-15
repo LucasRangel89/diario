@@ -20,7 +20,7 @@ console.log('\n== 22. Arte própria: emblemas de patente, selos, cards e retrato
     }
     check('100 emblemas de patente + 10 selos + 10 fundos de card existem', missing.length === 0, missing.slice(0, 6));
     check('emblemas de patente ficam leves (<= 60 KB cada)', heavy.length === 0, heavy.slice(0, 4));
-    const appSrc = fs.readFileSync('js/app.js', 'utf8');
+    const appSrc = fonteJs();
     const s0 = appSrc.indexOf('const DEFAULT_BOSS_PORTRAITS');
     const block = appSrc.slice(s0, appSrc.indexOf('};', s0));
     const entries = [...block.matchAll(/'([a-z]+):([a-zA-Z0-9]+)':\s*'([^']+)'/g)];
@@ -43,7 +43,7 @@ console.log('\n== 23. Badges: 16 medalhões de arte própria ==');
     check('16 medalhões de badge existem no disco e ficam leves (<= 60 KB)', missing.length === 0 && heavy.length === 0, { missing, heavy });
     const swSrc = fs.readFileSync('sw.js', 'utf8');
     check('os 16 badges entram no CORE do service worker', BADGE_SLUGS.every(s => swSrc.includes(`'./images/badges/${s}.webp'`)));
-    const appSrc = fs.readFileSync('js/app.js', 'utf8');
+    const appSrc = fonteJs();
     const m = appSrc.match(/const BADGE_ART = [\s\S]*?\]\)/);
     check('BADGE_ART do app lista exatamente os 16 slugs com arte', !!m && BADGE_SLUGS.every(s => m[0].includes(`'${s}'`)) && (m[0].match(/'[a-z0-9-]+'/g) || []).length === 16, m && (m[0].match(/'[a-z0-9-]+'/g) || []).length);
     check('badge sem arquivo volta pro emoji (fallback no onerror)', /badgeArtFallback/.test(appSrc) && /data-fallback/.test(appSrc));
@@ -92,7 +92,7 @@ console.log('\n== 25. Estúdio de reservas: manifesto e integração ==');
     const itens = Object.values(idx.temas).flat();
     check('index.json lista as 35 reservas e todas existem no disco', idx.total === 35 && itens.length === 35 && itens.every(i => fs.existsSync(i.file)), itens.length);
     check('cada reserva cai no tema certo pelo prefixo do arquivo', Object.entries(idx.temas).every(([t, lista]) => lista.every(i => i.file.includes(`/reserva/${t}-`) && i.label && i.slug)));
-    const appSrc25 = fs.readFileSync('js/app.js', 'utf8');
+    const appSrc25 = fonteJs();
     check('app lê o manifesto e reaproveita bossPortraits (upload por chefão)', /loadReservaManifest\(\)/.test(appSrc25) && /function applyReservaPortrait/.test(appSrc25) && /bossPortraits\[reservaBossId\] = src/.test(appSrc25) && /delete bossPortraits\[reservaBossId\]/.test(appSrc25));
     check('index.json das reservas entra no CORE do service worker', fs.readFileSync('sw.js', 'utf8').includes("'./images/bosses/reserva/index.json'"));
 }
@@ -227,7 +227,7 @@ check('medida não-numérica vira 0 (texto inteiro numa linha, sem loop)',
     && api.wrapCanvasText({}, 'a b c d', 880, 2).length === 1);
 check('texto vazio devolve lista vazia', api.wrapCanvasText(ctxMedidor, '', 880, 2).length === 0 && api.wrapCanvasText(ctxMedidor, null, 880, 2).length === 0);
 
-const appSrcCard = fs.readFileSync('js/app.js', 'utf8');
+const appSrcCard = fonteJs();
 check('drawThemedFrame lê o canvas real e escala a arte 1080×1920',
     /function drawThemedFrame\(ctx, palette\)[\s\S]{0,420}ctx\.scale\(W \/ 1080, H \/ 1920\)/.test(appSrcCard)
     && /canvasMeasure\(ctx && ctx\.canvas && ctx\.canvas\.width, 1080\)/.test(appSrcCard)
