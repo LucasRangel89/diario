@@ -1210,7 +1210,7 @@ function renderLogsTable() {
 }
 
 // ============================ RENDER: MAPA DE FADIGA ============================
-// Fase 3: fadiga REAL = recuperação (%) + volume da semana vs faixa 10–20 séries
+// Fase 3: fadiga REAL = recuperação (%) + volume da semana vs a faixa do grupo
 function renderRecoveryMap() {
     const gridEl = document.getElementById('recovery-status-grid');
     if (!gridEl) return;
@@ -1833,20 +1833,24 @@ function applySuggestedOrder() {
     alertModal('✨ Ordem sugerida aplicada! Cada exercício mostra o porquê — use ▲▼ para mudar quando quiser.');
 }
 
-// Painel "o que falta na semana" (estímulo total = 10–20 séries por grupo)
+// Painel "o que falta na semana" (estímulo total pela faixa de CADA grupo)
 function renderWeekGaps() {
     const el = document.getElementById('builder-week-gaps');
     if (!el) return;
     const gaps = weeklyGaps(logs, getTodayLocalISO());
-    const min = FAIXA_SERIES_SEMANAIS.min, max = FAIXA_SERIES_SEMANAIS.max;
+    const faixas = `${FAIXA_SERIES_SEMANAIS.min}–${FAIXA_SERIES_SEMANAIS.max} séries por grupo`
+        + Object.entries(FAIXA_SERIES_POR_GRUPO).map(([m, f]) => ` · ${m} ${f.min}–${f.max}`).join('');
     if (gaps.length === 0) {
-        el.innerHTML = `<div class="text-[11px] text-emerald-400/90 bg-emerald-950/20 border border-emerald-700/40 rounded-lg p-2.5">✅ Todos os grupos musculares estão dentro (ou acima) da faixa de ${min}–${max} séries/semana. Bom trabalho!</div>`;
+        el.innerHTML = `<div class="text-[11px] text-emerald-400/90 bg-emerald-950/20 border border-emerald-700/40 rounded-lg p-2.5">✅ Todos os grupos musculares estão dentro (ou acima) da própria faixa da semana (${faixas}). Bom trabalho!</div>`;
         return;
     }
     const chips = gaps.map(g => {
+        // O apoio indireto aparece, mas não entra na conta: a meta é de estímulo
+        // direto (senão o antebraço "fecha a semana" só de segurar barra).
+        const indiretos = g.indiretas > 0 ? ` · 🤝 +${String(g.indiretas.toFixed(1)).replace('.', ',')} indiretos` : '';
         const txt = g.status === 'abaixo'
-            ? `${g.muscle}: ${g.series}/${min} min · faltam ${g.faltam}`
-            : `${g.muscle}: ${g.series}/${max} máx · +${g.excesso} acima`;
+            ? `${g.muscle}: ${g.series}/${g.min} min · faltam ${g.faltam}${indiretos}`
+            : `${g.muscle}: ${g.series}/${g.max} máx · +${g.excesso} acima${indiretos}`;
         const cls = g.status === 'abaixo'
             ? 'bg-amber-950/40 border-amber-700/40 text-amber-300'
             : 'bg-orange-950/40 border-orange-700/40 text-orange-300';
@@ -1854,9 +1858,9 @@ function renderWeekGaps() {
     }).join('');
     el.innerHTML = `
         <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3 space-y-2">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">🎯 Estímulo da semana — o que falta (${min}–${max} séries por grupo)</div>
+            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">🎯 Estímulo da semana — o que falta (${faixas})</div>
             <div class="flex flex-wrap gap-1.5">${chips}</div>
-            <div class="text-[10px] text-gray-500">O assistente sugere treinos que cobrem os grupos mais abaixo da meta — mas quem manda é você.</div>
+            <div class="text-[10px] text-gray-500">🤝 = séries equivalentes de apoio indireto (informativo, não abate a meta). O assistente sugere treinos que cobrem os grupos mais abaixo — mas quem manda é você.</div>
         </div>`;
 }
 

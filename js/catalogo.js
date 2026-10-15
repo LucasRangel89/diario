@@ -313,6 +313,18 @@ const MUSCLE_WEIGHT = { 'Pernas': 0.5, 'Posterior': 0.5 };
 // ---------- Séries semanais por grupo (faixa-alvo) ----------
 const FAIXA_SERIES_SEMANAIS = { min: 10, max: 20 };
 
+// Exceções por grupo: músculo pequeno não precisa (nem aguenta) o volume de um
+// grupo grande. O antebraço ainda trabalha como apoio de toda puxada e pegada,
+// então cobrar 10 séries diretas dele é cobrar volume que não existe.
+const FAIXA_SERIES_POR_GRUPO = {
+    'Antebraço': { min: 4, max: 10 }
+};
+
+// Faixa-alvo do grupo (canônico): exceção quando existe, padrão 10–20.
+function faixaSeriesDoGrupo(muscle) {
+    return FAIXA_SERIES_POR_GRUPO[normalizeMuscle(muscle)] || FAIXA_SERIES_SEMANAIS;
+}
+
 // ---------- Anilhas ----------
 const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
 const DEFAULT_BAR_WEIGHT = 20;

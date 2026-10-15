@@ -32,6 +32,7 @@ const api = new Function(src + `
     weeklySetsByMuscle, fatigueState, suggestNextWorkout, weeklyGaps, diasDesdeUltimoTreino,
     FAIXA_SERIES_SEMANAIS, MUSCULOS_MAPA, MUSCLE_META, normalizeMuscle, PLANILHA_SESSOES,
     normalizeSavedWorkouts, suggestSessaoFor, CATALOG_ALIASES,
+    FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, seriesIndiretasSemana,
     get STATE() { return { logs, settings, userBodyweight }; },
     setLogs(arr) { logs = arr; },
     setBW(v) { userBodyweight = v; },
@@ -641,6 +642,48 @@ check('Cardio e grupo sem histórico não sugerem sessão', api.suggestSessaoFor
 api.setLogs([...api.logsArr, { id: 6, date: '2026-10-11', kind: 'peso', muscle: 'Bíceps', exercise: 'Rosca Scott', sessao: 'Full Body' }]);
 check('empate de uso desempata pela sessão mais recente', api.suggestSessaoFor('Bíceps') === 'Full Body', api.suggestSessaoFor('Bíceps'));
 api.setLogs([]);
+
+console.log('\n== 28. Meta de séries por grupo + apoio indireto visível ==');
+check('Antebraço tem faixa própria (4–10)', api.FAIXA_SERIES_POR_GRUPO['Antebraço'].min === 4 && api.FAIXA_SERIES_POR_GRUPO['Antebraço'].max === 10);
+check('faixaSeriesDoGrupo devolve a exceção e o padrão 10–20',
+    api.faixaSeriesDoGrupo('Antebraço') === api.FAIXA_SERIES_POR_GRUPO['Antebraço']
+    && api.faixaSeriesDoGrupo('antebraco') === api.FAIXA_SERIES_POR_GRUPO['Antebraço']
+    && api.faixaSeriesDoGrupo('Peito') === api.FAIXA_SERIES_SEMANAIS
+    && api.faixaSeriesDoGrupo('') === api.FAIXA_SERIES_SEMANAIS);
+const fAntebraco = api.fatigueState('Antebraço', [], 6, Date.now());
+check('fatigueState cobra a faixa do grupo: 6 séries de antebraço estão na faixa',
+    fAntebraco.volumeStatus === 'na-faixa' && fAntebraco.faltam === 0 && fAntebraco.excesso === 0
+    && fAntebraco.metaMin === 4 && fAntebraco.metaMax === 10 && fAntebraco.volText.includes('6/4–10 séries'), fAntebraco.volText);
+const fPeitoMeta = api.fatigueState('Peito', [], 6, Date.now());
+check('grupo sem exceção segue o padrão: 6 séries de peito = faltam 4',
+    fPeitoMeta.metaMin === 10 && fPeitoMeta.metaMax === 20 && fPeitoMeta.faltam === 4, fPeitoMeta);
+
+const logsMetaGrupo = [
+    { id: 1, kind: 'peso', muscle: 'Antebraço', date: '2026-10-14', exercise: 'Flexão de Punho', reps: [12, 12] },
+    { id: 2, kind: 'peso', muscle: 'Costas', date: '2026-10-14', exercise: 'Remada Baixa na Polia', reps: [10, 10, 10] }
+];
+const gapAntebraco = api.weeklyGaps(logsMetaGrupo, '2026-10-14').find(g => g.muscle === 'Antebraço');
+check('gap traz a faixa do grupo (min/max) junto de series e faltam',
+    gapAntebraco.min === 4 && gapAntebraco.max === 10 && gapAntebraco.series === 2 && gapAntebraco.faltam === 2 && gapAntebraco.status === 'abaixo', gapAntebraco);
+check('gap soma o apoio indireto da semana (3 séries de remada × 0,5 = 1,5)', gapAntebraco.indiretas === 1.5, gapAntebraco.indiretas);
+check('indiretas NÃO entram em series nem abatem faltam', gapAntebraco.series === 2 && gapAntebraco.faltam === 2);
+check('grupo sem regra de sinergia vem com indiretas zeradas',
+    api.weeklyGaps(logsMetaGrupo, '2026-10-14').find(g => g.muscle === 'Peito').indiretas === 0);
+check('apoio de fora da semana não conta como indireto',
+    api.weeklyGaps([{ id: 3, kind: 'peso', muscle: 'Costas', date: '2026-10-01', exercise: 'Remada Baixa na Polia', reps: [10, 10, 10] }], '2026-10-14')
+        .find(g => g.muscle === 'Bíceps').indiretas === 0);
+check('seriesIndiretasSemana é puro: mesmo vetor fora da semana = 0',
+    api.seriesIndiretasSemana('Bíceps', [{ id: 4, kind: 'peso', muscle: 'Costas', date: '2026-10-14', exercise: 'Remada Baixa na Polia', reps: [10, 10, 10] }]) === 1.5
+    && api.seriesIndiretasSemana('Peito', [{ id: 5, kind: 'peso', muscle: 'Costas', date: '2026-10-14', exercise: 'Remada Baixa na Polia', reps: [10, 10, 10] }]) === 0);
+const gapAntebracoAcima = api.weeklyGaps(
+    [{ id: 6, kind: 'peso', muscle: 'Antebraço', date: '2026-10-14', exercise: 'Flexão de Punho', sets: Array.from({ length: 12 }, () => ({})) }],
+    '2026-10-14').find(g => g.muscle === 'Antebraço');
+check('acima da faixa do grupo: 12 séries de antebraço = +2 sobre o máximo 10',
+    gapAntebracoAcima.status === 'acima' && gapAntebracoAcima.excesso === 2 && gapAntebracoAcima.max === 10, gapAntebracoAcima);
+check('gaps continuam ordenados pela maior falta', (() => {
+    const g = api.weeklyGaps(logsMetaGrupo, '2026-10-14');
+    return g.every((x, i) => i === 0 || g[i - 1].faltam >= x.faltam);
+})());
 
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);
