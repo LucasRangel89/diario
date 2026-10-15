@@ -190,9 +190,36 @@ const MUSCLE_OPTIONS_FULL = [...MUSCULOS_MAPA, 'Geral'];
 // Grupos que deixaram de existir: registros antigos (localStorage, backup JSON,
 // CSV da planilha) são remapeados sem erro na hora de carregar/importar.
 const LEGACY_MUSCLE_ALIASES = { 'Pescoço': 'Ombros', 'Glúteos': 'Posterior' };
+
+// Índice canônico: texto normalizado (sem acento nem caixa) + plural → grupo do
+// catálogo. Sem ele, "posteriores", "Posterior" e "Biceps" viravam três chaves
+// diferentes e o estímulo semanal do mesmo grupo se espalhava em várias linhas.
+const MUSCLE_CANONICAL = (() => {
+    const mapa = {};
+    const add = (variante, canon) => {
+        if (variante && !(variante in mapa)) mapa[variante] = canon;
+    };
+    // Flexões de um nome: o próprio, o plural (‑s / ‑es / ‑is) e o singular.
+    const variantes = nome => {
+        const base = normalizeText(nome);
+        if (!base) return [];
+        const lista = [base];
+        if (/[rz]$/.test(base)) lista.push(`${base}es`);              // posterior → posteriores
+        else if (/l$/.test(base)) lista.push(`${base.slice(0, -1)}is`); // geral → gerais
+        else if (!base.endsWith('s')) lista.push(`${base}s`);         // peito → peitos
+        if (base.endsWith('s')) lista.push(base.slice(0, -1));        // ombros → ombro
+        return lista;
+    };
+    [...MUSCULOS_MAPA, 'Geral', 'Cardio'].forEach(m => variantes(m).forEach(v => add(v, m)));
+    Object.entries(LEGACY_MUSCLE_ALIASES).forEach(([legado, canon]) => variantes(legado).forEach(v => add(v, canon)));
+    return mapa;
+})();
+
 function normalizeMuscle(muscle) {
     const m = String(muscle || '').trim();
-    return LEGACY_MUSCLE_ALIASES[m] || m || 'Geral';
+    if (!m) return 'Geral';
+    // Grupo fora do vocabulário (exercício personalizado) passa adiante intacto.
+    return MUSCLE_CANONICAL[normalizeText(m)] || LEGACY_MUSCLE_ALIASES[m] || m;
 }
 
 // XP legado: pernas e cadeia posterior contam metade.
@@ -424,20 +451,24 @@ const SINERGIA = {
 };
 
 // Logs de outros grupos que podem gerar apoio indireto para o músculo pedido.
+// Comparação pelo grupo canônico: "posteriores" do registro antigo não conta
+// como grupo diferente de "Posterior" (senão o apoio vira apoio de si mesmo).
 function sinergiaLogs(muscle, allLogs) {
-    const cfg = SINERGIA[muscle];
+    const alvo = normalizeMuscle(muscle);
+    const cfg = SINERGIA[alvo];
     if (!cfg || !Array.isArray(allLogs)) return [];
-    return allLogs.filter(l => l && l.kind !== 'corrida' && l.muscle !== muscle && cfg.re.test(l.exercise || ''));
+    return allLogs.filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle) !== alvo && cfg.re.test(l.exercise || ''));
 }
 
 // Apoio indireto informa a recuperação; suas séries equivalentes não entram na meta semanal.
 function sinergiaState(muscle, allLogs, nowMs) {
-    const cfg = SINERGIA[muscle];
+    const alvo = normalizeMuscle(muscle);
+    const cfg = SINERGIA[alvo];
     if (!cfg) return null;
-    const indiretos = sinergiaLogs(muscle, allLogs);
+    const indiretos = sinergiaLogs(alvo, allLogs);
     if (!indiretos.length) return null;
 
-    const base = recoveryState(muscle, indiretos, nowMs ?? Date.now());
+    const base = recoveryState(alvo, indiretos, nowMs ?? Date.now());
     const seriesBrutas = indiretos.reduce((total, l) => total + (
         (Array.isArray(l.sets) && l.sets.length) ? l.sets.length
             : (Array.isArray(l.reps) ? l.reps.length : 0)
@@ -448,7 +479,7 @@ function sinergiaState(muscle, allLogs, nowMs) {
     const pct = Math.max(2, Math.min(100, Math.round(100 - (100 - base.pct) * cfg.fator)));
 
     return {
-        muscle, pct, fator: cfg.fator, de: cfg.de,
+        muscle: alvo, pct, fator: cfg.fator, de: cfg.de,
         series: Math.round(seriesBrutas * cfg.fator * 10) / 10,
         seriesBrutas, ultimo: base.last, ultimoEm: latest.date,
         exercicios: [...new Set(indiretos.map(l => String(l.exercise || '').trim()).filter(Boolean))]

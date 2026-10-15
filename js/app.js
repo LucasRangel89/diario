@@ -255,10 +255,14 @@ function migrateLog(l) {
 
 // Treinos salvos também carregam grupos antigos (ex.: seed da planilha trazia
 // Glúteos no Hip Thrust e Pescoço na cervical) — normaliza ao carregar/semeiar.
+// O catálogo manda: se o exercício existe nele, o grupo é o dele (assim a
+// Mesa Flexora salva como "Pernas" volta para Posterior, que é onde ela conta).
 function normalizeSavedWorkouts() {
     (savedWorkouts || []).forEach(w => {
         (w.exercises || []).forEach(e => {
-            if (e && e.muscle) e.muscle = normalizeMuscle(e.muscle);
+            if (!e) return;
+            const cat = catalogInfo(e.exercise);
+            e.muscle = normalizeMuscle(cat ? cat.grupo : e.muscle);
         });
     });
     return savedWorkouts;
@@ -1001,13 +1005,18 @@ function repeatLastPerformance(exercise) {
 function handleAddLog(event) {
     event.preventDefault();
     const date = document.getElementById('log-date').value;
-    const muscle = document.getElementById('log-muscle').value;
     const exercise = document.getElementById('log-exercise').value.trim();
     const f = readFields('');
 
     if (!exercise) { alertModal('Digite o nome do exercício!'); return; }
     const temReps = f.mode === 'sets' ? f.sets.length > 0 : f.reps.length > 0;
     if (!temReps) { alertModal('Digite ao menos uma repetição válida (ex: 12, 10, 8) — ou segundos em isometria.'); return; }
+
+    // O grupo vem do catálogo quando o exercício é conhecido: o select pode
+    // estar desatualizado (autofill, nome colado) e é ele que alimenta a meta
+    // semanal, a recuperação e a fraqueza do chefão.
+    const catRegistro = catalogInfo(exercise);
+    const muscle = normalizeMuscle(catRegistro ? catRegistro.grupo : document.getElementById('log-muscle').value);
 
     const newLog = {
         id: newLogId(), date, kind: 'peso', muscle, exercise,
@@ -1172,7 +1181,7 @@ function renderRecoveryMap() {
     const weekly = weeklySetsByMuscle(logs, getTodayLocalISO());
 
     gridEl.innerHTML = MUSCULOS_MAPA.map(m => {
-        const muscleLogs = logs.filter(l => l.kind !== 'corrida' && l.muscle && l.muscle.toLowerCase() === m.toLowerCase());
+        const muscleLogs = logs.filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle) === m);
         const sin = sinergiaState(m, logs, nowMs);
         const st = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs, sin);
         const pctText = st.pct === null ? '—' : `${st.pct}%`;
@@ -1500,8 +1509,11 @@ function registerSessionUnit(idxs, isPair) {
     let totalDmg = 0;
     items.forEach(({ item, f }) => {
         const id = newLogId();
+        // Grupo canônico derivado do catálogo (o treino salvo pode trazer um
+        // grupo antigo: a Mesa Flexora de "Pernas" conta em Posterior).
+        const catItem = catalogInfo(item.exercise);
         const newLog = {
-            id, date, kind: 'peso', muscle: item.muscle, exercise: item.exercise,
+            id, date, kind: 'peso', muscle: normalizeMuscle(catItem ? catItem.grupo : item.muscle), exercise: item.exercise,
             xpTheme: activeGameThemeId, ...f, ...(isPair ? { biset: true } : {})
         };
         if (!newLog.sessao) newLog.sessao = activeSession.name;

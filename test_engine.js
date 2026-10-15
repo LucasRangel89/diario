@@ -31,11 +31,14 @@ const api = new Function(src + `
     orderWorkoutExercises, isAtivacaoExercise, classifyExercicio, bisetBlockRanges,
     weeklySetsByMuscle, fatigueState, suggestNextWorkout, weeklyGaps, diasDesdeUltimoTreino,
     FAIXA_SERIES_SEMANAIS, MUSCULOS_MAPA, MUSCLE_META, normalizeMuscle, PLANILHA_SESSOES,
+    normalizeSavedWorkouts,
     get STATE() { return { logs, settings, userBodyweight }; },
     setLogs(arr) { logs = arr; },
     setBW(v) { userBodyweight = v; },
     setWeightLog(arr) { weightLog = arr; },
-    get logsArr() { return logs; }
+    get logsArr() { return logs; },
+    get savedWorkouts() { return savedWorkouts; },
+    set savedWorkouts(arr) { savedWorkouts = arr; }
   };
 `)();
 
@@ -569,6 +572,44 @@ console.log('\n== 25. Estúdio de reservas: manifesto e integração ==');
     check('app lê o manifesto e reaproveita bossPortraits (upload por chefão)', /loadReservaManifest\(\)/.test(appSrc25) && /function applyReservaPortrait/.test(appSrc25) && /bossPortraits\[reservaBossId\] = src/.test(appSrc25) && /delete bossPortraits\[reservaBossId\]/.test(appSrc25));
     check('index.json das reservas entra no CORE do service worker', fs.readFileSync('sw.js', 'utf8').includes("'./images/bosses/reserva/index.json'"));
 }
+
+console.log('\n== 26. Grupos canônicos no estímulo semanal ==');
+check('normalizeMuscle tolera plural, acento e caixa',
+    api.normalizeMuscle('posteriores') === 'Posterior' && api.normalizeMuscle('POSTERIOR') === 'Posterior'
+    && api.normalizeMuscle('Biceps') === 'Bíceps' && api.normalizeMuscle('bíceps') === 'Bíceps'
+    && api.normalizeMuscle('  ombros  ') === 'Ombros' && api.normalizeMuscle('ANTEBRACO') === 'Antebraço'
+    && api.normalizeMuscle('abdomen') === 'Abdômen' && api.normalizeMuscle('triceps') === 'Tríceps',
+    ['posteriores', 'Biceps', 'ANTEBRACO', 'abdomen'].map(api.normalizeMuscle));
+check('grupos extintos continuam remapeados', api.normalizeMuscle('Glúteos') === 'Posterior' && api.normalizeMuscle('Pescoço') === 'Ombros');
+check('vazio cai em Geral e grupo fora do vocabulário passa adiante', api.normalizeMuscle('') === 'Geral' && api.normalizeMuscle('Panturrilha') === 'Panturrilha');
+
+const logsVariantes = [
+    { id: 1, kind: 'peso', muscle: 'Posterior', date: '2026-10-13', exercise: 'Mesa Flexora', reps: [15, 15] },
+    { id: 2, kind: 'peso', muscle: 'posteriores', date: '2026-10-14', exercise: 'Stiff com Barra', reps: [10, 10, 10] },
+    { id: 3, kind: 'peso', muscle: 'Glúteos', date: '2026-10-14', exercise: 'Elevação Pélvica (Hip Thrust)', sets: [{}, {}, {}] }
+];
+const semCanonica = api.weeklySetsByMuscle(logsVariantes, '2026-10-14');
+check('variantes do mesmo grupo somam numa chave só (Posterior = 8)',
+    semCanonica['Posterior'] === 8 && Object.keys(semCanonica).length === 1, semCanonica);
+check('weeklyGaps enxerga as 8 séries canônicas de Posterior',
+    api.weeklyGaps(logsVariantes, '2026-10-14').some(g => g.muscle === 'Posterior' && g.series === 8 && g.faltam === 2));
+check('apoio indireto não confunde variante do próprio grupo com outro grupo',
+    api.sinergiaLogs('Posterior', [{ id: 4, kind: 'peso', muscle: 'posteriores', date: '2026-10-14', exercise: 'Agachamento Livre', reps: [8, 8] }]).length === 0
+    && api.sinergiaLogs('Posterior', [{ id: 5, kind: 'peso', muscle: 'Pernas', date: '2026-10-14', exercise: 'Agachamento Livre', reps: [8, 8] }]).length === 1);
+
+api.savedWorkouts = [{
+    id: 1, name: 'Posterior/Acessórios', exercises: [
+        { muscle: 'Pernas', exercise: 'Mesa Flexora' },
+        { muscle: 'Glúteos', exercise: 'Elevação Pélvica (Hip Thrust)' },
+        { muscle: 'Pernas', exercise: 'Leg Press 45°' },
+        { muscle: 'Costas', exercise: 'Exercício inventado pelo usuário' }
+    ]
+}];
+api.normalizeSavedWorkouts();
+check('treino salvo rederiva o grupo pelo catálogo (Mesa Flexora → Posterior)',
+    api.savedWorkouts[0].exercises.map(e => e.muscle).join('|') === 'Posterior|Posterior|Pernas|Costas',
+    api.savedWorkouts[0].exercises.map(e => e.muscle));
+api.savedWorkouts = [];
 
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);

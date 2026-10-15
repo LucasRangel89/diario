@@ -116,9 +116,9 @@ function orderWorkoutExercises(list, options = {}) {
         : {};
     const muscleStateCache = new Map();
     const muscleState = muscle => {
-        const m = muscle || 'Geral';
+        const m = normalizeMuscle(muscle || 'Geral');
         if (!muscleStateCache.has(m)) {
-            const muscleLogs = allLogs.filter(l => l && l.kind !== 'corrida' && (l.muscle || 'Geral') === m);
+            const muscleLogs = allLogs.filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle || 'Geral') === m);
             const state = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs);
             // Mesma lógica da recomendação: prontidão + séries que faltam − excesso.
             state.orderScore = state.pct + state.faltam * 4 - state.excesso * 3;
@@ -265,7 +265,10 @@ function assistenteTodayISO(nowMs) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-// Séries feitas por grupo na semana atual (seg–dom), fora corrida
+// Séries feitas por grupo na semana atual (seg–dom), fora corrida.
+// A chave é sempre o grupo CANÔNICO do catálogo: um registro antigo gravado como
+// "posteriores" ou "Biceps" cai na mesma linha do grupo certo (senão a meta
+// semanal fica dividida e o app cobra séries que você já fez).
 function weeklySetsByMuscle(allLogs, refDateISO) {
     const ref = refDateISO || assistenteTodayISO();
     const [ws, we] = isoWeekRange(ref);
@@ -273,7 +276,7 @@ function weeklySetsByMuscle(allLogs, refDateISO) {
     (allLogs || []).forEach(l => {
         if (!l || l.kind === 'corrida') return;
         if (l.date < ws || l.date > we) return;
-        const m = l.muscle || 'Geral';
+        const m = normalizeMuscle(l.muscle || 'Geral');
         const sets = (Array.isArray(l.sets) && l.sets.length) ? l.sets.length
             : (Array.isArray(l.reps) ? l.reps.length : 0);
         out[m] = (out[m] || 0) + sets;
@@ -340,11 +343,12 @@ function suggestNextWorkout(workouts, allLogs, nowMs) {
     const estadoLombar = regiaoLombarState(allLogs, now);
 
     const scored = (Array.isArray(workouts) ? workouts : []).map(w => {
-        const groups = [...new Set((w.exercises || []).map(e => e && e.muscle).filter(m => m && m !== 'Cardio'))];
+        const groups = [...new Set((w.exercises || []).map(e => e && e.muscle).filter(Boolean)
+            .map(m => normalizeMuscle(m)).filter(m => m !== 'Cardio'))];
         let score = 0;
         const motivos = [];
         groups.forEach(m => {
-            const mLogs = (allLogs || []).filter(l => l && l.kind !== 'corrida' && l.muscle === m);
+            const mLogs = (allLogs || []).filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle) === m);
             const st = fatigueState(m, mLogs, weekly[m] || 0, now);
             score += st.pct + st.faltam * 4 - st.excesso * 3;
             if (st.faltam > 0) motivos.push(`${m}: faltam ${st.faltam} séries para a meta da semana (fez ${st.seriesSemana})`);
