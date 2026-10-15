@@ -72,6 +72,14 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
   data no futuro conta como **hoje** para recuperação e fadiga. A regra está em
   `docs/RECUPERACAO.md` e na explicação do mapa no `index.html`, com teste de regressão.
 
+### DOCUMENTADO / VALIDADO
+- **`docs/VALIDACAO_MANUAL.md`:** checklist de instalação, primeira carga offline,
+  atualização de versão, uso no celular e backup/restauração — com o que já foi
+  validado automaticamente em Chromium headless (30 checagens: boot em ES modules,
+  Service Worker + offline, IndexedDB, download real do backup, atualização v35→v36
+  apagando o cache antigo, 8 abas sem estouro em 412 px) e o que continua exigindo
+  validação manual (prompt de instalação, rede real, toque/galeria, cota cheia).
+
 ### CORRIGIDO
 - **Falha de gravação no IndexedDB (P3):** antes, um `put` recusado (cota, aba anônima,
   transação abortada) era silencioso — e o app ainda podia dizer "Retrato do chefão
