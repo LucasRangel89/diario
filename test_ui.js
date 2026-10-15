@@ -25,7 +25,7 @@ let html = fs.readFileSync('index.html', 'utf8');
 // remove scripts externos (fontes/tailwind CDN não existem aqui)
 html = html.replace(/<script src="https:\/\/[^"]+"><\/script>/g, '');
 const dom = new JSDOM(html, {
-    runScripts: 'dangerously',        // necessário para os onclick="" inline
+    runScripts: 'dangerously',        // executa os scripts clássicos do app (handlers agora via delegação)
     pretendToBeVisual: true,
     url: 'http://localhost/',
     virtualConsole
@@ -209,11 +209,11 @@ const lbCard = id => $('bosses-grid').querySelector(`[data-boss-id="${id}"]`);
 const lbImg = () => lbOverlay() && lbOverlay().querySelector('#boss-lightbox-img');
 const lbDownload = () => lbOverlay() && lbOverlay().querySelector('#boss-lightbox-download');
 check('lightbox não existe antes do clique', !lbOverlay());
-check('os 12 cards da grade são clicáveis e trazem o id do chefão', $('bosses-grid').querySelectorAll('[data-boss-id]').length === 12 && $('bosses-grid').querySelectorAll('[onclick^="openBossLightbox("]').length === 12);
+check('os 12 cards da grade são clicáveis e trazem o id do chefão', $('bosses-grid').querySelectorAll('[data-boss-id]').length === 12 && $('bosses-grid').querySelectorAll('[data-action="openBossLightbox"]').length === 12);
 check('miniaturas da grade carregam de forma preguiçosa (lazy + async)', [...$('bosses-grid').querySelectorAll('img')].length === 12 && [...$('bosses-grid').querySelectorAll('img')].every(i => i.getAttribute('loading') === 'lazy' && i.getAttribute('decoding') === 'async'));
 const idxAtual = ev('computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).currentIdx');
-const retratoAtivo = $('active-boss-card').querySelector('button[onclick^="openBossLightbox("]');
-check('retrato do chefão ativo (w-20) também é clicável e aponta para o boss em batalha', !!retratoAtivo && retratoAtivo.className.includes('w-20') && retratoAtivo.getAttribute('onclick') === `openBossLightbox('${ev('BOSSES[' + idxAtual + '].id')}')`, retratoAtivo && retratoAtivo.getAttribute('onclick'));
+const retratoAtivo = $('active-boss-card').querySelector('button[data-action="openBossLightbox"]');
+check('retrato do chefão ativo (w-20) também é clicável e aponta para o boss em batalha', !!retratoAtivo && retratoAtivo.className.includes('w-20') && JSON.parse(retratoAtivo.getAttribute('data-args'))[0] === ev('BOSSES[' + idxAtual + '].id'), retratoAtivo && retratoAtivo.getAttribute('data-args'));
 
 const bossAlvo = ev('BOSSES[5].id');
 click(lbCard(bossAlvo));
@@ -637,7 +637,7 @@ check('grade de conquistas tem 16 badges', badgeCards.length === 16 && badgeSlug
 check('contador de desbloqueios acompanha os 16', $('stat-unlocked-badges').textContent.endsWith('/ 16'), $('stat-unlocked-badges').textContent);
 check('todo badge com arte própria renderiza <img> da série', badgeCards.length === 16 && badgeCards.every(c => !!c.querySelector('img[src^="images/badges/"]')), badgeCards.filter(c => !c.querySelector('img')).length);
 check('cada <img> de badge aponta para um arquivo que existe no disco', badgeSlugs.every(slug => fs.existsSync(ev(`BADGE_ART['${slug}']`))), badgeSlugs.filter(slug => !fs.existsSync(ev(`BADGE_ART['${slug}']`))));
-check('img de badge carrega preguiçosa e com fallback de emoji no onerror', badgeCards.every(c => { const i = c.querySelector('img'); return i && i.getAttribute('loading') === 'lazy' && i.getAttribute('onerror') === 'badgeArtFallback(this)' && !!i.getAttribute('data-fallback'); }));
+check('img de badge carrega preguiçosa e com fallback de emoji delegado (data-error-action)', badgeCards.every(c => { const i = c.querySelector('img'); return i && i.getAttribute('loading') === 'lazy' && i.getAttribute('data-error-action') === 'badgeArtFallback' && !!i.getAttribute('data-fallback'); }));
 const imgSemArquivo = document.createElement('img');
 imgSemArquivo.setAttribute('data-fallback', '🐘');
 document.body.appendChild(imgSemArquivo);
@@ -667,7 +667,7 @@ check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexis
     check('escolher reserva grava em bossPortraits (mesmo mecanismo do upload)', ev('bossPortraits[reservaBossId]') === alvo, ev('bossPortraits[reservaBossId]'));
     check('a grade do Boss passa a mostrar a reserva escolhida', $('bosses-grid').querySelector(`[data-boss-id="${bossAlvo}"] img`).getAttribute('src') === alvo);
     check('select marca o chefão personalizado com 🎨', [...$('reserva-boss-select').options].some(o => o.value === bossAlvo && o.textContent.includes('🎨')));
-    check('tile da reserva ativa fica destacado', [...$('reserva-grid').querySelectorAll('button')].some(b => b.getAttribute('onclick') === `applyReservaPortrait('${alvo}')` && b.className.includes('ring-1')));
+    check('tile da reserva ativa fica destacado', [...$('reserva-grid').querySelectorAll('button')].some(b => b.getAttribute('data-action') === 'applyReservaPortrait' && JSON.parse(b.getAttribute('data-args') || '[]')[0] === alvo && b.className.includes('ring-1')));
     ev('resetBossPortraitToDefault()');
     check('voltar ao padrão limpa o bossPortraits e restaura a arte oficial', ev('bossPortraits[reservaBossId]') === undefined && $('bosses-grid').querySelector(`[data-boss-id="${bossAlvo}"] img`).getAttribute('src') === ev(`DEFAULT_BOSS_PORTRAITS[THEME.id + ':' + reservaBossId]`));
 

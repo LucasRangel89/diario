@@ -101,3 +101,20 @@ valida os símbolos críticos. Este manifesto é a fonte para gerar os
 
 Ordem corrigida da migração: 1 (manifestos) → 3 (delegação de eventos) →
 2 (módulos + setters + harness novo) → 4 (sw/cache).
+
+### Progresso — sub-etapa 3 concluída (delegação de eventos)
+
+- `js/actions.js`: despachante central (click/keydown/change/input/submit +
+  error em captura), com `data-args` (JSON, token `$event`),
+  `data-attr-args` e `data-value-attr`.
+- index.html, app.js, busca.js, historico.js e custom_exercises.js estão
+  100% sem handlers inline (guarda no motor: 0 ocorrências permitidas).
+- 97 ações registradas pelos manifestos; teste garante que toda
+  `data-*` declarada tem handler registrado.
+- Teclado: Enter/Espaço dispara `data-action` em elementos não nativos
+  (substituiu o onkeydown do grid de chefões com a11y equivalente).
+- `overlay.onclick` programático (lightbox) permanece — não é atributo
+  inline e funciona em módulos sem alteração.
+- Restante para a sub-etapa 2 (módulos): reescrever o harness jsdom
+  (não executa `type="module"`), converter as ~13 escritas cross-file em
+  setters e tornar explícita a injeção do `allExercisesList` customizado.

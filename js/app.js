@@ -210,6 +210,18 @@ function updateHeaderDate(isoStr) {
 function escapeHtml(str) {
     return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+// Fecha/remove um overlay pelo id (data-action="closeElementById")
+function closeElementById(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+// Esconde um elemento pelo id (data-action="hideElementById")
+function hideElementById(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+}
+
 function fmtN(n, dec) {
     return (Number(n) || 0).toLocaleString('pt-BR', dec != null ? { minimumFractionDigits: dec, maximumFractionDigits: dec } : undefined);
 }
@@ -665,7 +677,7 @@ function showThemeGallery() {
             : 100;
         const active = theme.id === THEME?.id;
         const defeated = Math.min(data.prog.defeatedCount, theme.bosses.length);
-        return `<button type="button" data-theme-id="${theme.id}" onclick="requestGameThemeChange('${theme.id}')" class="text-left rounded-2xl border ${active ? 'border-berzerker-500 bg-berzerker-600/10 ring-1 ring-berzerker-500/30' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'} p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-berzerker-500">
+        return `<button type="button" data-theme-id="${theme.id}" data-action="requestGameThemeChange" data-args='["${theme.id}"]' class="text-left rounded-2xl border ${active ? 'border-berzerker-500 bg-berzerker-600/10 ring-1 ring-berzerker-500/30' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'} p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-berzerker-500">
             <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-2 min-w-0">${themeIconImg(theme.id, 'h-8 w-8 rounded-lg border border-berzerker-border')}<strong class="text-sm text-white leading-tight">${escapeHtml(theme.name)}</strong></div>
                 ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[10px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
@@ -686,7 +698,7 @@ function showThemeGallery() {
     overlay.innerHTML = `<div class="my-auto max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-berzerker-border bg-berzerker-card p-4 shadow-2xl sm:p-6">
         <div class="mb-4 flex items-center justify-between gap-3">
             <div><h2 class="font-oswald text-xl font-bold uppercase tracking-wider text-white">🎭 Temas de gamificação</h2><p class="mt-1 text-[11px] text-gray-400">Cada jogo mantém sua patente e seu progresso.</p></div>
-            <button type="button" onclick="document.getElementById('theme-gallery-overlay').remove()" aria-label="Fechar galeria" class="rounded-lg px-3 py-2 text-gray-400 hover:bg-berzerker-dark hover:text-white">✕</button>
+            <button type="button" data-action="closeElementById" data-args='["theme-gallery-overlay"]' aria-label="Fechar galeria" class="rounded-lg px-3 py-2 text-gray-400 hover:bg-berzerker-dark hover:text-white">✕</button>
         </div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">${cards}</div>
     </div>`;
@@ -727,14 +739,14 @@ function showRanksModal(themeId) {
             <div class="text-right shrink-0"><div class="text-[10px] font-mono text-gray-400">${fmt(x.minXp)} XP</div><div class="text-[10px] font-bold text-gray-500 uppercase leading-tight">${tag}</div></div>
         </div>`;
     }).join('');
-    const tabs = Object.values(THEMES).map(x => `<button onclick="showRanksModal('${x.id}')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${x.id === t.id ? 'bg-berzerker-600 text-white' : 'bg-berzerker-border text-gray-400 hover:text-white'}">${escapeHtml(x.name)}</button>`).join('');
+    const tabs = Object.values(THEMES).map(x => `<button data-action="showRanksModal" data-args='["${x.id}"]' class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${x.id === t.id ? 'bg-berzerker-600 text-white' : 'bg-berzerker-border text-gray-400 hover:text-white'}">${escapeHtml(x.name)}</button>`).join('');
     document.getElementById('ranks-overlay')?.remove();
     const o = document.createElement('div');
     o.id = 'ranks-overlay';
     o.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-start sm:items-center justify-center p-4 overflow-y-auto';
     o.onclick = ev => { if (ev.target === o) o.remove(); };
     o.innerHTML = `<div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 max-w-lg w-full shadow-2xl space-y-3">
-        <div class="flex items-center justify-between"><h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">📜 Patentes</h3><button aria-label="Fechar patentes" onclick="document.getElementById('ranks-overlay').remove()" class="text-gray-400 hover:text-white">✕</button></div>
+        <div class="flex items-center justify-between"><h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">📜 Patentes</h3><button aria-label="Fechar patentes" data-action="closeElementById" data-args='["ranks-overlay"]'  class="text-gray-400 hover:text-white">✕</button></div>
         <div class="flex flex-wrap gap-1.5">${tabs}</div>
         <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3 space-y-1.5">
             <div class="flex justify-between text-[11px] font-bold text-gray-300"><span>${fmt(d.xp)} XP</span><span>${nxt ? 'próxima: ' + fmt(nxt.minXp) + ' XP' : 'nível máximo'}</span></div>
@@ -769,7 +781,7 @@ function renderNavigation() {
     subnav.classList.remove('hidden');
     subnav.innerHTML = group.tabs.map(([tab, label]) => {
         const active = tab === activeTab;
-        return `<button type="button" id="nav-${tab}" onclick="switchTab('${tab}')" ${active ? 'aria-current="page"' : ''} class="min-h-[44px] px-3 py-2 rounded-lg text-xs font-bold transition-colors ${active ? 'bg-berzerker-600/25 text-white border border-berzerker-500/50' : 'text-gray-400 bg-berzerker-dark/60 border border-transparent hover:text-white'}">${label}</button>`;
+        return `<button type="button" id="nav-${tab}" data-action="switchTab" data-args='["${tab}"]' ${active ? 'aria-current="page"' : ''} class="min-h-[44px] px-3 py-2 rounded-lg text-xs font-bold transition-colors ${active ? 'bg-berzerker-600/25 text-white border border-berzerker-500/50' : 'text-gray-400 bg-berzerker-dark/60 border border-transparent hover:text-white'}">${label}</button>`;
     }).join('');
 }
 
@@ -960,7 +972,7 @@ function renderSetRows(prefix) {
             <input type="number" step="0.5" min="0" value="${s.weight ?? ''}" placeholder="kg" data-setw="${prefix}${i}" class="${INP} !py-1.5 !text-xs flex-1">
             <input type="number" min="0" value="${s.reps ?? ''}" placeholder="reps" data-setr="${prefix}${i}" class="${INP} !py-1.5 !text-xs flex-1">
             <input type="number" min="0" max="10" value="${s.rir ?? ''}" placeholder="RIR" data-seti="${prefix}${i}" class="${INP} !py-1.5 !text-xs w-16">
-            <button type="button" onclick="removeSetRow('${prefix}', ${i})" aria-label="Remover série" class="p-1.5 text-gray-500 hover:text-red-400 text-xs">✕</button>
+            <button type="button" data-action="removeSetRow" data-args='["${prefix}",${i}]' aria-label="Remover série" class="p-1.5 text-gray-500 hover:text-red-400 text-xs">✕</button>
         </div>`).join('');
 }
 
@@ -1011,10 +1023,10 @@ function fieldsHTML(p, v, opts) {
     const typeModeHTML = `
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5${o.quickCapture ? '' : ' mt-3'}">
         <div class="col-span-2"><label class="${LBL}">Tipo de registro</label>
-            <select id="${p}type" onchange="onTypeChange('${p}')" class="${INP}">${typeOptions}</select>
+            <select id="${p}type" data-change-action="onTypeChange" data-args='["${p}"]' class="${INP}">${typeOptions}</select>
         </div>
         <div class="col-span-2"><label class="${LBL}">Modo de registro</label>
-            <select id="${p}mode" onchange="toggleSetMode('${p}')" class="${INP}">
+            <select id="${p}mode" data-change-action="toggleSetMode" data-args='["${p}"]' class="${INP}">
                 <option value="simple"${(v.mode || 'simple') === 'simple' ? ' selected' : ''}>Séries iguais (carga única)</option>
                 <option value="sets"${v.mode === 'sets' ? ' selected' : ''}>Série a série (drop-set, pirâmide)</option>
             </select>
@@ -1028,7 +1040,7 @@ function fieldsHTML(p, v, opts) {
     const setsHTML = `
     <div id="${p}sets-box" class="hidden mt-2.5 space-y-1.5">
         <div class="flex items-center justify-between"><label class="${LBL} !mb-0">Séries — carga · reps · RIR (opcional)</label>
-            <button type="button" onclick="addSetRow('${p}')" class="text-xs font-bold text-cyan-400 hover:underline">+ série</button></div>
+            <button type="button" data-action="addSetRow" data-args='["${p}"]' class="text-xs font-bold text-cyan-400 hover:underline">+ série</button></div>
         <div id="${p}sets" class="space-y-1.5"></div>
     </div>`;
     const extraHTML = `
@@ -1060,13 +1072,13 @@ function fieldsHTML(p, v, opts) {
                 <div id="${p}warmup-quick-box" class="hidden bg-berzerker-dark/80 border border-amber-500/30 rounded-xl p-3 text-xs space-y-1">
                     <div class="font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
                         <span>🔥 Aquecimento & Anilhas</span>
-                        <button type="button" onclick="document.getElementById('${p}warmup-quick-box').classList.add('hidden')" aria-label="Fechar aquecimento rápido" class="text-gray-400 hover:text-white">✕</button>
+                        <button type="button" data-action="hideElementById" data-args='["${p}warmup-quick-box"]' aria-label="Fechar aquecimento rápido" class="text-gray-400 hover:text-white">✕</button>
                     </div>
                     <div id="${p}warmup-quick-content" class="font-mono text-gray-300"></div>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" onclick="calculateWarmupFromForm()" class="px-3 py-2 bg-amber-900/30 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase rounded-lg hover:bg-amber-900/50">🔥 Aquecimento</button>
-                    <button type="button" onclick="calculatePlatesQuick()" class="px-3 py-2 bg-berzerker-border text-gray-200 text-xs font-bold uppercase rounded-lg hover:bg-gray-700">⚙️ Anilhas</button>
+                    <button type="button" data-action="calculateWarmupFromForm" class="px-3 py-2 bg-amber-900/30 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase rounded-lg hover:bg-amber-900/50">🔥 Aquecimento</button>
+                    <button type="button" data-action="calculatePlatesQuick" class="px-3 py-2 bg-berzerker-border text-gray-200 text-xs font-bold uppercase rounded-lg hover:bg-gray-700">⚙️ Anilhas</button>
                 </div>
                 <p class="text-xs text-gray-400">🏆 O PR é detectado sozinho pelo 1RM estimado (ou tempo, em isometria) — sem checkbox. 💡 Quando todas as séries baterem o topo da faixa, o app sugere subir a carga.</p>
             </div>
@@ -1137,7 +1149,7 @@ function lastPerformanceHTML(exerciseName, excludeId) {
     return `<div class="flex items-center gap-2 flex-wrap text-[11px] font-mono text-gray-400 mt-1">
         <span>🕐 Última vez: <span class="text-gray-200">${formatShortBR(last.date)} · ${formatLoadText(last)} × ${formatRepsText(last)}</span></span>
         ${prog ? `<span class="text-emerald-400 font-bold">→ sugestão: ${prog.proximaCarga} kg</span>` : ''}
-        <button type="button" data-ex="${escapeHtml(exerciseName)}" onclick="repeatLastPerformance(this.getAttribute('data-ex'))" class="px-2 py-0.5 bg-berzerker-border hover:bg-berzerker-600 text-white text-[10px] font-bold rounded uppercase">↻ Repetir</button>
+        <button type="button" data-ex="${escapeHtml(exerciseName)}" data-action="repeatLastPerformance" data-attr-args="data-ex" class="px-2 py-0.5 bg-berzerker-border hover:bg-berzerker-600 text-white text-[10px] font-bold rounded uppercase">↻ Repetir</button>
     </div>`;
 }
 
@@ -1236,8 +1248,8 @@ function editLog(id) {
         technique: l.technique, nextGoal: l.nextGoal, isPR: l.isPR, notes: l.notes, rir: l.rir
     }, { prOverride: true })}
             <div class="flex gap-3 justify-end mt-4">
-                <button onclick="document.getElementById('edit-log-overlay').remove()" class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Cancelar</button>
-                <button onclick="saveEditedLog(${id})" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">💾 Salvar alterações</button>
+                <button data-action="closeElementById" data-args='["edit-log-overlay"]'  class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Cancelar</button>
+                <button data-action="saveEditedLog" data-args="[${id}]" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">💾 Salvar alterações</button>
             </div>
         </div>`;
     document.body.appendChild(o);
@@ -1322,11 +1334,11 @@ function renderLogsTable() {
                     ${l.rir != null ? `<span class="text-[11px] font-mono text-cyan-300">RIR ${l.rir}</span>` : ''}
                     ${l.nextGoal ? `<span class="text-[11px] font-bold px-2 py-0.5 bg-berzerker-card border border-emerald-500/40 text-emerald-400 rounded">⚡ ${escapeHtml(l.nextGoal)}</span>` : ''}
                 </div>
-                <h3 class="font-bold text-white text-base mt-1">${l.biset ? '🔗 ' : ''}${escapeHtml(l.exercise)}${l.biset ? ' <span class="text-[10px] font-bold text-cyan-400 border border-cyan-500/40 rounded px-1.5 py-0.5 align-middle">BI-SET</span>' : ''}<button onclick="editLog(${l.id})" title="Editar" class="ml-2 px-2 py-0.5 text-xs text-gray-400 hover:text-cyan-400 align-middle">✏️ Editar</button></h3>
+                <h3 class="font-bold text-white text-base mt-1">${l.biset ? '🔗 ' : ''}${escapeHtml(l.exercise)}${l.biset ? ' <span class="text-[10px] font-bold text-cyan-400 border border-cyan-500/40 rounded px-1.5 py-0.5 align-middle">BI-SET</span>' : ''}<button data-action="editLog" data-args="[${l.id}]" title="Editar" class="ml-2 px-2 py-0.5 text-xs text-gray-400 hover:text-cyan-400 align-middle">✏️ Editar</button></h3>
                 ${l.notes ? `<p class="text-[11px] text-gray-400 mt-1 italic">📝 ${escapeHtml(l.notes)}</p>` : ''}
                 <div class="text-xs text-gray-400 mt-1 font-mono">${detalhe}</div>
             </div>
-            <button onclick="deleteLog(${l.id})" class="self-end sm:self-center p-2 text-gray-500 hover:text-red-400 transition-colors" title="Excluir">
+            <button data-action="deleteLog" data-args="[${l.id}]" class="self-end sm:self-center p-2 text-gray-500 hover:text-red-400 transition-colors" title="Excluir">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>
         </div>`;
@@ -1347,7 +1359,7 @@ function renderRecoveryMap() {
         const st = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs, sin);
         const pctText = st.pct === null ? '—' : `${st.pct}%`;
         return `
-        <div onclick="prefillMuscleFromMap('${m}')" title="Registrar exercício de ${m}" class="cursor-pointer bg-berzerker-dark border ${st.border} rounded-xl p-3.5 space-y-2.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+        <div data-action="prefillMuscleFromMap" data-args='["${m}"]' title="Registrar exercício de ${m}" class="cursor-pointer bg-berzerker-dark border ${st.border} rounded-xl p-3.5 space-y-2.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
             <div class="flex items-center justify-between gap-2">
                 <span class="font-oswald text-lg font-bold text-white uppercase tracking-wide leading-none">${m}</span>
                 <span class="text-lg leading-none">${st.icon}</span>
@@ -1420,7 +1432,7 @@ function renderDaySuggestion() {
     const el = document.getElementById('suggestion-content');
     if (!el) return;
     if (savedWorkouts.length === 0) {
-        el.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><p class="text-xs text-gray-400">Monte um treino no <b>Montador</b> para receber a sugestão do dia.</p><button type="button" onclick="switchTab('montador')" class="px-3 py-2 bg-berzerker-600/20 border border-berzerker-500/40 text-berzerker-500 text-xs font-bold uppercase rounded-lg hover:bg-berzerker-600/40">🎯 Abrir Montador</button></div>`;
+        el.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><p class="text-xs text-gray-400">Monte um treino no <b>Montador</b> para receber a sugestão do dia.</p><button type="button" data-action="switchTab" data-args='["montador"]' class="px-3 py-2 bg-berzerker-600/20 border border-berzerker-500/40 text-berzerker-500 text-xs font-bold uppercase rounded-lg hover:bg-berzerker-600/40">🎯 Abrir Montador</button></div>`;
         return;
     }
     const scored = suggestNextWorkout(savedWorkouts, logs, Date.now());
@@ -1433,9 +1445,9 @@ function renderDaySuggestion() {
                 <div class="font-oswald text-xl font-bold text-white uppercase mt-1">${escapeHtml(top.w.name)}</div>
                 <div class="text-xs text-gray-400 mt-0.5 leading-relaxed">Por quê: ${escapeHtml(top.motivos.slice(0, 3).join(' · '))}</div>
                 ${top.diasSemTreinar >= 1 ? `<div class="text-xs text-amber-400/90 mt-0.5">⏳ Sem treino registrado há ${top.diasSemTreinar} ${top.diasSemTreinar === 1 ? 'dia' : 'dias'}.</div>` : ''}
-                ${alternates.length ? `<div class="text-xs text-gray-600 mt-1.5">Outras opções: ${alternates.map(a => `<button type="button" onclick="startSession(${a.w.id})" class="underline hover:text-white transition-colors">${escapeHtml(a.w.name)}</button>`).join(' · ')}</div>` : ''}
+                ${alternates.length ? `<div class="text-xs text-gray-600 mt-1.5">Outras opções: ${alternates.map(a => `<button type="button" data-action="startSession" data-args="[${a.w.id}]" class="underline hover:text-white transition-colors">${escapeHtml(a.w.name)}</button>`).join(' · ')}</div>` : ''}
             </div>
-            <button onclick="startSession(${top.w.id})" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-emerald-600/20 whitespace-nowrap">▶ Treinar esta sugestão</button>
+            <button data-action="startSession" data-args="[${top.w.id}]" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-emerald-600/20 whitespace-nowrap">▶ Treinar esta sugestão</button>
         </div>`;
 }
 
@@ -1542,7 +1554,7 @@ function renderSession() {
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-emerald-400 font-mono whitespace-nowrap">${lg ? formatLoadText(lg) + ' × ' + formatRepsText(lg) : ''}</span>
-                        <button onclick="editLog(${e.logId})" class="px-2 py-1 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold rounded-lg transition-colors">✏️ Editar</button>
+                        <button data-action="editLog" data-args="[${e.logId}]" class="px-2 py-1 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold rounded-lg transition-colors">✏️ Editar</button>
                     </div>
                 </div>
                 ${lg && lg.notes ? `<p class="text-xs text-gray-400 mt-1.5 italic">📝 ${escapeHtml(lg.notes)}</p>` : ''}
@@ -1559,8 +1571,8 @@ function renderSession() {
                     <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button type="button" onclick="moveSessionUnit(${i}, -1)" title="Subir na ordem" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▲</button>
-                    <button type="button" onclick="moveSessionUnit(${i}, 1)" title="Descer na ordem" aria-label="Descer na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▼</button>
+                    <button type="button" data-action="moveSessionUnit" data-args="[${i},-1]" title="Subir na ordem" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▲</button>
+                    <button type="button" data-action="moveSessionUnit" data-args="[${i},1]" title="Descer na ordem" aria-label="Descer na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▼</button>
                     <span class="text-xs text-gray-400 font-mono whitespace-nowrap">🎯 Meta: ${e.weight > 0 ? e.weight + ' kg' : '—'} × (${escapeHtml(e.repsText || '—')})</span>
                 </div>
             </div>
@@ -1570,8 +1582,8 @@ function renderSession() {
             ${catInfo && catInfo.descanso ? `<div class="text-xs text-gray-400 font-mono">⏱ Descanso do catálogo: ${catInfo.descanso}s · faixa ${catInfo.faixa[0]}–${catInfo.faixa[1]}${catInfo.tipo === 'isometria' ? ' s' : ' reps'}</div>` : ''}
             ${lastPerformanceHTML(e.exercise)}
             <div class="flex gap-2 flex-wrap mt-1.5">
-                <button type="button" onclick="showWarmupFor(${i})" class="px-2 py-1 text-xs font-bold bg-amber-900/30 border border-amber-500/30 text-amber-300 rounded-md hover:bg-amber-900/50">🔥 Aquecimento</button>
-                <button type="button" onclick="showPlatesFor(${i})" class="px-2 py-1 text-xs font-bold bg-berzerker-border text-gray-200 rounded-md hover:bg-gray-700">⚙️ Anilhas</button>
+                <button type="button" data-action="showWarmupFor" data-args="[${i}]" class="px-2 py-1 text-xs font-bold bg-amber-900/30 border border-amber-500/30 text-amber-300 rounded-md hover:bg-amber-900/50">🔥 Aquecimento</button>
+                <button type="button" data-action="showPlatesFor" data-args="[${i}]" class="px-2 py-1 text-xs font-bold bg-berzerker-border text-gray-200 rounded-md hover:bg-gray-700">⚙️ Anilhas</button>
             </div>
             <div id="s${i}-quickbox" class="hidden mt-1.5 text-xs font-mono bg-berzerker-dark/80 border border-amber-500/20 rounded-lg p-2"></div>
             ${fieldsHTML(`s${i}-`, d)}
@@ -1596,7 +1608,7 @@ function renderSession() {
         html += `<div class="rounded-xl border ${pending.length ? (pair ? 'border-cyan-500/60 bg-berzerker-dark' : 'border-berzerker-border bg-berzerker-dark') : 'border-emerald-600/50 bg-emerald-950/10'} p-4 space-y-3">
             ${pair ? '<div class="text-xs font-bold text-cyan-400 uppercase tracking-wider">🔗 BI-SET — os dois juntos; o descanso começa depois do par</div>' : ''}
             ${idxs.map(k => itemHTML(ex[k], k)).join('<div class="border-t border-dashed border-berzerker-border"></div>')}
-            ${pending.length ? `<div class="flex justify-end"><button onclick="registerSessionUnit([${pending.join(',')}], ${pair})" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">✔ Registrar${pending.length > 1 ? ' Bi-set' : ''}</button></div>` : ''}
+            ${pending.length ? `<div class="flex justify-end"><button data-action="registerSessionUnit" data-args="[[${pending.join(',')}],${pair}]" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">✔ Registrar${pending.length > 1 ? ' Bi-set' : ''}</button></div>` : ''}
         </div>`;
     }
     listEl.innerHTML = html;
@@ -1622,7 +1634,7 @@ function renderSession() {
                             <div class="font-oswald text-lg font-bold text-white uppercase mt-0.5">${escapeHtml(top.w.name)}</div>
                             <div class="text-xs text-gray-400 mt-0.5">Por quê: ${escapeHtml(top.motivos.slice(0, 2).join(' · '))}</div>
                         </div>
-                        <button onclick="startSession(${top.w.id})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg whitespace-nowrap">▶ Começar este treino</button>
+                        <button data-action="startSession" data-args="[${top.w.id}]" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg whitespace-nowrap">▶ Começar este treino</button>
                     </div>`
                 : `<div class="text-xs text-emerald-400 font-bold">✅ Treino completo! Bom trabalho.</div>`;
         } else {
@@ -1867,9 +1879,9 @@ function normalizeBisets(arr) {
 
 function pairLink(i) {
     const d = draftExercises, e = d[i];
-    if (e.biset) return `<button onclick="toggleDraftBiset(${i})" class="ml-5 text-xs font-bold text-gray-400 hover:text-red-400 transition-colors">✂ Desfazer bi-set</button>`;
+    if (e.biset) return `<button data-action="toggleDraftBiset" data-args="[${i}]" class="ml-5 text-xs font-bold text-gray-400 hover:text-red-400 transition-colors">✂ Desfazer bi-set</button>`;
     if (i > 0 && !d[i - 1].biset && !(d[i + 1] && d[i + 1].biset))
-        return `<button onclick="toggleDraftBiset(${i})" class="w-full text-xs font-bold text-cyan-400 hover:bg-cyan-950/30 border border-dashed border-cyan-500/40 rounded-lg py-1.5 transition-colors">🔗 Juntar com o exercício acima em bi-set</button>`;
+        return `<button data-action="toggleDraftBiset" data-args="[${i}]" class="w-full text-xs font-bold text-cyan-400 hover:bg-cyan-950/30 border border-dashed border-cyan-500/40 rounded-lg py-1.5 transition-colors">🔗 Juntar com o exercício acima em bi-set</button>`;
     return '';
 }
 
@@ -2036,9 +2048,9 @@ function renderDraftList() {
                 </div>
             </div>
             <div class="flex items-center gap-0.5 shrink-0">
-                <button onclick="moveDraftExercise(${i}, -1)" title="Subir" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] p-2 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-sm">▲</button>
-                <button onclick="moveDraftExercise(${i}, 1)" title="Descer" aria-label="Descer exercício na ordem" class="min-h-[44px] min-w-[44px] p-2 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-sm">▼</button>
-                <button onclick="removeDraftExercise(${i})" title="Remover" aria-label="Remover exercício do rascunho" class="p-1.5 text-gray-500 hover:text-red-400 transition-colors text-xs">✕</button>
+                <button data-action="moveDraftExercise" data-args="[${i},-1]" title="Subir" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] p-2 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-sm">▲</button>
+                <button data-action="moveDraftExercise" data-args="[${i},1]" title="Descer" aria-label="Descer exercício na ordem" class="min-h-[44px] min-w-[44px] p-2 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-sm">▼</button>
+                <button data-action="removeDraftExercise" data-args="[${i}]" title="Remover" aria-label="Remover exercício do rascunho" class="p-1.5 text-gray-500 hover:text-red-400 transition-colors text-xs">✕</button>
             </div>
         </div>
     `).join('');
@@ -2133,9 +2145,9 @@ function renderSavedWorkouts() {
             </div>
             <p class="text-[11px] text-gray-500 font-mono leading-relaxed line-clamp-2">${escapeHtml(w.exercises.map((e, i) => (i ? (e.biset ? ' + ' : ' · ') : '') + e.exercise).join(''))}</p>
             <div class="flex gap-2 pt-1 mt-auto">
-                <button onclick="startSession(${w.id})" class="flex-1 px-3 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors">▶ Iniciar</button>
-                <button onclick="editWorkout(${w.id})" title="Editar" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-[11px] rounded-lg transition-colors">✏️</button>
-                <button onclick="deleteWorkout(${w.id})" title="Excluir" aria-label="Excluir treino salvo" class="px-3 py-2 bg-berzerker-border hover:bg-red-900/60 text-red-400 text-[11px] rounded-lg transition-colors">🗑</button>
+                <button data-action="startSession" data-args="[${w.id}]" class="flex-1 px-3 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors">▶ Iniciar</button>
+                <button data-action="editWorkout" data-args="[${w.id}]" title="Editar" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-[11px] rounded-lg transition-colors">✏️</button>
+                <button data-action="deleteWorkout" data-args="[${w.id}]" title="Excluir" aria-label="Excluir treino salvo" class="px-3 py-2 bg-berzerker-border hover:bg-red-900/60 text-red-400 text-[11px] rounded-lg transition-colors">🗑</button>
             </div>
         </div>`;
     }).join('');
@@ -2405,7 +2417,7 @@ function renderBossBattleUI() {
         activeCard.innerHTML = `
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div class="flex items-start gap-3 sm:gap-4 min-w-0">
-                    <button type="button" onclick="openBossLightbox('${currentBoss.id}')" title="Ampliar retrato de ${escapeHtml(currentBoss.name)}" aria-label="Ampliar retrato de ${escapeHtml(currentBoss.name)}" class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500">
+                    <button type="button" data-action="openBossLightbox" data-args='["${currentBoss.id}"]' title="Ampliar retrato de ${escapeHtml(currentBoss.name)}" aria-label="Ampliar retrato de ${escapeHtml(currentBoss.name)}" class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500">
                         ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl shrink-0" style="image-rendering:pixelated" alt="retrato de ${escapeHtml(currentBoss.name)}">` : `<span class="text-5xl sm:text-6xl leading-none">${currentBoss.icon}</span>`}
                     </button>
                     <div class="min-w-0 flex-1">
@@ -2416,9 +2428,9 @@ function renderBossBattleUI() {
                         <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1.5">
                             <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700 uppercase leading-tight break-words">💢 Fraqueza: ${escapeHtml(currentBoss.weak || '—')} ×1,25</span>
                             <label class="text-[10px] font-bold px-2 py-0.5 rounded bg-berzerker-border text-gray-300 cursor-pointer hover:bg-gray-700">🖼️ Retrato
-                                <input type="file" accept="image/*" class="hidden" onchange="uploadBossPortrait(event, '${currentBoss.id}')">
+                                <input type="file" accept="image/*" class="hidden" data-change-action="uploadBossPortrait" data-args='["$event","${currentBoss.id}"]'>
                             </label>
-                            <button onclick="openBossDefeatCard()" class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-900/40 text-amber-300 border border-amber-700/50 hover:bg-amber-900/70">📸 Card do Chefão</button>
+                            <button data-action="openBossDefeatCard" class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-900/40 text-amber-300 border border-amber-700/50 hover:bg-amber-900/70">📸 Card do Chefão</button>
                         </div>
                     </div>
                 </div>
@@ -2446,7 +2458,7 @@ function renderBossBattleUI() {
             const defeated = idx < prog.defeatedCount;
             const thumb = bossPortraitSrc(b.id);
             return `
-                <div role="button" tabindex="0" data-boss-id="${escapeHtml(b.id)}" onclick="openBossLightbox('${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBossLightbox('${b.id}')}" title="Ampliar retrato de ${escapeHtml(b.name)}" class="p-4 rounded-xl border cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500 ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
+                <div role="button" tabindex="0" data-boss-id="${escapeHtml(b.id)}" data-action="openBossLightbox" data-args='["${b.id}"]' title="Ampliar retrato de ${escapeHtml(b.name)}" class="p-4 rounded-xl border cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500 ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
                     <div class="flex items-center justify-between gap-2">
                         ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" width="40" height="40" style="width:40px;height:40px;image-rendering:pixelated" loading="lazy" decoding="async" class="w-10 h-10 shrink-0 rounded-lg object-cover border border-berzerker-border">` : `<span class="text-2xl shrink-0 leading-none">${b.icon}</span>`}
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded leading-tight ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
@@ -2537,17 +2549,17 @@ function renderBossLightbox() {
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <span id="boss-lightbox-status" class="text-[10px] font-bold uppercase px-2 py-1 rounded border ${bossStatusClass(idx, prog)}">${bossStatusLabel(idx, prog)}</span>
-                    <button type="button" onclick="closeBossLightbox()" aria-label="Fechar (ESC)" title="Fechar (ESC)" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✕</button>
+                    <button type="button" data-action="closeBossLightbox" aria-label="Fechar (ESC)" title="Fechar (ESC)" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✕</button>
                 </div>
             </div>
             <div class="flex items-center justify-center gap-2 sm:gap-4">
-                <button type="button" onclick="navBossLightbox(-1)" aria-label="Chefão anterior" title="Anterior (←)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">‹</button>
+                <button type="button" data-action="navBossLightbox" data-args="[-1]" aria-label="Chefão anterior" title="Anterior (←)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">‹</button>
                 <div class="w-56 h-56 sm:w-72 sm:h-72 rounded-2xl border border-berzerker-border bg-black/60 overflow-hidden flex items-center justify-center">
                     ${src
                         ? `<img id="boss-lightbox-img" src="${escapeHtml(src)}" alt="Retrato de ${escapeHtml(b.name)}" class="w-full h-full object-contain" style="image-rendering:pixelated">`
                         : `<span id="boss-lightbox-icon" class="text-8xl">${b.icon || '👹'}</span>`}
                 </div>
-                <button type="button" onclick="navBossLightbox(1)" aria-label="Próximo chefão" title="Próximo (→)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">›</button>
+                <button type="button" data-action="navBossLightbox" data-args="[1]" aria-label="Próximo chefão" title="Próximo (→)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">›</button>
             </div>
             <div class="grid grid-cols-3 gap-2 text-center">
                 <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
@@ -2567,8 +2579,8 @@ function renderBossLightbox() {
             ${b.desc ? `<p class="text-[11px] leading-relaxed text-gray-500">${escapeHtml(b.desc)}</p>` : ''}
             <div class="flex flex-wrap items-center gap-2">
                 ${src ? `<a id="boss-lightbox-download" href="${escapeHtml(src)}" download="${escapeHtml(bossPortraitDownloadName(b, src))}" class="flex-1 text-center px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-200 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">⬇️ Baixar retrato</a>` : ''}
-                <button type="button" onclick="navBossLightbox(-1)" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">‹ Anterior</button>
-                <button type="button" onclick="navBossLightbox(1)" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">Próximo ›</button>
+                <button type="button" data-action="navBossLightbox" data-args="[-1]" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">‹ Anterior</button>
+                <button type="button" data-action="navBossLightbox" data-args="[1]" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">Próximo ›</button>
             </div>
         </div>`;
     document.body.appendChild(overlay);
@@ -2722,7 +2734,7 @@ function renderReservaStudio() {
     const tileCls = on => `text-left rounded-xl border p-1.5 transition-colors ${on ? 'border-berzerker-500 bg-berzerker-600/15 ring-1 ring-berzerker-500/40' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'}`;
 
     let html = padrao ? `
-        <button type="button" onclick="resetBossPortraitToDefault()" title="Retrato padrão do tema" class="${tileCls(!atual)}">
+        <button type="button" data-action="resetBossPortraitToDefault" title="Retrato padrão do tema" class="${tileCls(!atual)}">
             <img src="${padrao}" alt="retrato padrão" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
             <span class="block text-[10px] font-bold uppercase tracking-wide leading-tight mt-1 ${!atual ? 'text-berzerker-300' : 'text-gray-500'}">Padrão</span>
         </button>` : '';
@@ -2735,7 +2747,7 @@ function renderReservaStudio() {
         if (grupos.length > 1) html += `<div class="col-span-full text-[10px] font-bold uppercase tracking-wider text-gray-500 pt-1">${escapeHtml((THEMES[g.tema] || {}).name || g.tema)}</div>`;
         g.itens.forEach(item => {
             html += `
-            <button type="button" onclick="applyReservaPortrait('${escapeHtml(item.file)}')" title="${escapeHtml(item.label)}" class="${tileCls(atual === item.file)}">
+            <button type="button" data-action="applyReservaPortrait" data-args='["${escapeHtml(item.file)}"]' title="${escapeHtml(item.label)}" class="${tileCls(atual === item.file)}">
                 <img src="${escapeHtml(item.file)}" alt="${escapeHtml(item.label)}" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
                 <span class="block truncate text-[10px] font-bold uppercase tracking-wide leading-tight mt-1 ${atual === item.file ? 'text-berzerker-300' : 'text-gray-400'}">${escapeHtml(item.label)}</span>
             </button>`;
@@ -2771,7 +2783,7 @@ function renderMissions() {
                     <span class="text-[10px] font-bold uppercase ${m.done ? 'text-emerald-400' : 'text-gray-500'}">${m.done ? '✔ pronta' : 'em curso'}</span>
                 </div>`).join('')}
         </div>
-        <button onclick="claimMissions()" ${(!st.allDone || claimed) ? 'disabled' : ''} class="mt-3 w-full py-2.5 ${st.allDone && !claimed ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-berzerker-border opacity-50 cursor-not-allowed'} text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">
+        <button data-action="claimMissions" ${(!st.allDone || claimed) ? 'disabled' : ''} class="mt-3 w-full py-2.5 ${st.allDone && !claimed ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-berzerker-border opacity-50 cursor-not-allowed'} text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">
             ${claimed ? '✔ XP resgatado esta semana' : (st.allDone ? `🎁 Resgatar ${st.totalXP} XP` : `Complete as 4 ${THEME.missionWordPlural || (THEME.missionWord + 's')} para resgatar`)}
         </button>`;
 }
@@ -2813,7 +2825,7 @@ function renderSeason() {
         <div class="text-[10px] text-gray-500 font-mono mt-1.5">🌙 Semana ${SEASON_WEEKS} = deload automático: volume rende 50% do XP e cada dia sem treino rende +${XP_REST_PER_DAY} XP de recuperação${s.currentWeek >= SEASON_WEEKS ? ' (você está nele)' : ''}.</div>
         <div class="flex items-center justify-between mt-2">
             <div class="text-xs text-gray-400">XP preservado entre temporadas · <b class="text-amber-400">${fmtN(xpNow)} XP</b></div>
-            <button onclick="finishSeasonNow()" class="px-3 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg">🏁 Encerrar agora</button>
+            <button data-action="finishSeasonNow" class="px-3 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg">🏁 Encerrar agora</button>
         </div>
         ${(seasons.completed || []).length ? `
         <div class="mt-3 border-t border-berzerker-border pt-2">
@@ -3361,9 +3373,9 @@ function openBossDefeatCard() {
     overlay.innerHTML = `
         <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-3">
             <div class="flex items-center justify-between"><h3 class="font-oswald text-lg font-bold text-white uppercase">📸 Card do Chefão</h3>
-            <button aria-label="Fechar card do chefão" onclick="document.getElementById('boss-card-overlay').remove()" class="text-gray-400 hover:text-white">✕</button></div>
+            <button aria-label="Fechar card do chefão" data-action="closeElementById" data-args='["boss-card-overlay"]'  class="text-gray-400 hover:text-white">✕</button></div>
             <canvas id="boss-card-canvas" width="1080" height="1080" class="w-full rounded-xl border border-berzerker-border"></canvas>
-            <button onclick="downloadBossDefeatCard()" class="w-full py-3 bg-gradient-to-r from-amber-600 to-berzerker-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl">⬇️ Baixar Card (1080×1080)</button>
+            <button data-action="downloadBossDefeatCard" class="w-full py-3 bg-gradient-to-r from-amber-600 to-berzerker-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl">⬇️ Baixar Card (1080×1080)</button>
         </div>`;
     document.body.appendChild(overlay);
     generateBossDefeatCard();
@@ -3582,7 +3594,7 @@ function badgeArtSrc(slug) {
 function badgeArtImg(slug, icon, unlocked) {
     const src = badgeArtSrc(slug);
     if (!src) return `<span class="text-3xl shrink-0" role="img" aria-label="${escapeHtml(icon)}">${icon}</span>`;
-    return `<img src="${src}" alt="emblema da conquista" width="48" height="48" data-fallback="${escapeHtml(icon)}" loading="lazy" decoding="async" onerror="badgeArtFallback(this)" class="h-12 w-12 shrink-0 rounded-full object-cover border ${unlocked ? 'border-emerald-500/50' : 'border-berzerker-border'}" style="width:48px;height:48px;image-rendering:auto">`;
+    return `<img src="${src}" alt="emblema da conquista" width="48" height="48" data-fallback="${escapeHtml(icon)}" loading="lazy" decoding="async" data-error-action="badgeArtFallback" class="h-12 w-12 shrink-0 rounded-full object-cover border ${unlocked ? 'border-emerald-500/50' : 'border-berzerker-border'}" style="width:48px;height:48px;image-rendering:auto">`;
 }
 
 function badgeArtFallback(img) {
@@ -3818,7 +3830,7 @@ function renderTests() {
                     <div class="font-bold text-white text-sm uppercase">${escapeHtml(t.name)}</div>
                     <div class="text-[10px] text-gray-500 font-mono">meta: ${t.goal} ${escapeHtml(t.unit)}${best != null ? ` · melhor: ${best} ${escapeHtml(t.unit)}` : ''}</div>
                 </div>
-                <button onclick="deleteTest('${t.id}')" aria-label="Excluir teste" class="text-gray-500 hover:text-red-400 text-xs" title="Excluir teste">🗑</button>
+                <button data-action="deleteTest" data-args='["${t.id}"]' aria-label="Excluir teste" class="text-gray-500 hover:text-red-400 text-xs" title="Excluir teste">🗑</button>
             </div>
             <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
                 <div class="h-full ${pct >= 100 ? 'bg-emerald-500' : 'bg-amber-500'} rounded-full" style="width:${pct}%"></div>
@@ -3826,13 +3838,13 @@ function renderTests() {
             <div class="flex items-center gap-1.5">
                 <input type="date" id="test-date-${t.id}" value="${getTodayLocalISO()}" class="${INP} !py-1 !text-xs flex-1">
                 <input type="number" step="0.5" min="0" id="test-val-${t.id}" placeholder="${escapeHtml(t.unit)}" class="${INP} !py-1 !text-xs w-20">
-                <button onclick="addTestRecord('${t.id}')" class="px-2.5 py-1.5 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[10px] font-bold rounded-lg">+ Registrar</button>
+                <button data-action="addTestRecord" data-args='["${t.id}"]' class="px-2.5 py-1.5 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[10px] font-bold rounded-lg">+ Registrar</button>
             </div>
             ${t.records.length ? `
             <div class="text-[10px] font-mono text-gray-400 space-y-0.5 max-h-24 overflow-y-auto border-t border-berzerker-border pt-1.5">
                 ${[...t.records].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 6).map(r => `
                     <div class="flex justify-between"><span>${formatShortBR(r.date)}</span><span class="text-white">${r.value} ${escapeHtml(t.unit)}</span>
-                    <button onclick="deleteTestRecord('${t.id}', '${r.date}', ${r.value})" aria-label="Excluir registro de teste" class="text-gray-600 hover:text-red-400">✕</button></div>`).join('')}
+                    <button data-action="deleteTestRecord" data-args='["${t.id}","${r.date}",${r.value}]' aria-label="Excluir registro de teste" class="text-gray-600 hover:text-red-400">✕</button></div>`).join('')}
             </div>` : '<div class="text-[10px] text-gray-600 italic">Sem registros ainda.</div>'}
         </div>`;
     }).join('') + `
@@ -3842,7 +3854,7 @@ function renderTests() {
                 <input type="text" id="new-test-name" placeholder="Ex: Agachamento 1RM" class="${INP} !py-1 !text-xs flex-1 min-w-[120px]">
                 <input type="text" id="new-test-unit" placeholder="unidade (kg/reps/s/min)" class="${INP} !py-1 !text-xs w-28">
                 <input type="number" min="1" id="new-test-goal" placeholder="meta" class="${INP} !py-1 !text-xs w-20">
-                <button onclick="addCustomTest()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg">Criar</button>
+                <button data-action="addCustomTest" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg">Criar</button>
             </div>
         </div>`;
 }
@@ -4322,6 +4334,8 @@ window.onload = function () {
     STORAGE_KEY_GAME_SHARED,
     STORAGE_KEY_STORY,
     STORAGE_KEY_BACKUP,
+    closeElementById,
+    hideElementById,
     safeStorage,
     TECHNIQUES,
     NEXT_GOALS,

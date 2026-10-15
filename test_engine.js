@@ -933,6 +933,21 @@ check('lombar carregada apresenta horas restantes aproximadas', lombarCarregada.
     check('manifesto expõe mais de 400 símbolos (superfície completa)', Object.keys(ex).length > 400, Object.keys(ex).length);
     check('storage do manifesto tem migrate/persist/compressImage', typeof ex.storage.migrate === 'function' && typeof ex.storage.persist === 'function' && typeof ex.storage.compressImage === 'function');
 
+    // ---- Etapa 5.1: toda data-* declarada tem handler registrado; sem handlers inline ----
+    console.log('\n== 5.1c. Cobertura da delegação de eventos ==');
+    const fsDeleg = ['index.html', 'js/app.js', 'js/busca.js', 'js/historico.js', 'js/custom_exercises.js', 'js/actions.js'];
+    const acaoRe = /data-(?:action|change-action|input-action|submit-action|error-action)="([\w$]+)"/g;
+    const usadas = new Set();
+    fsDeleg.forEach(f => {
+        const src = fs.readFileSync(f, 'utf8');
+        let m;
+        while ((m = acaoRe.exec(src)) !== null) usadas.add(m[1]);
+    });
+    const naoRegistradas = [...usadas].filter(n => typeof api.diarioActions[n] !== 'function');
+    check('toda ação declarada em data-* está registrada (' + usadas.size + ' ações)', naoRegistradas.length === 0, naoRegistradas);
+    const inlineRestante = fsDeleg.reduce((n, f) => n + (fs.readFileSync(f, 'utf8').match(/\son(click|change|input|submit|keydown|error)="[^"]*"/g) || []).length, 0);
+    check('nenhum handler inline em index.html e js/**', inlineRestante === 0, inlineRestante);
+
     console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
     process.exit(failures === 0 ? 0 : 1);
 })().catch(e => { console.error('❌ ERRO NOS TESTES DE STORAGE:', e); process.exit(1); });
