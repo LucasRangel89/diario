@@ -960,6 +960,18 @@ check('lombar carregada apresenta horas restantes aproximadas', lombarCarregada.
     check('entry importa actions.js primeiro (registro de ações antes de tudo)', primeiras[0] === './actions.js', primeiras.slice(0, 3));
     check('entry importa os 9 módulos na ordem do app', JSON.stringify(primeiras.slice(0, 9)) === JSON.stringify(['./actions.js', './storage.js', './catalogo.js', './gamificacao.js', './assistente.js', './planilha_data.js', './historico.js', './busca.js', './custom_exercises.js']), primeiras);
 
+    // ---- Etapa 5.1 (sub-etapa 4): sw.js pré-cacheia todo o js/ ----
+    console.log('\n== 5.1e. Cache offline cobre os módulos ==');
+    const swSrc = fs.readFileSync('sw.js', 'utf8');
+    const coreMatch = swSrc.match(/const CORE = \[([\s\S]*?)\];/);
+    const core = coreMatch ? (coreMatch[1].match(/'\.\/([^']+)'(?:\.webp)?'/g) || []).join('') : '';
+    const coreList = (coreMatch ? coreMatch[1].match(/'\.?(\/[^']+)'/g) || [] : [])
+        .map(x => x.slice(1, -1).replace(/^\.?\//, ''));
+    const jsFiles = fs.readdirSync('js').filter(f => f.endsWith('.js'));
+    const faltandoNoCore = jsFiles.filter(f => !coreList.includes('js/' + f));
+    check('sw.js CORE inclui todos os arquivos de js/', faltandoNoCore.length === 0, faltandoNoCore);
+    check('sw.js VERSION subiu para módulos (>= v32)', Number((swSrc.match(/VERSION = 'v(\d+)'/) || [])[1]) >= 32);
+
     console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
     process.exit(failures === 0 ? 0 : 1);
 })().catch(e => { console.error('❌ ERRO NOS TESTES DE STORAGE:', e); process.exit(1); });

@@ -137,3 +137,10 @@ Ordem corrigida da migração: 1 (manifestos) → 3 (delegação de eventos) →
   violação de strict mode.
 - `allExercisesList` segue mesclando exercícios customizados (a verificação
   de merge continua coberta pelos testes de busca).
+
+### Progresso — sub-etapa 4 concluída (sw/cache)
+
+- sw.js CORE pré-cacheia os 10 arquivos de js/ (teste novo impede que um
+  módulo novo fique fora do cache offline) e o VERSION subiu a cada etapa
+  (v32). O handler de fetch já cobre requisições de módulo (mesma origem,
+  rede-primeiro com reserva em cache).
