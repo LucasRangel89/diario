@@ -610,6 +610,22 @@ window.localStorage.clear();
 Object.entries(storedBeforeMigrationTest).forEach(([key, value]) => window.localStorage.setItem(key, value));
 ev("loadStoredData(); loadWorkoutsFromStorage(); applyTheme(activeGameThemeId); refreshAll();");
 
+// ============================ TEMPORADA ============================
+console.log('\n== UI 11b. Temporada de 4 semanas e deload automático ==');
+const isoLocal = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const inicioTemporadaTeste = new Date();
+inicioTemporadaTeste.setDate(inicioTemporadaTeste.getDate() - 22);   // dia 22 → semana 4
+ev(`window.__seasonBackup = JSON.stringify(seasons || null);`);
+ev(`seasons = { start: getTodayLocalISO(), completed: [] }; renderSeason();`);
+check('painel anuncia o ciclo curto de 4 semanas', ev('SEASON_WEEKS') === 4 && $('season-content').textContent.includes('Semana 1/4'), $('season-content').textContent.slice(0, 120));
+check('painel explica o deload automático da semana 4', $('season-content').textContent.includes('🌙 Semana 4 = deload automático') && /50% do XP/.test($('season-content').textContent), ($('season-content').textContent.match(/🌙 Semana[^.]*/) || [])[0]);
+check('fora da semana 4 o painel não marca deload ativo', !$('season-content').textContent.includes('· 🌙 deload'), $('season-content').textContent.slice(0, 120));
+ev(`seasons = { start: '${isoLocal(inicioTemporadaTeste)}', completed: [] }; renderSeason();`);
+check('na semana 4 o cabeçalho marca "· 🌙 deload"', /Semana 4\/4 · termina em \d+ dias · 🌙 deload/.test($('season-content').textContent) && $('season-content').textContent.includes('(você está nele)'), ($('season-content').textContent.match(/Semana 4[^·]*·[^·]*·[^.]*/) || [])[0]);
+check('semana de deload automático entra no deload efetivo do tema', ev('deloadWeeksEfetivos().includes(autoDeloadWeekKeys(seasons)[0])') === true, ev('deloadWeeksEfetivos()'));
+check('deload automático vale mesmo sem nenhuma semana marcada à mão', ev('deloadWeeks.length') === 0 || ev('deloadWeeksEfetivos().length >= deloadWeeks.length'), ev('deloadWeeks'));
+ev('seasons = window.__seasonBackup ? JSON.parse(window.__seasonBackup) : null; delete window.__seasonBackup; renderSeason();');
+
 // ============================ BADGES ============================
 console.log('\n== UI 12b. Badges com arte própria ==');
 navTo('stats');

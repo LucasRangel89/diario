@@ -33,6 +33,12 @@ const api = new Function(src + `
     FAIXA_SERIES_SEMANAIS, MUSCULOS_MAPA, MUSCLE_META, normalizeMuscle, PLANILHA_SESSOES,
     normalizeSavedWorkouts, suggestSessaoFor, CATALOG_ALIASES,
     FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, seriesIndiretasSemana, wrapCanvasText,
+    SEASON_WEEKS, autoDeloadWeekKeys, XP_REST_PER_DAY, ensureDeloadRestAwards, getTodayLocalISO,
+    deloadWeeksEfetivos,
+    setDeloadWeeks(arr) { deloadWeeks = arr; },
+    setSeasons(s) { seasons = s; },
+    setActiveTheme(id) { activeGameThemeId = id; },
+    get themeSaves() { return themeGameSaves; },
     get STATE() { return { logs, settings, userBodyweight }; },
     setLogs(arr) { logs = arr; },
     setBW(v) { userBodyweight = v; },
@@ -168,7 +174,7 @@ check('supino halteres legado vira halter_par', mig3.type === 'halter_par', mig3
 console.log('\n== 11. Temporadas ==');
 let seasons = { start: '2026-07-01', completed: [] };
 const st = api.seasonState(seasons, '2026-10-12');
-check('temporada de 12 semanas expirou', st.finished === true, st);
+check('temporada vencida expira (ciclo curto de 4 semanas)', st.finished === true, st);
 const done = api.completeSeason(seasons, '2026-10-12', 5000);
 check('troféu registrado e XP preservado', done.completed.length === 1 && done.completed[0].xp === 5000 && done.start === '2026-10-12');
 
@@ -716,6 +722,81 @@ check('card do chefão desenha a brecha tática em até 2 linhas de 880 px',
 check('layout do card reequilibrado (688 · 736 · 782 · 880 · 940 · 990)',
     [688, 736, 782, 880, 940, 990].every(y => appSrcCard.includes(`, 540, ${y}`)),
     [688, 736, 782, 880, 940, 990].filter(y => !appSrcCard.includes(`, 540, ${y}`)));
+
+console.log('\n== 30. Temporada de 4 semanas e deload automático ==');
+const deslocaDia = (iso, dias) => {
+    const d = new Date(`${iso}T12:00:00`);
+    d.setDate(d.getDate() + dias);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const hojeSeason = api.getTodayLocalISO();
+check('temporada tem 4 semanas (ciclo curto, troféu chega logo)', api.SEASON_WEEKS === 4);
+check('seasonState: dia 22 está na semana 4, sem terminar', (() => {
+    const s = api.seasonState({ start: deslocaDia(hojeSeason, -22), completed: [] }, hojeSeason);
+    return s.currentWeek === 4 && s.finished === false && s.progressPct === 79;
+})(), api.seasonState({ start: deslocaDia(hojeSeason, -22), completed: [] }, hojeSeason));
+check('seasonState: a temporada termina no dia 28', api.seasonState({ start: deslocaDia(hojeSeason, -28), completed: [] }, hojeSeason).finished === true);
+
+const [wsHoje] = api.isoWeekRange(hojeSeason);
+const semanaAtual = api.isoWeekKey(hojeSeason);
+check('4ª semana = dias 21 a 27 da temporada', api.autoDeloadWeekKeys({ start: deslocaDia(wsHoje, -21), completed: [] }).join() === semanaAtual, api.autoDeloadWeekKeys({ start: deslocaDia(wsHoje, -21), completed: [] }));
+check('temporada em andamento e concluídas geram as próprias semanas', (() => {
+    const keys = api.autoDeloadWeekKeys({ start: '2026-10-05', completed: [{ start: '2026-09-07', end: '2026-10-05', xp: 100, trophy: '🏆' }] });
+    return keys.length === 2 && keys.includes(api.isoWeekKey('2026-10-26')) && keys.includes(api.isoWeekKey('2026-09-28'));
+})(), api.autoDeloadWeekKeys({ start: '2026-10-05', completed: [{ start: '2026-09-07' }] }));
+check('temporadas repetidas não duplicam a chave', api.autoDeloadWeekKeys({ start: '2026-10-05', completed: [{ start: '2026-10-05' }] }).length === 1);
+check('sem temporada não há deload automático', api.autoDeloadWeekKeys(null).length === 0 && api.autoDeloadWeekKeys({}).length === 0 && api.autoDeloadWeekKeys({ start: 'data inválida' }).length === 0);
+
+api.setDeloadWeeks([api.isoWeekKey(deslocaDia(hojeSeason, -14))]);
+api.setSeasons(null);
+check('deload efetivo = manual ∪ automático (sem duplicar a mesma semana)', (() => {
+    const efetivas = api.deloadWeeksEfetivos({ start: deslocaDia(wsHoje, -21), completed: [] });
+    return efetivas.length === 2 && efetivas.includes(semanaAtual) && efetivas.includes(api.isoWeekKey(deslocaDia(hojeSeason, -14)));
+})(), api.deloadWeeksEfetivos({ start: deslocaDia(wsHoje, -21), completed: [] }));
+api.setDeloadWeeks([semanaAtual]);
+check('deload manual e automático na mesma semana não duplicam a chave',
+    api.deloadWeeksEfetivos({ start: deslocaDia(wsHoje, -21), completed: [] }).length === 1,
+    api.deloadWeeksEfetivos({ start: deslocaDia(wsHoje, -21), completed: [] }));
+api.setDeloadWeeks([]);
+check('com a semana 4 da temporada o deload vale sem marcar nada em Config',
+    api.deloadWeeksEfetivos({ start: deslocaDia(wsHoje, -21), completed: [] }).join() === semanaAtual, api.deloadWeeksEfetivos({ start: deslocaDia(wsHoje, -21) }));
+
+// dias de descanso: só até hoje (XP de descanso não pode ser antecipado)
+api.setLogs([]);
+api.setActiveTheme('classico');
+api.setDeloadWeeks([semanaAtual]);
+api.setSeasons(null);
+api.themeSaves.classico = { missionsXpTotal: 0, missionsClaimed: {}, seasons: null, bossPortraits: {}, deloadRestDays: [] };
+api.ensureDeloadRestAwards();
+const diasAtribuidos = api.themeSaves.classico.deloadRestDays;
+const diasEsperados = [];
+for (let d = wsHoje; d <= hojeSeason; d = deslocaDia(d, 1)) diasEsperados.push(d);
+check('dias de descanso vão de segunda até HOJE', diasAtribuidos.join() === diasEsperados.join(), { diasAtribuidos, diasEsperados });
+check('nenhum dia futuro é atribuído (sem XP antecipado)', !diasAtribuidos.some(d => d > hojeSeason) && !diasAtribuidos.includes(deslocaDia(hojeSeason, 1)), diasAtribuidos);
+check('dia com treino não vira dia de descanso', (() => {
+    api.setLogs([{ id: 1, date: hojeSeason, kind: 'peso', muscle: 'Peito', exercise: 'Supino Reto na Máquina', reps: [10] }]);
+    api.themeSaves.classico.deloadRestDays = [];
+    api.ensureDeloadRestAwards();
+    return !api.themeSaves.classico.deloadRestDays.includes(hojeSeason);
+})(), api.themeSaves.classico.deloadRestDays);
+api.setLogs([]);
+api.setDeloadWeeks([]);
+api.setSeasons({ start: deslocaDia(wsHoje, -21), completed: [] });
+api.themeSaves.classico.deloadRestDays = [];
+api.ensureDeloadRestAwards();
+check('deload automático da 4ª semana também atribui os dias de descanso',
+    api.themeSaves.classico.deloadRestDays.join() === diasEsperados.join(), api.themeSaves.classico.deloadRestDays);
+
+const logSemana4 = { id: 2, date: deslocaDia(hojeSeason, -1), kind: 'peso', muscle: 'Peito', exercise: 'Supino Reto na Máquina', type: 'carga_total', weight: 100, reps: [10] };
+const semanaDoLog = api.isoWeekKey(logSemana4.date);
+const xpDeload = api.computeXP(hojeSeason, { logs: [logSemana4], bodyweight: 80, deloadWeeks: [semanaDoLog], missionsXpTotal: 0, bosses: [], restDays: [] }).training;
+const xpNormal = api.computeXP(hojeSeason, { logs: [logSemana4], bodyweight: 80, deloadWeeks: [], missionsXpTotal: 0, bosses: [], restDays: [] }).training;
+check('semana de deload rende metade do XP de volume', xpDeload === 5 && xpNormal === 10, { xpDeload, xpNormal });
+const xpDescanso = api.computeXP(hojeSeason, { logs: [], bodyweight: 80, deloadWeeks: [semanaDoLog], missionsXpTotal: 0, bosses: [], restDays: [deslocaDia(hojeSeason, -1)] }).restXP;
+check('dia de descanso na semana de deload rende +25 XP', xpDescanso === api.XP_REST_PER_DAY && xpDescanso === 25, xpDescanso);
+api.setSeasons(null);
+api.setDeloadWeeks([]);
+api.themeSaves.classico.deloadRestDays = [];
 
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);

@@ -473,9 +473,25 @@ function missionsState(allLogs, theme, refDate) {
 }
 
 // ============================================================
-// TEMPORADAS — ciclos de 12 semanas, troféu no fim, XP preservado
+// TEMPORADAS — ciclos de 4 semanas, troféu no fim, XP preservado
 // ============================================================
-const SEASON_WEEKS = 12;
+// 4 semanas (28 dias): ciclo curto o bastante para o troféu chegar logo e para
+// a última semana funcionar como deload programado (veja autoDeloadWeekKeys).
+const SEASON_WEEKS = 4;
+
+/* Chaves ISO da semana de DELOAD AUTOMÁTICO: a 4ª semana (dias 21–27) de cada
+   temporada — a atual e as já concluídas. O deload deixa de depender de o
+   usuário lembrar de marcá-lo em Config: quem fecha a temporada descansa. */
+function autoDeloadWeekKeys(seasons) {
+    const s = seasons && typeof seasons === 'object' ? seasons : {};
+    const inicios = [s.start, ...((Array.isArray(s.completed) ? s.completed : []).map(c => c && c.start))]
+        .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(String(d || '')));
+    return [...new Set(inicios.map(inicio => {
+        const d = new Date(`${inicio}T12:00:00`);
+        d.setDate(d.getDate() + (SEASON_WEEKS - 1) * 7);   // dia 21 = abertura da 4ª semana
+        return isoWeekKey(toLocalISO(d));
+    }))];
+}
 
 function seasonState(seasons, todayISO) {
     const s = seasons || { start: todayISO, completed: [] };

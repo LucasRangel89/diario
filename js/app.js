@@ -317,30 +317,48 @@ function isoWeekDateRange(weekKey) {
     return [toLocalISO(start), toLocalISO(end)];
 }
 
+// Temporadas do tema: o tema ativo manda pela variável global (que só volta ao
+// save em saveGameState), os demais vivem no próprio save.
+function seasonsDoTema(themeId, save) {
+    return themeId === activeGameThemeId ? (seasons || (save && save.seasons)) : (save && save.seasons);
+}
+
+// Deload efetivo = semanas marcadas à mão (Config) ∪ semanas de deload
+// automático (4ª semana de cada temporada do tema). Tudo que decide XP de
+// descanso ou volume pela metade consulta esta lista, nunca `deloadWeeks` puro.
+function deloadWeeksEfetivos(themeSeasons) {
+    const s = themeSeasons === undefined ? seasons : themeSeasons;
+    return [...new Set([...(Array.isArray(deloadWeeks) ? deloadWeeks : []), ...autoDeloadWeekKeys(s)])];
+}
+
 function ensureDeloadRestAwards() {
-    const activeWeeks = new Set(deloadWeeks);
+    const hoje = getTodayLocalISO();
     const trainingDates = new Set(logs.filter(l => l && l.date).map(l => l.date));
     const assignedDates = new Set();
     let changed = false;
 
     Object.keys(THEMES).forEach(themeId => {
         const save = ensureThemeGameSave(themeId);
+        const semanasTema = new Set(deloadWeeksEfetivos(seasonsDoTema(themeId, save)));
         const keep = [];
         save.deloadRestDays.forEach(date => {
-            const valid = activeWeeks.has(isoWeekKey(date)) && !trainingDates.has(date) && !assignedDates.has(date);
+            const valid = semanasTema.has(isoWeekKey(date)) && !trainingDates.has(date) && !assignedDates.has(date);
             if (valid) { keep.push(date); assignedDates.add(date); }
             else changed = true;
         });
         if (keep.length !== save.deloadRestDays.length) save.deloadRestDays = keep;
     });
 
-    deloadWeeks.forEach(weekKey => {
+    const saveAtivo = ensureThemeGameSave(activeGameThemeId);
+    deloadWeeksEfetivos(seasonsDoTema(activeGameThemeId, saveAtivo)).forEach(weekKey => {
         const range = isoWeekDateRange(weekKey);
         if (!range) return;
         const [start, end] = range;
-        for (let date = start; date <= end; ) {
+        // Só até HOJE: dia futuro ainda pode virar treino, então não pode
+        // render XP de descanso antecipado (o XP tem que ser conquistado).
+        for (let date = start; date <= end && date <= hoje; ) {
             if (!trainingDates.has(date) && !assignedDates.has(date)) {
-                ensureThemeGameSave(activeGameThemeId).deloadRestDays.push(date);
+                saveAtivo.deloadRestDays.push(date);
                 assignedDates.add(date);
                 changed = true;
             }
@@ -546,7 +564,7 @@ function computeThemeXPCtx(themeId, upto) {
     const gameLogs = logsForTheme(t.id);
     const missionXP = t.id === activeGameThemeId ? missionsXpTotal : save.missionsXpTotal;
     return computeXP(upto, {
-        logs: gameLogs, bodyweight: userBodyweight, deloadWeeks,
+        logs: gameLogs, bodyweight: userBodyweight, deloadWeeks: deloadWeeksEfetivos(seasonsDoTema(t.id, save)),
         missionsXpTotal: missionXP, bosses: t.bosses, restDays: save.deloadRestDays
     });
 }
@@ -2610,11 +2628,12 @@ function renderSeason() {
     el.innerHTML = `
         <div class="flex items-center justify-between text-[11px] text-gray-400 font-mono mb-2">
             <span>Temporada iniciada em ${formatShortBR(s.start)}</span>
-            <span>Semana ${s.currentWeek}/${SEASON_WEEKS} · termina em ${s.endsInDays} dias</span>
+            <span>Semana ${s.currentWeek}/${SEASON_WEEKS} · termina em ${s.endsInDays} dias${s.currentWeek >= SEASON_WEEKS ? ' · 🌙 deload' : ''}</span>
         </div>
         <div class="w-full h-3 bg-berzerker-border rounded-full overflow-hidden">
             <div class="h-full bg-gradient-to-r from-amber-600 to-yellow-400 rounded-full transition-all" style="width:${s.progressPct}%"></div>
         </div>
+        <div class="text-[10px] text-gray-500 font-mono mt-1.5">🌙 Semana ${SEASON_WEEKS} = deload automático: volume rende 50% do XP e cada dia sem treino rende +${XP_REST_PER_DAY} XP de recuperação${s.currentWeek >= SEASON_WEEKS ? ' (você está nele)' : ''}.</div>
         <div class="flex items-center justify-between mt-2">
             <div class="text-xs text-gray-400">XP preservado entre temporadas · <b class="text-amber-400">${fmtN(xpNow)} XP</b></div>
             <button onclick="finishSeasonNow()" class="px-3 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg">🏁 Encerrar agora</button>
@@ -3905,8 +3924,14 @@ window.onload = function () {
     setV('cfg-sled', settings.sledWeight);
     const deloadBtn = document.getElementById('cfg-deload-btn');
     if (deloadBtn) {
-        const isDeload = deloadWeeks.includes(isoWeekKey(todayStr));
-        deloadBtn.textContent = isDeload ? '✔ Semana de deload ATIVA (clique para remover)' : '🧘 Planejar semana de deload (esta semana)';
+        const semanaHoje = isoWeekKey(todayStr);
+        const isDeload = deloadWeeks.includes(semanaHoje);
+        // A 4ª semana da temporada é deload automático: o botão precisa dizer
+        // isso, senão parece que a semana de descarga "apareceu do nada".
+        const isAuto = !isDeload && deloadWeeksEfetivos().includes(semanaHoje);
+        deloadBtn.textContent = isDeload ? '✔ Semana de deload ATIVA (clique para remover)'
+            : isAuto ? `🌙 Deload automático ATIVO (semana ${SEASON_WEEKS} da temporada)`
+                : '🧘 Planejar semana de deload (esta semana)';
     }
 
     // Campos do formulário principal (prefixo vazio)
