@@ -325,6 +325,26 @@ function faixaSeriesDoGrupo(muscle) {
     return FAIXA_SERIES_POR_GRUPO[normalizeMuscle(muscle)] || FAIXA_SERIES_SEMANAIS;
 }
 
+// ---------- Objeto único de constantes de recuperação (configurável) ----------
+// Centraliza as janelas de recuperação (24–72 h) e as faixas de séries por
+// grupo (10–20; antebraço 4–10) para evitar valores espalhados pelo código.
+const RECOVERY_CONSTANTS = Object.freeze({
+    // Janelas de recuperação em horas por grupo muscular (base; +2h por série acima de 8).
+    recoveryWindowsH: Object.freeze({
+        'Peito': 48, 'Costas': 48, 'Pernas': 72, 'Posterior': 48,
+        'Ombros': 36, 'Bíceps': 36, 'Tríceps': 36, 'Abdômen': 24,
+        'Core': 24, 'Antebraço': 24, 'Geral': 24, 'Cardio': 12
+    }),
+    // Faixa padrão de séries semanais por grupo.
+    seriesRangeDefault: Object.freeze({ min: 10, max: 20 }),
+    // Exceções por grupo (músculo pequeno).
+    seriesRangeByMuscle: Object.freeze({ 'Antebraço': Object.freeze({ min: 4, max: 10 }) }),
+    // Janela base mínima da região lombar (horas).
+    lombarBaseHours: 24
+});
+const RECOVERY_CONFIG = RECOVERY_CONSTANTS;
+
+
 // ---------- Anilhas ----------
 const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
 const DEFAULT_BAR_WEIGHT = 20;
@@ -531,7 +551,7 @@ function recoveryState(muscle, muscleLogs, nowMs) {
     }
     const dias = Math.floor(hoursSince / 24);
     st.pct = pct;
-    st.info = pct >= 100 ? (dias > 0 ? `Descansado há ${dias}d` : 'Recuperado') : `${Math.round(hoursNeed - hoursSince)}h p/ 100%`;
+    st.info = pct >= 100 ? (dias > 0 ? `Descansado há ${dias}d` : 'Recuperado') : `≈ ${Math.round(hoursNeed - hoursSince)}h p/ 100% (estimativa)`;
     st.last = last.exercise;
     st.hoursNeed = hoursNeed;
     return st;

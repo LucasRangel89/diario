@@ -1358,7 +1358,7 @@ function renderRecoveryMap() {
             </div>
             <div>
                 <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">
-                    <span>Prontidão real</span><span class="text-gray-400">${pctText}</span>
+                    <span>Prontidão estimada</span><span class="text-gray-400">${pctText}</span>
                 </div>
                 <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
                     <div class="h-full ${st.bar} rounded-full transition-all duration-500" style="width: ${st.pct === null ? 100 : st.pct}%"></div>
@@ -1398,7 +1398,8 @@ function renderRecoveryMap() {
                     <div class="h-full ${lombar.bar} rounded-full transition-all duration-500" style="width: ${lombar.pct}%"></div>
                 </div>
             </div>
-            ${lombar.last ? `<div class="text-[10px] text-gray-400">Última sessão que carregou: ${escapeHtml(lombar.last)} · ${lombar.horasRestantes}h restantes</div>` : ''}
+            ${lombar.last ? `<div class="text-[10px] text-gray-400">Última sessão que carregou: ${escapeHtml(lombar.last)} · ≈ ${lombar.horasRestantes}h restantes (estimativa)</div>` : ''}
+            <p class="text-[10px] text-gray-500">Estimativa baseada no tempo desde a última sessão e no volume; não mede fadiga nem substitui orientação profissional.</p>
             <div class="text-[11px] text-gray-300 leading-relaxed">💡 ${escapeHtml(lombar.dica)}</div>
         </div>`;
     }

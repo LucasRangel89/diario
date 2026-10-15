@@ -67,7 +67,9 @@ const api = new Function(src + `
     SINERGIA, sinergiaState, sinergiaLogs, STABILIZER_GROUPS,
     orderWorkoutExercises, isAtivacaoExercise, classifyExercicio, bisetBlockRanges,
     weeklySetsByMuscle, fatigueState, suggestNextWorkout, weeklyGaps, diasDesdeUltimoTreino,
+    regiaoLombarState, nivelCargaLombar,
     FAIXA_SERIES_SEMANAIS, MUSCULOS_MAPA, MUSCLE_META, normalizeMuscle, PLANILHA_SESSOES,
+    RECOVERY_CONSTANTS, RECOVERY_CONFIG,
     normalizeSavedWorkouts, suggestSessaoFor, CATALOG_ALIASES,
     FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, seriesIndiretasSemana, wrapCanvasText,
     SEASON_WEEKS, autoDeloadWeekKeys, XP_REST_PER_DAY, ensureDeloadRestAwards, getTodayLocalISO,
@@ -856,6 +858,14 @@ check('curva de HP e IDs dos chefões do folclore intactos',
     folclore.bosses.map(b => b.maxHp).join() === Array.from({ length: 12 }, (_, i) => 25000 + 2000 * i).join()
     && folclore.bosses.map(b => b.id).join() === Array.from({ length: 12 }, (_, i) => `b${i}`).join());
 
+
+console.log('\n== 3.5. Alerta de lombar (assistente) ==');
+const lombarLivre = api.regiaoLombarState([], Date.now());
+check('sem carga: lombar livre 100%', lombarLivre.pct === 100 && lombarLivre.carregada === false, lombarLivre);
+const lombarLogs = [{ id: 1, date: '2026-10-14', exercise: 'Levantamento Terra', muscle: 'Costas', reps: [5,5,5], kind: 'peso' }];
+const lombarCarregada = api.regiaoLombarState(lombarLogs, new Date('2026-10-14T12:00:00').getTime());
+check('terra carrega lombar (nivel 3)', api.nivelCargaLombar('Levantamento Terra') === 3);
+check('lombar carregada apresenta horas restantes aproximadas', lombarCarregada.carregada === true && lombarCarregada.horasRestantes >= 0, lombarCarregada);
 
 // ============================================================
 // ETAPA 1 — Camada de armazenamento (js/storage.js)

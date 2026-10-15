@@ -37,3 +37,11 @@ Testadas em `test_engine.js` (linhas 332–489 e 590–671): `orderWorkoutExerci
 - `pages.yml`: build estático (copia arquivos) e deploy no GitHub Pages.
 - Falta: `npm run build:css` e `npm run check:sw` no CI (5.2).
 
+## Proposta RIR (Etapa 3.4) — NÃO implementada
+
+Restrição 3 proíbe alterar o sinal de progressão sem aprovação. Usar RIR para
+mudar "⬆ Progredir" violaria a convenção documentada. Proposta (apenas se
+aprovado pelo dono): manter o sinal atual como padrão; adicionar modo opcional
+"progressão assistida por RIR" onde topo da faixa com RIR ≥ 3 sugere incremento
+maior e RIR 0 sugere manter, sem alterar o cálculo base. Requer aprovação
+explícita antes de implementar.

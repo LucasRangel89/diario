@@ -515,7 +515,7 @@ check('▲▼ continua funcionando (liberdade total)', ev('draftExercises.map(e 
 
 // ============================ ASSISTENTE — FASE 3 ============================
 console.log('\n== UI 10. Assistente: fadiga real + próximo treino (Fase 3) ==');
-check('mapa de fadiga mostra prontidão real', $('recovery-status-grid').textContent.includes('Prontidão real'));
+check('mapa de prontidão mostra "Prontidão estimada" (renomeado de "Fadiga real")', $('recovery-status-grid').textContent.includes('Prontidão estimada') && !$('recovery-status-grid').textContent.includes('Prontidão real'));
 check('mapa traz séries da semana × faixa 10–20', /séries/.test($('recovery-status-grid').textContent) && /abaixo da meta|na faixa|acima da faixa/.test($('recovery-status-grid').textContent));
 const recoveryBoxes = [...$('recovery-status-grid').children];
 const posteriorBox = recoveryBoxes.find(box => box.querySelector('.font-oswald')?.textContent.trim() === 'Posterior');
