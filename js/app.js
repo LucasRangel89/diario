@@ -734,7 +734,7 @@ function showRanksModal(themeId) {
     o.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-start sm:items-center justify-center p-4 overflow-y-auto';
     o.onclick = ev => { if (ev.target === o) o.remove(); };
     o.innerHTML = `<div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 max-w-lg w-full shadow-2xl space-y-3">
-        <div class="flex items-center justify-between"><h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">📜 Patentes</h3><button onclick="document.getElementById('ranks-overlay').remove()" class="text-gray-400 hover:text-white">✕</button></div>
+        <div class="flex items-center justify-between"><h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">📜 Patentes</h3><button aria-label="Fechar patentes" onclick="document.getElementById('ranks-overlay').remove()" class="text-gray-400 hover:text-white">✕</button></div>
         <div class="flex flex-wrap gap-1.5">${tabs}</div>
         <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3 space-y-1.5">
             <div class="flex justify-between text-[11px] font-bold text-gray-300"><span>${fmt(d.xp)} XP</span><span>${nxt ? 'próxima: ' + fmt(nxt.minXp) + ' XP' : 'nível máximo'}</span></div>
@@ -753,7 +753,7 @@ function renderNavigation() {
         const button = document.getElementById(`nav-group-${group.id}`);
         if (!button) return;
         const active = group.id === activeNavGroup;
-        button.className = `min-w-0 px-1 py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors ${active ? 'bg-berzerker-600 text-white' : 'bg-berzerker-dark text-gray-300 hover:text-white'}`;
+        button.className = `min-w-0 min-h-[44px] px-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors ${active ? 'bg-berzerker-600 text-white' : 'bg-berzerker-dark text-gray-300 hover:text-white'}`;
         if (active) button.setAttribute('aria-current', 'page');
         else button.removeAttribute('aria-current');
     });
@@ -769,7 +769,7 @@ function renderNavigation() {
     subnav.classList.remove('hidden');
     subnav.innerHTML = group.tabs.map(([tab, label]) => {
         const active = tab === activeTab;
-        return `<button type="button" id="nav-${tab}" onclick="switchTab('${tab}')" ${active ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-colors ${active ? 'bg-berzerker-600/25 text-white border border-berzerker-500/50' : 'text-gray-400 bg-berzerker-dark/60 border border-transparent hover:text-white'}">${label}</button>`;
+        return `<button type="button" id="nav-${tab}" onclick="switchTab('${tab}')" ${active ? 'aria-current="page"' : ''} class="min-h-[44px] px-3 py-2 rounded-lg text-xs font-bold transition-colors ${active ? 'bg-berzerker-600/25 text-white border border-berzerker-500/50' : 'text-gray-400 bg-berzerker-dark/60 border border-transparent hover:text-white'}">${label}</button>`;
     }).join('');
 }
 
@@ -960,7 +960,7 @@ function renderSetRows(prefix) {
             <input type="number" step="0.5" min="0" value="${s.weight ?? ''}" placeholder="kg" data-setw="${prefix}${i}" class="${INP} !py-1.5 !text-xs flex-1">
             <input type="number" min="0" value="${s.reps ?? ''}" placeholder="reps" data-setr="${prefix}${i}" class="${INP} !py-1.5 !text-xs flex-1">
             <input type="number" min="0" max="10" value="${s.rir ?? ''}" placeholder="RIR" data-seti="${prefix}${i}" class="${INP} !py-1.5 !text-xs w-16">
-            <button type="button" onclick="removeSetRow('${prefix}', ${i})" class="p-1.5 text-gray-500 hover:text-red-400 text-xs">✕</button>
+            <button type="button" onclick="removeSetRow('${prefix}', ${i})" aria-label="Remover série" class="p-1.5 text-gray-500 hover:text-red-400 text-xs">✕</button>
         </div>`).join('');
 }
 
@@ -1028,7 +1028,7 @@ function fieldsHTML(p, v, opts) {
     const setsHTML = `
     <div id="${p}sets-box" class="hidden mt-2.5 space-y-1.5">
         <div class="flex items-center justify-between"><label class="${LBL} !mb-0">Séries — carga · reps · RIR (opcional)</label>
-            <button type="button" onclick="addSetRow('${p}')" class="text-[10px] font-bold text-cyan-400 hover:underline">+ série</button></div>
+            <button type="button" onclick="addSetRow('${p}')" class="text-xs font-bold text-cyan-400 hover:underline">+ série</button></div>
         <div id="${p}sets" class="space-y-1.5"></div>
     </div>`;
     const extraHTML = `
@@ -1037,9 +1037,9 @@ function fieldsHTML(p, v, opts) {
         <div><label class="${LBL}">Técnica Avançada</label><select id="${p}t" class="${INP}">${optsSelect(TECHNIQUES, v.technique)}</select></div>
         <div class="col-span-2"><label class="${LBL} !text-emerald-400">💡 Meta Próximo Treino</label><select id="${p}g" class="${INP}">${optsSelect(NEXT_GOALS, v.nextGoal)}</select></div>
         <div class="col-span-2"><label class="${LBL}">Sessão (split do dia)</label><input type="text" id="${p}sessao" value="${escapeHtml(v.sessao || '')}" list="sessao-list" placeholder="ex: Peito/Tríceps/Ombro" class="${INP}"></div>
-        <label class="flex items-center gap-2 cursor-pointer col-span-2 self-end pb-2"><input type="checkbox" id="${p}conf"${v.conferir ? ' checked' : ''} class="w-4 h-4 rounded text-amber-500 bg-berzerker-dark border-berzerker-border"><span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">⚠️ Conferir?</span></label>
+        <label class="flex items-center gap-2 cursor-pointer col-span-2 self-end pb-2"><input type="checkbox" id="${p}conf"${v.conferir ? ' checked' : ''} class="w-4 h-4 rounded text-amber-500 bg-berzerker-dark border-berzerker-border"><span class="text-xs font-bold text-amber-400 uppercase tracking-wider">⚠️ Conferir?</span></label>
         <div class="col-span-2 sm:col-span-4"><label class="${LBL}">Observações</label><textarea id="${p}n" rows="2" placeholder="Ex: ajuste do banco, dor, sensação, regulagem da máquina..." class="${INP}">${escapeHtml(v.notes || '')}</textarea></div>
-        ${o.prOverride ? `<label class="flex items-center gap-2 cursor-pointer col-span-2"><input type="checkbox" id="${p}p"${v.isPR ? ' checked' : ''} class="w-4 h-4 rounded text-emerald-500 bg-berzerker-dark border-berzerker-border"><span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">🏆 PR (auto pelo 1RM — pode forçar)</span></label>` : ''}
+        ${o.prOverride ? `<label class="flex items-center gap-2 cursor-pointer col-span-2"><input type="checkbox" id="${p}p"${v.isPR ? ' checked' : ''} class="w-4 h-4 rounded text-emerald-500 bg-berzerker-dark border-berzerker-border"><span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">🏆 PR (auto pelo 1RM — pode forçar)</span></label>` : ''}
     </div>`;
 
     if (o.quickCapture) {
@@ -1047,20 +1047,20 @@ function fieldsHTML(p, v, opts) {
         <details id="${p}advanced-details" class="border border-berzerker-border rounded-xl bg-berzerker-dark/50"${v.mode === 'sets' ? ' open' : ''}>
             <summary class="cursor-pointer select-none px-3 py-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center justify-between gap-3">
                 <span>Mais detalhes</span>
-                <span class="text-[10px] text-gray-500 normal-case tracking-normal">séries individuais, técnica, observações e ferramentas</span>
+                <span class="text-xs text-gray-400 normal-case tracking-normal">séries individuais, técnica, observações e ferramentas</span>
             </summary>
             <div class="border-t border-berzerker-border p-3 space-y-3">
                 ${typeModeHTML}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div id="${p}type-hint" class="text-[11px] text-amber-400/90 font-mono bg-amber-950/20 border border-amber-700/30 rounded-lg px-3 py-2"></div>
-                    <div id="${p}faixa-hint" class="text-[11px] text-cyan-300/90 font-mono bg-cyan-950/20 border border-cyan-700/30 rounded-lg px-3 py-2"></div>
+                    <div id="${p}type-hint" class="text-xs text-amber-400/90 font-mono bg-amber-950/20 border border-amber-700/30 rounded-lg px-3 py-2"></div>
+                    <div id="${p}faixa-hint" class="text-xs text-cyan-300/90 font-mono bg-cyan-950/20 border border-cyan-700/30 rounded-lg px-3 py-2"></div>
                 </div>
                 ${setsHTML}
                 ${extraHTML}
                 <div id="${p}warmup-quick-box" class="hidden bg-berzerker-dark/80 border border-amber-500/30 rounded-xl p-3 text-xs space-y-1">
                     <div class="font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
                         <span>🔥 Aquecimento & Anilhas</span>
-                        <button type="button" onclick="document.getElementById('${p}warmup-quick-box').classList.add('hidden')" class="text-gray-400 hover:text-white">✕</button>
+                        <button type="button" onclick="document.getElementById('${p}warmup-quick-box').classList.add('hidden')" aria-label="Fechar aquecimento rápido" class="text-gray-400 hover:text-white">✕</button>
                     </div>
                     <div id="${p}warmup-quick-content" class="font-mono text-gray-300"></div>
                 </div>
@@ -1068,7 +1068,7 @@ function fieldsHTML(p, v, opts) {
                     <button type="button" onclick="calculateWarmupFromForm()" class="px-3 py-2 bg-amber-900/30 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase rounded-lg hover:bg-amber-900/50">🔥 Aquecimento</button>
                     <button type="button" onclick="calculatePlatesQuick()" class="px-3 py-2 bg-berzerker-border text-gray-200 text-xs font-bold uppercase rounded-lg hover:bg-gray-700">⚙️ Anilhas</button>
                 </div>
-                <p class="text-[10px] text-gray-500">🏆 O PR é detectado sozinho pelo 1RM estimado (ou tempo, em isometria) — sem checkbox. 💡 Quando todas as séries baterem o topo da faixa, o app sugere subir a carga.</p>
+                <p class="text-xs text-gray-400">🏆 O PR é detectado sozinho pelo 1RM estimado (ou tempo, em isometria) — sem checkbox. 💡 Quando todas as séries baterem o topo da faixa, o app sugere subir a carga.</p>
             </div>
         </details>`;
     }
@@ -1353,20 +1353,20 @@ function renderRecoveryMap() {
                 <span class="text-lg leading-none">${st.icon}</span>
             </div>
             <div class="flex items-center justify-between gap-2 flex-wrap">
-                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${st.badge}">${st.label}</span>
-                <span class="text-[11px] text-gray-500 font-mono leading-snug break-words">${st.info}</span>
+                <span class="px-2 py-0.5 text-xs font-bold uppercase rounded border ${st.badge}">${st.label}</span>
+                <span class="text-xs text-gray-400 font-mono leading-snug break-words">${st.info}</span>
             </div>
             <div>
-                <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">
+                <div class="flex justify-between text-xs font-bold uppercase text-gray-400 mb-1">
                     <span>Prontidão estimada</span><span class="text-gray-400">${pctText}</span>
                 </div>
                 <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
                     <div class="h-full ${st.bar} rounded-full transition-all duration-500" style="width: ${st.pct === null ? 100 : st.pct}%"></div>
                 </div>
             </div>
-            <div class="text-[11px] font-mono leading-snug ${st.volumeStatus === 'abaixo' ? 'text-amber-400/90' : st.volumeStatus === 'acima' ? 'text-orange-400/90' : 'text-emerald-400/90'}">${st.volText}</div>
-            ${st.sinergia ? `<div title="${escapeHtml(st.sinergia.exercicios.join(' · '))}" class="text-[11px] font-mono leading-snug text-cyan-400/80">${escapeHtml(st.sinergiaText)}</div>` : ''}
-            <div class="text-[11px] text-gray-600 truncate leading-snug border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
+            <div class="text-xs font-mono leading-snug ${st.volumeStatus === 'abaixo' ? 'text-amber-400/90' : st.volumeStatus === 'acima' ? 'text-orange-400/90' : 'text-emerald-400/90'}">${st.volText}</div>
+            ${st.sinergia ? `<div title="${escapeHtml(st.sinergia.exercicios.join(' · '))}" class="text-xs font-mono leading-snug text-cyan-400/80">${escapeHtml(st.sinergiaText)}</div>` : ''}
+            <div class="text-xs text-gray-600 truncate leading-snug border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
         </div>`;
     }).join('');
     // Painel da LOMBAR — alerta só quando há o que alertar
@@ -1380,7 +1380,7 @@ function renderRecoveryMap() {
             lombarEl.innerHTML = `
             <div class="bg-emerald-950/20 border ${lombar.border} rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
                 <span class="font-oswald text-sm font-bold text-emerald-400 uppercase tracking-wide leading-none whitespace-nowrap">✅ Lombar 100% — livre</span>
-                ${lombar.last ? `<span class="text-[10px] font-mono text-gray-500 break-words">Última carga: ${escapeHtml(lombar.last)}</span>` : '<span class="text-[10px] font-mono text-gray-500">Sem carga registrada na lombar.</span>'}
+                ${lombar.last ? `<span class="text-xs font-mono text-gray-400 break-words">Última carga: ${escapeHtml(lombar.last)}</span>` : '<span class="text-xs font-mono text-gray-400">Sem carga registrada na lombar.</span>'}
             </div>`;
         } else lombarEl.innerHTML = `
         <div class="bg-berzerker-dark border ${lombar.border} rounded-xl p-4 space-y-3">
@@ -1388,19 +1388,19 @@ function renderRecoveryMap() {
                 <div class="flex items-center gap-2">
                     <span class="font-oswald text-lg font-bold text-white uppercase tracking-wide leading-none">Lombar ${lombar.icon}</span>
                 </div>
-                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${lombar.badge} whitespace-nowrap">${lombar.label}</span>
+                <span class="px-2 py-0.5 text-xs font-bold uppercase rounded border ${lombar.badge} whitespace-nowrap">${lombar.label}</span>
             </div>
             <div>
-                <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">
+                <div class="flex justify-between text-xs font-bold uppercase text-gray-400 mb-1">
                     <span>Recuperação da região</span><span class="text-gray-400">${lombar.pct}%</span>
                 </div>
                 <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
                     <div class="h-full ${lombar.bar} rounded-full transition-all duration-500" style="width: ${lombar.pct}%"></div>
                 </div>
             </div>
-            ${lombar.last ? `<div class="text-[10px] text-gray-400">Última sessão que carregou: ${escapeHtml(lombar.last)} · ≈ ${lombar.horasRestantes}h restantes (estimativa)</div>` : ''}
-            <p class="text-[10px] text-gray-500">Estimativa baseada no tempo desde a última sessão e no volume; não mede fadiga nem substitui orientação profissional.</p>
-            <div class="text-[11px] text-gray-300 leading-relaxed">💡 ${escapeHtml(lombar.dica)}</div>
+            ${lombar.last ? `<div class="text-xs text-gray-400">Última sessão que carregou: ${escapeHtml(lombar.last)} · ≈ ${lombar.horasRestantes}h restantes (estimativa)</div>` : ''}
+            <p class="text-xs text-gray-400">Estimativa baseada no tempo desde a última sessão e no volume; não mede fadiga nem substitui orientação profissional.</p>
+            <div class="text-xs text-gray-300 leading-relaxed">💡 ${escapeHtml(lombar.dica)}</div>
         </div>`;
     }
 }
@@ -1420,7 +1420,7 @@ function renderDaySuggestion() {
     const el = document.getElementById('suggestion-content');
     if (!el) return;
     if (savedWorkouts.length === 0) {
-        el.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><p class="text-xs text-gray-500">Monte um treino no <b>Montador</b> para receber a sugestão do dia.</p><button type="button" onclick="switchTab('montador')" class="px-3 py-2 bg-berzerker-600/20 border border-berzerker-500/40 text-berzerker-500 text-[10px] font-bold uppercase rounded-lg hover:bg-berzerker-600/40">🎯 Abrir Montador</button></div>`;
+        el.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><p class="text-xs text-gray-400">Monte um treino no <b>Montador</b> para receber a sugestão do dia.</p><button type="button" onclick="switchTab('montador')" class="px-3 py-2 bg-berzerker-600/20 border border-berzerker-500/40 text-berzerker-500 text-xs font-bold uppercase rounded-lg hover:bg-berzerker-600/40">🎯 Abrir Montador</button></div>`;
         return;
     }
     const scored = suggestNextWorkout(savedWorkouts, logs, Date.now());
@@ -1431,9 +1431,9 @@ function renderDaySuggestion() {
             <div class="min-w-0">
                 <div class="text-xs text-gray-400 uppercase font-bold">🎯 Próximo treino recomendado (recuperação + séries da semana)</div>
                 <div class="font-oswald text-xl font-bold text-white uppercase mt-1">${escapeHtml(top.w.name)}</div>
-                <div class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">Por quê: ${escapeHtml(top.motivos.slice(0, 3).join(' · '))}</div>
-                ${top.diasSemTreinar >= 1 ? `<div class="text-[11px] text-amber-400/90 mt-0.5">⏳ Sem treino registrado há ${top.diasSemTreinar} ${top.diasSemTreinar === 1 ? 'dia' : 'dias'}.</div>` : ''}
-                ${alternates.length ? `<div class="text-[10px] text-gray-600 mt-1.5">Outras opções: ${alternates.map(a => `<button type="button" onclick="startSession(${a.w.id})" class="underline hover:text-white transition-colors">${escapeHtml(a.w.name)}</button>`).join(' · ')}</div>` : ''}
+                <div class="text-xs text-gray-400 mt-0.5 leading-relaxed">Por quê: ${escapeHtml(top.motivos.slice(0, 3).join(' · '))}</div>
+                ${top.diasSemTreinar >= 1 ? `<div class="text-xs text-amber-400/90 mt-0.5">⏳ Sem treino registrado há ${top.diasSemTreinar} ${top.diasSemTreinar === 1 ? 'dia' : 'dias'}.</div>` : ''}
+                ${alternates.length ? `<div class="text-xs text-gray-600 mt-1.5">Outras opções: ${alternates.map(a => `<button type="button" onclick="startSession(${a.w.id})" class="underline hover:text-white transition-colors">${escapeHtml(a.w.name)}</button>`).join(' · ')}</div>` : ''}
             </div>
             <button onclick="startSession(${top.w.id})" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-emerald-600/20 whitespace-nowrap">▶ Treinar esta sugestão</button>
         </div>`;
@@ -1536,16 +1536,16 @@ function renderSession() {
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div class="flex items-center gap-2 flex-wrap min-w-0">
                         <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-emerald-600 text-white">✔</span>
-                        <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
+                        <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
                         <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
-                        ${e.loggedPR ? '<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-700 rounded">🏆 PR</span>' : ''}
+                        ${e.loggedPR ? '<span class="text-xs font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-700 rounded">🏆 PR</span>' : ''}
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-emerald-400 font-mono whitespace-nowrap">${lg ? formatLoadText(lg) + ' × ' + formatRepsText(lg) : ''}</span>
-                        <button onclick="editLog(${e.logId})" class="px-2 py-1 bg-berzerker-border hover:bg-gray-700 text-white text-[11px] font-bold rounded-lg transition-colors">✏️ Editar</button>
+                        <button onclick="editLog(${e.logId})" class="px-2 py-1 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold rounded-lg transition-colors">✏️ Editar</button>
                     </div>
                 </div>
-                ${lg && lg.notes ? `<p class="text-[11px] text-gray-400 mt-1.5 italic">📝 ${escapeHtml(lg.notes)}</p>` : ''}
+                ${lg && lg.notes ? `<p class="text-xs text-gray-400 mt-1.5 italic">📝 ${escapeHtml(lg.notes)}</p>` : ''}
             </div>`;
         }
         const d = e.draft || { weight: e.weight, repsText: e.repsText, type: e.type, technique: e.technique, nextGoal: '', isPR: false, notes: '' };
@@ -1555,38 +1555,38 @@ function renderSession() {
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div class="flex items-center gap-2 flex-wrap min-w-0">
                     <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-berzerker-border text-gray-300">${i + 1}</span>
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
+                    <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
                     <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button type="button" onclick="moveSessionUnit(${i}, -1)" title="Subir na ordem" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▲</button>
-                    <button type="button" onclick="moveSessionUnit(${i}, 1)" title="Descer na ordem" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▼</button>
-                    <span class="text-[10px] text-gray-500 font-mono whitespace-nowrap">🎯 Meta: ${e.weight > 0 ? e.weight + ' kg' : '—'} × (${escapeHtml(e.repsText || '—')})</span>
+                    <button type="button" onclick="moveSessionUnit(${i}, -1)" title="Subir na ordem" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▲</button>
+                    <button type="button" onclick="moveSessionUnit(${i}, 1)" title="Descer na ordem" aria-label="Descer na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▼</button>
+                    <span class="text-xs text-gray-400 font-mono whitespace-nowrap">🎯 Meta: ${e.weight > 0 ? e.weight + ' kg' : '—'} × (${escapeHtml(e.repsText || '—')})</span>
                 </div>
             </div>
-            ${e.orderReason ? `<div class="text-[10px] text-gray-500 leading-relaxed"><span class="text-berzerker-500 font-bold">📌 Por que nesta posição:</span> ${escapeHtml(e.orderReason)}</div>` : ''}
-            ${fat.pct !== null && fat.pct < 100 ? `<div class="text-[10px] text-amber-400/90 font-mono">⏳ ${escapeHtml(e.muscle)} ainda em recuperação (${fat.pct}%) — considere uma carga mais leve</div>` : ''}
-            ${exercicioCarregaLombar(e.exercise) && lombarEstado.carregada ? `<div class="text-[10px] text-red-400/90 font-mono">⚠️ Este exercício exige a lombar — ainda carregada (${lombarEstado.horasRestantes}h restantes): priorize técnica perfeita e carga mais leve</div>` : ''}
-            ${catInfo && catInfo.descanso ? `<div class="text-[10px] text-gray-500 font-mono">⏱ Descanso do catálogo: ${catInfo.descanso}s · faixa ${catInfo.faixa[0]}–${catInfo.faixa[1]}${catInfo.tipo === 'isometria' ? ' s' : ' reps'}</div>` : ''}
+            ${e.orderReason ? `<div class="text-xs text-gray-400 leading-relaxed"><span class="text-berzerker-500 font-bold">📌 Por que nesta posição:</span> ${escapeHtml(e.orderReason)}</div>` : ''}
+            ${fat.pct !== null && fat.pct < 100 ? `<div class="text-xs text-amber-400/90 font-mono">⏳ ${escapeHtml(e.muscle)} ainda em recuperação (${fat.pct}%) — considere uma carga mais leve</div>` : ''}
+            ${exercicioCarregaLombar(e.exercise) && lombarEstado.carregada ? `<div class="text-xs text-red-400/90 font-mono">⚠️ Este exercício exige a lombar — ainda carregada (${lombarEstado.horasRestantes}h restantes): priorize técnica perfeita e carga mais leve</div>` : ''}
+            ${catInfo && catInfo.descanso ? `<div class="text-xs text-gray-400 font-mono">⏱ Descanso do catálogo: ${catInfo.descanso}s · faixa ${catInfo.faixa[0]}–${catInfo.faixa[1]}${catInfo.tipo === 'isometria' ? ' s' : ' reps'}</div>` : ''}
             ${lastPerformanceHTML(e.exercise)}
             <div class="flex gap-2 flex-wrap mt-1.5">
-                <button type="button" onclick="showWarmupFor(${i})" class="px-2 py-1 text-[10px] font-bold bg-amber-900/30 border border-amber-500/30 text-amber-300 rounded-md hover:bg-amber-900/50">🔥 Aquecimento</button>
-                <button type="button" onclick="showPlatesFor(${i})" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border text-gray-200 rounded-md hover:bg-gray-700">⚙️ Anilhas</button>
+                <button type="button" onclick="showWarmupFor(${i})" class="px-2 py-1 text-xs font-bold bg-amber-900/30 border border-amber-500/30 text-amber-300 rounded-md hover:bg-amber-900/50">🔥 Aquecimento</button>
+                <button type="button" onclick="showPlatesFor(${i})" class="px-2 py-1 text-xs font-bold bg-berzerker-border text-gray-200 rounded-md hover:bg-gray-700">⚙️ Anilhas</button>
             </div>
-            <div id="s${i}-quickbox" class="hidden mt-1.5 text-[11px] font-mono bg-berzerker-dark/80 border border-amber-500/20 rounded-lg p-2"></div>
+            <div id="s${i}-quickbox" class="hidden mt-1.5 text-xs font-mono bg-berzerker-dark/80 border border-amber-500/20 rounded-lg p-2"></div>
             ${fieldsHTML(`s${i}-`, d)}
         </div>`;
     };
 
     let html = '';
     if (activeSession.ordenado) {
-        html += `<div class="text-[11px] text-gray-400 bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2">✨ <b class="text-white">Ordem sugerida aplicada</b> — cada exercício mostra o porquê da posição. Use ▲▼ para trocar quando quiser (o bi-set anda junto).</div>`;
+        html += `<div class="text-xs text-gray-400 bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2">✨ <b class="text-white">Ordem sugerida aplicada</b> — cada exercício mostra o porquê da posição. Use ▲▼ para trocar quando quiser (o bi-set anda junto).</div>`;
     }
     // Aviso de lombar carregada no topo da sessão
     const lombarEstado = regiaoLombarState(logs, nowMs);
     const temExercicioLombar = ex.some(e => !e.done && exercicioCarregaLombar(e.exercise));
     if (lombarEstado.carregada && temExercicioLombar) {
-        html += `<div class="text-[11px] bg-red-950/40 border border-red-600/50 rounded-lg px-3 py-2 text-red-300">⚠️ <b>Sua lombar ainda está ${lombarEstado.label.toLowerCase()} (${lombarEstado.pct}% de recuperação, ${lombarEstado.horasRestantes}h restantes).</b> ${escapeHtml(lombarEstado.dica)}</div>`;
+        html += `<div class="text-xs bg-red-950/40 border border-red-600/50 rounded-lg px-3 py-2 text-red-300">⚠️ <b>Sua lombar ainda está ${lombarEstado.label.toLowerCase()} (${lombarEstado.pct}% de recuperação, ${lombarEstado.horasRestantes}h restantes).</b> ${escapeHtml(lombarEstado.dica)}</div>`;
     }
     for (let i = 0; i < ex.length; i++) {
         const pair = !!(ex[i + 1] && ex[i + 1].biset);
@@ -1594,7 +1594,7 @@ function renderSession() {
         if (pair) i++;
         const pending = idxs.filter(k => !ex[k].done);
         html += `<div class="rounded-xl border ${pending.length ? (pair ? 'border-cyan-500/60 bg-berzerker-dark' : 'border-berzerker-border bg-berzerker-dark') : 'border-emerald-600/50 bg-emerald-950/10'} p-4 space-y-3">
-            ${pair ? '<div class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">🔗 BI-SET — os dois juntos; o descanso começa depois do par</div>' : ''}
+            ${pair ? '<div class="text-xs font-bold text-cyan-400 uppercase tracking-wider">🔗 BI-SET — os dois juntos; o descanso começa depois do par</div>' : ''}
             ${idxs.map(k => itemHTML(ex[k], k)).join('<div class="border-t border-dashed border-berzerker-border"></div>')}
             ${pending.length ? `<div class="flex justify-end"><button onclick="registerSessionUnit([${pending.join(',')}], ${pair})" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">✔ Registrar${pending.length > 1 ? ' Bi-set' : ''}</button></div>` : ''}
         </div>`;
@@ -1620,7 +1620,7 @@ function renderSession() {
                         <div class="min-w-0">
                             <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider">✅ Treino completo! Próximo treino sugerido:</div>
                             <div class="font-oswald text-lg font-bold text-white uppercase mt-0.5">${escapeHtml(top.w.name)}</div>
-                            <div class="text-[11px] text-gray-400 mt-0.5">Por quê: ${escapeHtml(top.motivos.slice(0, 2).join(' · '))}</div>
+                            <div class="text-xs text-gray-400 mt-0.5">Por quê: ${escapeHtml(top.motivos.slice(0, 2).join(' · '))}</div>
                         </div>
                         <button onclick="startSession(${top.w.id})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg whitespace-nowrap">▶ Começar este treino</button>
                     </div>`
@@ -1766,7 +1766,7 @@ function toggleSessionTimer() {
         timer.interval = null;
         if (btn) {
             btn.textContent = 'Retomar';
-            btn.className = 'px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold uppercase rounded-lg transition-colors';
+            btn.className = 'px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold uppercase rounded-lg transition-colors';
         }
         return;
     }
@@ -1778,7 +1778,7 @@ function toggleSessionTimer() {
     timer.running = true;
     if (btn) {
         btn.textContent = 'Pausar';
-        btn.className = 'px-3 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[10px] font-bold uppercase rounded-lg transition-colors';
+        btn.className = 'px-3 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-xs font-bold uppercase rounded-lg transition-colors';
     }
     if (timer.interval) clearInterval(timer.interval);
     timer.interval = setInterval(tickSessionTimer, 500);
@@ -1802,7 +1802,7 @@ function stopSessionTimer() {
     const btn = document.getElementById('session-timer-btn');
     if (btn) {
         btn.textContent = 'Iniciar';
-        btn.className = 'px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold uppercase rounded-lg transition-colors';
+        btn.className = 'px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase rounded-lg transition-colors';
     }
 }
 
@@ -1867,9 +1867,9 @@ function normalizeBisets(arr) {
 
 function pairLink(i) {
     const d = draftExercises, e = d[i];
-    if (e.biset) return `<button onclick="toggleDraftBiset(${i})" class="ml-5 text-[10px] font-bold text-gray-500 hover:text-red-400 transition-colors">✂ Desfazer bi-set</button>`;
+    if (e.biset) return `<button onclick="toggleDraftBiset(${i})" class="ml-5 text-xs font-bold text-gray-400 hover:text-red-400 transition-colors">✂ Desfazer bi-set</button>`;
     if (i > 0 && !d[i - 1].biset && !(d[i + 1] && d[i + 1].biset))
-        return `<button onclick="toggleDraftBiset(${i})" class="w-full text-[11px] font-bold text-cyan-400 hover:bg-cyan-950/30 border border-dashed border-cyan-500/40 rounded-lg py-1.5 transition-colors">🔗 Juntar com o exercício acima em bi-set</button>`;
+        return `<button onclick="toggleDraftBiset(${i})" class="w-full text-xs font-bold text-cyan-400 hover:bg-cyan-950/30 border border-dashed border-cyan-500/40 rounded-lg py-1.5 transition-colors">🔗 Juntar com o exercício acima em bi-set</button>`;
     return '';
 }
 
@@ -2036,9 +2036,9 @@ function renderDraftList() {
                 </div>
             </div>
             <div class="flex items-center gap-0.5 shrink-0">
-                <button onclick="moveDraftExercise(${i}, -1)" title="Subir" class="p-1.5 text-gray-500 hover:text-white transition-colors text-[10px]">▲</button>
-                <button onclick="moveDraftExercise(${i}, 1)" title="Descer" class="p-1.5 text-gray-500 hover:text-white transition-colors text-[10px]">▼</button>
-                <button onclick="removeDraftExercise(${i})" title="Remover" class="p-1.5 text-gray-500 hover:text-red-400 transition-colors text-xs">✕</button>
+                <button onclick="moveDraftExercise(${i}, -1)" title="Subir" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] p-2 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-sm">▲</button>
+                <button onclick="moveDraftExercise(${i}, 1)" title="Descer" aria-label="Descer exercício na ordem" class="min-h-[44px] min-w-[44px] p-2 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-sm">▼</button>
+                <button onclick="removeDraftExercise(${i})" title="Remover" aria-label="Remover exercício do rascunho" class="p-1.5 text-gray-500 hover:text-red-400 transition-colors text-xs">✕</button>
             </div>
         </div>
     `).join('');
@@ -2135,7 +2135,7 @@ function renderSavedWorkouts() {
             <div class="flex gap-2 pt-1 mt-auto">
                 <button onclick="startSession(${w.id})" class="flex-1 px-3 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors">▶ Iniciar</button>
                 <button onclick="editWorkout(${w.id})" title="Editar" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-[11px] rounded-lg transition-colors">✏️</button>
-                <button onclick="deleteWorkout(${w.id})" title="Excluir" class="px-3 py-2 bg-berzerker-border hover:bg-red-900/60 text-red-400 text-[11px] rounded-lg transition-colors">🗑</button>
+                <button onclick="deleteWorkout(${w.id})" title="Excluir" aria-label="Excluir treino salvo" class="px-3 py-2 bg-berzerker-border hover:bg-red-900/60 text-red-400 text-[11px] rounded-lg transition-colors">🗑</button>
             </div>
         </div>`;
     }).join('');
@@ -3361,7 +3361,7 @@ function openBossDefeatCard() {
     overlay.innerHTML = `
         <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-3">
             <div class="flex items-center justify-between"><h3 class="font-oswald text-lg font-bold text-white uppercase">📸 Card do Chefão</h3>
-            <button onclick="document.getElementById('boss-card-overlay').remove()" class="text-gray-400 hover:text-white">✕</button></div>
+            <button aria-label="Fechar card do chefão" onclick="document.getElementById('boss-card-overlay').remove()" class="text-gray-400 hover:text-white">✕</button></div>
             <canvas id="boss-card-canvas" width="1080" height="1080" class="w-full rounded-xl border border-berzerker-border"></canvas>
             <button onclick="downloadBossDefeatCard()" class="w-full py-3 bg-gradient-to-r from-amber-600 to-berzerker-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl">⬇️ Baixar Card (1080×1080)</button>
         </div>`;
@@ -3818,7 +3818,7 @@ function renderTests() {
                     <div class="font-bold text-white text-sm uppercase">${escapeHtml(t.name)}</div>
                     <div class="text-[10px] text-gray-500 font-mono">meta: ${t.goal} ${escapeHtml(t.unit)}${best != null ? ` · melhor: ${best} ${escapeHtml(t.unit)}` : ''}</div>
                 </div>
-                <button onclick="deleteTest('${t.id}')" class="text-gray-500 hover:text-red-400 text-xs" title="Excluir teste">🗑</button>
+                <button onclick="deleteTest('${t.id}')" aria-label="Excluir teste" class="text-gray-500 hover:text-red-400 text-xs" title="Excluir teste">🗑</button>
             </div>
             <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
                 <div class="h-full ${pct >= 100 ? 'bg-emerald-500' : 'bg-amber-500'} rounded-full" style="width:${pct}%"></div>
@@ -3832,7 +3832,7 @@ function renderTests() {
             <div class="text-[10px] font-mono text-gray-400 space-y-0.5 max-h-24 overflow-y-auto border-t border-berzerker-border pt-1.5">
                 ${[...t.records].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 6).map(r => `
                     <div class="flex justify-between"><span>${formatShortBR(r.date)}</span><span class="text-white">${r.value} ${escapeHtml(t.unit)}</span>
-                    <button onclick="deleteTestRecord('${t.id}', '${r.date}', ${r.value})" class="text-gray-600 hover:text-red-400">✕</button></div>`).join('')}
+                    <button onclick="deleteTestRecord('${t.id}', '${r.date}', ${r.value})" aria-label="Excluir registro de teste" class="text-gray-600 hover:text-red-400">✕</button></div>`).join('')}
             </div>` : '<div class="text-[10px] text-gray-600 italic">Sem registros ainda.</div>'}
         </div>`;
     }).join('') + `
