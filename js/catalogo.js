@@ -135,26 +135,111 @@ const EXERCISE_CATALOG_FULL = [
     { nome: 'Remo (Ergômetro)',               grupo: 'Cardio',   equipamento: 'Remo',               como: 'km e minutos',        tipo: 'corrida',      fator: 1, lados: 1, unidade: 'reps', faixa: [0, 0],   extra: null, descanso: 0 }
 ];
 
-// Aliases: nomes antigos do app → nome do catálogo unificado
+// Aliases: nomes antigos do app E apelidos falados → nome do catálogo unificado.
+// O objetivo é o autofill do registro: "stiff", "terra" ou "supino" precisam
+// achar o exercício sem digitar o nome inteiro (no celular, digitar menos é
+// registrar mais). Chaves em texto natural — a busca compara normalizado.
 const CATALOG_ALIASES = {
+    // ---- nomes antigos (migração) ----
     'elevação lateral c/ halter': 'Elevação Lateral c/ Halteres',
     'crossover na polia': 'Crossover na Polia Alta',
     'tríceps polia alta': 'Tríceps na Polia Alta',
     'tríceps francês c/ halter': 'Tríceps Francês na Polia',
     'agachamento búlgaro': 'Afundo Búlgaro',
-    'prancha isometrica': 'Prancha Isométrica'
+    'prancha isometrica': 'Prancha Isométrica',
+    // ---- apelidos de academia ----
+    'supino': 'Supino Reto na Máquina',          // a academia não tem supino com barra
+    'supino reto': 'Supino Reto na Máquina',
+    'supino maquina': 'Supino Reto na Máquina',
+    'supino inclinado': 'Supino Inclinado c/ Halteres',
+    'crucifixo': 'Crucifixo na Máquina',
+    'crossover': 'Crossover na Polia Alta',
+    'flexão': 'Flexão de Braço',
+    'terra': 'Levantamento Terra',
+    'deadlift': 'Levantamento Terra',
+    'stiff': 'Stiff com Barra',
+    'rdl': 'Stiff com Barra',
+    'puxada': 'Puxada Frontal na Polia',
+    'pulldown': 'Pulldown na Polia',
+    'barra fixa': 'Barra Fixa (Pull-up)',
+    'pull up': 'Barra Fixa (Pull-up)',
+    'remada curvada': 'Remada Curvada com Barra',
+    'serrote': 'Remada Unilateral c/ Halter',
+    'leg press': 'Leg Press 45°',
+    'hack': 'Agachamento Hack',
+    'agachamento': 'Agachamento Livre',
+    'sumô': 'Agachamento Sumô',
+    'extensora': 'Cadeira Extensora',
+    'flexora': 'Mesa Flexora',
+    'cadeira flexora': 'Mesa Flexora',
+    'búlgaro': 'Afundo Búlgaro',
+    'afundo': 'Afundo c/ Halteres',
+    'hip thrust': 'Elevação Pélvica (Hip Thrust)',
+    'elevação pélvica': 'Elevação Pélvica (Hip Thrust)',
+    'panturrilha': 'Panturrilha em Pé',
+    'adutora': 'Cadeira Adutora',
+    'swing': 'Swing de Kettlebell',
+    'kettlebell': 'Swing de Kettlebell',
+    'desenvolvimento': 'Desenvolvimento Militar',
+    'militar': 'Desenvolvimento Militar',
+    'elevação lateral': 'Elevação Lateral c/ Halteres',
+    'elevação frontal': 'Elevação Frontal c/ Halter',
+    'encolhimento': 'Encolhimento de Ombros',
+    'manguito': 'Manguito Rotador',
+    'remada alta': 'Remada Alta na Polia',
+    'cervical': 'Extensão Cervical',
+    'rosca': 'Rosca Direta com Barra',
+    'rosca direta': 'Rosca Direta com Barra',
+    'martelo': 'Rosca Martelo',
+    'scott': 'Rosca Scott',
+    'concentrada': 'Rosca Concentrada',
+    'tríceps corda': 'Tríceps Corda na Polia',
+    'tríceps testa': 'Tríceps Testa com Barra W',
+    'francês': 'Tríceps Francês na Polia',
+    'abdominal': 'Abdominal Supra no Solo',
+    'bicicleta': 'Abdominal Bicicleta',
+    'rodinha': 'Ab Wheel',
+    'prancha': 'Prancha Isométrica',
+    'punho': 'Flexão de Punho',
+    'esteira': 'Corrida (Esteira)',
+    'bike': 'Bike / Ergométrico',
+    'remo': 'Remo (Ergômetro)'
 };
 
 // Índices
 const CATALOG_BY_NAME = {};
 EXERCISE_CATALOG_FULL.forEach(e => { CATALOG_BY_NAME[e.nome.toLowerCase()] = e; });
 
+// Apelidos indexados sem acento nem caixa ("stiff", "STIFF", "Stíff" → idem)
+const CATALOG_ALIAS_BY_NORM = {};
+Object.entries(CATALOG_ALIASES).forEach(([apelido, nome]) => {
+    CATALOG_ALIAS_BY_NORM[normalizeText(apelido)] = nome;
+});
+
+// Prefixo de 4+ caracteres que bate com UM exercício só → entrada do catálogo.
+// "mesa flex" acha a Mesa Flexora; "supino" é ambíguo e devolve null (o app
+// prefere não preencher nada a preencher o exercício errado).
+function catalogPrefixMatch(norm) {
+    if (!norm || norm.length < 4) return null;
+    let unico = null;
+    const lista = allExercisesList();
+    for (let i = 0; i < lista.length; i++) {
+        if (!normalizeText(lista[i].nome).startsWith(norm)) continue;
+        if (unico) return null;
+        unico = lista[i];
+    }
+    return unico;
+}
+
 function catalogInfo(exerciseName) {
-    const n = String(exerciseName || '').trim().toLowerCase();
+    const bruto = String(exerciseName || '').trim();
+    if (!bruto) return null;
+    const n = bruto.toLowerCase();
     if (CATALOG_BY_NAME[n]) return CATALOG_BY_NAME[n];
-    const alias = CATALOG_ALIASES[n];
-    if (alias) return CATALOG_BY_NAME[alias.toLowerCase()] || null;
-    return null;
+    const norm = normalizeText(bruto);
+    const alias = CATALOG_ALIAS_BY_NORM[norm];
+    if (alias) return CATALOG_BY_NAME[String(alias).toLowerCase()] || null;
+    return catalogPrefixMatch(norm);
 }
 
 // Sugestões por grupo (builder)

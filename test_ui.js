@@ -284,6 +284,17 @@ try {
     ev("switchHistoryView('progresso')"); ev("switchHistoryView('semanas')");
     ev("switchHistoryView('peso')"); ev("switchHistoryView('log')");
     check('4 vistas do histórico alternam sem erro', true);
+    const cabecalhoLog = [...$('history-content').querySelectorAll('thead th')].map(th => th.textContent.trim());
+    const primeiraLinha = $('history-content').querySelector('tbody tr');
+    check('tabela do histórico troca a coluna Sessão pela coluna Grupo',
+        cabecalhoLog[1] === 'Grupo' && !cabecalhoLog.includes('Sessão'), cabecalhoLog.slice(0, 3));
+    check('grupo da linha é um chip com o valor canônico',
+        !!primeiraLinha.querySelectorAll('td')[1].querySelector('span')
+        && ev(`normalizeMuscle(${JSON.stringify(primeiraLinha.querySelectorAll('td')[1].textContent.trim())})`) === primeiraLinha.querySelectorAll('td')[1].textContent.trim());
+    check('sessão continua visível como detalhe discreto sob o exercício',
+        !!primeiraLinha.querySelectorAll('td')[2].querySelector('span')
+        && /Peito\/Tríceps\/Ombro|Bíceps\/Costas|Pernas\/Abdômen|Posterior\/Acessórios|Full Body/.test(primeiraLinha.querySelectorAll('td')[2].textContent),
+        primeiraLinha.querySelectorAll('td')[2].textContent);
 } catch (e) { failures++; console.log('  ✘ vistas do histórico:', e.message); }
 
 // ============================ NAVEGAÇÃO ============================
@@ -430,6 +441,8 @@ setInput('hist-q', 'supino');
 check('texto filtra', histCards().length === ev('searchHistoryLogs().length') && histCards().length > 0 && $('hist-results').textContent.includes('Supino'), histCards().length);
 check('resumo traz totais', /registro/.test($('hist-summary').textContent) && /ton/.test($('hist-summary').textContent), $('hist-summary').textContent);
 setInput('hist-q', '');
+const histMuscleOpts = [...$('hist-muscle').options].map(o => o.value).filter(Boolean);
+check('filtro de grupo do histórico lista só valores canônicos', histMuscleOpts.length > 0 && histMuscleOpts.every(v => ev(`normalizeMuscle(${JSON.stringify(v)})`) === v) && !histMuscleOpts.includes('Glúteos'), histMuscleOpts);
 setSelect('hist-muscle', 'Pernas');
 check('grupo filtra', histCards().length === ev("searchHistoryLogs().length") && $('hist-results').textContent.includes('Agachamento'), histCards().length);
 setSelect('hist-muscle', '');
@@ -446,6 +459,21 @@ check('cartão do histórico tem editar + ver dia + tags', /Editar/.test($('hist
 // ============================ REGISTRO COM TAGS ============================
 console.log('\n== UI 8. Registro diário com tags ==');
 navTo('diario');
+$('log-muscle').value = 'Peito';
+$('sessao').value = '';
+setInput('log-exercise', 'stiff');
+check('apelido curto resolve o exercício pelo catálogo', ev("catalogInfo(document.getElementById('log-exercise').value).nome") === 'Stiff com Barra');
+check('grupo é autopreenchido com destaque verde', $('log-muscle').value === 'Posterior' && $('log-muscle').className.includes('ring-2') && $('log-muscle').className.includes('ring-emerald-500/70'), [$('log-muscle').value, $('log-muscle').className]);
+check('sessão vazia recebe a sugestão do histórico do grupo', $('sessao').value === 'Posterior/Acessórios', $('sessao').value);
+setInput('log-exercise', 'mesa flex');
+check('prefixo único de 4+ letras completa o exercício', ev("catalogInfo(document.getElementById('log-exercise').value).nome") === 'Mesa Flexora');
+setInput('sessao', 'Minha sessão');
+setInput('log-exercise', 'terra');
+check('autofill troca o grupo junto com o apelido (terra → Costas)', $('log-muscle').value === 'Costas', $('log-muscle').value);
+check('sessão digitada nunca é sobrescrita pelo autofill', $('sessao').value === 'Minha sessão', $('sessao').value);
+setInput('log-exercise', 'supino inclinado c');
+check('prefixo ambíguo não adivinha exercício nem grupo', ev("catalogInfo(document.getElementById('log-exercise').value)") === null && $('log-muscle').value === 'Costas');
+setInput('sessao', '');
 setInput('log-exercise', 'Rosca Direta com Barra');
 fire($('log-exercise'), 'input');
 check('digitar mostra as tags do exercício', $('log-tags-line').textContent.includes('Puxar') && $('log-tags-line').textContent.includes('Barra'), $('log-tags-line').textContent);

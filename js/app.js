@@ -766,14 +766,49 @@ function onTypeChange(prefix) {
     if (prefix === '') updateTypeHint();
 }
 
+// Destaque verde curto no campo que o app acabou de preencher sozinho:
+// confirma o autofill de relance, sem exigir conferência campo por campo.
+function flashAutofill(el) {
+    if (!el || !el.classList) return;
+    const cls = ['ring-2', 'ring-emerald-500/70'];
+    el.classList.add(...cls);
+    clearTimeout(el._autofillFlash);
+    el._autofillFlash = setTimeout(() => el.classList.remove(...cls), 900);
+}
+
+// Sessão (split do dia) sugerida pelo histórico do grupo: a mais repetida,
+// com desempate pela mais recente. Devolve '' quando não há o que sugerir.
+function suggestSessaoFor(muscle, exercise) {
+    const grupo = normalizeMuscle(muscle || (catalogInfo(exercise) || {}).grupo || '');
+    if (!grupo || grupo === 'Geral' || grupo === 'Cardio') return '';
+    const candidatos = (Array.isArray(logs) ? logs : []).filter(l =>
+        l && l.kind !== 'corrida' && String(l.sessao || '').trim() && normalizeMuscle(l.muscle) === grupo);
+    if (!candidatos.length) return '';
+    const resumo = {};
+    candidatos.forEach(l => {
+        const s = String(l.sessao).trim();
+        const r = resumo[s] || (resumo[s] = { sessao: s, vezes: 0, ultima: '' });
+        r.vezes += 1;
+        if (String(l.date || '') > r.ultima) r.ultima = String(l.date || '');
+    });
+    return Object.values(resumo).sort((a, b) => (b.vezes - a.vezes)
+        || (a.ultima < b.ultima ? 1 : a.ultima > b.ultima ? -1 : a.sessao.localeCompare(b.sessao, 'pt-BR')))[0].sessao;
+}
+
 function onLogExerciseChange() {
     const exName = document.getElementById('log-exercise')?.value.trim();
     const cat = catalogInfo(exName);
     if (cat) {
         const muscleSel = document.getElementById('log-muscle');
         const typeSel = document.getElementById('type');
-        if (muscleSel) muscleSel.value = cat.grupo;
+        if (muscleSel && muscleSel.value !== cat.grupo) { muscleSel.value = cat.grupo; flashAutofill(muscleSel); }
         if (typeSel) typeSel.value = cat.tipo;
+        // A sessão vem do histórico do grupo — só se o campo estiver vazio.
+        const sessaoEl = document.getElementById('sessao');
+        if (sessaoEl && !String(sessaoEl.value || '').trim()) {
+            const sugestao = suggestSessaoFor(cat.grupo, cat.nome);
+            if (sugestao) { sessaoEl.value = sugestao; flashAutofill(sessaoEl); }
+        }
     }
     if (typeof renderExerciseTagLine === 'function') renderExerciseTagLine('log-tags-line', exName || '');
     onTypeChange('');
@@ -1017,6 +1052,8 @@ function handleAddLog(event) {
     // semanal, a recuperação e a fraqueza do chefão.
     const catRegistro = catalogInfo(exercise);
     const muscle = normalizeMuscle(catRegistro ? catRegistro.grupo : document.getElementById('log-muscle').value);
+    // Sessão vazia → usa a que o histórico indica para este grupo.
+    if (!String(f.sessao || '').trim()) f.sessao = suggestSessaoFor(muscle, exercise);
 
     const newLog = {
         id: newLogId(), date, kind: 'peso', muscle, exercise,
@@ -1719,7 +1756,7 @@ function updateExerciseSuggestions() {
     if (!datalist || !muscle) return;
     const historyNames = muscle === 'Geral'
         ? logs.map(l => l.exercise)
-        : logs.filter(l => l.muscle === muscle).map(l => l.exercise);
+        : logs.filter(l => normalizeMuscle(l.muscle) === normalizeMuscle(muscle)).map(l => l.exercise);
     const all = [...new Set([...(EXERCISE_CATALOG[muscle] || []), ...historyNames])];
     datalist.innerHTML = all.map(n => {
         const cat = catalogInfo(n);
@@ -1734,7 +1771,7 @@ function onWbExerciseChange() {
     const hint = document.getElementById('wb-type-hint');
     if (cat) {
         const muscleSel = document.getElementById('wb-muscle');
-        if (muscleSel) muscleSel.value = cat.grupo;
+        if (muscleSel && muscleSel.value !== cat.grupo) { muscleSel.value = cat.grupo; flashAutofill(muscleSel); }
         if (hint) hint.textContent = `${cat.equipamento} · ${CATALOG_TIPOS[cat.tipo]?.label || ''} · faixa ${cat.faixa[0]}–${cat.faixa[1]}${cat.tipo === 'isometria' ? ' s' : ' reps'}`;
     } else if (hint) {
         hint.textContent = 'Fora do catálogo — o tipo fica como "carga total".';

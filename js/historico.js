@@ -24,7 +24,7 @@ function historyFilteredLogs() {
     return logs.filter(l => {
         if (l.kind !== 'peso' && l.kind !== 'corrida') return false;
         if (busca && !(l.exercise || '').toLowerCase().includes(busca) && !(l.sessao || '').toLowerCase().includes(busca)) return false;
-        if (grupo && grupo !== 'Todos' && l.muscle !== grupo) return false;
+        if (grupo && grupo !== 'Todos' && normalizeMuscle(l.muscle) !== grupo) return false;
         if (de && l.date < de) return false;
         if (ate && l.date > ate) return false;
         if (soConferir && !l.conferir) return false;
@@ -40,6 +40,18 @@ function histDataBR(iso) {
 
 function metricaProgresso(meta) {
     return meta.unidade === 'seg' ? `${fmtN(meta.bestSet, 0)} seg` : `${fmtN(meta.cargaEfetiva, 1)}`;
+}
+
+// A tabela do histórico é larga no celular: o GRUPO (canônico) ganha a coluna e
+// o chip, e a sessão vira um detalhe discreto embaixo do exercício — o split do
+// dia continua legível sem competir com o que alimenta a meta semanal.
+function histGrupoChipHTML(l) {
+    return `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded border border-berzerker-border bg-berzerker-card text-berzerker-500 uppercase whitespace-nowrap">${escapeHtml(normalizeMuscle(l && l.muscle))}</span>`;
+}
+
+function histSessaoDetalheHTML(l) {
+    const sessao = l && String(l.sessao || '').trim();
+    return sessao ? `<span class="block text-[10px] font-normal text-gray-500 mt-0.5">${escapeHtml(sessao)}</span>` : '';
 }
 
 function renderHistory() {
@@ -64,8 +76,8 @@ function historyLogHTML() {
             const pace = km > 0 ? Math.round(min / km * 10) / 10 : 0;
             return `<tr class="${l.conferir ? 'bg-amber-500/10' : ''} bg-cyan-900/10">
                 <td class="px-2 py-1.5 whitespace-nowrap">${histDataBR(l.date)}</td>
-                <td class="px-2 py-1.5">${escapeHtml(l.sessao || '')}</td>
-                <td class="px-2 py-1.5 font-semibold text-cyan-300">🏃 ${escapeHtml(l.exercise)}</td>
+                <td class="px-2 py-1.5">${histGrupoChipHTML(l)}</td>
+                <td class="px-2 py-1.5 font-semibold text-cyan-300">🏃 ${escapeHtml(l.exercise)}${histSessaoDetalheHTML(l)}</td>
                 <td class="px-2 py-1.5 text-center font-bold text-cyan-400" colspan="6">${String(km).replace('.', ',')} km em ${min} min · pace ${String(pace).replace('.', ',')} min/km · +${cardioXP(l)} XP</td>
                 <td class="px-2 py-1.5 text-center">${l.conferir ? '⚠️' : ''}</td>
                 <td class="px-2 py-1.5 text-xs text-gray-400 max-w-[16ch] truncate" title="${escapeHtml(l.notes || '')}">${escapeHtml(l.notes || '')}</td>
@@ -76,8 +88,8 @@ function historyLogHTML() {
         const total = meta.unidade === 'seg' ? meta.totalReps : meta.totalReps;
         return `<tr class="${l.conferir ? 'bg-amber-500/10' : ''}">
             <td class="px-2 py-1.5 whitespace-nowrap">${histDataBR(l.date)}</td>
-            <td class="px-2 py-1.5">${escapeHtml(l.sessao || '')}</td>
-            <td class="px-2 py-1.5 font-semibold text-white">${escapeHtml(l.exercise)}</td>
+            <td class="px-2 py-1.5">${histGrupoChipHTML(l)}</td>
+            <td class="px-2 py-1.5 font-semibold text-white">${escapeHtml(l.exercise)}${histSessaoDetalheHTML(l)}</td>
             <td class="px-2 py-1.5 text-center font-bold">${fmtN(l.weight, 1)}</td>
             ${[0, 1, 2, 3, 4].map(i => `<td class="px-1 py-1.5 text-center">${l.reps && l.reps[i] != null ? fmtN(l.reps[i], 0) : ''}</td>`).join('')}
             <td class="px-2 py-1.5 text-center">${l.rir != null && l.rir !== '' ? l.rir : ''}</td>
@@ -101,7 +113,7 @@ function historyLogHTML() {
             <thead class="bg-gray-900/70 text-gray-300">
                 <tr>
                     <th class="px-2 py-2 text-left">Data</th>
-                    <th class="px-2 py-2 text-left">Sessão</th>
+                    <th class="px-2 py-2 text-left">Grupo</th>
                     <th class="px-2 py-2 text-left">Exercício</th>
                     <th class="px-2 py-2">Carga reg. (kg)</th>
                     <th class="px-1 py-2">S1</th><th class="px-1 py-2">S2</th><th class="px-1 py-2">S3</th><th class="px-1 py-2">S4</th><th class="px-1 py-2">S5</th>

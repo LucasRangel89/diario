@@ -31,7 +31,7 @@ const api = new Function(src + `
     orderWorkoutExercises, isAtivacaoExercise, classifyExercicio, bisetBlockRanges,
     weeklySetsByMuscle, fatigueState, suggestNextWorkout, weeklyGaps, diasDesdeUltimoTreino,
     FAIXA_SERIES_SEMANAIS, MUSCULOS_MAPA, MUSCLE_META, normalizeMuscle, PLANILHA_SESSOES,
-    normalizeSavedWorkouts,
+    normalizeSavedWorkouts, suggestSessaoFor, CATALOG_ALIASES,
     get STATE() { return { logs, settings, userBodyweight }; },
     setLogs(arr) { logs = arr; },
     setBW(v) { userBodyweight = v; },
@@ -610,6 +610,37 @@ check('treino salvo rederiva o grupo pelo catálogo (Mesa Flexora → Posterior)
     api.savedWorkouts[0].exercises.map(e => e.muscle).join('|') === 'Posterior|Posterior|Pernas|Costas',
     api.savedWorkouts[0].exercises.map(e => e.muscle));
 api.savedWorkouts = [];
+
+console.log('\n== 27. Autofill flexível: apelidos, prefixo único e sessão sugerida ==');
+check('apelidos falados caem no exercício certo',
+    api.catalogInfo('stiff').nome === 'Stiff com Barra'
+    && api.catalogInfo('TERRA').nome === 'Levantamento Terra'
+    && api.catalogInfo('supino').nome === 'Supino Reto na Máquina'
+    && api.catalogInfo('hip thrust').grupo === 'Posterior'
+    && api.catalogInfo('serrote').nome === 'Remada Unilateral c/ Halter'
+    && api.catalogInfo('hack').nome === 'Agachamento Hack',
+    ['stiff', 'TERRA', 'supino', 'hip thrust', 'serrote', 'hack'].map(n => (api.catalogInfo(n) || {}).nome));
+check('apelidos ignoram acento e caixa', api.catalogInfo('ELEVAÇÃO PELVICA').nome === 'Elevação Pélvica (Hip Thrust)' && api.catalogInfo('Búlgaro').nome === 'Afundo Búlgaro');
+check('apelidos antigos de migração continuam valendo', api.catalogInfo('agachamento búlgaro').nome === 'Afundo Búlgaro' && api.catalogInfo('prancha isometrica').nome === 'Prancha Isométrica' && api.catalogInfo('tríceps francês c/ halter').nome === 'Tríceps Francês na Polia');
+check('catálogo tem ~30 apelidos novos além dos 6 de migração', Object.keys(api.CATALOG_ALIASES).length >= 36, Object.keys(api.CATALOG_ALIASES).length);
+check('prefixo único de 4+ caracteres completa o nome', api.catalogInfo('mesa flex').nome === 'Mesa Flexora' && api.catalogInfo('cadeira ext').nome === 'Cadeira Extensora');
+check('prefixo ambíguo ou curto demais não adivinha', api.catalogInfo('supino inclinado c') === null && api.catalogInfo('mes') === null && api.catalogInfo('exercício inexistente') === null && api.catalogInfo('') === null);
+check('nome exato do catálogo continua tendo prioridade', api.catalogInfo('Supino Inclinado com Barra').nome === 'Supino Inclinado com Barra');
+
+api.setLogs([
+    { id: 1, date: '2026-10-06', kind: 'peso', muscle: 'Bíceps', exercise: 'Rosca Martelo', sessao: 'Bíceps/Costas' },
+    { id: 2, date: '2026-10-06', kind: 'peso', muscle: 'Biceps', exercise: 'Rosca Direta com Barra', sessao: 'Bíceps/Costas' },
+    { id: 3, date: '2026-10-10', kind: 'peso', muscle: 'Bíceps', exercise: 'Rosca Martelo', sessao: 'Full Body' },
+    { id: 4, date: '2026-10-09', kind: 'peso', muscle: 'Posterior', exercise: 'Mesa Flexora', sessao: 'Posterior/Acessórios' },
+    { id: 5, date: '2026-10-10', kind: 'corrida', muscle: 'Cardio', exercise: 'Corrida (Rua)', sessao: 'Cardio leve' }
+]);
+check('sessão sugerida = a mais repetida no histórico do grupo', api.suggestSessaoFor('Bíceps') === 'Bíceps/Costas', api.suggestSessaoFor('Bíceps'));
+check('variante do grupo cai na mesma sugestão', api.suggestSessaoFor('biceps') === 'Bíceps/Costas' && api.suggestSessaoFor('posteriores') === 'Posterior/Acessórios');
+check('grupo deriva do catálogo quando só o exercício é informado', api.suggestSessaoFor('', 'Mesa Flexora') === 'Posterior/Acessórios' && api.suggestSessaoFor(null, 'stiff') === 'Posterior/Acessórios');
+check('Cardio e grupo sem histórico não sugerem sessão', api.suggestSessaoFor('Cardio') === '' && api.suggestSessaoFor('Antebraço') === '' && api.suggestSessaoFor('Geral') === '');
+api.setLogs([...api.logsArr, { id: 6, date: '2026-10-11', kind: 'peso', muscle: 'Bíceps', exercise: 'Rosca Scott', sessao: 'Full Body' }]);
+check('empate de uso desempata pela sessão mais recente', api.suggestSessaoFor('Bíceps') === 'Full Body', api.suggestSessaoFor('Bíceps'));
+api.setLogs([]);
 
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);
