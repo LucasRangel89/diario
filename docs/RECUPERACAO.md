@@ -33,7 +33,7 @@ muscular”); este arquivo é a versão completa.
   estimativa é conservadora e **nunca antecipa** a janela de recuperação por causa de
   uma data digitada errada (ex.: `2026` no lugar de `2025`, ou digitar o dia seguinte).
   Mudar isso (tratar data futura como “descansado”) daria sinal verde para treinar o
-  mesmo grupo em cima do erro. Coberto por teste de regressão (`test_engine.js`,
+  mesmo grupo em cima do erro. Coberto por teste de regressão (`tests/engine/50_dados_validacao.js`,
   seção 34).
 - **Registro sem data válida é ignorado.** Data vazia, mal formatada (ex.: `31/02`) ou
   inexistente no calendário não entra na estimativa — antes isso gerava `NaN` e o mapa

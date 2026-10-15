@@ -14,7 +14,8 @@
     "test:modules": "node --experimental-vm-modules test_modules.js",
     "check:sw-core": "node scripts/check-sw.js",
     "check:sw": "node scripts/check-sw-version.js",
-    "check:modules": "node --experimental-vm-modules scripts/check-modules.js"
+    "check:modules": "node --experimental-vm-modules scripts/check-modules.js",
+    "check:docs": "node scripts/check-docs-paths.js"
   },
   "devDependencies": {
     "jsdom": "^30.1.2",

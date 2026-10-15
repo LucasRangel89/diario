@@ -2,6 +2,22 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Não lançado] — manutenção pós-PR #16 (branch `arena/ffba3b1d-diario`)
+
+### DOCUMENTADO
+- **Ponteiros de teste atualizados (I4):** `docs/FORMATO_CSV.md`, `docs/RECUPERACAO.md`,
+  `DIAGNOSTICO.md`, `js/datas.js`, `js/assistente.js` e `test_modules.js` apontavam para
+  linhas/seções de `test_engine.js`/`test_ui.js`, que desde a R3 são só runners. Agora citam o
+  arquivo de área (`tests/engine/50_dados_validacao.js` §32/§34, `tests/ui/50_backup_gravacao.js`
+  seção `UI 12i`, etc.). `DIAGNOSTICO.md` ganhou cabeçalho de **documento histórico** (retrato da
+  Etapa 0, `ffee7c2`/`v25`, com notas até `3a6c2e9`/`v32`).
+
+### CI
+- **`scripts/check-docs-paths.js` (`npm run check:docs`):** reprova ponteiro com número de linha
+  ou seção apontando para os runners finos e menção a `tests/<área>/*.js` inexistente. Roda no
+  job "Testes (motor + UI)".
+- `sw.js` sobe para `v36` (comentários em `js/datas.js` e `js/assistente.js` mudaram).
+
 ## [Não lançado] — correções da auditoria (branch `arena/35b569b7-diario`)
 
 ### CORRIGIDO

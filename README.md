@@ -150,6 +150,8 @@ npm test             # motor + UI + módulos + Service Worker
 - `node test_sw.js` — Service Worker: instalação, offline, ativação e a regra de versão.
 - Cada runner confere o manifesto das áreas e um piso de checagens (`tests/**/99_fechamento.js`):
   apagar, renomear ou esvaziar um trecho de teste falha em vez de reduzir a cobertura em silêncio.
+- `npm run check:docs` — docs e comentários não podem apontar para linha/seção dos runners
+  (os checks vivem em `tests/engine/*` e `tests/ui/*`) nem para um arquivo de área inexistente.
 
 - `js/storage.js` — camada única de armazenamento (IndexedDB + espelho no localStorage, migração automática, imagens como Blob)
 - `js/app.js` — entry: importa os demais módulos na ordem certa

@@ -41,6 +41,11 @@ jobs:
       - name: Grafo de ES modules (link + avaliação)
         run: npm run check:modules
 
+      # Docs/comentários não podem apontar para linha/seção dos runners finos
+      # (test_engine.js/test_ui.js) nem para tests/<área>/*.js inexistente.
+      - name: Ponteiros de teste em docs e comentários
+        run: npm run check:docs
+
   build-css:
     name: vendor/tailwind.css atualizado
     runs-on: ubuntu-latest
