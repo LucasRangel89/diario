@@ -105,8 +105,19 @@ falha de gravação de imagem (IndexedDB recusando).
 - [ ] Exportar CSV (multi-aba) e reimportar: nada duplica, cardio e personalizados
       voltam (ver `docs/FORMATO_CSV.md`; a coluna `PR (informativo)` é ignorada na
       importação de propósito).
+- [ ] **Cota cheia → aviso com ação de backup** (Chrome desktop): DevTools → Application →
+      Storage → marcar **Simulate custom storage quota** com um valor pequeno (ex.: 1 MB) e
+      recarregar. Na aba Jogo, enviar uma foto grande como retrato de chefão ou como fundo do
+      Story Card. Esperado: aparece no topo o aviso "⚠️ A imagem **não confirmou o
+      salvamento** …" que **não some sozinho**, com **💾 Exportar backup JSON** (baixa o
+      `berzerker-diario-backup-AAAA-MM-DD.json`) e **Dispensar**; o app segue utilizável
+      (registrar um treino com o aviso na tela funciona). Uma segunda falha logo em seguida
+      **não** traz o aviso de volta depois de dispensado. Desmarcar a simulação, enviar de
+      novo (mensagem "Retrato do chefão atualizado!", sem aviso) e repetir a falha: o aviso
+      volta. (Automatizado no jsdom com IndexedDB simulado: `tests/ui/50_backup_gravacao.js`,
+      seção `UI 12j`.)
 - [ ] **Não validado automaticamente**: exportação/importação entre aparelhos
-      diferentes e cota de armazenamento cheia.
+      diferentes e cota de armazenamento cheia num navegador real (o item acima é o roteiro).
 
 ## 6. Pendências conhecidas (não são deste checklist)
 

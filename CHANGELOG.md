@@ -14,6 +14,17 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
   formulário (`customExerciseFormHTML`) e o cadastro já existiam. Teste novo de ponta a ponta em
   `tests/ui/60_csv_mapa_delegacao.js` (seção `UI 13b`). `sw.js` sobe para `v37`.
 
+### ALTERADO
+- **Aviso de imagem não confirmada com ação de backup (I5, evolução do P3):** quando o IndexedDB
+  não confirma a gravação de um retrato/fundo, o aviso deixou de ser um `alertModal` que some em
+  ~4 s: agora fica no topo da tela até ser dispensado (`#blob-save-warning`, `role="alert"`),
+  mantém o texto "não confirmou o salvamento" e traz o botão **💾 Exportar backup JSON**, ligado
+  ao mesmo `exportJSONBackup` de Config. Semântica igual: um aviso por sequência de falhas,
+  rearmado só depois de uma gravação confirmada, nunca "salvo" sem confirmação, e o app segue
+  utilizável (não é modal). Checks novos em `tests/ui/50_backup_gravacao.js` (seção `UI 12j`);
+  roteiro manual de cota cheia em `docs/VALIDACAO_MANUAL.md`. `vendor/tailwind.css` regenerado
+  (posição do aviso). `sw.js` sobe para `v38`.
+
 ### DOCUMENTADO
 - **Ponteiros de teste atualizados (I4):** `docs/FORMATO_CSV.md`, `docs/RECUPERACAO.md`,
   `DIAGNOSTICO.md`, `js/datas.js`, `js/assistente.js` e `test_modules.js` apontavam para

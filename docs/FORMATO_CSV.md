@@ -126,7 +126,7 @@ Regras:
   com IndexedDB simulado que recusa a gravação (`tests/ui/50_backup_gravacao.js`, seção
   `UI 12i. Falha de gravação no IndexedDB (imagens e fundo) é observável` — checks de `saveBlobChecked`:
   erro no `put`, transação abortada, aviso único por sequência, rearme após sucesso e mensagem de
-  importação sem "sucesso").
+  importação sem "sucesso"; a seção `UI 12j` cobre o aviso persistente com o botão de exportar backup).
   O comportamento num navegador real (cota, aba anônima, troca de aparelho) segue dependendo de
   validação manual — checklist em `docs/VALIDACAO_MANUAL.md`.
 - `deloadRestDays` é um campo derivado (recalculado a partir dos registros e da data de hoje); não é comparado como dado de origem.

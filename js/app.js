@@ -126,8 +126,29 @@ function notifyBlobFailure() {
     if (_blobFailureNotified) return;
     _blobFailureNotified = true;
     try {
-        if (typeof alertModal === 'function') alertModal(`⚠️ A imagem ${TEXTO_BLOB_NAO_CONFIRMADO} (armazenamento de imagens indisponível ou sem espaço). O app continua funcionando, mas a imagem pode desaparecer ao recarregar — exporte um backup JSON.`);
+        showBlobFailureWarning(`⚠️ A imagem ${TEXTO_BLOB_NAO_CONFIRMADO} (armazenamento de imagens indisponível ou sem espaço). O app continua funcionando, mas a imagem pode desaparecer ao recarregar — exporte um backup JSON.`);
     } catch (e) { /* sem UI disponível */ }
+}
+
+// Aviso PERSISTENTE da imagem não confirmada: ao contrário do alertModal (some em
+// ~4 s), fica na tela até a pessoa dispensar e traz a ação que protege os dados —
+// o mesmo exportJSONBackup do botão de Config. Não é modal: não cobre a tela nem
+// bloqueia o registro. Um só por vez (id fixo); quem decide QUANDO aparecer é o
+// notifyBlobFailure (uma vez por sequência de falhas, rearmado após sucesso).
+const BLOB_WARNING_ID = 'blob-save-warning';
+function showBlobFailureWarning(msg) {
+    document.getElementById(BLOB_WARNING_ID)?.remove();
+    const aviso = document.createElement('div');
+    aviso.id = BLOB_WARNING_ID;
+    aviso.setAttribute('role', 'alert');
+    aviso.className = 'fixed top-4 left-4 right-4 sm:left-auto sm:right-5 sm:max-w-sm z-[65] bg-berzerker-card border border-amber-500/60 rounded-xl shadow-2xl p-4 space-y-3';
+    aviso.innerHTML = `
+        <p class="text-xs text-amber-200 font-bold leading-relaxed">${escapeHtml(msg)}</p>
+        <div class="flex flex-wrap gap-2 justify-end">
+            <button type="button" data-action="closeElementById" data-args='["${BLOB_WARNING_ID}"]' class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Dispensar</button>
+            <button type="button" data-action="exportJSONBackup" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">💾 Exportar backup JSON</button>
+        </div>`;
+    document.body.appendChild(aviso);
 }
 
 // Grava um Blob confirmando o resultado. Devolve true SÓ quando o IndexedDB
