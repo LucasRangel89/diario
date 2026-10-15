@@ -153,6 +153,11 @@ npm test             # motor + UI + módulos + Service Worker
   apagar, renomear ou esvaziar um trecho de teste falha em vez de reduzir a cobertura em silêncio.
 - `npm run check:docs` — docs e comentários não podem apontar para linha/seção dos runners
   (os checks vivem em `tests/engine/*` e `tests/ui/*`) nem para um arquivo de área inexistente.
+- `node scripts/validacao-navegador.js` — validação em navegador real (Service Worker, offline,
+  IndexedDB, download do backup, layout 412 px). Fora do `npm test`; precisa de
+  `npm i --no-save playwright-core` e de um Chrome (`DIARIO_CHROME_PATH`). Sem eles, pula com
+  mensagem clara. Na CI roda no job "Validação em navegador real (não bloqueia)". Roteiro e
+  resultados em `docs/VALIDACAO_MANUAL.md`.
 
 - `js/storage.js` — camada única de armazenamento (IndexedDB + espelho no localStorage, migração automática, imagens como Blob)
 - `js/app.js` — entry: importa os demais módulos na ordem certa

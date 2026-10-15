@@ -116,3 +116,56 @@ jobs:
         run: |
           node --check _site/sw.js
           node scripts/check-sw.js _site
+
+  # Validação em NAVEGADOR REAL (Chrome da imagem do runner): boot em ES modules,
+  # Service Worker + offline, IndexedDB, download real do backup, layout em 412 px,
+  # atualização de versão do cache, "➕ Novo exercício" e o aviso persistente de imagem.
+  # AINDA NÃO É GATE: o harness é novo na CI e depende do Chrome que vem na imagem
+  # (versão muda sem aviso) — continue-on-error até provar estabilidade em várias PRs.
+  # Sem driver/Chrome o script sai com sucesso dizendo "validação em navegador pulada"
+  # (e um ::warning::); nada aqui entra no npm test nem no artefato do Pages.
+  navegador:
+    name: Validação em navegador real (não bloqueia)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Dependências
+        run: npm ci
+
+      # Só o driver (playwright-core não baixa navegador) e SEM tocar no package.json
+      # nem no package-lock.json: não vira dependência do projeto.
+      - name: Driver do navegador (playwright-core, --no-save)
+        run: |
+          npm i --no-save --no-audit --no-fund playwright-core
+          git diff --exit-code -- package.json package-lock.json
+
+      - name: Chrome do runner
+        id: chrome
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || true)"
+          if [ -n "$CHROME" ]; then "$CHROME" --version; else echo "::warning::Chrome não encontrado na imagem do runner"; fi
+          echo "path=$CHROME" >> "$GITHUB_OUTPUT"
+
+      - name: Validação em navegador real
+        env:
+          DIARIO_CHROME_PATH: ${{ steps.chrome.outputs.path }}
+          DIARIO_REPORT: ${{ runner.temp }}/validacao-navegador.json
+        run: node scripts/validacao-navegador.js
+
+      - name: Relatório da validação
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validacao-navegador
+          path: ${{ runner.temp }}/validacao-navegador.json
+          if-no-files-found: ignore

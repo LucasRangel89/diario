@@ -4,21 +4,6 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Não lançado] — manutenção pós-PR #16 (branch `arena/ffba3b1d-diario`)
 
-### ALTERADO (estrutura, sem mudança de comportamento)
-- **`js/app.js` dividido de novo (R2, rodada 2 — I1):** saíram 57 declarações para três módulos
-  novos, carregados pelo entry: `js/config.js` (migração para o IndexedDB, painel de
-  armazenamento e seed do primeiro uso), `js/boss.js` (tela do chefão, retratos padrão/upload/
-  reservas e lightbox) e `js/registro.js` (formulário de registro, última vez/repetir, edição,
-  registros do dia, mapa de prontidão, sugestão do dia e cardio). `js/app.js`: 3.304 → 2.131
-  linhas (`wc -l`; 3.282 no `origin/main` antes desta branch). Os corpos foram recortados e
-  colados por script e comparados com o snapshot pré-movimentação: **byte a byte idênticos**;
-  as 155 instruções que ficaram no app também são idênticas, e nenhum módulo reatribui binding
-  importado. Funções que **reatribuem estado de topo** (`logs = …`, `seasons = …`,
-  `lastBackupAt = …`, instâncias de gráfico etc.) ficaram no app de propósito — movê-las exigiria
-  reescrever a atribuição como setter (ver o relatório da PR). Testes que liam arquivos fixos
-  passaram a varrer todo `js/` (cobertura da delegação volta a 97 ações; antes da rodada eram 86
-  e a lista fixa cairia para 72). `sw.js` sobe para `v39` e inclui os módulos no CORE.
-
 ### CORRIGIDO
 - **"➕ Novo exercício" voltou a abrir (I2):** `js/custom_exercises.js` chamava `openModal`,
   `closeModal` e `renderSearchTab`, que nunca existiram em nenhum commit (desde `a6c8735`): o
@@ -40,6 +25,21 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
   roteiro manual de cota cheia em `docs/VALIDACAO_MANUAL.md`. `vendor/tailwind.css` regenerado
   (posição do aviso). `sw.js` sobe para `v38`.
 
+### ESTRUTURA (sem mudança de comportamento)
+- **`js/app.js` dividido de novo (R2, rodada 2 — I1):** saíram 57 declarações para três módulos
+  novos, carregados pelo entry: `js/config.js` (migração para o IndexedDB, painel de
+  armazenamento e seed do primeiro uso), `js/boss.js` (tela do chefão, retratos padrão/upload/
+  reservas e lightbox) e `js/registro.js` (formulário de registro, última vez/repetir, edição,
+  registros do dia, mapa de prontidão, sugestão do dia e cardio). `js/app.js`: 3.304 → 2.131
+  linhas (`wc -l`; 3.282 no `origin/main` antes desta branch). Os corpos foram recortados e
+  colados por script e comparados com o snapshot pré-movimentação: **byte a byte idênticos**;
+  as 155 instruções que ficaram no app também são idênticas, e nenhum módulo reatribui binding
+  importado. Funções que **reatribuem estado de topo** (`logs = …`, `seasons = …`,
+  `lastBackupAt = …`, instâncias de gráfico etc.) ficaram no app de propósito — movê-las exigiria
+  reescrever a atribuição como setter (ver o relatório da PR). Testes que liam arquivos fixos
+  passaram a varrer todo `js/` (cobertura da delegação volta a 97 ações; antes da rodada eram 86
+  e a lista fixa cairia para 72). `sw.js` sobe para `v39` e inclui os módulos no CORE.
+
 ### DOCUMENTADO
 - **Ponteiros de teste atualizados (I4):** `docs/FORMATO_CSV.md`, `docs/RECUPERACAO.md`,
   `DIAGNOSTICO.md`, `js/datas.js`, `js/assistente.js` e `test_modules.js` apontavam para
@@ -48,11 +48,27 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
   seção `UI 12i`, etc.). `DIAGNOSTICO.md` ganhou cabeçalho de **documento histórico** (retrato da
   Etapa 0, `ffee7c2`/`v25`, com notas até `3a6c2e9`/`v32`).
 
-### CI
+### CI E TESTES
 - **`scripts/check-docs-paths.js` (`npm run check:docs`):** reprova ponteiro com número de linha
   ou seção apontando para os runners finos e menção a `tests/<área>/*.js` inexistente. Roda no
   job "Testes (motor + UI)".
 - `sw.js` sobe para `v36` (comentários em `js/datas.js` e `js/assistente.js` mudaram).
+- **Validação em navegador real na CI (I3):** job novo `navegador` ("Validação em navegador real
+  (não bloqueia)", `continue-on-error`) roda `scripts/validacao-navegador.js` com o Chrome da imagem
+  do runner (`DIARIO_CHROME_PATH`) e o driver instalado com `npm i --no-save playwright-core` — sem
+  tocar no `package.json`/`package-lock.json` (o job confere com `git diff --exit-code`). O script
+  agora: prefere o Chrome do sistema (`DIARIO_CHROME_PATH`/`DIARIO_CHROME_CHANNEL`) ao
+  `@sparticuz/chromium` (que passou a ser ESM e quebrava o script); **sai com sucesso** e mensagem
+  clara quando faltam driver/navegador ("validação em navegador pulada", `::warning::` na CI;
+  `DIARIO_EXIGIR_NAVEGADOR=1` exige); lê o `VERSION` do `sw.js` (antes fixo em v35→v36, quebraria a
+  cada versão) e o número de módulos de `js/`; grava o relatório em `DIARIO_REPORT`; e ganhou 7
+  checagens (➕ Novo exercício, aviso persistente com download real, falhas de rede separadas entre
+  "rede ligada", "CORE offline" e a lacuna conhecida de imagens fora do CORE). Nada disso entra no
+  `npm test` nem no artefato do Pages.
+- **Piso de checagens da UI** sobe de 326 para 353 (`tests/ui/99_fechamento.js`): apagar um
+  dos blocos novos (`UI 12j`, `UI 13b`) reprova a suíte em vez de reduzir a cobertura em silêncio.
+- `VERSION` do `sw.js` subiu um passo a cada item que mexeu em `js/**` (v36 I4, v37 I2, v38 I5,
+  v39 I1): o PR inteiro vai de `v35` para `v39`.
 
 ## [Não lançado] — correções da auditoria (branch `arena/35b569b7-diario`)
 

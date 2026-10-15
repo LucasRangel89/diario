@@ -6,34 +6,54 @@ que já foi validado automaticamente em 2026-10-15 e o que continua exigindo uma
 
 > Regra da auditoria: comportamento não validado **não** é declarado validado.
 
-## 0. O que já foi validado automaticamente (Chromium 131 real, headless)
+## 0. O que já foi validado automaticamente (navegador real, headless)
 
-Execução fora do repositório (nada foi instalado no projeto), com o app servido em
-`http://127.0.0.1:8099` e viewport de celular (412×915, touch, deviceScaleFactor 2.6).
-**30 checagens, todas aprovadas:**
+`scripts/validacao-navegador.js` serve o app em `http://127.0.0.1:8099` e usa um Chrome/Chromium
+de verdade com viewport de celular (412×915, touch, deviceScaleFactor 2.6). Nada é instalado no
+projeto: o driver (`playwright-core`) entra com `--no-save` e o navegador vem do sistema.
+
+**Última execução local (2026-10-15, Chromium 153 do `@sparticuz/chromium`, app em `v39`):
+37 checagens, todas aprovadas** (antes eram 30; a versão do cache agora é lida do `sw.js`):
 
 | Área | O que foi checado |
 | --- | --- |
-| Boot | ES modules reais (14 arquivos), `window.__diarioExports` > 400 símbolos, histórico renderizado, **zero** `pageerror`, zero requisição local falhando |
+| Boot | ES modules reais (manifesto registrado pelas **18** fontes de `js/`), `window.__diarioExports` > 400 símbolos, histórico renderizado, **zero** `pageerror`, zero requisição local falhando |
 | Menus | clique em `#nav-diario` abre `#tab-content-diario` (delegação `data-action` funcionando no navegador) |
 | Dados | histórico do seed presente, `buildPlanilhaCSV()` com as linhas do seed |
 | Storage | `storage.set/get` (IndexedDB + espelho no localStorage) e `saveBlob/getBlob` reais |
-| Offline | Service Worker instalado, cache do CORE com > 100 arquivos, **app abre offline** com catálogo e histórico |
+| ➕ Novo exercício | o botão da aba Buscar abre o formulário sem erro, cabe nos 412 px e o ESC fecha |
+| Offline | Service Worker instalado, cache `berzerker-<VERSION>` com > 100 arquivos, **app abre offline** com catálogo e histórico; nenhum arquivo do CORE falha offline |
 | Celular | nenhuma das 8 abas estoura a largura de 412 px |
 | Instalação | manifest linkado e servido (`display: standalone`, ícones 192/512), `apple-touch-icon`, `theme-color`, SW controlando a página |
-| Atualização | cópia com `VERSION` v36: instala, ativa, popula o cache novo e **apaga o cache antigo (v35)**; app segue funcionando |
+| Atualização | cópia com `VERSION` **N+1** (N lido do `sw.js`; na última execução v40 sobre v39): instala, ativa, popula o cache novo e **apaga o cache antigo**; app segue funcionando |
 | Backup | `buildBackupPayload` (v6) e `applyImportedBackup` reaplicando; **download real** do `exportJSONBackup` lido do disco pelo navegador |
+| Aviso de imagem | com o IndexedDB recusando, o aviso "não confirmou o salvamento" aparece dentro da tela de 412 px, **continua lá depois de 4,5 s**, o botão baixa o backup JSON v6 de verdade (clique real), "Dispensar" fecha e o aviso não volta na mesma sequência |
 
-Reproduzir (Chromium precisa das libs NSS, que não existem nesta imagem):
+**Lacuna conhecida (achado, não corrigido):** na **primeira visita**, as imagens que ficam fora do
+CORE (`images/patentes/*.webp`, `images/cards/*.webp` — 110 arquivos, ~1,2 MB) são pedidas antes
+de o Service Worker controlar a página e não entram no cache em runtime; se a pessoa ficar offline
+logo depois, o emblema da patente e a arte do Story Card não carregam (o resto do app funciona). O
+harness lista isso como "lacuna conhecida" sem reprovar; numa segunda visita online as imagens já
+passam pelo cache em runtime. Ver a seção 6.
+
+Reproduzir:
 
 ```bash
-# fora do repositório
-mkdir -p /tmp/realbrowser && cd /tmp/realbrowser
-npm i @sparticuz/chromium playwright-core          # binário do Chromium
-node -e "const z=require('zlib'),f=require('fs');['al2023.tar.br'].forEach(n=>f.writeFileSync('/tmp/chrlibs/'+n.replace('.br',''),z.brotliDecompressSync(f.readFileSync('node_modules/@sparticuz/chromium/bin/'+n))))"
-cd /tmp/chrlibs && tar xf al2023.tar                # libnss3/libnspr4/libnssutil3/...
-LD_LIBRARY_PATH=/tmp/chrlibs/lib node scripts/validacao-navegador.js
+# CI (job "navegador" em .github/workflows/ci.yml, ainda não bloqueia a PR)
+npm ci && npm i --no-save playwright-core
+DIARIO_CHROME_PATH="$(command -v google-chrome)" node scripts/validacao-navegador.js
+
+# sandbox sem Chrome (tudo fora do repositório; o Chromium precisa das libs NSS do pacote)
+mkdir -p /tmp/realbrowser && cd /tmp/realbrowser && npm i @sparticuz/chromium playwright-core
+mkdir -p /tmp/chrlibs && cd /tmp/chrlibs
+node -e "const z=require('zlib'),f=require('fs');f.writeFileSync('al2023.tar',z.brotliDecompressSync(f.readFileSync('/tmp/realbrowser/node_modules/@sparticuz/chromium/bin/al2023.tar.br')))"
+tar xf al2023.tar                                   # libnss3/libnspr4/libnssutil3/...
+cd /home/user/diario
+DIARIO_BROWSER_DEPS=/tmp/realbrowser LD_LIBRARY_PATH=/tmp/chrlibs/lib node scripts/validacao-navegador.js
 ```
+
+Sem driver ou sem navegador o script **não falha**: imprime "validação em navegador pulada: …"
+(na CI, também um `::warning::`). `DIARIO_EXIGIR_NAVEGADOR=1` transforma o pulo em erro.
 
 ## 1. Instalação (PWA) — manual
 
@@ -57,13 +77,17 @@ Pré-requisito: servir por **https** ou `localhost` (o app só registra o SW em 
       Esperado: carrega sem erro, com histórico, catálogo e buscas funcionando.
 - [ ] Fechar o app, desligar a rede e abrir pelo ícone instalado: deve abrir do cache.
 - [ ] Confirmar que nada de novo foi baixado (DevTools → Application → Cache Storage →
-      `berzerker-v35` com o CORE; fora isso, só `vendor/chart.umd.js` é externo).
+      `berzerker-v<VERSION do sw.js>` com o CORE; fora isso, só `vendor/chart.umd.js` é externo).
+- [ ] Ficar offline **logo na primeira visita** e conferir o emblema da patente (cabeçalho) e a
+      arte do Story Card: hoje eles podem faltar (lacuna conhecida da seção 0 — imagens fora do
+      CORE); numa segunda visita online elas já ficam no cache.
 - [ ] **Não validado automaticamente**: queda de rede real no meio do uso e
       comportamento em rede instável/lenta.
 
 ## 3. Atualização de versão (cache novo) — manual
 
-Automatizado já foi: instalar v36 por cima de v35 e ver o cache antigo ser apagado.
+Automatizado já foi: instalar `VERSION`+1 por cima da versão atual (v40 sobre v39 na última
+execução) e ver o cache antigo ser apagado.
 
 - [ ] Com o app aberto em uma versão antiga, publicar uma versão nova (`sw.js`
       `VERSION` maior) e recarregar duas vezes.
@@ -127,3 +151,5 @@ falha de gravação de imagem (IndexedDB recusando).
   `renderSearchScreen`. Ver o item "➕ Novo exercício" na seção 4.
 - Edição/exclusão de exercício personalizado: o formulário tem esse modo
   (`openCustomExModal(id)`), mas nenhum botão da interface o abre hoje.
+- Offline na primeira visita: `images/patentes/*` e `images/cards/*` não estão no CORE do
+  `sw.js` (seção 0). Corrigir é decisão de produto (≈1,2 MB a mais na instalação offline).
