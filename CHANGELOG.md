@@ -63,8 +63,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
   `DIARIO_EXIGIR_NAVEGADOR=1` exige); lê o `VERSION` do `sw.js` (antes fixo em v35→v36, quebraria a
   cada versão) e o número de módulos de `js/`; grava o relatório em `DIARIO_REPORT`; e ganhou 7
   checagens (➕ Novo exercício, aviso persistente com download real, falhas de rede separadas entre
-  "rede ligada", "CORE offline" e a lacuna conhecida de imagens fora do CORE). Nada disso entra no
-  `npm test` nem no artefato do Pages.
+  "rede ligada", "CORE offline" e a lacuna conhecida de imagens fora do CORE). Na CI o resultado
+  vira anotação na PR (primeira execução: 37/37 com o Google Chrome 155 do runner). Nada disso
+  entra no `npm test` nem no artefato do Pages.
 - **Piso de checagens da UI** sobe de 326 para 353 (`tests/ui/99_fechamento.js`): apagar um
   dos blocos novos (`UI 12j`, `UI 13b`) reprova a suíte em vez de reduzir a cobertura em silêncio.
 - `VERSION` do `sw.js` subiu um passo a cada item que mexeu em `js/**` (v36 I4, v37 I2, v38 I5,

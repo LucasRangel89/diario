@@ -12,8 +12,13 @@ que já foi validado automaticamente em 2026-10-15 e o que continua exigindo uma
 de verdade com viewport de celular (412×915, touch, deviceScaleFactor 2.6). Nada é instalado no
 projeto: o driver (`playwright-core`) entra com `--no-save` e o navegador vem do sistema.
 
-**Última execução local (2026-10-15, Chromium 153 do `@sparticuz/chromium`, app em `v39`):
-37 checagens, todas aprovadas** (antes eram 30; a versão do cache agora é lida do `sw.js`):
+**Últimas execuções (2026-10-15, app em `v39`): 37 checagens, todas aprovadas** (antes eram 30;
+a versão do cache agora é lida do `sw.js`):
+
+- local, fora do repositório: Chromium 153 do `@sparticuz/chromium`;
+- **CI** (PR #17, job "Validação em navegador real (não bloqueia)", `ubuntu-latest`): **Google
+  Chrome 155** da imagem do runner — o resultado sai como anotação na PR
+  (`37/37 checagens OK · Chrome do sistema (/usr/bin/google-chrome) · 155.0.8059.39 · cache v39`).
 
 | Área | O que foi checado |
 | --- | --- |
