@@ -48,14 +48,16 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
   entre os compostos. Cada exercício mostra **o porquê da posição** (📌) e você reordena à
   vontade com ▲▼ (bi-set anda sempre junto). O botão **✨ Ordenar com o assistente** faz o
   mesmo no criador de treino.
-- **Fadiga real (Fase 3):** os 10 grupos são **Peito, Costas, Pernas (quadríceps), Posterior
+- **Prontidão estimada (Fase 3):** os 10 grupos são **Peito, Costas, Pernas (quadríceps), Posterior
   (isquiotibiais + glúteo), Ombros, Bíceps, Tríceps, Abdômen, Core e Antebraço**. O mapa combina
   **recuperação** (janela 24–72 h) com o **volume direto da semana** (faixa-alvo 10–20 séries por
-  grupo) — cada box mostra a prontidão real e as séries registradas naquele grupo.
-- **⚠️ Alerta de Lombar (NOVO):** alerta de carga da região lombar com gradação (leve/moderado/pesado)
-  baseado nos exercícios da última sessão: calcula horas de recuperação restantes, dá dica prática
+  grupo) — cada box mostra a prontidão estimada e as séries registradas naquele grupo.
+  **Estimativa baseada em tempo desde o último treino e volume semanal; não mede fadiga.**
+- **⚠️ Alerta de Lombar:** alerta de carga da região lombar com gradação (leve/moderado/pesado)
+  baseado nos exercícios da última sessão: calcula horas de recuperação restantes (estimativa), dá dica prática
   de quais exercícios evitar ou fazer com carga leve, mostra aviso em cada exercício durante a sessão,
   e penaliza treinos que usam lombar na sugestão automática quando a região está carregada.
+  **Estimativa baseada no tempo desde a última sessão e no volume; não substitui orientação profissional.**
 - **Corridas no histórico (CORRIGIDO):** corridas, bike e cardio agora aparecem na aba Histórico
   com distância, tempo, pace e XP, com opção de filtrar por grupo "Cardio".
 - **Correção teclado no celular (CORRIGIDO):** campos de data abrem o seletor nativo no Android
@@ -110,7 +112,7 @@ npm test             # testes do motor (node test_engine.js)
 - `js/storage.js` — camada única de armazenamento (IndexedDB + espelho no localStorage, migração automática, imagens como Blob)
 - `js/catalogo.js` — catálogo + motor de volume/convenções + tags
 - `js/gamificacao.js` — temas, patentes, chefões
-- `js/assistente.js` — ordem sugerida (Fase 2) + fadiga real/próximo treino (Fase 3)
+- `js/assistente.js` — ordem sugerida (Fase 2) + prontidão estimada/próximo treino (Fase 3)
 - `js/planilha_data.js` — seed com o histórico real
 - `js/historico.js` — aba Histórico + CSV multi-aba
 - `js/busca.js` — aba Buscar + seletor rápido
