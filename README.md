@@ -165,4 +165,5 @@ npm test             # motor + UI + módulos + Service Worker
 - `js/backup.js` — validação do backup JSON, montagem do pacote e parser de CSV
 - `js/cartoes.js` — Story Card e Card do Chefão (canvas, arte temática e símbolos)
 - `js/calculadoras.js` — aba Cálculos (1RM, aquecimento, anilhas), recordes e medalhas
+- `js/sessao.js` — treino ao vivo, cronômetro de descanso, bi-sets e efeitos do boss
 - `js/app.js` — entry: importa os demais módulos e concentra estado, sessão e UI (núcleo)

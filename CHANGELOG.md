@@ -54,10 +54,11 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
   para arquivos próprios, carregados pelo entry na ordem do grafo:
   `js/persistencia.js` (gravação do estado: logs, treinos, ajustes, jogo, Story Card),
   `js/backup.js` (validação do backup JSON, montagem do pacote, parser de CSV),
-  `js/cartoes.js` (Story Card e Card do Chefão: canvas, arte temática, emblemas) e
-  `js/calculadoras.js` (aba Cálculos, recordes e medalhas). `js/app.js` ficou com
-  3.632 linhas (estado, sessão e UI de núcleo) e passa a importar essas funções.
-  Nenhuma linha de lógica foi reescrita: os corpos das 50 declarações movidas foram
+  `js/cartoes.js` (Story Card e Card do Chefão: canvas, arte temática, emblemas),
+  `js/calculadoras.js` (aba Cálculos, recordes e medalhas) e `js/sessao.js`
+  (treino ao vivo, cronômetro de descanso, bi-sets e efeitos do boss). `js/app.js`
+  ficou com 3.283 linhas (estado, sessão e UI de núcleo) e passa a importar essas
+  funções — de 4.768 no começo (‑31%). Nenhuma linha de lógica foi reescrita: os corpos das 67 declarações movidas foram
   comparados e são byte a byte iguais aos originais, e nenhuma função movida
   reatribui estado do app (estado continua sendo escrito por quem o possui).
   `sw.js` sobe para `v35` e inclui os novos módulos no CORE.

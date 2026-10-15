@@ -27,6 +27,7 @@ const CORE = [
   './js/calculadoras.js',
   './js/backup.js',
   './js/persistencia.js',
+  './js/sessao.js',
   './js/app.js',
   './images/bosses/golem-anilhas.webp',
   './images/bosses/hidra-titanio.webp',
