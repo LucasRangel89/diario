@@ -29,6 +29,11 @@ jobs:
       - name: Testes (test_engine.js + test_ui.js)
         run: npm test
 
+      # O jsdom não executa type="module": esta checagem linka e avalia o
+      # grafo REAL de ES modules em Node (import quebrado quebra aqui).
+      - name: Grafo de ES modules (link + avaliação)
+        run: npm run check:modules
+
   build-css:
     name: vendor/tailwind.css atualizado
     runs-on: ubuntu-latest

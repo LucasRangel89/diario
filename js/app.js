@@ -1,3 +1,16 @@
+import './actions.js';
+import './storage.js';
+import './catalogo.js';
+import './gamificacao.js';
+import './assistente.js';
+import './planilha_data.js';
+import './historico.js';
+import './busca.js';
+import './custom_exercises.js';
+import { storage } from './storage.js';
+import { DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, FAIXA_SERIES_SEMANAIS, MUSCLE_META, MUSCLE_OPTIONS_FULL, MUSCULOS_MAPA, formatLoadText, formatPlates, formatRepsText, logEst1RM, logVolumeKg } from './catalogo.js';
+import { SEASON_WEEKS, STORAGE_KEY_THEME, THEMES, XP_REST_PER_DAY, completeSeason, computeBossProgress, isoWeekKey, isoWeekRange, missionsState, rankFromXP, seasonState } from './gamificacao.js';
+import { renderHistory } from './historico.js';
 /* ============================================================
    DIÁRIO DE CARGAS — núcleo do app (estado, sessão, UI, dados)
    ============================================================ */
@@ -210,6 +223,15 @@ function updateHeaderDate(isoStr) {
 function escapeHtml(str) {
     return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+// ============================ SETTERS PARA MÓDULOS ============================
+// Escritas de estado por outros módulos viram funções exportadas
+// (imports de ES module são somente leitura; etapa 5.1, sub-etapa 2).
+function setLogs(v) { logs = v; }
+function setSavedWorkouts(v) { savedWorkouts = v; }
+function setUserBodyweight(v) { userBodyweight = v; }
+function setWeightLog(v) { weightLog = v; }
+function setHistVolChartInstance(v) { histVolChartInstance = v; }
+
 // Fecha/remove um overlay pelo id (data-action="closeElementById")
 function closeElementById(id) {
     const el = document.getElementById(id);
@@ -4336,6 +4358,11 @@ window.onload = function () {
     STORAGE_KEY_BACKUP,
     closeElementById,
     hideElementById,
+    setLogs,
+    setSavedWorkouts,
+    setUserBodyweight,
+    setWeightLog,
+    setHistVolChartInstance,
     safeStorage,
     TECHNIQUES,
     NEXT_GOALS,
@@ -4560,3 +4587,4 @@ window.onload = function () {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/app.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
+export { logs, savedWorkouts, draftExercises, editingWorkoutId, activeSession, userBodyweight, customBgImageData, volumeChartInstance, exChartInstance, setsChartInstance, weightLog, histVolChartInstance, settings, deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, portraitObjectURLs, STORY_BG_BLOB_KEY, themeGameSaves, activeGameThemeId, selectedStoryBossId, THEME, lastRankLevel, timer, wakeLock, lastKnownTodayISO, setEditorState, STORAGE_KEY_LOGS, STORAGE_KEY_BW, STORAGE_KEY_WORKOUTS, STORAGE_KEY_SEEDED, STORAGE_KEY_SETTINGS, STORAGE_KEY_GAME, STORAGE_KEY_THEME_GAMES, STORAGE_KEY_GAME_SHARED, STORAGE_KEY_STORY, STORAGE_KEY_BACKUP, safeStorage, TECHNIQUES, NEXT_GOALS, INP, LBL, MUSCLE_OPTIONS, NAV_GROUPS, activeNavGroup, activeTab, THEME_ICONS, THEME_IDS_LIST, THEME_ICON_IMGS, THEME_CARD_BGS, TAILWIND_SPACING_PX, imgSizeAttrs, themeIconImg, rankEmblemSrc, rankEmblemImg, _cardImgCache, getCardImg, drawCoverImg, STORY_CARD_STYLES, toLocalISO, getTodayLocalISO, formatDateBR, formatShortBR, updateHeaderDate, escapeHtml, setLogs, setSavedWorkouts, setUserBodyweight, setWeightLog, setHistVolChartInstance, closeElementById, hideElementById, fmtN, alertModal, confirmModal, shakeElement, migrateLog, normalizeSavedWorkouts, parseStoredObject, emptyThemeGameSave, ensureThemeGameSave, restoreActiveThemeGameSave, isoWeekDateRange, seasonsDoTema, deloadWeeksEfetivos, ensureDeloadRestAwards, loadGameProgressFromStorage, loadStoredData, logsForTheme, saveLogsToStorage, saveWorkoutsToStorage, saveSettings, saveGameState, saveStoryState, snapshotStoryBgDataURL, defaultTests, loadWorkoutsFromStorage, saveBodyweight, saveTrainingSettings, toggleDeloadWeek, updateStoryThemeInfo, applyTheme, changeGameTheme, computeThemeXPCtx, computeXPCtx, getGlobalXPTotal, themeRankList, themeConfirmationName, requestGameThemeChange, showThemeGallery, checkRankUp, showRanksModal, renderNavigation, selectNavGroup, switchTab, initStorageMigration, renderStorageStatus, seedInitialMockData, updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, saveEditedLog, deleteLog, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida, startSession, renderSession, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, endSession, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, stopSessionTimer, vibrate, playBeepSound, acquireWakeLock, releaseWakeLock, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, updateExerciseSuggestions, onWbExerciseChange, addExerciseToDraft, removeDraftExercise, moveDraftExercise, applySuggestedOrder, renderWeekGaps, renderDraftList, updateSaveButton, saveWorkout, clearDraft, editWorkout, deleteWorkout, renderSavedWorkouts, getAnimalRankForSession, updateHeaderChrome, updateSummaryMetrics, DEFAULT_BOSS_PORTRAITS, bossPortraitSrc, resolvePortraitSrc, hydratePortraitBlobs, _bossImgCache, getBossImg, renderBossBattleUI, BOSS_LIGHTBOX_ID, bossLightboxIdx, bossStatusLabel, bossStatusClass, bossPortraitDownloadName, openBossLightbox, closeBossLightbox, navBossLightbox, renderBossLightbox, OVERLAY_CLOSE_ORDER, closeTopOverlay, uploadBossPortrait, reservaManifest, reservaBossId, loadReservaManifest, reservaGroups, selectReservaBoss, applyReservaPortrait, resetBossPortraitToDefault, renderReservaStudio, renderMissions, claimMissions, renderSeason, finishSeasonNow, handleBgImageUpload, removeBgImage, wrapCanvasText, canvasMeasure, drawThemedFrame, drawThemedFrameArt, _fontsRedrawScheduled, withWebFonts, generateStoryCard, downloadStoryCard, openBossDefeatCard, generateBossDefeatCard, downloadBossDefeatCard, calculate1RM, renderWarmupCalculator, calculateWarmupFromForm, calculatePlatesFromForm, calculatePlatesQuick, weeklyStreakInfo, BADGE_ART, badgeArtSrc, badgeArtImg, badgeArtFallback, bestWeekWorkouts, renderBadgesAndStreak, initVolumeChart, renderExerciseChart, renderWeeklySetsChart, renderTests, addTestRecord, deleteTestRecord, addCustomTest, deleteTest, parseCSVRows, buildBackupPayload, exportJSONBackup, applyImportedBackup, importJSONBackup, renderBackupReminder, clearAllData, startDateWatcher, refreshAll };

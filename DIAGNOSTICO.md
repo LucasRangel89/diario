@@ -118,3 +118,22 @@ Ordem corrigida da migração: 1 (manifestos) → 3 (delegação de eventos) →
 - Restante para a sub-etapa 2 (módulos): reescrever o harness jsdom
   (não executa `type="module"`), converter as ~13 escritas cross-file em
   setters e tornar explícita a injeção do `allExercisesList` customizado.
+
+### Progresso — sub-etapa 2 concluída (módulos de verdade)
+
+- Os 10 arquivos são ES modules válidos; `index.html` carrega só o entry
+  `<script type="module" src="js/app.js">`, que importa os demais na ordem
+  actions → storage → catálogo → gamificação → assistente → planilha →
+  histórico → busca → custom.
+- Escritas cross-file viraram setters exportados pelo app
+  (setLogs/setSavedWorkouts/setUserBodyweight/setWeightLog/
+  setHistVolChartInstance) — 10 pontos convertidos.
+- Ciclos resolvidos: catálogo↔custom_exercises via injeção
+  (`setCustomExercisesRef`); fallbacks mortos de `typeof X !== 'function'`
+  removidos (imports diretos).
+- Harnesses (motor + UI) removem import/export e rodam o mesmo código
+  concatenado; `scripts/check-modules.js` LINKA E AVALIA o grafo real em
+  Node (`npm run check:modules`, no CI) — pega import quebrado, TDZ e
+  violação de strict mode.
+- `allExercisesList` segue mesclando exercícios customizados (a verificação
+  de merge continua coberta pelos testes de busca).

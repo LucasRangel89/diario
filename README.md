@@ -138,10 +138,12 @@ npm test             # testes do motor (node test_engine.js)
 ```
 
 - `js/storage.js` — camada única de armazenamento (IndexedDB + espelho no localStorage, migração automática, imagens como Blob)
+- `js/app.js` — entry: importa os demais módulos na ordem certa
+- `js/actions.js` — despachante central de eventos (delegação data-action)
 - `js/catalogo.js` — catálogo + motor de volume/convenções + tags
 - `js/gamificacao.js` — temas, patentes, chefões
 - `js/assistente.js` — ordem sugerida (Fase 2) + prontidão estimada/próximo treino (Fase 3)
 - `js/planilha_data.js` — seed com o histórico real
 - `js/historico.js` — aba Histórico + CSV multi-aba
 - `js/busca.js` — aba Buscar + seletor rápido
-- `js/app.js` — estado, sessão, UI
+- `js/app.js` — estado, sessão, UI (núcleo)

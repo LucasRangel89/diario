@@ -1,3 +1,5 @@
+import { MUSCLE_WEIGHT, logTstSeconds, logVolumeKg } from './catalogo.js';
+import { logs, toLocalISO } from './app.js';
 /* ============================================================
    GAMIFICAÇÃO — patentes, chefões, XP, missões e temporadas
    ============================================================ */
@@ -564,3 +566,4 @@ function completeSeason(seasons, todayISO, xpNow) {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/gamificacao.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
+export { XP_MIN, XP_GROUP_DAY_CAP, XP_PR, XP_REST_PER_DAY, MISSION_XP, BOSS_HP_BASE, BOSS_HP_STEP, mkBosses, RANKS_CLASSIC, BOSSES_CLASSIC, STORAGE_KEY_THEME, THEMES, isoWeekKey, weekStartISO, isoWeekRange, logDamageKg, computeBossProgress, isDeloadWeek, cardioXP, computeXP, rankFromXP, missionDefs, missionsState, SEASON_WEEKS, autoDeloadWeekKeys, seasonState, completeSeason };

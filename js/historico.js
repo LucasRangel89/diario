@@ -1,3 +1,6 @@
+import { EXERCISE_CATALOG_FULL, catalogInfo, inferExerciseType, logCargaEfetiva, logFullMeta, logVolumeKg, normalizeMuscle, sinalProximaSessao } from './catalogo.js';
+import { cardioXP } from './gamificacao.js';
+import { alertModal, escapeHtml, fmtN, getTodayLocalISO, histVolChartInstance, logs, parseCSVRows, refreshAll, saveBodyweight, saveGameState, saveLogsToStorage, saveSettings, setHistVolChartInstance, setLogs, setUserBodyweight, setWeightLog, settings, userBodyweight, weightLog } from './app.js';
 /* ============================================================
    HISTÓRICO — formato da planilha do usuário
    Vistas: Log | Progresso | Semana a semana | Peso corporal
@@ -283,14 +286,14 @@ function addWeightLog() {
     const peso = parseFloat(document.getElementById('pw-peso').value);
     const obs = document.getElementById('pw-obs').value.trim();
     if (!peso || peso < 20) return alertModal('⚠️ Peso inválido — informe um peso em kg (ex.: 80).');
-    weightLog = weightLog.filter(w => w.date !== date);
+    setWeightLog(weightLog.filter(w => w.date !== date));
     weightLog.push({ date, peso, obs });
     saveGameState();
     renderHistory();
 }
 
 function removeWeightLog(date) {
-    weightLog = weightLog.filter(w => w.date !== date);
+    setWeightLog(weightLog.filter(w => w.date !== date));
     saveGameState();
     renderHistory();
 }
@@ -298,7 +301,7 @@ function removeWeightLog(date) {
 function setBodyweightFromLog() {
     const last = weightLog.slice().sort((a, b) => a.date.localeCompare(b.date)).pop();
     if (!last) return alertModal('⚠️ Sem pesagens — registre um peso primeiro.');
-    userBodyweight = last.peso;
+    setUserBodyweight(last.peso);
     document.getElementById('user-bodyweight').value = last.peso;
     saveBodyweight();
     alertModal(`⚖️ Peso corporal do app = ${fmtN(last.peso, 1)} kg (pesagem de ${histDataBR(last.date)}).`);
@@ -317,11 +320,11 @@ function drawVolumeChartMini() {
         vols.push(logs.filter(l => l.kind === 'peso' && l.date >= s.toISOString().slice(0, 10) && l.date <= e.toISOString().slice(0, 10)).reduce((a, l) => a + logVolumeKg(l), 0));
     }
     if (histVolChartInstance) histVolChartInstance.destroy();
-    histVolChartInstance = new Chart(canvas.getContext('2d'), {
+    setHistVolChartInstance(new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: { labels, datasets: [{ label: 'Volume (kg)/semana', data: vols, backgroundColor: '#FF6B00' }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { x: { ticks: { color: '#aaa' } }, y: { ticks: { color: '#aaa' } } } }
-    });
+    }));
 }
 
 /* ================= CSV — formato da planilha (multi-aba, ; ) ================= */
@@ -491,7 +494,7 @@ function importPlanilhaCSV(text) {
 
     if (sheets['log']) {
         const novos = parseSheetLogRows(parseCSVRows(sheets['log'].join('\n'), ';'));
-        logs = [...novos, ...logs];
+        setLogs([...novos, ...logs]);
         const imported = novos.length;
         // Peso corporal
         if (sheets['peso corporal']) {
@@ -499,7 +502,7 @@ function importPlanilhaCSV(text) {
                 const peso = parseFloat(String(c[1]).replace(',', '.'));
                 if (peso) {
                     const date = parseDateBRorISO(c[0]);
-                    weightLog = weightLog.filter(w => w.date !== date);
+                    setWeightLog(weightLog.filter(w => w.date !== date));
                     weightLog.push({ date, peso, obs: c[2] || '' });
                 }
             });
@@ -582,3 +585,4 @@ function importPlanilhaCSV(text) {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/historico.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
+export { historyView, switchHistoryView, historyFilteredLogs, histDataBR, metricaProgresso, histGrupoChipHTML, histSessaoDetalheHTML, renderHistory, historyLogHTML, historyProgressoHTML, getWeek1Start, setWeek1Start, historySemanasHTML, historyPesoHTML, addWeightLog, removeWeightLog, setBodyweightFromLog, drawVolumeChartMini, csvNum, buildPlanilhaCSV, exportCSV, parseDateBRorISO, importCSV, parseSheetLogRows, importPlanilhaCSV };

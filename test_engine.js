@@ -54,8 +54,13 @@ function makeFakeIDB() {
 global.indexedDB = makeFakeIDB();
 
 // ---- Carrega os módulos (mesmo escopo) ----
+// Os fontes são ES modules (etapa 5.1); este harness clássico remove
+// import/export e roda o mesmo código concatenado (escopo compartilhado).
+const stripModuleSyntax = s => s
+    .replace(/^import [^\n]*;\n/gm, '')
+    .replace(/^export \{[^\n]*\};?\n/gm, '');
 const src = ['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/app.js']
-    .map(p => fs.readFileSync(p, 'utf8')).join('\n');
+    .map(p => stripModuleSyntax(fs.readFileSync(p, 'utf8'))).join('\n');
 const api = new Function(src + `
   return {
     logVolumeKg, logTstSeconds, logEst1RM, logCargaEfetiva, logFullMeta, logBestSet, logWorstSet,
@@ -947,6 +952,13 @@ check('lombar carregada apresenta horas restantes aproximadas', lombarCarregada.
     check('toda ação declarada em data-* está registrada (' + usadas.size + ' ações)', naoRegistradas.length === 0, naoRegistradas);
     const inlineRestante = fsDeleg.reduce((n, f) => n + (fs.readFileSync(f, 'utf8').match(/\son(click|change|input|submit|keydown|error)="[^"]*"/g) || []).length, 0);
     check('nenhum handler inline em index.html e js/**', inlineRestante === 0, inlineRestante);
+
+    // ---- Etapa 5.1: entry module na ordem certa ----
+    console.log('\n== 5.1d. Entry module (js/app.js) ==');
+    const entrySrc = fs.readFileSync('js/app.js', 'utf8');
+    const primeiras = entrySrc.split('\n').filter(l => l.startsWith("import '")).map(l => l.match(/'([^']+)'/)[1]);
+    check('entry importa actions.js primeiro (registro de ações antes de tudo)', primeiras[0] === './actions.js', primeiras.slice(0, 3));
+    check('entry importa os 9 módulos na ordem do app', JSON.stringify(primeiras.slice(0, 9)) === JSON.stringify(['./actions.js', './storage.js', './catalogo.js', './gamificacao.js', './assistente.js', './planilha_data.js', './historico.js', './busca.js', './custom_exercises.js']), primeiras);
 
     console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
     process.exit(failures === 0 ? 0 : 1);

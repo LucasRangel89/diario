@@ -60,11 +60,14 @@ window.fetch = url => {
     return Promise.resolve({ ok: false, json: () => Promise.resolve(null) });
 };
 
-// ---------- carrega os módulos na ordem do index.html ----------
-// vm.runInContext mantém o escopo léxico global entre scripts (como no navegador),
-// então os `const`/`let` de catalogo.js continuam visíveis para app.js.
-['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
-    .forEach(f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f }));
+// ---------- carrega os módulos na ordem do entry (js/app.js) ----------
+// Os fontes são ES modules; o jsdom não executa type="module", então este
+// harness remove import/export e roda o mesmo código no contexto compartilhado.
+const stripModuleSyntax = s => s
+    .replace(/^import [^\n]*;\n/gm, '')
+    .replace(/^export \{[^\n]*\};?\n/gm, '');
+['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/app.js']
+    .forEach(f => vm.runInContext(stripModuleSyntax(fs.readFileSync(f, 'utf8')), ctx, { filename: f }));
 
 // ---------- helpers ----------
 let failures = 0;

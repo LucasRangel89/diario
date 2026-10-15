@@ -5,6 +5,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 ## [2.1.0] — 2026-10-15
 
 ### NOVO
+- **ES modules nativos:** os 10 scripts viraram módulos (`<script type="module">`,
+  sem bundler); handlers inline saíram em favor da delegação central
+  (`js/actions.js`); CI linka e avalia o grafo de módulos a cada push.
 - **Armazenamento durável (IndexedDB):** nova camada única em `js/storage.js`;
   migração automática do localStorage com validação e cópia antiga preservada;
   recuperação automática se o navegador limpar o localStorage.

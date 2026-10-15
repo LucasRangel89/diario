@@ -1,3 +1,6 @@
+import { CATALOG_TIPOS, MUSCLE_META, TAG_BY_CATEGORY, TAG_DEFS, catalogFacets, catalogInfo, duplaProgressao, exerciseTags, formatLoadText, formatRepsText, logEst1RM, logVolumeKg, matchesQuery, matchesTags, normalizeMuscle, searchCatalog } from './catalogo.js';
+import { allExercisesList } from './custom_exercises.js';
+import { alertModal, editLog, escapeHtml, findLastPerformance, fmtN, formatDateBR, formatShortBR, getTodayLocalISO, handleFilterDateChange, logs, onLogExerciseChange, onWbExerciseChange, renderExerciseChart, repeatLastPerformance, switchTab, toLocalISO, toggleSetMode, updateExerciseSuggestions, userBodyweight } from './app.js';
 /* ============================================================
    BUSCA & FILTROS (Fase 1) — tags acumulativas em ação
    ------------------------------------------------------------
@@ -579,3 +582,4 @@ function renderExerciseTagLine(elId, name) {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/busca.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
+export { searchState, pickerState, SEARCH_PRESETS, usageStats, searchOptsFrom, shiftLocalISO, exerciseTagChipsHTML, tagFilterHTML, tagModeButtonsHTML, renderSearchScreen, renderSearchFilters, isPresetActive, renderCatalogResults, searchHistoryLogs, renderHistoryResults, setSearchQuery, setSearchField, setHistoryField, toggleSearchTag, setSearchTagMode, applySearchPreset, clearSearchFilters, setFieldValue, repsAlvoSugeridas, useExerciseInLog, useExerciseInBuilder, showExerciseProgress, openDayInDiary, openExercisePicker, closeExercisePicker, setPickerQuery, togglePickerTag, setPickerTagMode, renderPickerResults, chooseExerciseFromPicker, renderExerciseTagLine };

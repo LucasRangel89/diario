@@ -822,13 +822,13 @@ EXERCISE_CATALOG_FULL.forEach(e => { CATALOG_BY_SEARCH[normalizeText(e.nome)] = 
 
 const TAG_IDS = Object.keys(TAG_DEFS);
 // Lista completa de exercícios (base + customizados)
+let customExercisesRef = () => [];
+function setCustomExercisesRef(fn) { customExercisesRef = fn; }
+
 function allExercisesList() {
-    if (typeof customExercises !== 'undefined' && Array.isArray(customExercises)) {
-        return [...EXERCISE_CATALOG_FULL, ...customExercises];
-    }
-    return EXERCISE_CATALOG_FULL;
+    return [...EXERCISE_CATALOG_FULL, ...customExercisesRef()];
 }
-if (typeof catalogInfoCustom !== 'function') function catalogInfoCustom(n) { return catalogInfo(n); }
+// catalogInfoCustom (definida em custom_exercises.js) chega via import no topo.
 const TAG_BY_CATEGORY = TAG_CATEGORIAS.map(c => ({
     ...c, tags: TAG_IDS.filter(id => TAG_DEFS[id].cat === c.id).map(id => ({ id, ...TAG_DEFS[id] }))
 }));
@@ -1070,3 +1070,4 @@ function matchesQuery(text, q) {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/catalogo.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
+export { TYPE_META, CATALOG_TIPOS, EXERCISE_CATALOG_FULL, CATALOG_ALIASES, CATALOG_BY_NAME, CATALOG_ALIAS_BY_NORM, catalogPrefixMatch, catalogInfo, EXERCISE_CATALOG, MUSCLE_META, MUSCULOS_MAPA, MUSCLE_OPTIONS_FULL, LEGACY_MUSCLE_ALIASES, MUSCLE_CANONICAL, normalizeMuscle, MUSCLE_WEIGHT, FAIXA_SERIES_SEMANAIS, FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, RECOVERY_CONSTANTS, RECOVERY_CONFIG, PLATES, DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, inferExerciseType, logMeta, logCargaEfetiva, logFullMeta, logVolumeKg, logTstSeconds, logBestSet, logWorstSet, logEst1RM, epleySeValido, formatLoadText, formatRepsText, duplaProgressao, sinalProximaSessao, detectAutoPR, recoveryState, SINERGIA, sinergiaLogs, sinergiaState, formatPlates, TAG_CATEGORIAS, TAG_DEFS, EQUIP_KIND, KIND_TAGS, KIND_FROM_NAME, P_EMPURRAR, P_PUXAR, P_AGACHAR, P_DOBRADICA, P_CORE, P_COMPOSTO, P_UNI, P_POSTERIOR, P_ANTERIOR, P_AVANCADO, P_BASICO, TAG_OVERRIDES, SINONIMOS, normalizeText, CATALOG_BY_SEARCH, TAG_IDS, customExercisesRef, setCustomExercisesRef, allExercisesList, TAG_BY_CATEGORY, deriveTags, exerciseTags, catalogFacets, searchCatalog, matchesTags, matchesQuery };

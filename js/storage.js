@@ -361,3 +361,4 @@ try { if (typeof global !== 'undefined') global.storage = storage; } catch (e) {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/storage.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
+export { STORAGE_DB_NAME, STORAGE_DB_VERSION, STORAGE_STORE, STORAGE_SCHEMA_VERSION, STORAGE_MIGRATED_FLAG, STORAGE_SCHEMA_KEY, _storageCache, _storageDB, _storageReady, _hasIndexedDB, _openDB, _idbGet, _idbSet, _idbKeys, STORAGE_MIGRATIONS, _runMigrations, _hydrateCacheFromLocalStorage, storage };

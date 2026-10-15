@@ -1,3 +1,6 @@
+import { CATALOG_ALIASES, CATALOG_BY_NAME, CATALOG_BY_SEARCH, CATALOG_TIPOS, EXERCISE_CATALOG_FULL, MUSCLE_OPTIONS_FULL, SINONIMOS, TAG_DEFS, TAG_IDS, catalogInfo, deriveTags, normalizeText, setCustomExercisesRef } from './catalogo.js';
+import { exercicioCarregaLombar } from './assistente.js';
+import { alertModal, escapeHtml, refreshAll, safeStorage, updateExerciseSuggestions } from './app.js';
 /* ============================================================
    EXERCÍCIOS CUSTOMIZADOS PELO USUÁRIO
    ------------------------------------------------------------
@@ -317,6 +320,9 @@ function submitDeleteCustomEx(id) {
 // migração para <script type="module"> acontecer, este bloco vira
 // `export { ... }`.
 // ============================================================
+// Ensina o catálogo a enxergar os exercícios customizados (sem ciclo de import)
+setCustomExercisesRef(() => customExercises);
+
 (function (g) {
     const exports_ = {
         STORAGE_KEY_CUSTOM_EX,
@@ -348,3 +354,4 @@ function submitDeleteCustomEx(id) {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/custom_exercises.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
+export { STORAGE_KEY_CUSTOM_EX, customExercises, loadCustomExercises, saveCustomExercises, customBySearch, customByName, rebuildCustomCatalog, rebuildFullSearchIndex, allExercisesList, catalogInfoCustom, exercicioCarregaLombarCustom, addCustomExercise, updateCustomExercise, deleteCustomExercise, customExerciseFormHTML, updateCustomExFormHint, openCustomExModal, closeCustomExModal, submitCustomExForm, submitDeleteCustomEx };

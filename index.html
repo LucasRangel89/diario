@@ -1004,17 +1004,11 @@
 
     </main>
 
-    <!-- App (offline-first: catálogo → gamificação → assistente → núcleo) -->
-    <script src="js/actions.js"></script>
-    <script src="js/storage.js"></script>
-    <script src="js/catalogo.js"></script>
-    <script src="js/gamificacao.js"></script>
-    <script src="js/assistente.js"></script>
-    <script src="js/planilha_data.js"></script>
-    <script src="js/historico.js"></script>
-    <script src="js/busca.js"></script>
-    <script src="js/custom_exercises.js"></script>
-    <script src="js/app.js"></script>
+    <!-- App em ES modules nativos (sem bundler): app.js importa os demais na
+         ordem actions → storage → catálogo → gamificação → assistente →
+         planilha → histórico → busca → custom. Funciona offline: o service
+         worker pré-cacheia cada arquivo. -->
+    <script type="module" src="js/app.js"></script>
     <script>
         // PWA: registra o service worker (só em http/https) e pede armazenamento persistente
         if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
