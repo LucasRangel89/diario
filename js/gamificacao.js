@@ -125,10 +125,13 @@ const THEMES = {
     },
     folclore: {
         id: 'folclore', name: 'Folclore Brasileiro',
-        desc: 'Do Novato da Roça à Lenda do Brasil: lendas, encantados e figuras da tradição popular.',
-        arena: 'Sertão Encantado — Lendas do Brasil', bossLabel: 'LENDA ATIVA', stageWord: 'LENDA',
-        missionWord: 'Desafio do Sertão', missionWordPlural: 'Desafios do Sertão', frame: 'madeira',
-        ranks: [['Novato da Roça', '🌱'], ['Peão de Boiadeiro', '🤠'], ['Violeiro do Sertão', '🪕'], ['Capanga Valente', '⚔️'], ['Domador de Bestas', '🐎'], ['Herói do Arraial', '🎇'], ['Guardião da Mata', '🌿'], ['Caçador de Encantados', '🔥'], ['Mestre do Folclore', '✨'], ['LENDA DO BRASIL', '🇧🇷']],
+        desc: 'Do Andarilho da Mata à LENDA DO BRASIL: patentes e desafios inspirados na tradição tupi-guarani e nos encantados das matas.',
+        arena: 'Mata Encantada — Lendas do Brasil', bossLabel: 'LENDA ATIVA', stageWord: 'LENDA',
+        missionWord: 'Desafio da Mata', missionWordPlural: 'Desafios da Mata', frame: 'madeira',
+        // Patentes tupi-guarani: Jaci (lua) e Guaraci (sol), Anhangá e Boitatá
+        // (encantados), Tupã (trovão) e Maíra (herói criador) — a mesma raiz
+        // dos chefões do tema, em vez de figuras do sertão genérico.
+        ranks: [['Andarilho da Mata', '🌱'], ['Caçador de Encantados', '🏹'], ['Amigo do Uirapuru', '🐦'], ['Filho de Jaci', '🌙'], ['Filho de Guaraci', '☀️'], ['Guardião do Anhangá', '🔥'], ['Herdeiro de Boitatá', '🐍'], ['Guerreiro de Tupã', '⚡'], ['Maíra Imortal', '✨'], ['LENDA DO BRASIL', '🇧🇷']],
         bosses: mkBosses([
             ['Saci-Pererê', '🌀', 'Travesso de uma perna só, costuma surgir em redemoinhos e pregar peças.', 'Pernas', 'Seu salto e seus redemoinhos dependem de uma única perna de apoio.'],
             ['Curupira', '🦶', 'Guardião das matas; os pés virados confundem quem segue suas pegadas.', 'Pernas', 'Os rastros invertidos dependem de passos rápidos e mudanças de direção.'],

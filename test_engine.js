@@ -798,5 +798,25 @@ api.setSeasons(null);
 api.setDeloadWeeks([]);
 api.themeSaves.classico.deloadRestDays = [];
 
+console.log('\n== 31. Folclore Tupi-Guarani ==');
+const folclore = api.THEMES.folclore;
+const ranksFolclore = folclore.ranks.map(r => r[0]);
+check('patentes do folclore seguem a raiz tupi-guarani',
+    ranksFolclore.join('|') === ['Andarilho da Mata', 'Caçador de Encantados', 'Amigo do Uirapuru', 'Filho de Jaci', 'Filho de Guaraci', 'Guardião do Anhangá', 'Herdeiro de Boitatá', 'Guerreiro de Tupã', 'Maíra Imortal', 'LENDA DO BRASIL'].join('|'),
+    ranksFolclore);
+check('arena é a Mata Encantada', folclore.arena === 'Mata Encantada — Lendas do Brasil', folclore.arena);
+check('missões viram Desafio(s) da Mata', folclore.missionWord === 'Desafio da Mata' && folclore.missionWordPlural === 'Desafios da Mata');
+check('descrição do tema cita a tradição tupi-guarani', /tupi-guarani/i.test(folclore.desc), folclore.desc);
+check('as patentes do sertão genérico saíram do tema', !ranksFolclore.some(n => /Sertão|Roça|Boiadeiro|Violeiro|Capanga|Arraial/.test(n)), ranksFolclore);
+check('tema mantém 10 patentes com ícone, 12 chefões e moldura de madeira',
+    folclore.ranks.length === 10 && folclore.ranks.every(r => r.length === 2 && !!r[1]) && folclore.bosses.length === 12 && folclore.frame === 'madeira');
+check('título das missões usa o nome novo do tema',
+    api.missionsState([], folclore, '2026-10-14').missions.every(m => m.title.startsWith('Desafio da Mata · ')),
+    api.missionsState([], folclore, '2026-10-14').missions.map(m => m.title));
+check('os 12 chefões continuam com fraqueza e brecha tática', folclore.bosses.every(b => !!b.weak && !!b.weakReason && b.maxHp > 0));
+check('curva de HP e IDs dos chefões do folclore intactos',
+    folclore.bosses.map(b => b.maxHp).join() === Array.from({ length: 12 }, (_, i) => 25000 + 2000 * i).join()
+    && folclore.bosses.map(b => b.id).join() === Array.from({ length: 12 }, (_, i) => `b${i}`).join());
+
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);
