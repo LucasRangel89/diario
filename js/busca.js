@@ -101,7 +101,7 @@ function tagFilterHTML(state, facets, onToggle) {
                 : dead
                     ? 'bg-berzerker-card border-berzerker-border text-gray-600 cursor-not-allowed'
                     : 'bg-berzerker-dark border-berzerker-border text-gray-400 hover:text-white hover:border-gray-600';
-            return `<button type="button" title="${escapeHtml(t.desc)}"${dead ? ' disabled' : ''} onclick="${onToggle}('${t.id}')"` +
+            return `<button type="button" title="${escapeHtml(t.desc)}"${dead ? ' disabled' : ''} data-action="${onToggle}" data-args='["${t.id}"]'` +
                 ` class="px-2 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wide whitespace-nowrap transition-colors ${cls}">` +
                 `${t.icon} ${escapeHtml(t.label)} <span class="font-mono ${on ? 'text-white' : 'text-gray-500'}">${n}</span></button>`;
         }).join('');
@@ -113,7 +113,7 @@ function tagFilterHTML(state, facets, onToggle) {
 }
 
 function tagModeButtonsHTML(mode, onClickFn, idPrefix) {
-    const mk = (m, label) => `<button type="button" id="${idPrefix}-tagmode-${m}" onclick="${onClickFn}('${m}')"` +
+    const mk = (m, label) => `<button type="button" id="${idPrefix}-tagmode-${m}" data-action="${onClickFn}" data-args='["${m}"]'` +
         ` class="px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-wider transition-colors ` +
         (mode === m ? 'bg-berzerker-600 border-berzerker-500 text-white' : 'bg-berzerker-dark border-berzerker-border text-gray-400 hover:text-white') +
         `">${label}</button>`;
@@ -137,7 +137,7 @@ function renderSearchFilters() {
     if (presets) {
         presets.innerHTML = SEARCH_PRESETS.map(p => {
             const on = isPresetActive(p);
-            return `<button type="button" onclick="applySearchPreset('${p.id}')"` +
+            return `<button type="button" data-action="applySearchPreset" data-args='["${p.id}"]'` +
                 ` class="px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wide transition-colors ` +
                 (on ? 'bg-cyan-700 border-cyan-600 text-white' : 'bg-berzerker-dark border-berzerker-border text-gray-400 hover:text-white hover:border-gray-600') +
                 `">${p.label}</button>`;
@@ -201,7 +201,7 @@ function renderCatalogResults() {
     if (list.length === 0) {
         el.innerHTML = `<div class="md:col-span-2 text-center py-8 text-gray-500 border border-dashed border-berzerker-border rounded-xl text-sm">
             Nenhum exercício com esses filtros.<br>
-            <button type="button" onclick="clearSearchFilters()" class="mt-2 px-3 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✕ Limpar filtros</button>
+            <button type="button" data-action="clearSearchFilters" class="mt-2 px-3 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✕ Limpar filtros</button>
         </div>`;
         return;
     }
@@ -228,10 +228,10 @@ function renderCatalogResults() {
             ${exerciseTagChipsHTML(e.nome, { max: 8, first: searchState.tags })}
             <div class="text-[10px] font-mono ${uses ? 'text-cyan-300/90' : 'text-gray-500'}">${uso}</div>
             <div class="flex flex-wrap gap-1.5 pt-1 border-t border-berzerker-border">
-                <button type="button" data-ex="${escapeHtml(e.nome)}" onclick="useExerciseInLog(this.getAttribute('data-ex'))" class="px-2.5 py-1.5 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">⚡ Registrar</button>
-                <button type="button" data-ex="${escapeHtml(e.nome)}" onclick="useExerciseInBuilder(this.getAttribute('data-ex'))" class="px-2.5 py-1.5 bg-cyan-700 hover:bg-cyan-600 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">🎯 No treino</button>
-                <button type="button" data-ex="${escapeHtml(e.nome)}" onclick="showExerciseProgress(this.getAttribute('data-ex'))" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors"${uses ? '' : ' disabled'}>📊 Evolução</button>
-                ${uses ? `<button type="button" data-ex="${escapeHtml(e.nome)}" onclick="repeatLastPerformance(this.getAttribute('data-ex'))" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">↻ Repetir última</button>` : ''}
+                <button type="button" data-ex="${escapeHtml(e.nome)}" data-action="useExerciseInLog" data-attr-args="data-ex" class="px-2.5 py-1.5 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">⚡ Registrar</button>
+                <button type="button" data-ex="${escapeHtml(e.nome)}" data-action="useExerciseInBuilder" data-attr-args="data-ex" class="px-2.5 py-1.5 bg-cyan-700 hover:bg-cyan-600 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">🎯 No treino</button>
+                <button type="button" data-ex="${escapeHtml(e.nome)}" data-action="showExerciseProgress" data-attr-args="data-ex" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors"${uses ? '' : ' disabled'}>📊 Evolução</button>
+                ${uses ? `<button type="button" data-ex="${escapeHtml(e.nome)}" data-action="repeatLastPerformance" data-attr-args="data-ex" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">↻ Repetir última</button>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -307,8 +307,8 @@ function renderHistoryResults() {
                     ${exerciseTagChipsHTML(l.exercise, { max: 5, first: searchState.tags, className: 'mt-1' })}
                 </div>
                 <div class="flex flex-col gap-1.5 shrink-0">
-                    <button type="button" onclick="editLog(${l.id})" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✏️ Editar</button>
-                    <button type="button" data-date="${escapeHtml(l.date)}" onclick="openDayInDiary(this.getAttribute('data-date'))" class="px-2.5 py-1.5 bg-berzerker-dark border border-berzerker-border hover:border-gray-600 text-gray-300 text-[10px] font-bold uppercase rounded-lg transition-colors">📅 Ver dia</button>
+                    <button type="button" data-action="editLog" data-args="[${l.id}]" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✏️ Editar</button>
+                    <button type="button" data-date="${escapeHtml(l.date)}" data-action="openDayInDiary" data-attr-args="data-date" class="px-2.5 py-1.5 bg-berzerker-dark border border-berzerker-border hover:border-gray-600 text-gray-300 text-[10px] font-bold uppercase rounded-lg transition-colors">📅 Ver dia</button>
                 </div>
             </div>
         </div>`;
@@ -439,9 +439,9 @@ function openExercisePicker(target) {
                     <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">🔎 Buscar exercício</h3>
                     <p id="picker-hint" class="text-[11px] text-gray-400">${pickerState.target === 'wb' ? 'Vai para o criador de treino.' : 'Vai para o registro do dia (com a última carga).'}</p>
                 </div>
-                <button type="button" onclick="closeExercisePicker()" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✕ Fechar</button>
+                <button type="button" data-action="closeExercisePicker" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✕ Fechar</button>
             </div>
-            <input type="search" id="picker-q" oninput="setPickerQuery(this.value)" value="${escapeHtml(pickerState.q)}" placeholder="Nome, apelido ou tag (ex: supino, rdl, casa, polia)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
+            <input type="search" id="picker-q" data-input-action="setPickerQuery" data-value-attr="value" value="${escapeHtml(pickerState.q)}" placeholder="Nome, apelido ou tag (ex: supino, rdl, casa, polia)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
             <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-2.5 space-y-2">
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">🏷️ Filtrar por tags</span>
@@ -499,7 +499,7 @@ function renderPickerResults() {
         const uses = stats.usage[e.nome] || 0;
         const last = stats.lastUsed[e.nome];
         return `
-        <button type="button" data-ex="${escapeHtml(e.nome)}" onclick="chooseExerciseFromPicker(this.getAttribute('data-ex'))"
+        <button type="button" data-ex="${escapeHtml(e.nome)}" data-action="chooseExerciseFromPicker" data-attr-args="data-ex"
             class="w-full text-left bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 rounded-xl px-3 py-2.5 transition-colors">
             <div class="flex items-center justify-between gap-2">
                 <span class="font-bold text-white text-sm truncate">${escapeHtml(e.nome)}</span>

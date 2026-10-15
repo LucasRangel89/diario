@@ -228,7 +228,7 @@ function historySemanasHTML() {
     return `
     <div class="flex items-end gap-3 mb-4 flex-wrap">
         <label class="text-xs text-gray-400">Início da semana 1 (segunda-feira)
-            <input type="date" value="${w1}" onchange="setWeek1Start(this.value)" class="block bg-gray-800 border border-berzerker-border rounded px-3 py-2 text-white">
+            <input type="date" value="${w1}" data-change-action="setWeek1Start" data-value-attr="value" class="block bg-gray-800 border border-berzerker-border rounded px-3 py-2 text-white">
         </label>
         <p class="text-xs text-gray-400 pb-2">Semanas de ${histDataBR(weeks[0].isoS)} a ${histDataBR(weeks[11].isoE)}.</p>
     </div>
@@ -260,15 +260,15 @@ function historyPesoHTML() {
             <td class="px-2 py-1.5">${histDataBR(w.date)}</td>
             <td class="px-2 py-1.5 text-center font-semibold text-white">${fmtN(w.peso, 1)}</td>
             <td class="px-2 py-1.5 text-xs text-gray-400">${escapeHtml(w.obs || '')}</td>
-            <td class="px-2 py-1.5 text-right"><button onclick="removeWeightLog('${w.date}')" class="text-red-400 hover:text-red-300 text-xs">✕</button></td>
+            <td class="px-2 py-1.5 text-right"><button data-action="removeWeightLog" data-args='["${w.date}"]' class="text-red-400 hover:text-red-300 text-xs">✕</button></td>
         </tr>`).join('');
     return `
     <div class="flex gap-2 items-end flex-wrap mb-4">
         <label class="text-xs text-gray-400">Data<input type="date" id="pw-date" value="${getTodayLocalISO()}" class="block bg-gray-800 border border-berzerker-border rounded px-3 py-2 text-white"></label>
         <label class="text-xs text-gray-400">Peso (kg)<input type="number" id="pw-peso" step="0.1" class="block bg-gray-800 border border-berzerker-border rounded px-3 py-2 text-white w-28" placeholder="80"></label>
         <label class="text-xs text-gray-400">Observação<input type="text" id="pw-obs" class="block bg-gray-800 border border-berzerker-border rounded px-3 py-2 text-white w-52" placeholder="opcional"></label>
-        <button onclick="addWeightLog()" class="bg-berzerker-500 hover:bg-berzerker-100 text-white font-semibold px-4 py-2 rounded">Registrar peso</button>
-        <button onclick="setBodyweightFromLog()" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded text-sm">Usar como peso corporal do app</button>
+        <button data-action="addWeightLog" class="bg-berzerker-500 hover:bg-berzerker-100 text-white font-semibold px-4 py-2 rounded">Registrar peso</button>
+        <button data-action="setBodyweightFromLog" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded text-sm">Usar como peso corporal do app</button>
     </div>
     <div class="overflow-x-auto bg-gray-800/50 rounded-xl border border-berzerker-border">
         <table class="w-full text-xs">

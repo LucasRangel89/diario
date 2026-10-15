@@ -186,7 +186,7 @@ function customExerciseFormHTML(existing = null) {
         <div class="grid grid-cols-2 gap-3">
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tipo de carga</label>
-                <select id="cex-tipo" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white" onchange="updateCustomExFormHint()">${tipoOptions}</select>
+                <select id="cex-tipo" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white" data-change-action="updateCustomExFormHint">${tipoOptions}</select>
                 <p id="cex-tipo-hint" class="text-[10px] text-gray-500 mt-1"></p>
             </div>
             <div class="grid grid-cols-2 gap-2">
@@ -241,8 +241,8 @@ function customExerciseFormHTML(existing = null) {
             </div>
         </div>
         <div class="flex gap-2 pt-2">
-            <button type="button" onclick="closeCustomExModal()" class="flex-1 px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase rounded-lg">Cancelar</button>
-            ${existing && existing.id ? `<button type="button" onclick="submitDeleteCustomEx('${existing.id}')" class="px-4 py-2 bg-red-900/50 hover:bg-red-800 text-red-300 text-xs font-bold uppercase rounded-lg">🗑️ Excluir</button>` : ''}
+            <button type="button" data-action="closeCustomExModal" class="flex-1 px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase rounded-lg">Cancelar</button>
+            ${existing && existing.id ? `<button type="button" data-action="submitDeleteCustomEx" data-args='["${existing.id}"]' class="px-4 py-2 bg-red-900/50 hover:bg-red-800 text-red-300 text-xs font-bold uppercase rounded-lg">🗑️ Excluir</button>` : ''}
             <button type="submit" class="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase rounded-lg">${existing && existing.id ? '💾 Salvar alterações' : '➕ Criar exercício'}</button>
         </div>
     </form>`;
