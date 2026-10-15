@@ -134,8 +134,22 @@ qualquer caminho — inclusive os arquivos de `reserva/`.
 npm install          # só o Tailwind CLI (dev)
 npm run build:css    # regenera vendor/tailwind.css (necessário ao criar classes novas)
 npm run serve        # servidor local em http://localhost:8080
-npm test             # testes do motor (node test_engine.js)
+npm test             # motor + UI + módulos + Service Worker
 ```
+
+### Testes
+
+- `node test_engine.js` — runner do motor: carrega os módulos e avalia os trechos de
+  `tests/engine/*.js` (volume/1RM/XP, recuperação e temas, catálogo e busca, arte e jogo,
+  validação de dados, armazenamento, CSV e backup). Os trechos rodam no mesmo escopo,
+  na ordem do nome do arquivo.
+- `node test_ui.js` — runner da UI (jsdom): avalia os trechos de `tests/ui/*.js`
+  (boot/navegação, busca e registro, assistente/sessão, reservas e card, backup e
+  gravação, CSV/mapa de recuperação).
+- `node --experimental-vm-modules test_modules.js` — avalia o grafo real de ES modules.
+- `node test_sw.js` — Service Worker: instalação, offline, ativação e a regra de versão.
+- Cada runner confere o manifesto das áreas e um piso de checagens (`tests/**/99_fechamento.js`):
+  apagar, renomear ou esvaziar um trecho de teste falha em vez de reduzir a cobertura em silêncio.
 
 - `js/storage.js` — camada única de armazenamento (IndexedDB + espelho no localStorage, migração automática, imagens como Blob)
 - `js/app.js` — entry: importa os demais módulos na ordem certa
@@ -146,4 +160,10 @@ npm test             # testes do motor (node test_engine.js)
 - `js/planilha_data.js` — seed com o histórico real
 - `js/historico.js` — aba Histórico + CSV multi-aba
 - `js/busca.js` — aba Buscar + seletor rápido
-- `js/app.js` — estado, sessão, UI (núcleo)
+- `js/datas.js` — regra única de data válida (backup, CSV e recuperação)
+- `js/persistencia.js` — gravação do estado (logs, treinos, ajustes, jogo, Story Card)
+- `js/backup.js` — validação do backup JSON, montagem do pacote e parser de CSV
+- `js/cartoes.js` — Story Card e Card do Chefão (canvas, arte temática e símbolos)
+- `js/calculadoras.js` — aba Cálculos (1RM, aquecimento, anilhas), recordes e medalhas
+- `js/sessao.js` — treino ao vivo, cronômetro de descanso, bi-sets e efeitos do boss
+- `js/app.js` — entry: importa os demais módulos e concentra estado, sessão e UI (núcleo)

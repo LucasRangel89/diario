@@ -1,3 +1,4 @@
+import { dataISOValida } from './datas.js';
 import { CATALOG_TIPOS, EXERCISE_CATALOG_FULL, catalogInfo, inferExerciseType, logCargaEfetiva, logFullMeta, logVolumeKg, normalizeMuscle, sinalProximaSessao } from './catalogo.js';
 import { cardioXP } from './gamificacao.js';
 import { getCustomExercises } from './custom_exercises.js';
@@ -339,6 +340,14 @@ function drawVolumeChartMini() {
 //    Meta da próxima sessão e Séries (JSON) — a série a série completa (pesos e reps
 //    por série, inclusive drop-set). Arquivos antigos não têm essas colunas: as séries
 //    são lidas de S1–S5 e a identidade é calculada pelo conteúdo (ver planejarImportacaoLogs).
+//  - Coluna `PR (informativo)` (acrescentada ao formato 2, no fim da aba Log): é
+//    INFORMATIVA. A importação NUNCA usa esse valor como fonte de verdade — os
+//    registros importados entram com isPR = false e o PR é decidido pelo app
+//    (detectAutoPR ao registrar) ou pelo flag manual do formulário. Motivo: PR
+//    multiplica o dano do chefão por 2, soma XP_PR e cumpre missão semanal; aceitar
+//    "PR = Sim" de um arquivo daria XP e gamificação de graça. A coluna é exportada
+//    para leitura humana na planilha; quem lê é a versão nova (versões antigas
+//    ignoram colunas desconhecidas, então o arquivo continua compatível).
 //  - Aba Cardio (nova): corrida/cardio, separada do volume de musculação.
 //  - Aba Formato (nova): versão do formato.
 // Importáveis: data, sessão, exercício, carga, repetições/séries, RIR, Conferir?,
@@ -351,7 +360,7 @@ function drawVolumeChartMini() {
 // ============================================================
 const CSV_FORMATO_VERSAO = 2;
 const CSV_LOG_COLS_V1 = ['Data', 'Sessão', 'Exercício', 'Carga registrada (kg)', 'S1', 'S2', 'S3', 'S4', 'S5', 'RIR', 'Conferir?', 'Observações', 'Unidade', 'Fator', 'Lados', 'Carga efetiva (kg)', 'Total reps (ou segundos)', 'Volume (kg)', 'Melhor série', 'Menor série', '1RM Epley (kg)', 'Métrica de progresso'];
-const CSV_LOG_COLS = [...CSV_LOG_COLS_V1, 'ID do registro', 'Tipo de exercício', 'Grupo do registro', 'Técnica', 'Meta da próxima sessão', 'Séries (JSON)'];
+const CSV_LOG_COLS = [...CSV_LOG_COLS_V1, 'ID do registro', 'Tipo de exercício', 'Grupo do registro', 'Técnica', 'Meta da próxima sessão', 'Séries (JSON)', 'PR (informativo)'];
 const CSV_CARDIO_COLS = ['Data', 'Modalidade', 'Distância (km)', 'Duração (min)', 'Observações', 'ID do registro'];
 const CSV_PESO_COLS = ['Data', 'Peso (kg)', 'Observação'];
 
@@ -374,6 +383,8 @@ function csvNumeroLido(s) {
     return Number(t);
 }
 // dd/mm/aaaa ou aaaa-mm-dd → ISO válido; null se a data não existir no calendário.
+// A conferência de calendário é a regra única de js/datas.js (dataISOValida): a
+// mesma que valida backups e registros, para o CSV não aceitar 31/02 que o resto rejeita.
 function parseDataCSV(s) {
     const t = String(s == null ? '' : s).trim();
     let y, m, d, mm = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);
@@ -383,8 +394,7 @@ function parseDataCSV(s) {
         if (!mm) return null;
         y = +mm[1]; m = +mm[2]; d = +mm[3];
     }
-    const dt = new Date(Date.UTC(y, m - 1, d));
-    if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null;
+    if (!dataISOValida(y, m, d)) return null;
     return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
@@ -411,7 +421,8 @@ function csvLogRow(l) {
         csvNum(meta.cargaEfetiva), csvNum(meta.totalReps), csvNum(meta.volume),
         csvNum(meta.bestSet), csvNum(meta.worstSet), meta.est1RM != null ? csvNum(meta.est1RM) : '',
         meta.unidade === 'seg' ? csvNum(meta.bestSet) : csvNum(meta.cargaEfetiva),
-        csvLogId(l), l.type || '', l.muscle || '', l.technique || '', l.nextGoal || '', csvSeriesJSON(l)
+        csvLogId(l), l.type || '', l.muscle || '', l.technique || '', l.nextGoal || '', csvSeriesJSON(l),
+        l.isPR ? 'Sim' : 'Não'   // informativo: a importação ignora (ver docs/FORMATO_CSV.md)
     ];
 }
 function csvCardioRow(l) {
@@ -636,6 +647,8 @@ function analisarLinhasLog(rows) {
             weight, reps, sets,
             technique: (v2 && cel('técnica').trim()) || 'Convencional',
             nextGoal: v2 ? cel('meta da próxima sessão').trim() : '',
+            // Coluna "PR (informativo)": deliberadamente NÃO lida. Aceitar "Sim" do
+            // arquivo daria XP (XP_PR), crítico no chefão e missão de PR sem treino.
             isPR: false, rir,
             conferir: /^(sim|s|true|1)/i.test(cel('conferir?').trim()),
             notes: csvTexto(cel('observações')).trim(),
@@ -676,7 +689,8 @@ function analisarLinhasCardio(rows) {
         if (distanceKm <= 0 && durationMin <= 0) return erro('informe distância e/ou duração');
         out.push({
             id: 0, date, kind: 'corrida', muscle: 'Cardio', exercise, distanceKm, durationMin,
-            notes: csvTexto(cel('observações')).trim(), technique: 'Convencional', isPR: false,
+            notes: csvTexto(cel('observações')).trim(), technique: 'Convencional',
+            isPR: false,   // cardio: PR de distância também é decidido pelo app, não pelo arquivo
             nextGoal: '', type: 'corrida', reps: [], externalId: cel('id do registro').trim() || null
         });
     });
@@ -736,6 +750,7 @@ function analisarCSVSimples(rows) {
             id: 0, date, kind: 'peso', muscle: normalizeMuscle(c[2] || 'Geral'), sessao: '', exercise,
             type: String(c[1] || '').trim() || (catItem && catItem.tipo) || inferExerciseType(exercise),
             weight, reps, sets: null, technique: String(c[6] || '').trim() || 'Convencional', nextGoal: '',
+            // CSV simples (formato 1, sem ID): PR nunca vem do arquivo — o app decide.
             isPR: false, rir, conferir: false, notes: csvTexto(c[10]).trim(), externalId: null
         });
     });

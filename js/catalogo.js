@@ -1,3 +1,4 @@
+import { dataDeRegistroValida } from './datas.js';
 /* ============================================================
    CATÁLOGO DE EXERCÍCIOS — fonte do volume, XP e dano
    ------------------------------------------------------------
@@ -524,13 +525,7 @@ function detectAutoPR(newLog, allLogs, bodyweight) {
 // ---------- Recuperação muscular ----------
 // Registro com data inválida (vazia, mal formatada ou inexistente) não entra na estimativa:
 // antes gerava NaN e a função devolvia "100% PRONTO" para dado inválido.
-function dataDeRegistroValida(l) {
-    if (!l || typeof l.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(l.date)) return false;
-    // confere o calendário: new Date('2026-02-31') rola para 03/03 e não pode ser aceito
-    const [y, m, d] = l.date.split('-').map(Number);
-    const dt = new Date(Date.UTC(y, m - 1, d));
-    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
-}
+// A regra vive em js/datas.js (módulo único, compartilhado com o backup e o CSV).
 
 function recoveryState(muscle, muscleLogs, nowMs) {
     const meta = MUSCLE_META[muscle] || MUSCLE_META['Geral'];
