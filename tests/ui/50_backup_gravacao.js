@@ -210,7 +210,9 @@
 
     // Nenhuma gravação de imagem pode fugir do caminho que confirma (regressão do P3).
     // O único lugar que pode chamar window.storage.saveBlob é o próprio saveBlobChecked.
-    const fontesImagem = ['js/app.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/assistente.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/planilha_data.js'];
+    // TODO js/*.js (a lista fixa antiga não via os módulos extraídos na R2, como js/boss.js,
+    // onde agora vivem o upload e a migração de retratos).
+    const fontesImagem = fs.readdirSync('js').filter(f => f.endsWith('.js')).sort().map(f => 'js/' + f);
     const srcApp = fs.readFileSync('js/app.js', 'utf8').replace(/async function saveBlobChecked[\s\S]*?\n}\n/, '');
     const diretas = fontesImagem.filter(f => /window\.storage\.saveBlob\(/.test(f === 'js/app.js' ? srcApp : fs.readFileSync(f, 'utf8')));
     check('toda gravação de imagem passa por saveBlobChecked (nada de saveBlob direto)', diretas.length === 0, diretas);

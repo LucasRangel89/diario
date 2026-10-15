@@ -170,4 +170,7 @@ npm test             # motor + UI + módulos + Service Worker
 - `js/cartoes.js` — Story Card e Card do Chefão (canvas, arte temática e símbolos)
 - `js/calculadoras.js` — aba Cálculos (1RM, aquecimento, anilhas), recordes e medalhas
 - `js/sessao.js` — treino ao vivo, cronômetro de descanso, bi-sets e efeitos do boss
+- `js/config.js` — migração para o IndexedDB, painel de armazenamento (Config) e seed do primeiro uso
+- `js/boss.js` — tela do chefão, retratos (padrão, upload e reservas) e lightbox da arte
+- `js/registro.js` — formulário de registro, última vez/repetir, edição, registros do dia, mapa de prontidão, sugestão do dia e cardio
 - `js/app.js` — entry: importa os demais módulos e concentra estado, sessão e UI (núcleo)

@@ -4,6 +4,21 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Não lançado] — manutenção pós-PR #16 (branch `arena/ffba3b1d-diario`)
 
+### ALTERADO (estrutura, sem mudança de comportamento)
+- **`js/app.js` dividido de novo (R2, rodada 2 — I1):** saíram 57 declarações para três módulos
+  novos, carregados pelo entry: `js/config.js` (migração para o IndexedDB, painel de
+  armazenamento e seed do primeiro uso), `js/boss.js` (tela do chefão, retratos padrão/upload/
+  reservas e lightbox) e `js/registro.js` (formulário de registro, última vez/repetir, edição,
+  registros do dia, mapa de prontidão, sugestão do dia e cardio). `js/app.js`: 3.304 → 2.131
+  linhas (`wc -l`; 3.282 no `origin/main` antes desta branch). Os corpos foram recortados e
+  colados por script e comparados com o snapshot pré-movimentação: **byte a byte idênticos**;
+  as 155 instruções que ficaram no app também são idênticas, e nenhum módulo reatribui binding
+  importado. Funções que **reatribuem estado de topo** (`logs = …`, `seasons = …`,
+  `lastBackupAt = …`, instâncias de gráfico etc.) ficaram no app de propósito — movê-las exigiria
+  reescrever a atribuição como setter (ver o relatório da PR). Testes que liam arquivos fixos
+  passaram a varrer todo `js/` (cobertura da delegação volta a 97 ações; antes da rodada eram 86
+  e a lista fixa cairia para 72). `sw.js` sobe para `v39` e inclui os módulos no CORE.
+
 ### CORRIGIDO
 - **"➕ Novo exercício" voltou a abrir (I2):** `js/custom_exercises.js` chamava `openModal`,
   `closeModal` e `renderSearchTab`, que nunca existiram em nenhum commit (desde `a6c8735`): o
