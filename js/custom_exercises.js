@@ -1,3 +1,6 @@
+import { CATALOG_ALIASES, CATALOG_BY_NAME, CATALOG_BY_SEARCH, CATALOG_TIPOS, EXERCISE_CATALOG_FULL, MUSCLE_OPTIONS_FULL, SINONIMOS, TAG_DEFS, TAG_IDS, catalogInfo, deriveTags, normalizeText, setCustomExercisesRef } from './catalogo.js';
+import { exercicioCarregaLombar } from './assistente.js';
+import { alertModal, escapeHtml, refreshAll, safeStorage, updateExerciseSuggestions } from './app.js';
 /* ============================================================
    EXERCÍCIOS CUSTOMIZADOS PELO USUÁRIO
    ------------------------------------------------------------
@@ -186,7 +189,7 @@ function customExerciseFormHTML(existing = null) {
         <div class="grid grid-cols-2 gap-3">
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tipo de carga</label>
-                <select id="cex-tipo" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white" onchange="updateCustomExFormHint()">${tipoOptions}</select>
+                <select id="cex-tipo" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white" data-change-action="updateCustomExFormHint">${tipoOptions}</select>
                 <p id="cex-tipo-hint" class="text-[10px] text-gray-500 mt-1"></p>
             </div>
             <div class="grid grid-cols-2 gap-2">
@@ -241,8 +244,8 @@ function customExerciseFormHTML(existing = null) {
             </div>
         </div>
         <div class="flex gap-2 pt-2">
-            <button type="button" onclick="closeCustomExModal()" class="flex-1 px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase rounded-lg">Cancelar</button>
-            ${existing && existing.id ? `<button type="button" onclick="submitDeleteCustomEx('${existing.id}')" class="px-4 py-2 bg-red-900/50 hover:bg-red-800 text-red-300 text-xs font-bold uppercase rounded-lg">🗑️ Excluir</button>` : ''}
+            <button type="button" data-action="closeCustomExModal" class="flex-1 px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase rounded-lg">Cancelar</button>
+            ${existing && existing.id ? `<button type="button" data-action="submitDeleteCustomEx" data-args='["${existing.id}"]' class="px-4 py-2 bg-red-900/50 hover:bg-red-800 text-red-300 text-xs font-bold uppercase rounded-lg">🗑️ Excluir</button>` : ''}
             <button type="submit" class="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase rounded-lg">${existing && existing.id ? '💾 Salvar alterações' : '➕ Criar exercício'}</button>
         </div>
     </form>`;
@@ -309,3 +312,46 @@ function submitDeleteCustomEx(id) {
     alertModal('🗑️ Exercício excluído.');
     renderSearchTab();
 }
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+// Ensina o catálogo a enxergar os exercícios customizados (sem ciclo de import)
+setCustomExercisesRef(() => customExercises);
+
+(function (g) {
+    const exports_ = {
+        STORAGE_KEY_CUSTOM_EX,
+    customExercises,
+    loadCustomExercises,
+    saveCustomExercises,
+    customBySearch,
+    customByName,
+    rebuildCustomCatalog,
+    rebuildFullSearchIndex,
+    allExercisesList,
+    catalogInfoCustom,
+    exercicioCarregaLombarCustom,
+    addCustomExercise,
+    updateCustomExercise,
+    deleteCustomExercise,
+    customExerciseFormHTML,
+    updateCustomExFormHint,
+    openCustomExModal,
+    closeCustomExModal,
+    submitCustomExForm,
+    submitDeleteCustomEx
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    // Ações delegáveis (js/actions.js): toda função pública do módulo fica
+    // disponível para os atributos data-action dos templates.
+    const actionFns = {};
+    Object.keys(exports_).forEach(k => { if (typeof exports_[k] === 'function') actionFns[k] = exports_[k]; });
+    g.registerDiarioActions(actionFns);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/custom_exercises.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);
+export { STORAGE_KEY_CUSTOM_EX, customExercises, loadCustomExercises, saveCustomExercises, customBySearch, customByName, rebuildCustomCatalog, rebuildFullSearchIndex, allExercisesList, catalogInfoCustom, exercicioCarregaLombarCustom, addCustomExercise, updateCustomExercise, deleteCustomExercise, customExerciseFormHTML, updateCustomExFormHint, openCustomExModal, closeCustomExModal, submitCustomExForm, submitDeleteCustomEx };

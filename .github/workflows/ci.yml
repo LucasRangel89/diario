@@ -29,6 +29,39 @@ jobs:
       - name: Testes (test_engine.js + test_ui.js)
         run: npm test
 
+      # O jsdom não executa type="module": esta checagem linka e avalia o
+      # grafo REAL de ES modules em Node (import quebrado quebra aqui).
+      - name: Grafo de ES modules (link + avaliação)
+        run: npm run check:modules
+
+  build-css:
+    name: vendor/tailwind.css atualizado
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Dependências
+        run: npm ci
+
+      # Falha se o CSS commitado estiver diferente do gerado a partir das
+      # classes usadas em index.html e js/** (evita classe nova sem build).
+      - name: Build do CSS e comparação
+        run: |
+          npm run build:css
+          if ! git diff --exit-code -- vendor/tailwind.css; then
+            echo "❌ vendor/tailwind.css está desatualizado."
+            echo "   Rode 'npm run build:css' e commite o resultado."
+            exit 1
+          fi
+          echo "✅ vendor/tailwind.css em dia com as classes do app."
+
   cache-offline:
     name: Versão do cache offline
     runs-on: ubuntu-latest

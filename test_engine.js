@@ -4,8 +4,10 @@ const fs = require('fs');
 // ---- Stubs de browser ----
 const noop = () => { };
 global.window = { localStorage: { getItem: () => null, setItem: noop }, addEventListener: noop, onload: null };
+const __docListeners = [];
+global.__docListeners = __docListeners; // visível dentro do new Function abaixo
 global.document = {
-    addEventListener: noop,
+    addEventListener: (type, fn) => { __docListeners.push(type); },
     getElementById: () => null,
     createElement: () => ({ classList: { add: noop, remove: noop, toggle: noop }, style: {}, appendChild: noop, remove: noop, setAttribute: noop, querySelector: () => ({ onclick: null }), click: noop }),
     body: { appendChild: noop }
@@ -14,9 +16,51 @@ global.navigator = { vibrate: noop };
 global.Image = class { set src(v) { } };
 global.Chart = undefined;
 
+// ---- Stubs de armazenamento: localStorage + IndexedDB falsos (para js/storage.js) ----
+const __lsData = new Map();
+global.localStorage = {
+    getItem: k => (__lsData.has(k) ? __lsData.get(k) : null),
+    setItem: (k, v) => __lsData.set(k, String(v)),
+    removeItem: k => __lsData.delete(k),
+    clear() { __lsData.clear(); },
+    get length() { return __lsData.size; },
+    key(i) { return [...__lsData.keys()][i] ?? null; }
+};
+function makeFakeIDB() {
+    const store = new Map();
+    class FakeReq {
+        constructor(exec) {
+            this.onsuccess = null; this.onerror = null; this.onupgradeneeded = null; this.result = undefined;
+            queueMicrotask(() => {
+                try { exec(this); if (this.onsuccess) this.onsuccess({ target: this }); }
+                catch (e) { if (this.onerror) this.onerror(e); }
+            });
+        }
+    }
+    const db = {
+        objectStoreNames: { contains: () => true },
+        transaction(_name, _mode) {
+            return { objectStore(_store) {
+                return {
+                    get: k => new FakeReq(r => { r.result = store.has(k) ? store.get(k) : undefined; }),
+                    put: (v, k) => new FakeReq(r => { store.set(k, v); r.result = k; }),
+                    getAllKeys: () => new FakeReq(r => { r.result = [...store.keys()]; })
+                };
+            } };
+        }
+    };
+    return { open(_name, _ver) { return new FakeReq(r => { r.result = db; }); } };
+}
+global.indexedDB = makeFakeIDB();
+
 // ---- Carrega os módulos (mesmo escopo) ----
-const src = ['js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
-    .map(p => fs.readFileSync(p, 'utf8')).join('\n');
+// Os fontes são ES modules (etapa 5.1); este harness clássico remove
+// import/export e roda o mesmo código concatenado (escopo compartilhado).
+const stripModuleSyntax = s => s
+    .replace(/^import [^\n]*;\n/gm, '')
+    .replace(/^export \{[^\n]*\};?\n/gm, '');
+const src = ['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/app.js']
+    .map(p => stripModuleSyntax(fs.readFileSync(p, 'utf8'))).join('\n');
 const api = new Function(src + `
   return {
     logVolumeKg, logTstSeconds, logEst1RM, logCargaEfetiva, logFullMeta, logBestSet, logWorstSet,
@@ -30,7 +74,9 @@ const api = new Function(src + `
     SINERGIA, sinergiaState, sinergiaLogs, STABILIZER_GROUPS,
     orderWorkoutExercises, isAtivacaoExercise, classifyExercicio, bisetBlockRanges,
     weeklySetsByMuscle, fatigueState, suggestNextWorkout, weeklyGaps, diasDesdeUltimoTreino,
+    regiaoLombarState, nivelCargaLombar,
     FAIXA_SERIES_SEMANAIS, MUSCULOS_MAPA, MUSCLE_META, normalizeMuscle, PLANILHA_SESSOES,
+    RECOVERY_CONSTANTS, RECOVERY_CONFIG,
     normalizeSavedWorkouts, suggestSessaoFor, CATALOG_ALIASES,
     FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, seriesIndiretasSemana, wrapCanvasText,
     SEASON_WEEKS, autoDeloadWeekKeys, XP_REST_PER_DAY, ensureDeloadRestAwards, getTodayLocalISO,
@@ -41,6 +87,10 @@ const api = new Function(src + `
     get themeSaves() { return themeGameSaves; },
     get STATE() { return { logs, settings, userBodyweight }; },
     setLogs(arr) { logs = arr; },
+    storageRef: storage,
+    docListeners: __docListeners,
+    diarioActions: window.__diarioActions,
+    getDiarioAction: window.getDiarioAction,
     setBW(v) { userBodyweight = v; },
     setWeightLog(arr) { weightLog = arr; },
     get logsArr() { return logs; },
@@ -818,5 +868,110 @@ check('curva de HP e IDs dos chefões do folclore intactos',
     folclore.bosses.map(b => b.maxHp).join() === Array.from({ length: 12 }, (_, i) => 25000 + 2000 * i).join()
     && folclore.bosses.map(b => b.id).join() === Array.from({ length: 12 }, (_, i) => `b${i}`).join());
 
-console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
-process.exit(failures === 0 ? 0 : 1);
+
+console.log('\n== 3.5. Alerta de lombar (assistente) ==');
+const lombarLivre = api.regiaoLombarState([], Date.now());
+check('sem carga: lombar livre 100%', lombarLivre.pct === 100 && lombarLivre.carregada === false, lombarLivre);
+const lombarLogs = [{ id: 1, date: '2026-10-14', exercise: 'Levantamento Terra', muscle: 'Costas', reps: [5,5,5], kind: 'peso' }];
+const lombarCarregada = api.regiaoLombarState(lombarLogs, new Date('2026-10-14T12:00:00').getTime());
+check('terra carrega lombar (nivel 3)', api.nivelCargaLombar('Levantamento Terra') === 3);
+check('lombar carregada apresenta horas restantes aproximadas', lombarCarregada.carregada === true && lombarCarregada.horasRestantes >= 0, lombarCarregada);
+
+// ============================================================
+// ETAPA 1 — Camada de armazenamento (js/storage.js)
+// Migração localStorage → IndexedDB: automática, idempotente,
+// valida contagem, mantém o localStorage intacto e recupera do espelho.
+// ============================================================
+(async () => {
+    console.log('\n== 1-storage. IndexedDB: migração, idempotência e recuperação ==');
+    const storage = api.storageRef;
+
+    // round-trip síncrono
+    storage.set('berzerker_teste_rt', 'valor-123');
+    check('storage.set/get round-trip', storage.get('berzerker_teste_rt') === 'valor-123');
+
+    // migração: 3 chaves legadas no localStorage
+    __lsData.set('berzerker_legado_a', '1');
+    __lsData.set('berzerker_legado_b', '2');
+    __lsData.set('berzerker_legado_c', '3');
+    const mig1 = await storage.migrate();
+    check('migração conclui com validação de contagem', mig1 && mig1.ok === true, mig1);
+    check('localStorage NÃO é apagado depois da migração (cópia antiga preservada)',
+        __lsData.get('berzerker_legado_a') === '1' && __lsData.get('berzerker_legado_b') === '2' && __lsData.get('berzerker_legado_c') === '3');
+    const mig2 = await storage.migrate();
+    check('segunda migração é pulada (idempotente)', mig2 && mig2.skipped === true, mig2);
+    check('schemaVersion declarado = 1', storage.schemaVersion === 1);
+    check('flag de migração gravada no IndexedDB', await storage.peekRaw('__berzerker_migrated_v1') === '1');
+    check('schemaVersion gravado no IndexedDB', await storage.peekRaw('__berzerker_schema_version') === '1');
+
+    // recuperação: localStorage esvaziado → espelho do IndexedDB restaura
+    const antes = storage.get('berzerker_legado_a');
+    __lsData.delete('berzerker_legado_a');
+    __lsData.delete('berzerker_legado_b');
+    const rec = await storage.recoverFromIndexedDB();
+    check('chaves perdidas são restauradas do espelho do IndexedDB',
+        rec && rec.ok && rec.restored >= 2 && storage.get('berzerker_legado_a') === antes && storage.get('berzerker_legado_b') === '2', rec);
+    const rec2 = await storage.recoverFromIndexedDB();
+    check('recuperação repetida não restaura nada (idempotente)', rec2 && rec2.ok && rec2.restored === 0, rec2);
+
+    // ---- Etapa 5.1 (sub-etapa 3): despachante central de eventos ----
+    console.log('\n== 5.1b. Despachante de eventos (js/actions.js) ==');
+    check('actions.js registra os 5 tipos de evento', ['click','keydown','change','input','submit'].every(t => api.docListeners.includes(t)) && api.docListeners.includes('error'));
+    check('registro de ações existe e registra função', typeof api.diarioActions === 'object' && typeof api.getDiarioAction('registerDiarioAction') === 'undefined');
+
+    // ---- Etapa 5.1: manifestos de export (fundação ES modules) ----
+    console.log('\n== 5.1. Manifestos de export por arquivo ==');
+    const ex = window.__diarioExports || {};
+    const files = window.__diarioExportFiles || {};
+    check('os 9 arquivos registram manifesto', Object.keys(files).length === 9, Object.keys(files));
+    const criticos = ['storage','safeStorage',
+        'catalogInfo','logVolumeKg','duplaProgressao','sinalProximaSessao','recoveryState','normalizeMuscle',
+        'THEMES','computeXP','computeBossProgress',
+        'fatigueState','orderWorkoutExercises','suggestNextWorkout','regiaoLombarState',
+        'PLANILHA_LOG','seedFromPlanilha','PLANILHA_SESSOES',
+        'buildPlanilhaCSV','exportCSV',
+        'searchCatalog','deriveTags','exerciseTags',
+        'loadCustomExercises','catalogInfoCustom',
+        'loadStoredData','renderSession','renderRecoveryMap','renderHistory','fieldsHTML'];
+    const faltando = criticos.filter(n => !(n in ex));
+    check('símbolos críticos presentes nos manifestos', faltando.length === 0, faltando);
+    check('manifesto expõe mais de 400 símbolos (superfície completa)', Object.keys(ex).length > 400, Object.keys(ex).length);
+    check('storage do manifesto tem migrate/persist/compressImage', typeof ex.storage.migrate === 'function' && typeof ex.storage.persist === 'function' && typeof ex.storage.compressImage === 'function');
+
+    // ---- Etapa 5.1: toda data-* declarada tem handler registrado; sem handlers inline ----
+    console.log('\n== 5.1c. Cobertura da delegação de eventos ==');
+    const fsDeleg = ['index.html', 'js/app.js', 'js/busca.js', 'js/historico.js', 'js/custom_exercises.js', 'js/actions.js'];
+    const acaoRe = /data-(?:action|change-action|input-action|submit-action|error-action)="([\w$]+)"/g;
+    const usadas = new Set();
+    fsDeleg.forEach(f => {
+        const src = fs.readFileSync(f, 'utf8');
+        let m;
+        while ((m = acaoRe.exec(src)) !== null) usadas.add(m[1]);
+    });
+    const naoRegistradas = [...usadas].filter(n => typeof api.diarioActions[n] !== 'function');
+    check('toda ação declarada em data-* está registrada (' + usadas.size + ' ações)', naoRegistradas.length === 0, naoRegistradas);
+    const inlineRestante = fsDeleg.reduce((n, f) => n + (fs.readFileSync(f, 'utf8').match(/\son(click|change|input|submit|keydown|error)="[^"]*"/g) || []).length, 0);
+    check('nenhum handler inline em index.html e js/**', inlineRestante === 0, inlineRestante);
+
+    // ---- Etapa 5.1: entry module na ordem certa ----
+    console.log('\n== 5.1d. Entry module (js/app.js) ==');
+    const entrySrc = fs.readFileSync('js/app.js', 'utf8');
+    const primeiras = entrySrc.split('\n').filter(l => l.startsWith("import '")).map(l => l.match(/'([^']+)'/)[1]);
+    check('entry importa actions.js primeiro (registro de ações antes de tudo)', primeiras[0] === './actions.js', primeiras.slice(0, 3));
+    check('entry importa os 9 módulos na ordem do app', JSON.stringify(primeiras.slice(0, 9)) === JSON.stringify(['./actions.js', './storage.js', './catalogo.js', './gamificacao.js', './assistente.js', './planilha_data.js', './historico.js', './busca.js', './custom_exercises.js']), primeiras);
+
+    // ---- Etapa 5.1 (sub-etapa 4): sw.js pré-cacheia todo o js/ ----
+    console.log('\n== 5.1e. Cache offline cobre os módulos ==');
+    const swSrc = fs.readFileSync('sw.js', 'utf8');
+    const coreMatch = swSrc.match(/const CORE = \[([\s\S]*?)\];/);
+    const core = coreMatch ? (coreMatch[1].match(/'\.\/([^']+)'(?:\.webp)?'/g) || []).join('') : '';
+    const coreList = (coreMatch ? coreMatch[1].match(/'\.?(\/[^']+)'/g) || [] : [])
+        .map(x => x.slice(1, -1).replace(/^\.?\//, ''));
+    const jsFiles = fs.readdirSync('js').filter(f => f.endsWith('.js'));
+    const faltandoNoCore = jsFiles.filter(f => !coreList.includes('js/' + f));
+    check('sw.js CORE inclui todos os arquivos de js/', faltandoNoCore.length === 0, faltandoNoCore);
+    check('sw.js VERSION subiu para módulos (>= v32)', Number((swSrc.match(/VERSION = 'v(\d+)'/) || [])[1]) >= 32);
+
+    console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
+    process.exit(failures === 0 ? 0 : 1);
+})().catch(e => { console.error('❌ ERRO NOS TESTES DE STORAGE:', e); process.exit(1); });

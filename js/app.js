@@ -1,3 +1,16 @@
+import './actions.js';
+import './storage.js';
+import './catalogo.js';
+import './gamificacao.js';
+import './assistente.js';
+import './planilha_data.js';
+import './historico.js';
+import './busca.js';
+import './custom_exercises.js';
+import { storage } from './storage.js';
+import { DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, FAIXA_SERIES_SEMANAIS, MUSCLE_META, MUSCLE_OPTIONS_FULL, MUSCULOS_MAPA, formatLoadText, formatPlates, formatRepsText, logEst1RM, logVolumeKg } from './catalogo.js';
+import { SEASON_WEEKS, STORAGE_KEY_THEME, THEMES, XP_REST_PER_DAY, completeSeason, computeBossProgress, isoWeekKey, isoWeekRange, missionsState, rankFromXP, seasonState } from './gamificacao.js';
+import { renderHistory } from './historico.js';
 /* ============================================================
    DIÁRIO DE CARGAS — núcleo do app (estado, sessão, UI, dados)
    ============================================================ */
@@ -25,7 +38,9 @@ let missionsXpTotal = 0;       // XP já resgatado de missões
 let missionsClaimed = {};      // { '2026-W41': true }
 let tests = [];                // Modo Testes
 let seasons = null;            // temporadas de 12 semanas
-let bossPortraits = {};        // retratos do tema ativo { bossId: dataURL }
+let bossPortraits = {};        // retratos do tema ativo { bossId: dataURL | 'idb:portrait:...' }
+const portraitObjectURLs = {};  // marcador 'idb:...' → objectURL do Blob no IndexedDB (sessão atual)
+const STORY_BG_BLOB_KEY = 'story-bg'; // chave do Blob do fundo do Story Card no IndexedDB
 let themeGameSaves = {};       // progresso separado por tema
 let activeGameThemeId = 'classico';
 let selectedStoryBossId = null;
@@ -56,8 +71,14 @@ const STORAGE_KEY_STORY = 'berzerker_story_v1';          // foto de fundo do Sto
 const STORAGE_KEY_BACKUP = 'berzerker_last_backup_at';
 
 const safeStorage = {
-    get(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } },
-    set(key, val) { try { window.localStorage.setItem(key, val); } catch (e) { /* sem persistência */ } }
+    get(key) {
+        try { if (window.storage && typeof window.storage.get === 'function') return window.storage.get(key); } catch (e) { /* fallback */ }
+        try { return window.localStorage.getItem(key); } catch (e) { return null; }
+    },
+    set(key, val) {
+        try { if (window.storage && typeof window.storage.set === 'function') window.storage.set(key, val); } catch (e) { /* fallback */ }
+        try { window.localStorage.setItem(key, val); } catch (e) { /* sem persistência */ }
+    }
 };
 
 // ============================ CONSTANTES UI ============================
@@ -202,6 +223,27 @@ function updateHeaderDate(isoStr) {
 function escapeHtml(str) {
     return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+// ============================ SETTERS PARA MÓDULOS ============================
+// Escritas de estado por outros módulos viram funções exportadas
+// (imports de ES module são somente leitura; etapa 5.1, sub-etapa 2).
+function setLogs(v) { logs = v; }
+function setSavedWorkouts(v) { savedWorkouts = v; }
+function setUserBodyweight(v) { userBodyweight = v; }
+function setWeightLog(v) { weightLog = v; }
+function setHistVolChartInstance(v) { histVolChartInstance = v; }
+
+// Fecha/remove um overlay pelo id (data-action="closeElementById")
+function closeElementById(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+// Esconde um elemento pelo id (data-action="hideElementById")
+function hideElementById(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+}
+
 function fmtN(n, dec) {
     return (Number(n) || 0).toLocaleString('pt-BR', dec != null ? { minimumFractionDigits: dec, maximumFractionDigits: dec } : undefined);
 }
@@ -312,6 +354,8 @@ function restoreActiveThemeGameSave(themeId) {
     missionsClaimed = { ...save.missionsClaimed };
     seasons = save.seasons ? JSON.parse(JSON.stringify(save.seasons)) : null;
     bossPortraits = { ...save.bossPortraits };
+    // Blobs do IndexedDB: hidrata objectURLs (e migra dataURLs legados) sem bloquear.
+    if (typeof hydratePortraitBlobs === 'function') { try { hydratePortraitBlobs(); } catch (e) { /* noop */ } }
 }
 
 function isoWeekDateRange(weekKey) {
@@ -440,11 +484,32 @@ function loadStoredData() {
     try {
         const st = JSON.parse(safeStorage.get(STORAGE_KEY_STORY));
         if (st && typeof st === 'object') {
-            // Opções de paleta antigas (Berzerker/Cyberpunk/Minimal) são ignoradas.
-            if (st.bgImageData) {
+            // Novo: fundo vive como Blob no IndexedDB (flag `bgBlob`).
+            if (st.bgBlob === '1' && window.storage && typeof window.storage.getBlob === 'function') {
+                window.storage.getBlob(STORY_BG_BLOB_KEY).then(blob => {
+                    if (!blob) return;
+                    const url = URL.createObjectURL(blob);
+                    const img = new Image();
+                    img.onload = () => { customBgImageData = img; generateStoryCard(); };
+                    img.src = url;
+                }).catch(() => {});
+            } else if (st.bgImageData) {
+                // Legado: dataURL em base64 → migra para Blob e limpa o localStorage.
+                const dataURL = st.bgImageData;
                 const img = new Image();
-                img.onload = () => { customBgImageData = img; generateStoryCard(); };
-                img.src = st.bgImageData;
+                img.onload = () => {
+                    customBgImageData = img;
+                    generateStoryCard();
+                    (async () => {
+                        try {
+                            if (window.storage && typeof window.storage.compressImage === 'function' && typeof window.storage.saveBlob === 'function') {
+                                const blob = await window.storage.compressImage(dataURL, 1080, 0.82, 'image/webp');
+                                if (await window.storage.saveBlob(STORY_BG_BLOB_KEY, blob)) saveStoryState();
+                            }
+                        } catch (e) { /* mantém o legado */ }
+                    })();
+                };
+                img.src = dataURL;
             }
         }
     } catch (e) { /* ok */ }
@@ -477,9 +542,27 @@ function saveGameState() {
     safeStorage.set(STORAGE_KEY_GAME_SHARED, JSON.stringify({ deloadWeeks, tests, weightLog }));
 }
 function saveStoryState() {
+    // O fundo enviado pelo usuário vive como Blob no IndexedDB (`bgBlob: '1'`).
+    // `bgImageData` só fica preenchido em fallback legado (IndexedDB indisponível).
     safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({
-        bgImageData: customBgImageData ? customBgImageData.src : null
+        bgBlob: customBgImageData ? '1' : null,
+        bgImageData: null
     }));
+}
+
+// Fundo em dataURL portátil (para o backup JSON): desenha a imagem num canvas
+// limitado a 1080 px. Retorna null se não der (canvas indisponível).
+function snapshotStoryBgDataURL() {
+    try {
+        if (!customBgImageData || !customBgImageData.naturalWidth) return null;
+        const maxPx = 1080;
+        const scale = Math.min(1, maxPx / Math.max(customBgImageData.naturalWidth, customBgImageData.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.round(customBgImageData.naturalWidth * scale);
+        c.height = Math.round(customBgImageData.naturalHeight * scale);
+        c.getContext('2d').drawImage(customBgImageData, 0, 0, c.width, c.height);
+        return c.toDataURL('image/jpeg', 0.8);
+    } catch (e) { return null; }
 }
 
 function defaultTests() {
@@ -616,7 +699,7 @@ function showThemeGallery() {
             : 100;
         const active = theme.id === THEME?.id;
         const defeated = Math.min(data.prog.defeatedCount, theme.bosses.length);
-        return `<button type="button" data-theme-id="${theme.id}" onclick="requestGameThemeChange('${theme.id}')" class="text-left rounded-2xl border ${active ? 'border-berzerker-500 bg-berzerker-600/10 ring-1 ring-berzerker-500/30' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'} p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-berzerker-500">
+        return `<button type="button" data-theme-id="${theme.id}" data-action="requestGameThemeChange" data-args='["${theme.id}"]' class="text-left rounded-2xl border ${active ? 'border-berzerker-500 bg-berzerker-600/10 ring-1 ring-berzerker-500/30' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'} p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-berzerker-500">
             <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-2 min-w-0">${themeIconImg(theme.id, 'h-8 w-8 rounded-lg border border-berzerker-border')}<strong class="text-sm text-white leading-tight">${escapeHtml(theme.name)}</strong></div>
                 ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[10px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
@@ -637,7 +720,7 @@ function showThemeGallery() {
     overlay.innerHTML = `<div class="my-auto max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-berzerker-border bg-berzerker-card p-4 shadow-2xl sm:p-6">
         <div class="mb-4 flex items-center justify-between gap-3">
             <div><h2 class="font-oswald text-xl font-bold uppercase tracking-wider text-white">🎭 Temas de gamificação</h2><p class="mt-1 text-[11px] text-gray-400">Cada jogo mantém sua patente e seu progresso.</p></div>
-            <button type="button" onclick="document.getElementById('theme-gallery-overlay').remove()" aria-label="Fechar galeria" class="rounded-lg px-3 py-2 text-gray-400 hover:bg-berzerker-dark hover:text-white">✕</button>
+            <button type="button" data-action="closeElementById" data-args='["theme-gallery-overlay"]' aria-label="Fechar galeria" class="rounded-lg px-3 py-2 text-gray-400 hover:bg-berzerker-dark hover:text-white">✕</button>
         </div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">${cards}</div>
     </div>`;
@@ -678,14 +761,14 @@ function showRanksModal(themeId) {
             <div class="text-right shrink-0"><div class="text-[10px] font-mono text-gray-400">${fmt(x.minXp)} XP</div><div class="text-[10px] font-bold text-gray-500 uppercase leading-tight">${tag}</div></div>
         </div>`;
     }).join('');
-    const tabs = Object.values(THEMES).map(x => `<button onclick="showRanksModal('${x.id}')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${x.id === t.id ? 'bg-berzerker-600 text-white' : 'bg-berzerker-border text-gray-400 hover:text-white'}">${escapeHtml(x.name)}</button>`).join('');
+    const tabs = Object.values(THEMES).map(x => `<button data-action="showRanksModal" data-args='["${x.id}"]' class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${x.id === t.id ? 'bg-berzerker-600 text-white' : 'bg-berzerker-border text-gray-400 hover:text-white'}">${escapeHtml(x.name)}</button>`).join('');
     document.getElementById('ranks-overlay')?.remove();
     const o = document.createElement('div');
     o.id = 'ranks-overlay';
     o.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-start sm:items-center justify-center p-4 overflow-y-auto';
     o.onclick = ev => { if (ev.target === o) o.remove(); };
     o.innerHTML = `<div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 max-w-lg w-full shadow-2xl space-y-3">
-        <div class="flex items-center justify-between"><h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">📜 Patentes</h3><button onclick="document.getElementById('ranks-overlay').remove()" class="text-gray-400 hover:text-white">✕</button></div>
+        <div class="flex items-center justify-between"><h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">📜 Patentes</h3><button aria-label="Fechar patentes" data-action="closeElementById" data-args='["ranks-overlay"]'  class="text-gray-400 hover:text-white">✕</button></div>
         <div class="flex flex-wrap gap-1.5">${tabs}</div>
         <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3 space-y-1.5">
             <div class="flex justify-between text-[11px] font-bold text-gray-300"><span>${fmt(d.xp)} XP</span><span>${nxt ? 'próxima: ' + fmt(nxt.minXp) + ' XP' : 'nível máximo'}</span></div>
@@ -704,7 +787,7 @@ function renderNavigation() {
         const button = document.getElementById(`nav-group-${group.id}`);
         if (!button) return;
         const active = group.id === activeNavGroup;
-        button.className = `min-w-0 px-1 py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors ${active ? 'bg-berzerker-600 text-white' : 'bg-berzerker-dark text-gray-300 hover:text-white'}`;
+        button.className = `min-w-0 min-h-[44px] px-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors ${active ? 'bg-berzerker-600 text-white' : 'bg-berzerker-dark text-gray-300 hover:text-white'}`;
         if (active) button.setAttribute('aria-current', 'page');
         else button.removeAttribute('aria-current');
     });
@@ -720,7 +803,7 @@ function renderNavigation() {
     subnav.classList.remove('hidden');
     subnav.innerHTML = group.tabs.map(([tab, label]) => {
         const active = tab === activeTab;
-        return `<button type="button" id="nav-${tab}" onclick="switchTab('${tab}')" ${active ? 'aria-current="page"' : ''} class="px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-colors ${active ? 'bg-berzerker-600/25 text-white border border-berzerker-500/50' : 'text-gray-400 bg-berzerker-dark/60 border border-transparent hover:text-white'}">${label}</button>`;
+        return `<button type="button" id="nav-${tab}" data-action="switchTab" data-args='["${tab}"]' ${active ? 'aria-current="page"' : ''} class="min-h-[44px] px-3 py-2 rounded-lg text-xs font-bold transition-colors ${active ? 'bg-berzerker-600/25 text-white border border-berzerker-500/50' : 'text-gray-400 bg-berzerker-dark/60 border border-transparent hover:text-white'}">${label}</button>`;
     }).join('');
 }
 
@@ -753,7 +836,54 @@ function switchTab(tab) {
     if (tab === 'boss') { renderBossBattleUI(); renderMissions(); renderSeason(); }
     if (tab === 'story') generateStoryCard();
     if (tab === 'stats') { renderBadgesAndStreak(); initVolumeChart(); renderExerciseChart(); renderWeeklySetsChart(); renderTests(); }
-    if (tab === 'config') renderBackupReminder();
+    if (tab === 'config') { renderBackupReminder(); renderStorageStatus(); }
+}
+
+// ============================ ARMAZENAMENTO (IndexedDB) ============================
+// Migração automática no primeiro boot + painel de status (persistência e quota).
+async function initStorageMigration() {
+    try {
+        if (window.storage && typeof window.storage.migrate === 'function') {
+            const r = await window.storage.migrate();
+            if (r && r.ok && !r.skipped) console.log('[storage] migração para IndexedDB concluída:', r);
+            else if (r && !r.ok) console.warn('[storage] migração para IndexedDB não concluída:', r);
+        }
+        if (window.storage && typeof window.storage.recoverFromIndexedDB === 'function') {
+            const rec = await window.storage.recoverFromIndexedDB();
+            if (rec && rec.ok && rec.restored > 0) {
+                console.warn(`[storage] ${rec.restored} chave(s) restaurada(s) do IndexedDB para o localStorage.`);
+                loadStoredData();
+                loadWorkoutsFromStorage();
+            }
+        }
+        if (window.storage && typeof window.storage.persist === 'function') {
+            const jaPersistente = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : false;
+            if (!jaPersistente) await window.storage.persist();
+        }
+    } catch (e) { console.warn('[storage] falha na migração/persistência:', e); }
+}
+
+async function renderStorageStatus() {
+    const el = document.getElementById('storage-status');
+    if (!el) return;
+    let linhas = [];
+    try {
+        if (navigator.storage && typeof navigator.storage.persisted === 'function') {
+            const persistente = await navigator.storage.persisted();
+            linhas.push(persistente
+                ? '✅ Armazenamento <b>persistente</b>: o navegador não apaga seus dados por falta de espaço.'
+                : '⚠️ Armazenamento <b>não persistente</b>: em espaço apertado o navegador pode limpar dados antigos. Faça backup com frequência.');
+        }
+        if (navigator.storage && typeof navigator.storage.estimate === 'function') {
+            const est = await navigator.storage.estimate();
+            const fmt = n => n >= 1073741824 ? (n / 1073741824).toFixed(2) + ' GB' : n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round((n || 0) / 1024) + ' KB';
+            linhas.push(`📦 Uso: <b>${fmt(est.usage || 0)}</b> de ~${fmt(est.quota || 0)} disponíveis.`);
+        }
+        linhas.push('🗃️ Dados gravados no <b>IndexedDB</b> (com espelho no localStorage durante a transição).');
+    } catch (e) {
+        linhas.push('ℹ️ Status de armazenamento indisponível neste navegador.');
+    }
+    el.innerHTML = linhas.map(t => `<div class="leading-relaxed">${t}</div>`).join('');
 }
 
 // ============================ SEED ============================
@@ -864,7 +994,7 @@ function renderSetRows(prefix) {
             <input type="number" step="0.5" min="0" value="${s.weight ?? ''}" placeholder="kg" data-setw="${prefix}${i}" class="${INP} !py-1.5 !text-xs flex-1">
             <input type="number" min="0" value="${s.reps ?? ''}" placeholder="reps" data-setr="${prefix}${i}" class="${INP} !py-1.5 !text-xs flex-1">
             <input type="number" min="0" max="10" value="${s.rir ?? ''}" placeholder="RIR" data-seti="${prefix}${i}" class="${INP} !py-1.5 !text-xs w-16">
-            <button type="button" onclick="removeSetRow('${prefix}', ${i})" class="p-1.5 text-gray-500 hover:text-red-400 text-xs">✕</button>
+            <button type="button" data-action="removeSetRow" data-args='["${prefix}",${i}]' aria-label="Remover série" class="p-1.5 text-gray-500 hover:text-red-400 text-xs">✕</button>
         </div>`).join('');
 }
 
@@ -915,10 +1045,10 @@ function fieldsHTML(p, v, opts) {
     const typeModeHTML = `
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5${o.quickCapture ? '' : ' mt-3'}">
         <div class="col-span-2"><label class="${LBL}">Tipo de registro</label>
-            <select id="${p}type" onchange="onTypeChange('${p}')" class="${INP}">${typeOptions}</select>
+            <select id="${p}type" data-change-action="onTypeChange" data-args='["${p}"]' class="${INP}">${typeOptions}</select>
         </div>
         <div class="col-span-2"><label class="${LBL}">Modo de registro</label>
-            <select id="${p}mode" onchange="toggleSetMode('${p}')" class="${INP}">
+            <select id="${p}mode" data-change-action="toggleSetMode" data-args='["${p}"]' class="${INP}">
                 <option value="simple"${(v.mode || 'simple') === 'simple' ? ' selected' : ''}>Séries iguais (carga única)</option>
                 <option value="sets"${v.mode === 'sets' ? ' selected' : ''}>Série a série (drop-set, pirâmide)</option>
             </select>
@@ -932,7 +1062,7 @@ function fieldsHTML(p, v, opts) {
     const setsHTML = `
     <div id="${p}sets-box" class="hidden mt-2.5 space-y-1.5">
         <div class="flex items-center justify-between"><label class="${LBL} !mb-0">Séries — carga · reps · RIR (opcional)</label>
-            <button type="button" onclick="addSetRow('${p}')" class="text-[10px] font-bold text-cyan-400 hover:underline">+ série</button></div>
+            <button type="button" data-action="addSetRow" data-args='["${p}"]' class="text-xs font-bold text-cyan-400 hover:underline">+ série</button></div>
         <div id="${p}sets" class="space-y-1.5"></div>
     </div>`;
     const extraHTML = `
@@ -941,9 +1071,9 @@ function fieldsHTML(p, v, opts) {
         <div><label class="${LBL}">Técnica Avançada</label><select id="${p}t" class="${INP}">${optsSelect(TECHNIQUES, v.technique)}</select></div>
         <div class="col-span-2"><label class="${LBL} !text-emerald-400">💡 Meta Próximo Treino</label><select id="${p}g" class="${INP}">${optsSelect(NEXT_GOALS, v.nextGoal)}</select></div>
         <div class="col-span-2"><label class="${LBL}">Sessão (split do dia)</label><input type="text" id="${p}sessao" value="${escapeHtml(v.sessao || '')}" list="sessao-list" placeholder="ex: Peito/Tríceps/Ombro" class="${INP}"></div>
-        <label class="flex items-center gap-2 cursor-pointer col-span-2 self-end pb-2"><input type="checkbox" id="${p}conf"${v.conferir ? ' checked' : ''} class="w-4 h-4 rounded text-amber-500 bg-berzerker-dark border-berzerker-border"><span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">⚠️ Conferir?</span></label>
+        <label class="flex items-center gap-2 cursor-pointer col-span-2 self-end pb-2"><input type="checkbox" id="${p}conf"${v.conferir ? ' checked' : ''} class="w-4 h-4 rounded text-amber-500 bg-berzerker-dark border-berzerker-border"><span class="text-xs font-bold text-amber-400 uppercase tracking-wider">⚠️ Conferir?</span></label>
         <div class="col-span-2 sm:col-span-4"><label class="${LBL}">Observações</label><textarea id="${p}n" rows="2" placeholder="Ex: ajuste do banco, dor, sensação, regulagem da máquina..." class="${INP}">${escapeHtml(v.notes || '')}</textarea></div>
-        ${o.prOverride ? `<label class="flex items-center gap-2 cursor-pointer col-span-2"><input type="checkbox" id="${p}p"${v.isPR ? ' checked' : ''} class="w-4 h-4 rounded text-emerald-500 bg-berzerker-dark border-berzerker-border"><span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">🏆 PR (auto pelo 1RM — pode forçar)</span></label>` : ''}
+        ${o.prOverride ? `<label class="flex items-center gap-2 cursor-pointer col-span-2"><input type="checkbox" id="${p}p"${v.isPR ? ' checked' : ''} class="w-4 h-4 rounded text-emerald-500 bg-berzerker-dark border-berzerker-border"><span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">🏆 PR (auto pelo 1RM — pode forçar)</span></label>` : ''}
     </div>`;
 
     if (o.quickCapture) {
@@ -951,28 +1081,28 @@ function fieldsHTML(p, v, opts) {
         <details id="${p}advanced-details" class="border border-berzerker-border rounded-xl bg-berzerker-dark/50"${v.mode === 'sets' ? ' open' : ''}>
             <summary class="cursor-pointer select-none px-3 py-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center justify-between gap-3">
                 <span>Mais detalhes</span>
-                <span class="text-[10px] text-gray-500 normal-case tracking-normal">séries individuais, técnica, observações e ferramentas</span>
+                <span class="text-xs text-gray-400 normal-case tracking-normal">séries individuais, técnica, observações e ferramentas</span>
             </summary>
             <div class="border-t border-berzerker-border p-3 space-y-3">
                 ${typeModeHTML}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div id="${p}type-hint" class="text-[11px] text-amber-400/90 font-mono bg-amber-950/20 border border-amber-700/30 rounded-lg px-3 py-2"></div>
-                    <div id="${p}faixa-hint" class="text-[11px] text-cyan-300/90 font-mono bg-cyan-950/20 border border-cyan-700/30 rounded-lg px-3 py-2"></div>
+                    <div id="${p}type-hint" class="text-xs text-amber-400/90 font-mono bg-amber-950/20 border border-amber-700/30 rounded-lg px-3 py-2"></div>
+                    <div id="${p}faixa-hint" class="text-xs text-cyan-300/90 font-mono bg-cyan-950/20 border border-cyan-700/30 rounded-lg px-3 py-2"></div>
                 </div>
                 ${setsHTML}
                 ${extraHTML}
                 <div id="${p}warmup-quick-box" class="hidden bg-berzerker-dark/80 border border-amber-500/30 rounded-xl p-3 text-xs space-y-1">
                     <div class="font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
                         <span>🔥 Aquecimento & Anilhas</span>
-                        <button type="button" onclick="document.getElementById('${p}warmup-quick-box').classList.add('hidden')" class="text-gray-400 hover:text-white">✕</button>
+                        <button type="button" data-action="hideElementById" data-args='["${p}warmup-quick-box"]' aria-label="Fechar aquecimento rápido" class="text-gray-400 hover:text-white">✕</button>
                     </div>
                     <div id="${p}warmup-quick-content" class="font-mono text-gray-300"></div>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" onclick="calculateWarmupFromForm()" class="px-3 py-2 bg-amber-900/30 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase rounded-lg hover:bg-amber-900/50">🔥 Aquecimento</button>
-                    <button type="button" onclick="calculatePlatesQuick()" class="px-3 py-2 bg-berzerker-border text-gray-200 text-xs font-bold uppercase rounded-lg hover:bg-gray-700">⚙️ Anilhas</button>
+                    <button type="button" data-action="calculateWarmupFromForm" class="px-3 py-2 bg-amber-900/30 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase rounded-lg hover:bg-amber-900/50">🔥 Aquecimento</button>
+                    <button type="button" data-action="calculatePlatesQuick" class="px-3 py-2 bg-berzerker-border text-gray-200 text-xs font-bold uppercase rounded-lg hover:bg-gray-700">⚙️ Anilhas</button>
                 </div>
-                <p class="text-[10px] text-gray-500">🏆 O PR é detectado sozinho pelo 1RM estimado (ou tempo, em isometria) — sem checkbox. 💡 Quando todas as séries baterem o topo da faixa, o app sugere subir a carga.</p>
+                <p class="text-xs text-gray-400">🏆 O PR é detectado sozinho pelo 1RM estimado (ou tempo, em isometria) — sem checkbox. 💡 Quando todas as séries baterem o topo da faixa, o app sugere subir a carga.</p>
             </div>
         </details>`;
     }
@@ -1041,7 +1171,7 @@ function lastPerformanceHTML(exerciseName, excludeId) {
     return `<div class="flex items-center gap-2 flex-wrap text-[11px] font-mono text-gray-400 mt-1">
         <span>🕐 Última vez: <span class="text-gray-200">${formatShortBR(last.date)} · ${formatLoadText(last)} × ${formatRepsText(last)}</span></span>
         ${prog ? `<span class="text-emerald-400 font-bold">→ sugestão: ${prog.proximaCarga} kg</span>` : ''}
-        <button type="button" data-ex="${escapeHtml(exerciseName)}" onclick="repeatLastPerformance(this.getAttribute('data-ex'))" class="px-2 py-0.5 bg-berzerker-border hover:bg-berzerker-600 text-white text-[10px] font-bold rounded uppercase">↻ Repetir</button>
+        <button type="button" data-ex="${escapeHtml(exerciseName)}" data-action="repeatLastPerformance" data-attr-args="data-ex" class="px-2 py-0.5 bg-berzerker-border hover:bg-berzerker-600 text-white text-[10px] font-bold rounded uppercase">↻ Repetir</button>
     </div>`;
 }
 
@@ -1140,8 +1270,8 @@ function editLog(id) {
         technique: l.technique, nextGoal: l.nextGoal, isPR: l.isPR, notes: l.notes, rir: l.rir
     }, { prOverride: true })}
             <div class="flex gap-3 justify-end mt-4">
-                <button onclick="document.getElementById('edit-log-overlay').remove()" class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Cancelar</button>
-                <button onclick="saveEditedLog(${id})" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">💾 Salvar alterações</button>
+                <button data-action="closeElementById" data-args='["edit-log-overlay"]'  class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Cancelar</button>
+                <button data-action="saveEditedLog" data-args="[${id}]" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">💾 Salvar alterações</button>
             </div>
         </div>`;
     document.body.appendChild(o);
@@ -1226,11 +1356,11 @@ function renderLogsTable() {
                     ${l.rir != null ? `<span class="text-[11px] font-mono text-cyan-300">RIR ${l.rir}</span>` : ''}
                     ${l.nextGoal ? `<span class="text-[11px] font-bold px-2 py-0.5 bg-berzerker-card border border-emerald-500/40 text-emerald-400 rounded">⚡ ${escapeHtml(l.nextGoal)}</span>` : ''}
                 </div>
-                <h3 class="font-bold text-white text-base mt-1">${l.biset ? '🔗 ' : ''}${escapeHtml(l.exercise)}${l.biset ? ' <span class="text-[10px] font-bold text-cyan-400 border border-cyan-500/40 rounded px-1.5 py-0.5 align-middle">BI-SET</span>' : ''}<button onclick="editLog(${l.id})" title="Editar" class="ml-2 px-2 py-0.5 text-xs text-gray-400 hover:text-cyan-400 align-middle">✏️ Editar</button></h3>
+                <h3 class="font-bold text-white text-base mt-1">${l.biset ? '🔗 ' : ''}${escapeHtml(l.exercise)}${l.biset ? ' <span class="text-[10px] font-bold text-cyan-400 border border-cyan-500/40 rounded px-1.5 py-0.5 align-middle">BI-SET</span>' : ''}<button data-action="editLog" data-args="[${l.id}]" title="Editar" class="ml-2 px-2 py-0.5 text-xs text-gray-400 hover:text-cyan-400 align-middle">✏️ Editar</button></h3>
                 ${l.notes ? `<p class="text-[11px] text-gray-400 mt-1 italic">📝 ${escapeHtml(l.notes)}</p>` : ''}
                 <div class="text-xs text-gray-400 mt-1 font-mono">${detalhe}</div>
             </div>
-            <button onclick="deleteLog(${l.id})" class="self-end sm:self-center p-2 text-gray-500 hover:text-red-400 transition-colors" title="Excluir">
+            <button data-action="deleteLog" data-args="[${l.id}]" class="self-end sm:self-center p-2 text-gray-500 hover:text-red-400 transition-colors" title="Excluir">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>
         </div>`;
@@ -1251,26 +1381,26 @@ function renderRecoveryMap() {
         const st = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs, sin);
         const pctText = st.pct === null ? '—' : `${st.pct}%`;
         return `
-        <div onclick="prefillMuscleFromMap('${m}')" title="Registrar exercício de ${m}" class="cursor-pointer bg-berzerker-dark border ${st.border} rounded-xl p-3.5 space-y-2.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+        <div data-action="prefillMuscleFromMap" data-args='["${m}"]' title="Registrar exercício de ${m}" class="cursor-pointer bg-berzerker-dark border ${st.border} rounded-xl p-3.5 space-y-2.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
             <div class="flex items-center justify-between gap-2">
                 <span class="font-oswald text-lg font-bold text-white uppercase tracking-wide leading-none">${m}</span>
                 <span class="text-lg leading-none">${st.icon}</span>
             </div>
             <div class="flex items-center justify-between gap-2 flex-wrap">
-                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${st.badge}">${st.label}</span>
-                <span class="text-[11px] text-gray-500 font-mono leading-snug break-words">${st.info}</span>
+                <span class="px-2 py-0.5 text-xs font-bold uppercase rounded border ${st.badge}">${st.label}</span>
+                <span class="text-xs text-gray-400 font-mono leading-snug break-words">${st.info}</span>
             </div>
             <div>
-                <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">
-                    <span>Prontidão real</span><span class="text-gray-400">${pctText}</span>
+                <div class="flex justify-between text-xs font-bold uppercase text-gray-400 mb-1">
+                    <span>Prontidão estimada</span><span class="text-gray-400">${pctText}</span>
                 </div>
                 <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
                     <div class="h-full ${st.bar} rounded-full transition-all duration-500" style="width: ${st.pct === null ? 100 : st.pct}%"></div>
                 </div>
             </div>
-            <div class="text-[11px] font-mono leading-snug ${st.volumeStatus === 'abaixo' ? 'text-amber-400/90' : st.volumeStatus === 'acima' ? 'text-orange-400/90' : 'text-emerald-400/90'}">${st.volText}</div>
-            ${st.sinergia ? `<div title="${escapeHtml(st.sinergia.exercicios.join(' · '))}" class="text-[11px] font-mono leading-snug text-cyan-400/80">${escapeHtml(st.sinergiaText)}</div>` : ''}
-            <div class="text-[11px] text-gray-600 truncate leading-snug border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
+            <div class="text-xs font-mono leading-snug ${st.volumeStatus === 'abaixo' ? 'text-amber-400/90' : st.volumeStatus === 'acima' ? 'text-orange-400/90' : 'text-emerald-400/90'}">${st.volText}</div>
+            ${st.sinergia ? `<div title="${escapeHtml(st.sinergia.exercicios.join(' · '))}" class="text-xs font-mono leading-snug text-cyan-400/80">${escapeHtml(st.sinergiaText)}</div>` : ''}
+            <div class="text-xs text-gray-600 truncate leading-snug border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
         </div>`;
     }).join('');
     // Painel da LOMBAR — alerta só quando há o que alertar
@@ -1284,7 +1414,7 @@ function renderRecoveryMap() {
             lombarEl.innerHTML = `
             <div class="bg-emerald-950/20 border ${lombar.border} rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
                 <span class="font-oswald text-sm font-bold text-emerald-400 uppercase tracking-wide leading-none whitespace-nowrap">✅ Lombar 100% — livre</span>
-                ${lombar.last ? `<span class="text-[10px] font-mono text-gray-500 break-words">Última carga: ${escapeHtml(lombar.last)}</span>` : '<span class="text-[10px] font-mono text-gray-500">Sem carga registrada na lombar.</span>'}
+                ${lombar.last ? `<span class="text-xs font-mono text-gray-400 break-words">Última carga: ${escapeHtml(lombar.last)}</span>` : '<span class="text-xs font-mono text-gray-400">Sem carga registrada na lombar.</span>'}
             </div>`;
         } else lombarEl.innerHTML = `
         <div class="bg-berzerker-dark border ${lombar.border} rounded-xl p-4 space-y-3">
@@ -1292,18 +1422,19 @@ function renderRecoveryMap() {
                 <div class="flex items-center gap-2">
                     <span class="font-oswald text-lg font-bold text-white uppercase tracking-wide leading-none">Lombar ${lombar.icon}</span>
                 </div>
-                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${lombar.badge} whitespace-nowrap">${lombar.label}</span>
+                <span class="px-2 py-0.5 text-xs font-bold uppercase rounded border ${lombar.badge} whitespace-nowrap">${lombar.label}</span>
             </div>
             <div>
-                <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">
+                <div class="flex justify-between text-xs font-bold uppercase text-gray-400 mb-1">
                     <span>Recuperação da região</span><span class="text-gray-400">${lombar.pct}%</span>
                 </div>
                 <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
                     <div class="h-full ${lombar.bar} rounded-full transition-all duration-500" style="width: ${lombar.pct}%"></div>
                 </div>
             </div>
-            ${lombar.last ? `<div class="text-[10px] text-gray-400">Última sessão que carregou: ${escapeHtml(lombar.last)} · ${lombar.horasRestantes}h restantes</div>` : ''}
-            <div class="text-[11px] text-gray-300 leading-relaxed">💡 ${escapeHtml(lombar.dica)}</div>
+            ${lombar.last ? `<div class="text-xs text-gray-400">Última sessão que carregou: ${escapeHtml(lombar.last)} · ≈ ${lombar.horasRestantes}h restantes (estimativa)</div>` : ''}
+            <p class="text-xs text-gray-400">Estimativa baseada no tempo desde a última sessão e no volume; não mede fadiga nem substitui orientação profissional.</p>
+            <div class="text-xs text-gray-300 leading-relaxed">💡 ${escapeHtml(lombar.dica)}</div>
         </div>`;
     }
 }
@@ -1323,7 +1454,7 @@ function renderDaySuggestion() {
     const el = document.getElementById('suggestion-content');
     if (!el) return;
     if (savedWorkouts.length === 0) {
-        el.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><p class="text-xs text-gray-500">Monte um treino no <b>Montador</b> para receber a sugestão do dia.</p><button type="button" onclick="switchTab('montador')" class="px-3 py-2 bg-berzerker-600/20 border border-berzerker-500/40 text-berzerker-500 text-[10px] font-bold uppercase rounded-lg hover:bg-berzerker-600/40">🎯 Abrir Montador</button></div>`;
+        el.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><p class="text-xs text-gray-400">Monte um treino no <b>Montador</b> para receber a sugestão do dia.</p><button type="button" data-action="switchTab" data-args='["montador"]' class="px-3 py-2 bg-berzerker-600/20 border border-berzerker-500/40 text-berzerker-500 text-xs font-bold uppercase rounded-lg hover:bg-berzerker-600/40">🎯 Abrir Montador</button></div>`;
         return;
     }
     const scored = suggestNextWorkout(savedWorkouts, logs, Date.now());
@@ -1334,11 +1465,11 @@ function renderDaySuggestion() {
             <div class="min-w-0">
                 <div class="text-xs text-gray-400 uppercase font-bold">🎯 Próximo treino recomendado (recuperação + séries da semana)</div>
                 <div class="font-oswald text-xl font-bold text-white uppercase mt-1">${escapeHtml(top.w.name)}</div>
-                <div class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">Por quê: ${escapeHtml(top.motivos.slice(0, 3).join(' · '))}</div>
-                ${top.diasSemTreinar >= 1 ? `<div class="text-[11px] text-amber-400/90 mt-0.5">⏳ Sem treino registrado há ${top.diasSemTreinar} ${top.diasSemTreinar === 1 ? 'dia' : 'dias'}.</div>` : ''}
-                ${alternates.length ? `<div class="text-[10px] text-gray-600 mt-1.5">Outras opções: ${alternates.map(a => `<button type="button" onclick="startSession(${a.w.id})" class="underline hover:text-white transition-colors">${escapeHtml(a.w.name)}</button>`).join(' · ')}</div>` : ''}
+                <div class="text-xs text-gray-400 mt-0.5 leading-relaxed">Por quê: ${escapeHtml(top.motivos.slice(0, 3).join(' · '))}</div>
+                ${top.diasSemTreinar >= 1 ? `<div class="text-xs text-amber-400/90 mt-0.5">⏳ Sem treino registrado há ${top.diasSemTreinar} ${top.diasSemTreinar === 1 ? 'dia' : 'dias'}.</div>` : ''}
+                ${alternates.length ? `<div class="text-xs text-gray-600 mt-1.5">Outras opções: ${alternates.map(a => `<button type="button" data-action="startSession" data-args="[${a.w.id}]" class="underline hover:text-white transition-colors">${escapeHtml(a.w.name)}</button>`).join(' · ')}</div>` : ''}
             </div>
-            <button onclick="startSession(${top.w.id})" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-emerald-600/20 whitespace-nowrap">▶ Treinar esta sugestão</button>
+            <button data-action="startSession" data-args="[${top.w.id}]" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-emerald-600/20 whitespace-nowrap">▶ Treinar esta sugestão</button>
         </div>`;
 }
 
@@ -1439,16 +1570,16 @@ function renderSession() {
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div class="flex items-center gap-2 flex-wrap min-w-0">
                         <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-emerald-600 text-white">✔</span>
-                        <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
+                        <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
                         <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
-                        ${e.loggedPR ? '<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-700 rounded">🏆 PR</span>' : ''}
+                        ${e.loggedPR ? '<span class="text-xs font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-700 rounded">🏆 PR</span>' : ''}
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-emerald-400 font-mono whitespace-nowrap">${lg ? formatLoadText(lg) + ' × ' + formatRepsText(lg) : ''}</span>
-                        <button onclick="editLog(${e.logId})" class="px-2 py-1 bg-berzerker-border hover:bg-gray-700 text-white text-[11px] font-bold rounded-lg transition-colors">✏️ Editar</button>
+                        <button data-action="editLog" data-args="[${e.logId}]" class="px-2 py-1 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold rounded-lg transition-colors">✏️ Editar</button>
                     </div>
                 </div>
-                ${lg && lg.notes ? `<p class="text-[11px] text-gray-400 mt-1.5 italic">📝 ${escapeHtml(lg.notes)}</p>` : ''}
+                ${lg && lg.notes ? `<p class="text-xs text-gray-400 mt-1.5 italic">📝 ${escapeHtml(lg.notes)}</p>` : ''}
             </div>`;
         }
         const d = e.draft || { weight: e.weight, repsText: e.repsText, type: e.type, technique: e.technique, nextGoal: '', isPR: false, notes: '' };
@@ -1458,38 +1589,38 @@ function renderSession() {
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div class="flex items-center gap-2 flex-wrap min-w-0">
                     <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-berzerker-border text-gray-300">${i + 1}</span>
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
+                    <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
                     <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button type="button" onclick="moveSessionUnit(${i}, -1)" title="Subir na ordem" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▲</button>
-                    <button type="button" onclick="moveSessionUnit(${i}, 1)" title="Descer na ordem" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▼</button>
-                    <span class="text-[10px] text-gray-500 font-mono whitespace-nowrap">🎯 Meta: ${e.weight > 0 ? e.weight + ' kg' : '—'} × (${escapeHtml(e.repsText || '—')})</span>
+                    <button type="button" data-action="moveSessionUnit" data-args="[${i},-1]" title="Subir na ordem" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▲</button>
+                    <button type="button" data-action="moveSessionUnit" data-args="[${i},1]" title="Descer na ordem" aria-label="Descer na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▼</button>
+                    <span class="text-xs text-gray-400 font-mono whitespace-nowrap">🎯 Meta: ${e.weight > 0 ? e.weight + ' kg' : '—'} × (${escapeHtml(e.repsText || '—')})</span>
                 </div>
             </div>
-            ${e.orderReason ? `<div class="text-[10px] text-gray-500 leading-relaxed"><span class="text-berzerker-500 font-bold">📌 Por que nesta posição:</span> ${escapeHtml(e.orderReason)}</div>` : ''}
-            ${fat.pct !== null && fat.pct < 100 ? `<div class="text-[10px] text-amber-400/90 font-mono">⏳ ${escapeHtml(e.muscle)} ainda em recuperação (${fat.pct}%) — considere uma carga mais leve</div>` : ''}
-            ${exercicioCarregaLombar(e.exercise) && lombarEstado.carregada ? `<div class="text-[10px] text-red-400/90 font-mono">⚠️ Este exercício exige a lombar — ainda carregada (${lombarEstado.horasRestantes}h restantes): priorize técnica perfeita e carga mais leve</div>` : ''}
-            ${catInfo && catInfo.descanso ? `<div class="text-[10px] text-gray-500 font-mono">⏱ Descanso do catálogo: ${catInfo.descanso}s · faixa ${catInfo.faixa[0]}–${catInfo.faixa[1]}${catInfo.tipo === 'isometria' ? ' s' : ' reps'}</div>` : ''}
+            ${e.orderReason ? `<div class="text-xs text-gray-400 leading-relaxed"><span class="text-berzerker-500 font-bold">📌 Por que nesta posição:</span> ${escapeHtml(e.orderReason)}</div>` : ''}
+            ${fat.pct !== null && fat.pct < 100 ? `<div class="text-xs text-amber-400/90 font-mono">⏳ ${escapeHtml(e.muscle)} ainda em recuperação (${fat.pct}%) — considere uma carga mais leve</div>` : ''}
+            ${exercicioCarregaLombar(e.exercise) && lombarEstado.carregada ? `<div class="text-xs text-red-400/90 font-mono">⚠️ Este exercício exige a lombar — ainda carregada (${lombarEstado.horasRestantes}h restantes): priorize técnica perfeita e carga mais leve</div>` : ''}
+            ${catInfo && catInfo.descanso ? `<div class="text-xs text-gray-400 font-mono">⏱ Descanso do catálogo: ${catInfo.descanso}s · faixa ${catInfo.faixa[0]}–${catInfo.faixa[1]}${catInfo.tipo === 'isometria' ? ' s' : ' reps'}</div>` : ''}
             ${lastPerformanceHTML(e.exercise)}
             <div class="flex gap-2 flex-wrap mt-1.5">
-                <button type="button" onclick="showWarmupFor(${i})" class="px-2 py-1 text-[10px] font-bold bg-amber-900/30 border border-amber-500/30 text-amber-300 rounded-md hover:bg-amber-900/50">🔥 Aquecimento</button>
-                <button type="button" onclick="showPlatesFor(${i})" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border text-gray-200 rounded-md hover:bg-gray-700">⚙️ Anilhas</button>
+                <button type="button" data-action="showWarmupFor" data-args="[${i}]" class="px-2 py-1 text-xs font-bold bg-amber-900/30 border border-amber-500/30 text-amber-300 rounded-md hover:bg-amber-900/50">🔥 Aquecimento</button>
+                <button type="button" data-action="showPlatesFor" data-args="[${i}]" class="px-2 py-1 text-xs font-bold bg-berzerker-border text-gray-200 rounded-md hover:bg-gray-700">⚙️ Anilhas</button>
             </div>
-            <div id="s${i}-quickbox" class="hidden mt-1.5 text-[11px] font-mono bg-berzerker-dark/80 border border-amber-500/20 rounded-lg p-2"></div>
+            <div id="s${i}-quickbox" class="hidden mt-1.5 text-xs font-mono bg-berzerker-dark/80 border border-amber-500/20 rounded-lg p-2"></div>
             ${fieldsHTML(`s${i}-`, d)}
         </div>`;
     };
 
     let html = '';
     if (activeSession.ordenado) {
-        html += `<div class="text-[11px] text-gray-400 bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2">✨ <b class="text-white">Ordem sugerida aplicada</b> — cada exercício mostra o porquê da posição. Use ▲▼ para trocar quando quiser (o bi-set anda junto).</div>`;
+        html += `<div class="text-xs text-gray-400 bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2">✨ <b class="text-white">Ordem sugerida aplicada</b> — cada exercício mostra o porquê da posição. Use ▲▼ para trocar quando quiser (o bi-set anda junto).</div>`;
     }
     // Aviso de lombar carregada no topo da sessão
     const lombarEstado = regiaoLombarState(logs, nowMs);
     const temExercicioLombar = ex.some(e => !e.done && exercicioCarregaLombar(e.exercise));
     if (lombarEstado.carregada && temExercicioLombar) {
-        html += `<div class="text-[11px] bg-red-950/40 border border-red-600/50 rounded-lg px-3 py-2 text-red-300">⚠️ <b>Sua lombar ainda está ${lombarEstado.label.toLowerCase()} (${lombarEstado.pct}% de recuperação, ${lombarEstado.horasRestantes}h restantes).</b> ${escapeHtml(lombarEstado.dica)}</div>`;
+        html += `<div class="text-xs bg-red-950/40 border border-red-600/50 rounded-lg px-3 py-2 text-red-300">⚠️ <b>Sua lombar ainda está ${lombarEstado.label.toLowerCase()} (${lombarEstado.pct}% de recuperação, ${lombarEstado.horasRestantes}h restantes).</b> ${escapeHtml(lombarEstado.dica)}</div>`;
     }
     for (let i = 0; i < ex.length; i++) {
         const pair = !!(ex[i + 1] && ex[i + 1].biset);
@@ -1497,9 +1628,9 @@ function renderSession() {
         if (pair) i++;
         const pending = idxs.filter(k => !ex[k].done);
         html += `<div class="rounded-xl border ${pending.length ? (pair ? 'border-cyan-500/60 bg-berzerker-dark' : 'border-berzerker-border bg-berzerker-dark') : 'border-emerald-600/50 bg-emerald-950/10'} p-4 space-y-3">
-            ${pair ? '<div class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">🔗 BI-SET — os dois juntos; o descanso começa depois do par</div>' : ''}
+            ${pair ? '<div class="text-xs font-bold text-cyan-400 uppercase tracking-wider">🔗 BI-SET — os dois juntos; o descanso começa depois do par</div>' : ''}
             ${idxs.map(k => itemHTML(ex[k], k)).join('<div class="border-t border-dashed border-berzerker-border"></div>')}
-            ${pending.length ? `<div class="flex justify-end"><button onclick="registerSessionUnit([${pending.join(',')}], ${pair})" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">✔ Registrar${pending.length > 1 ? ' Bi-set' : ''}</button></div>` : ''}
+            ${pending.length ? `<div class="flex justify-end"><button data-action="registerSessionUnit" data-args="[[${pending.join(',')}],${pair}]" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">✔ Registrar${pending.length > 1 ? ' Bi-set' : ''}</button></div>` : ''}
         </div>`;
     }
     listEl.innerHTML = html;
@@ -1523,9 +1654,9 @@ function renderSession() {
                         <div class="min-w-0">
                             <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider">✅ Treino completo! Próximo treino sugerido:</div>
                             <div class="font-oswald text-lg font-bold text-white uppercase mt-0.5">${escapeHtml(top.w.name)}</div>
-                            <div class="text-[11px] text-gray-400 mt-0.5">Por quê: ${escapeHtml(top.motivos.slice(0, 2).join(' · '))}</div>
+                            <div class="text-xs text-gray-400 mt-0.5">Por quê: ${escapeHtml(top.motivos.slice(0, 2).join(' · '))}</div>
                         </div>
-                        <button onclick="startSession(${top.w.id})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg whitespace-nowrap">▶ Começar este treino</button>
+                        <button data-action="startSession" data-args="[${top.w.id}]" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg whitespace-nowrap">▶ Começar este treino</button>
                     </div>`
                 : `<div class="text-xs text-emerald-400 font-bold">✅ Treino completo! Bom trabalho.</div>`;
         } else {
@@ -1669,7 +1800,7 @@ function toggleSessionTimer() {
         timer.interval = null;
         if (btn) {
             btn.textContent = 'Retomar';
-            btn.className = 'px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold uppercase rounded-lg transition-colors';
+            btn.className = 'px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold uppercase rounded-lg transition-colors';
         }
         return;
     }
@@ -1681,7 +1812,7 @@ function toggleSessionTimer() {
     timer.running = true;
     if (btn) {
         btn.textContent = 'Pausar';
-        btn.className = 'px-3 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[10px] font-bold uppercase rounded-lg transition-colors';
+        btn.className = 'px-3 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-xs font-bold uppercase rounded-lg transition-colors';
     }
     if (timer.interval) clearInterval(timer.interval);
     timer.interval = setInterval(tickSessionTimer, 500);
@@ -1705,7 +1836,7 @@ function stopSessionTimer() {
     const btn = document.getElementById('session-timer-btn');
     if (btn) {
         btn.textContent = 'Iniciar';
-        btn.className = 'px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold uppercase rounded-lg transition-colors';
+        btn.className = 'px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase rounded-lg transition-colors';
     }
 }
 
@@ -1770,9 +1901,9 @@ function normalizeBisets(arr) {
 
 function pairLink(i) {
     const d = draftExercises, e = d[i];
-    if (e.biset) return `<button onclick="toggleDraftBiset(${i})" class="ml-5 text-[10px] font-bold text-gray-500 hover:text-red-400 transition-colors">✂ Desfazer bi-set</button>`;
+    if (e.biset) return `<button data-action="toggleDraftBiset" data-args="[${i}]" class="ml-5 text-xs font-bold text-gray-400 hover:text-red-400 transition-colors">✂ Desfazer bi-set</button>`;
     if (i > 0 && !d[i - 1].biset && !(d[i + 1] && d[i + 1].biset))
-        return `<button onclick="toggleDraftBiset(${i})" class="w-full text-[11px] font-bold text-cyan-400 hover:bg-cyan-950/30 border border-dashed border-cyan-500/40 rounded-lg py-1.5 transition-colors">🔗 Juntar com o exercício acima em bi-set</button>`;
+        return `<button data-action="toggleDraftBiset" data-args="[${i}]" class="w-full text-xs font-bold text-cyan-400 hover:bg-cyan-950/30 border border-dashed border-cyan-500/40 rounded-lg py-1.5 transition-colors">🔗 Juntar com o exercício acima em bi-set</button>`;
     return '';
 }
 
@@ -1939,9 +2070,9 @@ function renderDraftList() {
                 </div>
             </div>
             <div class="flex items-center gap-0.5 shrink-0">
-                <button onclick="moveDraftExercise(${i}, -1)" title="Subir" class="p-1.5 text-gray-500 hover:text-white transition-colors text-[10px]">▲</button>
-                <button onclick="moveDraftExercise(${i}, 1)" title="Descer" class="p-1.5 text-gray-500 hover:text-white transition-colors text-[10px]">▼</button>
-                <button onclick="removeDraftExercise(${i})" title="Remover" class="p-1.5 text-gray-500 hover:text-red-400 transition-colors text-xs">✕</button>
+                <button data-action="moveDraftExercise" data-args="[${i},-1]" title="Subir" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] p-2 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-sm">▲</button>
+                <button data-action="moveDraftExercise" data-args="[${i},1]" title="Descer" aria-label="Descer exercício na ordem" class="min-h-[44px] min-w-[44px] p-2 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-sm">▼</button>
+                <button data-action="removeDraftExercise" data-args="[${i}]" title="Remover" aria-label="Remover exercício do rascunho" class="p-1.5 text-gray-500 hover:text-red-400 transition-colors text-xs">✕</button>
             </div>
         </div>
     `).join('');
@@ -2036,9 +2167,9 @@ function renderSavedWorkouts() {
             </div>
             <p class="text-[11px] text-gray-500 font-mono leading-relaxed line-clamp-2">${escapeHtml(w.exercises.map((e, i) => (i ? (e.biset ? ' + ' : ' · ') : '') + e.exercise).join(''))}</p>
             <div class="flex gap-2 pt-1 mt-auto">
-                <button onclick="startSession(${w.id})" class="flex-1 px-3 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors">▶ Iniciar</button>
-                <button onclick="editWorkout(${w.id})" title="Editar" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-[11px] rounded-lg transition-colors">✏️</button>
-                <button onclick="deleteWorkout(${w.id})" title="Excluir" class="px-3 py-2 bg-berzerker-border hover:bg-red-900/60 text-red-400 text-[11px] rounded-lg transition-colors">🗑</button>
+                <button data-action="startSession" data-args="[${w.id}]" class="flex-1 px-3 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors">▶ Iniciar</button>
+                <button data-action="editWorkout" data-args="[${w.id}]" title="Editar" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-[11px] rounded-lg transition-colors">✏️</button>
+                <button data-action="deleteWorkout" data-args="[${w.id}]" title="Excluir" aria-label="Excluir treino salvo" class="px-3 py-2 bg-berzerker-border hover:bg-red-900/60 text-red-400 text-[11px] rounded-lg transition-colors">🗑</button>
             </div>
         </div>`;
     }).join('');
@@ -2232,8 +2363,53 @@ const DEFAULT_BOSS_PORTRAITS = {
 };
 
 function bossPortraitSrc(bossId) {
-    if (bossPortraits[bossId]) return bossPortraits[bossId]; // upload do usuário
+    if (bossPortraits[bossId]) return resolvePortraitSrc(bossId); // upload do usuário (dataURL legado ou Blob no IndexedDB)
     return DEFAULT_BOSS_PORTRAITS[(THEME ? THEME.id : 'classico') + ':' + bossId] || null;
+}
+
+// Marcador 'idb:portrait:<tema>:<chefe>' → objectURL do Blob carregado nesta sessão.
+// Enquanto o Blob não carregar, devolve null (arte padrão aparece e a UI re-renderiza).
+function resolvePortraitSrc(bossId) {
+    const v = bossPortraits[bossId];
+    if (!v) return null;
+    if (typeof v === 'string' && v.startsWith('idb:')) return portraitObjectURLs[v] || null;
+    return v;
+}
+
+// Converte dataURLs legados de bossPortraits para Blobs no IndexedDB e hidrata
+// os objectURLs dos marcadores. Idempotente: dataURL já migrado vira marcador.
+async function hydratePortraitBlobs() {
+    if (!window.storage || typeof window.storage.saveBlob !== 'function') return;
+    const ids = Object.keys(bossPortraits || {});
+    let mudou = false;
+    for (const bossId of ids) {
+        const v = bossPortraits[bossId];
+        if (!v) continue;
+        if (typeof v === 'string' && v.startsWith('idb:')) {
+            if (!portraitObjectURLs[v]) {
+                try {
+                    const blob = await window.storage.getBlob(v.slice(4));
+                    if (blob) portraitObjectURLs[v] = URL.createObjectURL(blob);
+                } catch (e) { /* sem IndexedDB: segue */ }
+            }
+            continue;
+        }
+        // legado: dataURL → Blob (512 px quadrado, WebP)
+        try {
+            const blob = await window.storage.compressImage(v, 512, 0.82, 'image/webp', { square: true });
+            const key = 'portrait:' + activeGameThemeId + ':' + bossId;
+            const ok = await window.storage.saveBlob(key, blob);
+            if (!ok) continue; // IndexedDB indisponível: mantém o dataURL (sem perda)
+            const marker = 'idb:' + key;
+            portraitObjectURLs[marker] = URL.createObjectURL(blob);
+            bossPortraits[bossId] = marker;
+            mudou = true;
+        } catch (e) { /* imagem inválida: mantém o dataURL */ }
+    }
+    if (mudou) { saveGameState(); renderBossBattleUI(); }
+    else if (ids.some(id => bossPortraits[id] && String(bossPortraits[id]).startsWith('idb:') && portraitObjectURLs[bossPortraits[id]])) {
+        renderBossBattleUI();
+    }
 }
 
 // Cache de imagens para desenho em canvas (o canvas precisa de HTMLImageElement)
@@ -2263,7 +2439,7 @@ function renderBossBattleUI() {
         activeCard.innerHTML = `
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div class="flex items-start gap-3 sm:gap-4 min-w-0">
-                    <button type="button" onclick="openBossLightbox('${currentBoss.id}')" title="Ampliar retrato de ${escapeHtml(currentBoss.name)}" aria-label="Ampliar retrato de ${escapeHtml(currentBoss.name)}" class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500">
+                    <button type="button" data-action="openBossLightbox" data-args='["${currentBoss.id}"]' title="Ampliar retrato de ${escapeHtml(currentBoss.name)}" aria-label="Ampliar retrato de ${escapeHtml(currentBoss.name)}" class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500">
                         ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl shrink-0" style="image-rendering:pixelated" alt="retrato de ${escapeHtml(currentBoss.name)}">` : `<span class="text-5xl sm:text-6xl leading-none">${currentBoss.icon}</span>`}
                     </button>
                     <div class="min-w-0 flex-1">
@@ -2274,9 +2450,9 @@ function renderBossBattleUI() {
                         <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1.5">
                             <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700 uppercase leading-tight break-words">💢 Fraqueza: ${escapeHtml(currentBoss.weak || '—')} ×1,25</span>
                             <label class="text-[10px] font-bold px-2 py-0.5 rounded bg-berzerker-border text-gray-300 cursor-pointer hover:bg-gray-700">🖼️ Retrato
-                                <input type="file" accept="image/*" class="hidden" onchange="uploadBossPortrait(event, '${currentBoss.id}')">
+                                <input type="file" accept="image/*" class="hidden" data-change-action="uploadBossPortrait" data-args='["$event","${currentBoss.id}"]'>
                             </label>
-                            <button onclick="openBossDefeatCard()" class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-900/40 text-amber-300 border border-amber-700/50 hover:bg-amber-900/70">📸 Card do Chefão</button>
+                            <button data-action="openBossDefeatCard" class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-900/40 text-amber-300 border border-amber-700/50 hover:bg-amber-900/70">📸 Card do Chefão</button>
                         </div>
                     </div>
                 </div>
@@ -2304,7 +2480,7 @@ function renderBossBattleUI() {
             const defeated = idx < prog.defeatedCount;
             const thumb = bossPortraitSrc(b.id);
             return `
-                <div role="button" tabindex="0" data-boss-id="${escapeHtml(b.id)}" onclick="openBossLightbox('${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBossLightbox('${b.id}')}" title="Ampliar retrato de ${escapeHtml(b.name)}" class="p-4 rounded-xl border cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500 ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
+                <div role="button" tabindex="0" data-boss-id="${escapeHtml(b.id)}" data-action="openBossLightbox" data-args='["${b.id}"]' title="Ampliar retrato de ${escapeHtml(b.name)}" class="p-4 rounded-xl border cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500 ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
                     <div class="flex items-center justify-between gap-2">
                         ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" width="40" height="40" style="width:40px;height:40px;image-rendering:pixelated" loading="lazy" decoding="async" class="w-10 h-10 shrink-0 rounded-lg object-cover border border-berzerker-border">` : `<span class="text-2xl shrink-0 leading-none">${b.icon}</span>`}
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded leading-tight ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
@@ -2395,17 +2571,17 @@ function renderBossLightbox() {
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <span id="boss-lightbox-status" class="text-[10px] font-bold uppercase px-2 py-1 rounded border ${bossStatusClass(idx, prog)}">${bossStatusLabel(idx, prog)}</span>
-                    <button type="button" onclick="closeBossLightbox()" aria-label="Fechar (ESC)" title="Fechar (ESC)" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✕</button>
+                    <button type="button" data-action="closeBossLightbox" aria-label="Fechar (ESC)" title="Fechar (ESC)" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">✕</button>
                 </div>
             </div>
             <div class="flex items-center justify-center gap-2 sm:gap-4">
-                <button type="button" onclick="navBossLightbox(-1)" aria-label="Chefão anterior" title="Anterior (←)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">‹</button>
+                <button type="button" data-action="navBossLightbox" data-args="[-1]" aria-label="Chefão anterior" title="Anterior (←)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">‹</button>
                 <div class="w-56 h-56 sm:w-72 sm:h-72 rounded-2xl border border-berzerker-border bg-black/60 overflow-hidden flex items-center justify-center">
                     ${src
                         ? `<img id="boss-lightbox-img" src="${escapeHtml(src)}" alt="Retrato de ${escapeHtml(b.name)}" class="w-full h-full object-contain" style="image-rendering:pixelated">`
                         : `<span id="boss-lightbox-icon" class="text-8xl">${b.icon || '👹'}</span>`}
                 </div>
-                <button type="button" onclick="navBossLightbox(1)" aria-label="Próximo chefão" title="Próximo (→)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">›</button>
+                <button type="button" data-action="navBossLightbox" data-args="[1]" aria-label="Próximo chefão" title="Próximo (→)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">›</button>
             </div>
             <div class="grid grid-cols-3 gap-2 text-center">
                 <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
@@ -2425,8 +2601,8 @@ function renderBossLightbox() {
             ${b.desc ? `<p class="text-[11px] leading-relaxed text-gray-500">${escapeHtml(b.desc)}</p>` : ''}
             <div class="flex flex-wrap items-center gap-2">
                 ${src ? `<a id="boss-lightbox-download" href="${escapeHtml(src)}" download="${escapeHtml(bossPortraitDownloadName(b, src))}" class="flex-1 text-center px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-200 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">⬇️ Baixar retrato</a>` : ''}
-                <button type="button" onclick="navBossLightbox(-1)" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">‹ Anterior</button>
-                <button type="button" onclick="navBossLightbox(1)" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">Próximo ›</button>
+                <button type="button" data-action="navBossLightbox" data-args="[-1]" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">‹ Anterior</button>
+                <button type="button" data-action="navBossLightbox" data-args="[1]" class="px-3 py-2.5 bg-berzerker-dark border border-berzerker-border hover:border-berzerker-500 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">Próximo ›</button>
             </div>
         </div>`;
     document.body.appendChild(overlay);
@@ -2463,9 +2639,29 @@ document.addEventListener('keydown', e => {
     if (closeTopOverlay()) e.preventDefault();
 });
 
-function uploadBossPortrait(event, bossId) {
+async function uploadBossPortrait(event, bossId) {
     const file = event.target.files[0];
     if (!file) return;
+    // Caminho novo: Blob comprimido (512 px quadrado, WebP) direto no IndexedDB —
+    // nada de base64 no localStorage. Se algo falhar (sem IndexedDB/canvas),
+    // cai no caminho antigo em dataURL para não perder o upload.
+    try {
+        if (window.storage && typeof window.storage.compressImage === 'function' && typeof window.storage.saveBlob === 'function') {
+            const blob = await window.storage.compressImage(file, 512, 0.82, 'image/webp', { square: true });
+            const key = 'portrait:' + activeGameThemeId + ':' + bossId;
+            const ok = await window.storage.saveBlob(key, blob);
+            if (ok) {
+                const marker = 'idb:' + key;
+                if (portraitObjectURLs[marker]) URL.revokeObjectURL(portraitObjectURLs[marker]);
+                portraitObjectURLs[marker] = URL.createObjectURL(blob);
+                bossPortraits[bossId] = marker;
+                saveGameState();
+                renderBossBattleUI();
+                alertModal('🖼️ Retrato do chefão atualizado!');
+                return;
+            }
+        }
+    } catch (e) { /* cai para o caminho legado */ }
     const reader = new FileReader();
     reader.onload = function (e) {
         const img = new Image();
@@ -2525,6 +2721,11 @@ function applyReservaPortrait(src) {
 
 function resetBossPortraitToDefault() {
     if (!reservaBossId) return;
+    const antigo = bossPortraits[reservaBossId];
+    if (typeof antigo === 'string' && antigo.startsWith('idb:')) {
+        if (window.storage && typeof window.storage.removeBlob === 'function') window.storage.removeBlob(antigo.slice(4));
+        if (portraitObjectURLs[antigo]) { URL.revokeObjectURL(portraitObjectURLs[antigo]); delete portraitObjectURLs[antigo]; }
+    }
     delete bossPortraits[reservaBossId];
     saveGameState();
     renderBossBattleUI();
@@ -2555,7 +2756,7 @@ function renderReservaStudio() {
     const tileCls = on => `text-left rounded-xl border p-1.5 transition-colors ${on ? 'border-berzerker-500 bg-berzerker-600/15 ring-1 ring-berzerker-500/40' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'}`;
 
     let html = padrao ? `
-        <button type="button" onclick="resetBossPortraitToDefault()" title="Retrato padrão do tema" class="${tileCls(!atual)}">
+        <button type="button" data-action="resetBossPortraitToDefault" title="Retrato padrão do tema" class="${tileCls(!atual)}">
             <img src="${padrao}" alt="retrato padrão" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
             <span class="block text-[10px] font-bold uppercase tracking-wide leading-tight mt-1 ${!atual ? 'text-berzerker-300' : 'text-gray-500'}">Padrão</span>
         </button>` : '';
@@ -2568,7 +2769,7 @@ function renderReservaStudio() {
         if (grupos.length > 1) html += `<div class="col-span-full text-[10px] font-bold uppercase tracking-wider text-gray-500 pt-1">${escapeHtml((THEMES[g.tema] || {}).name || g.tema)}</div>`;
         g.itens.forEach(item => {
             html += `
-            <button type="button" onclick="applyReservaPortrait('${escapeHtml(item.file)}')" title="${escapeHtml(item.label)}" class="${tileCls(atual === item.file)}">
+            <button type="button" data-action="applyReservaPortrait" data-args='["${escapeHtml(item.file)}"]' title="${escapeHtml(item.label)}" class="${tileCls(atual === item.file)}">
                 <img src="${escapeHtml(item.file)}" alt="${escapeHtml(item.label)}" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
                 <span class="block truncate text-[10px] font-bold uppercase tracking-wide leading-tight mt-1 ${atual === item.file ? 'text-berzerker-300' : 'text-gray-400'}">${escapeHtml(item.label)}</span>
             </button>`;
@@ -2604,7 +2805,7 @@ function renderMissions() {
                     <span class="text-[10px] font-bold uppercase ${m.done ? 'text-emerald-400' : 'text-gray-500'}">${m.done ? '✔ pronta' : 'em curso'}</span>
                 </div>`).join('')}
         </div>
-        <button onclick="claimMissions()" ${(!st.allDone || claimed) ? 'disabled' : ''} class="mt-3 w-full py-2.5 ${st.allDone && !claimed ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-berzerker-border opacity-50 cursor-not-allowed'} text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">
+        <button data-action="claimMissions" ${(!st.allDone || claimed) ? 'disabled' : ''} class="mt-3 w-full py-2.5 ${st.allDone && !claimed ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-berzerker-border opacity-50 cursor-not-allowed'} text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">
             ${claimed ? '✔ XP resgatado esta semana' : (st.allDone ? `🎁 Resgatar ${st.totalXP} XP` : `Complete as 4 ${THEME.missionWordPlural || (THEME.missionWord + 's')} para resgatar`)}
         </button>`;
 }
@@ -2646,7 +2847,7 @@ function renderSeason() {
         <div class="text-[10px] text-gray-500 font-mono mt-1.5">🌙 Semana ${SEASON_WEEKS} = deload automático: volume rende 50% do XP e cada dia sem treino rende +${XP_REST_PER_DAY} XP de recuperação${s.currentWeek >= SEASON_WEEKS ? ' (você está nele)' : ''}.</div>
         <div class="flex items-center justify-between mt-2">
             <div class="text-xs text-gray-400">XP preservado entre temporadas · <b class="text-amber-400">${fmtN(xpNow)} XP</b></div>
-            <button onclick="finishSeasonNow()" class="px-3 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg">🏁 Encerrar agora</button>
+            <button data-action="finishSeasonNow" class="px-3 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg">🏁 Encerrar agora</button>
         </div>
         ${(seasons.completed || []).length ? `
         <div class="mt-3 border-t border-berzerker-border pt-2">
@@ -2668,9 +2869,24 @@ function finishSeasonNow() {
 }
 
 // ============================ STORY CARD ============================
-function handleBgImageUpload(event) {
+async function handleBgImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
+    // Caminho novo: Blob comprimido (máx. 1080 px, WebP) no IndexedDB; o
+    // localStorage guarda só a flag `bgBlob`. Reserva: dataURL legado.
+    try {
+        if (window.storage && typeof window.storage.compressImage === 'function' && typeof window.storage.saveBlob === 'function') {
+            const blob = await window.storage.compressImage(file, 1080, 0.82, 'image/webp');
+            const ok = await window.storage.saveBlob(STORY_BG_BLOB_KEY, blob);
+            if (ok) {
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => { customBgImageData = img; saveStoryState(); generateStoryCard(); };
+                img.src = url;
+                return;
+            }
+        }
+    } catch (e) { /* cai para o caminho legado */ }
     const reader = new FileReader();
     reader.onload = function (e) {
         const img = new Image();
@@ -2686,6 +2902,7 @@ function handleBgImageUpload(event) {
 
 function removeBgImage() {
     customBgImageData = null;
+    if (window.storage && typeof window.storage.removeBlob === 'function') window.storage.removeBlob(STORY_BG_BLOB_KEY);
     document.getElementById('bg-image-input').value = '';
     saveStoryState();
     generateStoryCard();
@@ -3178,9 +3395,9 @@ function openBossDefeatCard() {
     overlay.innerHTML = `
         <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-3">
             <div class="flex items-center justify-between"><h3 class="font-oswald text-lg font-bold text-white uppercase">📸 Card do Chefão</h3>
-            <button onclick="document.getElementById('boss-card-overlay').remove()" class="text-gray-400 hover:text-white">✕</button></div>
+            <button aria-label="Fechar card do chefão" data-action="closeElementById" data-args='["boss-card-overlay"]'  class="text-gray-400 hover:text-white">✕</button></div>
             <canvas id="boss-card-canvas" width="1080" height="1080" class="w-full rounded-xl border border-berzerker-border"></canvas>
-            <button onclick="downloadBossDefeatCard()" class="w-full py-3 bg-gradient-to-r from-amber-600 to-berzerker-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl">⬇️ Baixar Card (1080×1080)</button>
+            <button data-action="downloadBossDefeatCard" class="w-full py-3 bg-gradient-to-r from-amber-600 to-berzerker-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl">⬇️ Baixar Card (1080×1080)</button>
         </div>`;
     document.body.appendChild(overlay);
     generateBossDefeatCard();
@@ -3399,7 +3616,7 @@ function badgeArtSrc(slug) {
 function badgeArtImg(slug, icon, unlocked) {
     const src = badgeArtSrc(slug);
     if (!src) return `<span class="text-3xl shrink-0" role="img" aria-label="${escapeHtml(icon)}">${icon}</span>`;
-    return `<img src="${src}" alt="emblema da conquista" width="48" height="48" data-fallback="${escapeHtml(icon)}" loading="lazy" decoding="async" onerror="badgeArtFallback(this)" class="h-12 w-12 shrink-0 rounded-full object-cover border ${unlocked ? 'border-emerald-500/50' : 'border-berzerker-border'}" style="width:48px;height:48px;image-rendering:auto">`;
+    return `<img src="${src}" alt="emblema da conquista" width="48" height="48" data-fallback="${escapeHtml(icon)}" loading="lazy" decoding="async" data-error-action="badgeArtFallback" class="h-12 w-12 shrink-0 rounded-full object-cover border ${unlocked ? 'border-emerald-500/50' : 'border-berzerker-border'}" style="width:48px;height:48px;image-rendering:auto">`;
 }
 
 function badgeArtFallback(img) {
@@ -3635,7 +3852,7 @@ function renderTests() {
                     <div class="font-bold text-white text-sm uppercase">${escapeHtml(t.name)}</div>
                     <div class="text-[10px] text-gray-500 font-mono">meta: ${t.goal} ${escapeHtml(t.unit)}${best != null ? ` · melhor: ${best} ${escapeHtml(t.unit)}` : ''}</div>
                 </div>
-                <button onclick="deleteTest('${t.id}')" class="text-gray-500 hover:text-red-400 text-xs" title="Excluir teste">🗑</button>
+                <button data-action="deleteTest" data-args='["${t.id}"]' aria-label="Excluir teste" class="text-gray-500 hover:text-red-400 text-xs" title="Excluir teste">🗑</button>
             </div>
             <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
                 <div class="h-full ${pct >= 100 ? 'bg-emerald-500' : 'bg-amber-500'} rounded-full" style="width:${pct}%"></div>
@@ -3643,13 +3860,13 @@ function renderTests() {
             <div class="flex items-center gap-1.5">
                 <input type="date" id="test-date-${t.id}" value="${getTodayLocalISO()}" class="${INP} !py-1 !text-xs flex-1">
                 <input type="number" step="0.5" min="0" id="test-val-${t.id}" placeholder="${escapeHtml(t.unit)}" class="${INP} !py-1 !text-xs w-20">
-                <button onclick="addTestRecord('${t.id}')" class="px-2.5 py-1.5 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[10px] font-bold rounded-lg">+ Registrar</button>
+                <button data-action="addTestRecord" data-args='["${t.id}"]' class="px-2.5 py-1.5 bg-berzerker-600 hover:bg-berzerker-500 text-white text-[10px] font-bold rounded-lg">+ Registrar</button>
             </div>
             ${t.records.length ? `
             <div class="text-[10px] font-mono text-gray-400 space-y-0.5 max-h-24 overflow-y-auto border-t border-berzerker-border pt-1.5">
                 ${[...t.records].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 6).map(r => `
                     <div class="flex justify-between"><span>${formatShortBR(r.date)}</span><span class="text-white">${r.value} ${escapeHtml(t.unit)}</span>
-                    <button onclick="deleteTestRecord('${t.id}', '${r.date}', ${r.value})" class="text-gray-600 hover:text-red-400">✕</button></div>`).join('')}
+                    <button data-action="deleteTestRecord" data-args='["${t.id}","${r.date}",${r.value}]' aria-label="Excluir registro de teste" class="text-gray-600 hover:text-red-400">✕</button></div>`).join('')}
             </div>` : '<div class="text-[10px] text-gray-600 italic">Sem registros ainda.</div>'}
         </div>`;
     }).join('') + `
@@ -3659,7 +3876,7 @@ function renderTests() {
                 <input type="text" id="new-test-name" placeholder="Ex: Agachamento 1RM" class="${INP} !py-1 !text-xs flex-1 min-w-[120px]">
                 <input type="text" id="new-test-unit" placeholder="unidade (kg/reps/s/min)" class="${INP} !py-1 !text-xs w-28">
                 <input type="number" min="1" id="new-test-goal" placeholder="meta" class="${INP} !py-1 !text-xs w-20">
-                <button onclick="addCustomTest()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg">Criar</button>
+                <button data-action="addCustomTest" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg">Criar</button>
             </div>
         </div>`;
 }
@@ -3727,10 +3944,26 @@ function parseCSVRows(text, sep) {
 }
 
 // ============================ BACKUP JSON ============================
-function exportJSONBackup() {
+// Monta o payload completo do backup (função separada para ser testável de
+// ponta a ponta: exportar → apagar → importar → comparar). Imagens enviadas
+// pelo usuário entram como dataURL portáteis SÓ no arquivo de backup — no
+// app elas vivem como Blob no IndexedDB, nunca em base64 no localStorage.
+async function buildBackupPayload() {
     saveGameState();
-    const backupData = {
-        version: 4,
+    const portraitImages = {};
+    try {
+        if (window.storage && typeof window.storage.getBlob === 'function' && typeof window.storage.blobToDataURL === 'function') {
+            for (const [bossId, v] of Object.entries(bossPortraits || {})) {
+                if (typeof v === 'string' && v.startsWith('idb:')) {
+                    const blob = await window.storage.getBlob(v.slice(4));
+                    const dataURL = await window.storage.blobToDataURL(blob);
+                    if (dataURL) portraitImages[`${activeGameThemeId}:${bossId}`] = dataURL;
+                }
+            }
+        }
+    } catch (e) { /* backup segue sem as imagens */ }
+    return {
+        version: 5,
         userBodyweight,
         logs,
         savedWorkouts,
@@ -3738,23 +3971,123 @@ function exportJSONBackup() {
         gameTheme: activeGameThemeId,
         themeGameSaves,
         sharedGameState: { deloadWeeks, tests, weightLog },
+        portraitImages,
+        storyBgImageData: snapshotStoryBgDataURL(),
         // Campos legados para que versões antigas ainda consigam importar o backup.
         deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, weightLog,
-        bgImageData: customBgImageData ? customBgImageData.src : null,
+        bgImageData: snapshotStoryBgDataURL(),
         exportDate: new Date().toISOString()
     };
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute('href', dataStr);
-    dlAnchor.setAttribute('download', `berzerker-diario-backup-${getTodayLocalISO()}.json`);
-    document.body.appendChild(dlAnchor);
-    dlAnchor.click();
-    dlAnchor.remove();
+}
 
-    lastBackupAt = getTodayLocalISO();
-    safeStorage.set(STORAGE_KEY_BACKUP, lastBackupAt);
-    renderBackupReminder();
-    alertModal('📥 Backup exportado (dados, temas e progresso dos jogos)!');
+async function exportJSONBackup() {
+    const backupData = await buildBackupPayload();
+    const jsonStr = JSON.stringify(backupData, null, 2);
+    const fileName = `berzerker-diario-backup-${getTodayLocalISO()}.json`;
+    const saveViaPicker = async () => {
+        if (typeof window.showSaveFilePicker !== 'function') return false;
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(jsonStr);
+            await writable.close();
+            return true;
+        } catch (e) { return false; }
+    };
+    (async () => {
+        const ok = await saveViaPicker();
+        if (!ok) {
+            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(jsonStr);
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute('href', dataStr);
+            dlAnchor.setAttribute('download', fileName);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+        lastBackupAt = getTodayLocalISO();
+        safeStorage.set(STORAGE_KEY_BACKUP, lastBackupAt);
+        renderBackupReminder();
+        alertModal('📥 Backup exportado (dados, temas e progresso dos jogos)!');
+    })();
+}
+
+async function applyImportedBackup(parsed) {
+    if (!parsed || !Array.isArray(parsed.logs)) { alertModal('Arquivo JSON inválido!'); return false; }
+    const importedThemeId = THEMES[parsed.gameTheme] ? parsed.gameTheme : activeGameThemeId;
+    logs = parsed.logs.map(migrateLog);
+    if (parsed.userBodyweight) userBodyweight = parsed.userBodyweight;
+    if (Array.isArray(parsed.savedWorkouts)) { savedWorkouts = parsed.savedWorkouts; normalizeSavedWorkouts(); }
+    if (parsed.settings) settings = { ...settings, ...parsed.settings };
+
+    const importedSaves = parsed.themeGameSaves && typeof parsed.themeGameSaves === 'object' ? parsed.themeGameSaves : null;
+    themeGameSaves = {};
+    if (importedSaves) {
+        Object.entries(importedSaves).forEach(([id, save]) => {
+            if (THEMES[id] && save && typeof save === 'object' && !Array.isArray(save)) themeGameSaves[id] = save;
+        });
+    } else {
+        // Backups antigos não tinham saves por tema: migrar tudo para o jogo exportado.
+        themeGameSaves[importedThemeId] = {
+            ...emptyThemeGameSave(),
+            missionsXpTotal: Number(parsed.missionsXpTotal) || 0,
+            missionsClaimed: parsed.missionsClaimed || {},
+            seasons: parsed.seasons || null,
+            bossPortraits: parsed.bossPortraits || {}
+        };
+    }
+    Object.keys(THEMES).forEach(ensureThemeGameSave);
+
+    // Imagens do backup (dataURL portáteis) → Blob no IndexedDB + marcador no save.
+    try {
+        if (window.storage && typeof window.storage.saveBlob === 'function') {
+            const imgs = parsed.portraitImages && typeof parsed.portraitImages === 'object' ? parsed.portraitImages : {};
+            for (const [chave, dataURL] of Object.entries(imgs)) {
+                if (typeof dataURL !== 'string' || !dataURL.startsWith('data:')) continue;
+                const [tema, ...resto] = chave.split(':');
+                const bossId = resto.join(':');
+                if (!THEMES[tema] || !bossId) continue;
+                const blob = await window.storage.dataURLToBlob(dataURL);
+                if (!blob) continue;
+                const key = `portrait:${tema}:${bossId}`;
+                if (await window.storage.saveBlob(key, blob)) {
+                    const save = ensureThemeGameSave(tema);
+                    save.bossPortraits[bossId] = 'idb:' + key;
+                }
+            }
+            if (parsed.storyBgImageData) {
+                const blob = await window.storage.dataURLToBlob(parsed.storyBgImageData);
+                if (blob) await window.storage.saveBlob(STORY_BG_BLOB_KEY, blob);
+            }
+        }
+    } catch (e) { /* import segue sem as imagens */ }
+
+    const shared = parsed.sharedGameState && typeof parsed.sharedGameState === 'object' ? parsed.sharedGameState : parsed;
+    deloadWeeks = Array.isArray(shared.deloadWeeks) ? shared.deloadWeeks : [];
+    tests = Array.isArray(shared.tests) && shared.tests.length ? shared.tests : defaultTests();
+    weightLog = Array.isArray(shared.weightLog) ? shared.weightLog : [];
+    restoreActiveThemeGameSave(importedThemeId);
+    safeStorage.set(STORAGE_KEY_THEME, importedThemeId);
+    applyTheme(importedThemeId);
+    lastRankLevel = null; lastBossesDefeated = null;
+
+    saveLogsToStorage();
+    saveWorkoutsToStorage();
+    saveSettings();
+    saveGameState();
+    saveStoryState();
+    safeStorage.set(STORAGE_KEY_BW, userBodyweight.toString());
+    safeStorage.set(STORAGE_KEY_SEEDED, '1');
+
+    const bwInput = document.getElementById('user-bodyweight');
+    if (bwInput && userBodyweight > 0) bwInput.value = userBodyweight;
+
+    alertModal('Backup importado com sucesso!');
+    refreshAll();
+    return true;
 }
 
 function importJSONBackup(event) {
@@ -3764,62 +4097,8 @@ function importJSONBackup(event) {
     reader.onload = function (e) {
         try {
             const parsed = JSON.parse(e.target.result);
-            if (parsed && Array.isArray(parsed.logs)) {
-                const importedThemeId = THEMES[parsed.gameTheme] ? parsed.gameTheme : activeGameThemeId;
-                logs = parsed.logs.map(migrateLog);
-                if (parsed.userBodyweight) userBodyweight = parsed.userBodyweight;
-                if (Array.isArray(parsed.savedWorkouts)) savedWorkouts = normalizeSavedWorkouts();
-                if (parsed.settings) settings = { ...settings, ...parsed.settings };
-
-                const importedSaves = parsed.themeGameSaves && typeof parsed.themeGameSaves === 'object' ? parsed.themeGameSaves : null;
-                themeGameSaves = {};
-                if (importedSaves) {
-                    Object.entries(importedSaves).forEach(([id, save]) => {
-                        if (THEMES[id] && save && typeof save === 'object' && !Array.isArray(save)) themeGameSaves[id] = save;
-                    });
-                } else {
-                    // Backups antigos não tinham saves por tema: migrar tudo para o jogo exportado.
-                    themeGameSaves[importedThemeId] = {
-                        ...emptyThemeGameSave(),
-                        missionsXpTotal: Number(parsed.missionsXpTotal) || 0,
-                        missionsClaimed: parsed.missionsClaimed || {},
-                        seasons: parsed.seasons || null,
-                        bossPortraits: parsed.bossPortraits || {}
-                    };
-                }
-                Object.keys(THEMES).forEach(ensureThemeGameSave);
-
-                const shared = parsed.sharedGameState && typeof parsed.sharedGameState === 'object' ? parsed.sharedGameState : parsed;
-                deloadWeeks = Array.isArray(shared.deloadWeeks) ? shared.deloadWeeks : [];
-                tests = Array.isArray(shared.tests) && shared.tests.length ? shared.tests : defaultTests();
-                weightLog = Array.isArray(shared.weightLog) ? shared.weightLog : [];
-                restoreActiveThemeGameSave(importedThemeId);
-                safeStorage.set(STORAGE_KEY_THEME, importedThemeId);
-                applyTheme(importedThemeId);
-                // storyTheme de backups antigos é ignorado; o tema do jogo define o visual.
-                if (parsed.bgImageData) {
-                    const img = new Image();
-                    img.onload = () => { customBgImageData = img; saveStoryState(); generateStoryCard(); };
-                    img.src = parsed.bgImageData;
-                }
-                lastRankLevel = null; lastBossesDefeated = null;
-
-                saveLogsToStorage();
-                saveWorkoutsToStorage();
-                saveSettings();
-                saveGameState();
-                saveStoryState();
-                safeStorage.set(STORAGE_KEY_BW, userBodyweight.toString());
-                safeStorage.set(STORAGE_KEY_SEEDED, '1');
-
-                const bwInput = document.getElementById('user-bodyweight');
-                if (bwInput && userBodyweight > 0) bwInput.value = userBodyweight;
-
-                alertModal('Backup importado com sucesso!');
-                refreshAll();
-            } else {
-                alertModal('Arquivo JSON inválido!');
-            }
+            // storyTheme de backups antigos é ignorado; o tema do jogo define o visual.
+            applyImportedBackup(parsed).catch(() => alertModal('Erro ao importar o backup.'));
         } catch (err) {
             alertModal('Erro ao ler o arquivo de backup.');
         }
@@ -3923,6 +4202,7 @@ window.onload = function () {
     loadStoredData();
     loadWorkoutsFromStorage();
     applyTheme(safeStorage.get(STORAGE_KEY_THEME) || 'classico');
+    initStorageMigration();
 
     if (logs.length === 0) seedInitialMockData(todayStr);
 
@@ -4026,3 +4306,285 @@ window.onload = function () {
     const mo = new MutationObserver(fixMobileInputs);
     mo.observe(document.body, { childList: true, subtree: true });
 };
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+(function (g) {
+    const exports_ = {
+        logs,
+    savedWorkouts,
+    draftExercises,
+    editingWorkoutId,
+    activeSession,
+    userBodyweight,
+    customBgImageData,
+    volumeChartInstance,
+    exChartInstance,
+    setsChartInstance,
+    weightLog,
+    histVolChartInstance,
+    settings,
+    deloadWeeks,
+    missionsXpTotal,
+    missionsClaimed,
+    tests,
+    seasons,
+    bossPortraits,
+    portraitObjectURLs,
+    STORY_BG_BLOB_KEY,
+    themeGameSaves,
+    activeGameThemeId,
+    selectedStoryBossId,
+    THEME,
+    lastRankLevel,
+    timer,
+    wakeLock,
+    lastKnownTodayISO,
+    setEditorState,
+    STORAGE_KEY_LOGS,
+    STORAGE_KEY_BW,
+    STORAGE_KEY_WORKOUTS,
+    STORAGE_KEY_SEEDED,
+    STORAGE_KEY_SETTINGS,
+    STORAGE_KEY_GAME,
+    STORAGE_KEY_THEME_GAMES,
+    STORAGE_KEY_GAME_SHARED,
+    STORAGE_KEY_STORY,
+    STORAGE_KEY_BACKUP,
+    closeElementById,
+    hideElementById,
+    setLogs,
+    setSavedWorkouts,
+    setUserBodyweight,
+    setWeightLog,
+    setHistVolChartInstance,
+    safeStorage,
+    TECHNIQUES,
+    NEXT_GOALS,
+    INP,
+    LBL,
+    MUSCLE_OPTIONS,
+    NAV_GROUPS,
+    activeNavGroup,
+    activeTab,
+    THEME_ICONS,
+    THEME_IDS_LIST,
+    THEME_ICON_IMGS,
+    THEME_CARD_BGS,
+    TAILWIND_SPACING_PX,
+    imgSizeAttrs,
+    themeIconImg,
+    rankEmblemSrc,
+    rankEmblemImg,
+    _cardImgCache,
+    getCardImg,
+    drawCoverImg,
+    STORY_CARD_STYLES,
+    toLocalISO,
+    getTodayLocalISO,
+    formatDateBR,
+    formatShortBR,
+    updateHeaderDate,
+    escapeHtml,
+    fmtN,
+    alertModal,
+    confirmModal,
+    shakeElement,
+    migrateLog,
+    normalizeSavedWorkouts,
+    parseStoredObject,
+    emptyThemeGameSave,
+    ensureThemeGameSave,
+    restoreActiveThemeGameSave,
+    isoWeekDateRange,
+    seasonsDoTema,
+    deloadWeeksEfetivos,
+    ensureDeloadRestAwards,
+    loadGameProgressFromStorage,
+    loadStoredData,
+    logsForTheme,
+    saveLogsToStorage,
+    saveWorkoutsToStorage,
+    saveSettings,
+    saveGameState,
+    saveStoryState,
+    snapshotStoryBgDataURL,
+    defaultTests,
+    loadWorkoutsFromStorage,
+    saveBodyweight,
+    saveTrainingSettings,
+    toggleDeloadWeek,
+    updateStoryThemeInfo,
+    applyTheme,
+    changeGameTheme,
+    computeThemeXPCtx,
+    computeXPCtx,
+    getGlobalXPTotal,
+    themeRankList,
+    themeConfirmationName,
+    requestGameThemeChange,
+    showThemeGallery,
+    checkRankUp,
+    showRanksModal,
+    renderNavigation,
+    selectNavGroup,
+    switchTab,
+    initStorageMigration,
+    renderStorageStatus,
+    seedInitialMockData,
+    updateTypeHint,
+    onTypeChange,
+    flashAutofill,
+    suggestSessaoFor,
+    onLogExerciseChange,
+    toggleSetMode,
+    renderSetRows,
+    readSetRows,
+    addSetRow,
+    removeSetRow,
+    initSetEditor,
+    fieldsHTML,
+    readFields,
+    snapshotDrafts,
+    findLastPerformance,
+    lastPerformanceHTML,
+    repeatLastPerformance,
+    handleAddLog,
+    _lastLogId,
+    newLogId,
+    editLog,
+    saveEditedLog,
+    deleteLog,
+    handleFilterDateChange,
+    getFilteredLogs,
+    renderLogsTable,
+    renderRecoveryMap,
+    prefillMuscleFromMap,
+    renderDaySuggestion,
+    registerCorrida,
+    startSession,
+    renderSession,
+    moveSessionUnit,
+    showWarmupFor,
+    showPlatesFor,
+    registerSessionUnit,
+    endSession,
+    timerRemainingMs,
+    updateSessionTimerDisplay,
+    addSessionTimer,
+    toggleSessionTimer,
+    tickSessionTimer,
+    stopSessionTimer,
+    vibrate,
+    playBeepSound,
+    acquireWakeLock,
+    releaseWakeLock,
+    spawnDamageFloat,
+    normalizeBisets,
+    pairLink,
+    toggleDraftBiset,
+    updateExerciseSuggestions,
+    onWbExerciseChange,
+    addExerciseToDraft,
+    removeDraftExercise,
+    moveDraftExercise,
+    applySuggestedOrder,
+    renderWeekGaps,
+    renderDraftList,
+    updateSaveButton,
+    saveWorkout,
+    clearDraft,
+    editWorkout,
+    deleteWorkout,
+    renderSavedWorkouts,
+    getAnimalRankForSession,
+    updateHeaderChrome,
+    updateSummaryMetrics,
+    DEFAULT_BOSS_PORTRAITS,
+    bossPortraitSrc,
+    resolvePortraitSrc,
+    hydratePortraitBlobs,
+    _bossImgCache,
+    getBossImg,
+    renderBossBattleUI,
+    BOSS_LIGHTBOX_ID,
+    bossLightboxIdx,
+    bossStatusLabel,
+    bossStatusClass,
+    bossPortraitDownloadName,
+    openBossLightbox,
+    closeBossLightbox,
+    navBossLightbox,
+    renderBossLightbox,
+    OVERLAY_CLOSE_ORDER,
+    closeTopOverlay,
+    uploadBossPortrait,
+    reservaManifest,
+    reservaBossId,
+    loadReservaManifest,
+    reservaGroups,
+    selectReservaBoss,
+    applyReservaPortrait,
+    resetBossPortraitToDefault,
+    renderReservaStudio,
+    renderMissions,
+    claimMissions,
+    renderSeason,
+    finishSeasonNow,
+    handleBgImageUpload,
+    removeBgImage,
+    wrapCanvasText,
+    canvasMeasure,
+    drawThemedFrame,
+    drawThemedFrameArt,
+    _fontsRedrawScheduled,
+    withWebFonts,
+    generateStoryCard,
+    downloadStoryCard,
+    openBossDefeatCard,
+    generateBossDefeatCard,
+    downloadBossDefeatCard,
+    calculate1RM,
+    renderWarmupCalculator,
+    calculateWarmupFromForm,
+    calculatePlatesFromForm,
+    calculatePlatesQuick,
+    weeklyStreakInfo,
+    BADGE_ART,
+    badgeArtSrc,
+    badgeArtImg,
+    badgeArtFallback,
+    bestWeekWorkouts,
+    renderBadgesAndStreak,
+    initVolumeChart,
+    renderExerciseChart,
+    renderWeeklySetsChart,
+    renderTests,
+    addTestRecord,
+    deleteTestRecord,
+    addCustomTest,
+    deleteTest,
+    parseCSVRows,
+    buildBackupPayload,
+    exportJSONBackup,
+    applyImportedBackup,
+    importJSONBackup,
+    renderBackupReminder,
+    clearAllData,
+    startDateWatcher,
+    refreshAll
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    // Ações delegáveis (js/actions.js): toda função pública do módulo fica
+    // disponível para os atributos data-action dos templates.
+    const actionFns = {};
+    Object.keys(exports_).forEach(k => { if (typeof exports_[k] === 'function') actionFns[k] = exports_[k]; });
+    g.registerDiarioActions(actionFns);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/app.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);
+export { logs, savedWorkouts, draftExercises, editingWorkoutId, activeSession, userBodyweight, customBgImageData, volumeChartInstance, exChartInstance, setsChartInstance, weightLog, histVolChartInstance, settings, deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, portraitObjectURLs, STORY_BG_BLOB_KEY, themeGameSaves, activeGameThemeId, selectedStoryBossId, THEME, lastRankLevel, timer, wakeLock, lastKnownTodayISO, setEditorState, STORAGE_KEY_LOGS, STORAGE_KEY_BW, STORAGE_KEY_WORKOUTS, STORAGE_KEY_SEEDED, STORAGE_KEY_SETTINGS, STORAGE_KEY_GAME, STORAGE_KEY_THEME_GAMES, STORAGE_KEY_GAME_SHARED, STORAGE_KEY_STORY, STORAGE_KEY_BACKUP, safeStorage, TECHNIQUES, NEXT_GOALS, INP, LBL, MUSCLE_OPTIONS, NAV_GROUPS, activeNavGroup, activeTab, THEME_ICONS, THEME_IDS_LIST, THEME_ICON_IMGS, THEME_CARD_BGS, TAILWIND_SPACING_PX, imgSizeAttrs, themeIconImg, rankEmblemSrc, rankEmblemImg, _cardImgCache, getCardImg, drawCoverImg, STORY_CARD_STYLES, toLocalISO, getTodayLocalISO, formatDateBR, formatShortBR, updateHeaderDate, escapeHtml, setLogs, setSavedWorkouts, setUserBodyweight, setWeightLog, setHistVolChartInstance, closeElementById, hideElementById, fmtN, alertModal, confirmModal, shakeElement, migrateLog, normalizeSavedWorkouts, parseStoredObject, emptyThemeGameSave, ensureThemeGameSave, restoreActiveThemeGameSave, isoWeekDateRange, seasonsDoTema, deloadWeeksEfetivos, ensureDeloadRestAwards, loadGameProgressFromStorage, loadStoredData, logsForTheme, saveLogsToStorage, saveWorkoutsToStorage, saveSettings, saveGameState, saveStoryState, snapshotStoryBgDataURL, defaultTests, loadWorkoutsFromStorage, saveBodyweight, saveTrainingSettings, toggleDeloadWeek, updateStoryThemeInfo, applyTheme, changeGameTheme, computeThemeXPCtx, computeXPCtx, getGlobalXPTotal, themeRankList, themeConfirmationName, requestGameThemeChange, showThemeGallery, checkRankUp, showRanksModal, renderNavigation, selectNavGroup, switchTab, initStorageMigration, renderStorageStatus, seedInitialMockData, updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, saveEditedLog, deleteLog, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida, startSession, renderSession, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, endSession, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, stopSessionTimer, vibrate, playBeepSound, acquireWakeLock, releaseWakeLock, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, updateExerciseSuggestions, onWbExerciseChange, addExerciseToDraft, removeDraftExercise, moveDraftExercise, applySuggestedOrder, renderWeekGaps, renderDraftList, updateSaveButton, saveWorkout, clearDraft, editWorkout, deleteWorkout, renderSavedWorkouts, getAnimalRankForSession, updateHeaderChrome, updateSummaryMetrics, DEFAULT_BOSS_PORTRAITS, bossPortraitSrc, resolvePortraitSrc, hydratePortraitBlobs, _bossImgCache, getBossImg, renderBossBattleUI, BOSS_LIGHTBOX_ID, bossLightboxIdx, bossStatusLabel, bossStatusClass, bossPortraitDownloadName, openBossLightbox, closeBossLightbox, navBossLightbox, renderBossLightbox, OVERLAY_CLOSE_ORDER, closeTopOverlay, uploadBossPortrait, reservaManifest, reservaBossId, loadReservaManifest, reservaGroups, selectReservaBoss, applyReservaPortrait, resetBossPortraitToDefault, renderReservaStudio, renderMissions, claimMissions, renderSeason, finishSeasonNow, handleBgImageUpload, removeBgImage, wrapCanvasText, canvasMeasure, drawThemedFrame, drawThemedFrameArt, _fontsRedrawScheduled, withWebFonts, generateStoryCard, downloadStoryCard, openBossDefeatCard, generateBossDefeatCard, downloadBossDefeatCard, calculate1RM, renderWarmupCalculator, calculateWarmupFromForm, calculatePlatesFromForm, calculatePlatesQuick, weeklyStreakInfo, BADGE_ART, badgeArtSrc, badgeArtImg, badgeArtFallback, bestWeekWorkouts, renderBadgesAndStreak, initVolumeChart, renderExerciseChart, renderWeeklySetsChart, renderTests, addTestRecord, deleteTestRecord, addCustomTest, deleteTest, parseCSVRows, buildBackupPayload, exportJSONBackup, applyImportedBackup, importJSONBackup, renderBackupReminder, clearAllData, startDateWatcher, refreshAll };

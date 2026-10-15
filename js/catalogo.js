@@ -325,6 +325,26 @@ function faixaSeriesDoGrupo(muscle) {
     return FAIXA_SERIES_POR_GRUPO[normalizeMuscle(muscle)] || FAIXA_SERIES_SEMANAIS;
 }
 
+// ---------- Objeto único de constantes de recuperação (configurável) ----------
+// Centraliza as janelas de recuperação (24–72 h) e as faixas de séries por
+// grupo (10–20; antebraço 4–10) para evitar valores espalhados pelo código.
+const RECOVERY_CONSTANTS = Object.freeze({
+    // Janelas de recuperação em horas por grupo muscular (base; +2h por série acima de 8).
+    recoveryWindowsH: Object.freeze({
+        'Peito': 48, 'Costas': 48, 'Pernas': 72, 'Posterior': 48,
+        'Ombros': 36, 'Bíceps': 36, 'Tríceps': 36, 'Abdômen': 24,
+        'Core': 24, 'Antebraço': 24, 'Geral': 24, 'Cardio': 12
+    }),
+    // Faixa padrão de séries semanais por grupo.
+    seriesRangeDefault: Object.freeze({ min: 10, max: 20 }),
+    // Exceções por grupo (músculo pequeno).
+    seriesRangeByMuscle: Object.freeze({ 'Antebraço': Object.freeze({ min: 4, max: 10 }) }),
+    // Janela base mínima da região lombar (horas).
+    lombarBaseHours: 24
+});
+const RECOVERY_CONFIG = RECOVERY_CONSTANTS;
+
+
 // ---------- Anilhas ----------
 const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
 const DEFAULT_BAR_WEIGHT = 20;
@@ -531,7 +551,7 @@ function recoveryState(muscle, muscleLogs, nowMs) {
     }
     const dias = Math.floor(hoursSince / 24);
     st.pct = pct;
-    st.info = pct >= 100 ? (dias > 0 ? `Descansado há ${dias}d` : 'Recuperado') : `${Math.round(hoursNeed - hoursSince)}h p/ 100%`;
+    st.info = pct >= 100 ? (dias > 0 ? `Descansado há ${dias}d` : 'Recuperado') : `≈ ${Math.round(hoursNeed - hoursSince)}h p/ 100% (estimativa)`;
     st.last = last.exercise;
     st.hoursNeed = hoursNeed;
     return st;
@@ -802,13 +822,13 @@ EXERCISE_CATALOG_FULL.forEach(e => { CATALOG_BY_SEARCH[normalizeText(e.nome)] = 
 
 const TAG_IDS = Object.keys(TAG_DEFS);
 // Lista completa de exercícios (base + customizados)
+let customExercisesRef = () => [];
+function setCustomExercisesRef(fn) { customExercisesRef = fn; }
+
 function allExercisesList() {
-    if (typeof customExercises !== 'undefined' && Array.isArray(customExercises)) {
-        return [...EXERCISE_CATALOG_FULL, ...customExercises];
-    }
-    return EXERCISE_CATALOG_FULL;
+    return [...EXERCISE_CATALOG_FULL, ...customExercisesRef()];
 }
-if (typeof catalogInfoCustom !== 'function') function catalogInfoCustom(n) { return catalogInfo(n); }
+// catalogInfoCustom (definida em custom_exercises.js) chega via import no topo.
 const TAG_BY_CATEGORY = TAG_CATEGORIAS.map(c => ({
     ...c, tags: TAG_IDS.filter(id => TAG_DEFS[id].cat === c.id).map(id => ({ id, ...TAG_DEFS[id] }))
 }));
@@ -958,3 +978,96 @@ function matchesQuery(text, q) {
     const hay = normalizeText(text);
     return tokens.every(t => hay.includes(t));
 }
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+(function (g) {
+    const exports_ = {
+        TYPE_META,
+    CATALOG_TIPOS,
+    EXERCISE_CATALOG_FULL,
+    CATALOG_ALIASES,
+    CATALOG_BY_NAME,
+    CATALOG_ALIAS_BY_NORM,
+    catalogPrefixMatch,
+    catalogInfo,
+    EXERCISE_CATALOG,
+    MUSCLE_META,
+    MUSCULOS_MAPA,
+    MUSCLE_OPTIONS_FULL,
+    LEGACY_MUSCLE_ALIASES,
+    MUSCLE_CANONICAL,
+    normalizeMuscle,
+    MUSCLE_WEIGHT,
+    FAIXA_SERIES_SEMANAIS,
+    FAIXA_SERIES_POR_GRUPO,
+    faixaSeriesDoGrupo,
+    RECOVERY_CONSTANTS,
+    RECOVERY_CONFIG,
+    PLATES,
+    DEFAULT_BAR_WEIGHT,
+    DEFAULT_SLED_WEIGHT,
+    inferExerciseType,
+    logMeta,
+    logCargaEfetiva,
+    logFullMeta,
+    logVolumeKg,
+    logTstSeconds,
+    logBestSet,
+    logWorstSet,
+    logEst1RM,
+    epleySeValido,
+    formatLoadText,
+    formatRepsText,
+    duplaProgressao,
+    sinalProximaSessao,
+    detectAutoPR,
+    recoveryState,
+    SINERGIA,
+    sinergiaLogs,
+    sinergiaState,
+    formatPlates,
+    TAG_CATEGORIAS,
+    TAG_DEFS,
+    EQUIP_KIND,
+    KIND_TAGS,
+    KIND_FROM_NAME,
+    P_EMPURRAR,
+    P_PUXAR,
+    P_AGACHAR,
+    P_DOBRADICA,
+    P_CORE,
+    P_COMPOSTO,
+    P_UNI,
+    P_POSTERIOR,
+    P_ANTERIOR,
+    P_AVANCADO,
+    P_BASICO,
+    TAG_OVERRIDES,
+    SINONIMOS,
+    normalizeText,
+    CATALOG_BY_SEARCH,
+    TAG_IDS,
+    allExercisesList,
+    TAG_BY_CATEGORY,
+    deriveTags,
+    exerciseTags,
+    catalogFacets,
+    searchCatalog,
+    matchesTags,
+    matchesQuery
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    // Ações delegáveis (js/actions.js): toda função pública do módulo fica
+    // disponível para os atributos data-action dos templates.
+    const actionFns = {};
+    Object.keys(exports_).forEach(k => { if (typeof exports_[k] === 'function') actionFns[k] = exports_[k]; });
+    g.registerDiarioActions(actionFns);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/catalogo.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);
+export { TYPE_META, CATALOG_TIPOS, EXERCISE_CATALOG_FULL, CATALOG_ALIASES, CATALOG_BY_NAME, CATALOG_ALIAS_BY_NORM, catalogPrefixMatch, catalogInfo, EXERCISE_CATALOG, MUSCLE_META, MUSCULOS_MAPA, MUSCLE_OPTIONS_FULL, LEGACY_MUSCLE_ALIASES, MUSCLE_CANONICAL, normalizeMuscle, MUSCLE_WEIGHT, FAIXA_SERIES_SEMANAIS, FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, RECOVERY_CONSTANTS, RECOVERY_CONFIG, PLATES, DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, inferExerciseType, logMeta, logCargaEfetiva, logFullMeta, logVolumeKg, logTstSeconds, logBestSet, logWorstSet, logEst1RM, epleySeValido, formatLoadText, formatRepsText, duplaProgressao, sinalProximaSessao, detectAutoPR, recoveryState, SINERGIA, sinergiaLogs, sinergiaState, formatPlates, TAG_CATEGORIAS, TAG_DEFS, EQUIP_KIND, KIND_TAGS, KIND_FROM_NAME, P_EMPURRAR, P_PUXAR, P_AGACHAR, P_DOBRADICA, P_CORE, P_COMPOSTO, P_UNI, P_POSTERIOR, P_ANTERIOR, P_AVANCADO, P_BASICO, TAG_OVERRIDES, SINONIMOS, normalizeText, CATALOG_BY_SEARCH, TAG_IDS, customExercisesRef, setCustomExercisesRef, allExercisesList, TAG_BY_CATEGORY, deriveTags, exerciseTags, catalogFacets, searchCatalog, matchesTags, matchesQuery };

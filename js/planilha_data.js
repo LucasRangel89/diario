@@ -1,3 +1,5 @@
+import { catalogInfo, inferExerciseType } from './catalogo.js';
+import { logs, savedWorkouts, setLogs, setSavedWorkouts, setUserBodyweight, setWeightLog, userBodyweight, weightLog } from './app.js';
 /* ============================================================
    DADOS DA PLANILHA DO USUÁRIO — seed inicial do app
    (Log de 28/09 a 10/10/2026 + convenções da planilha)
@@ -110,9 +112,9 @@ const PLANILHA_SESSOES = [
 function seedFromPlanilha() {
     let id = 100;
     // Peso corporal confirmado pela usuária (≈94 kg agora; 93 kg no dia da barra fixa)
-    userBodyweight = 94;
-    weightLog = [{ date: '2026-10-10', peso: 94, obs: 'Peso atual ≈ 94 kg (conferido)' }];
-    logs = PLANILHA_LOG.map(([date, sessao, exercise, weight, reps, rir, conferir, notes]) => {
+    setUserBodyweight(94);
+    setWeightLog([{ date: '2026-10-10', peso: 94, obs: 'Peso atual ≈ 94 kg (conferido)' }]);
+    setLogs(PLANILHA_LOG.map(([date, sessao, exercise, weight, reps, rir, conferir, notes]) => {
         const cat = catalogInfo(exercise);
         const type = cat ? cat.tipo : inferExerciseType(exercise);
         return {
@@ -122,6 +124,29 @@ function seedFromPlanilha() {
             sets: null, technique: 'Convencional', nextGoal: '',
             isPR: false, rir, conferir: !!conferir, notes
         };
-    });
-    savedWorkouts = JSON.parse(JSON.stringify(PLANILHA_SESSOES));
+    }));
+    setSavedWorkouts(JSON.parse(JSON.stringify(PLANILHA_SESSOES)));
 }
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+(function (g) {
+    const exports_ = {
+        PLANILHA_LOG,
+    PLANILHA_SESSOES,
+    seedFromPlanilha
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    // Ações delegáveis (js/actions.js): toda função pública do módulo fica
+    // disponível para os atributos data-action dos templates.
+    const actionFns = {};
+    Object.keys(exports_).forEach(k => { if (typeof exports_[k] === 'function') actionFns[k] = exports_[k]; });
+    g.registerDiarioActions(actionFns);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/planilha_data.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);
+export { PLANILHA_LOG, PLANILHA_SESSOES, seedFromPlanilha };

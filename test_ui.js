@@ -25,7 +25,7 @@ let html = fs.readFileSync('index.html', 'utf8');
 // remove scripts externos (fontes/tailwind CDN não existem aqui)
 html = html.replace(/<script src="https:\/\/[^"]+"><\/script>/g, '');
 const dom = new JSDOM(html, {
-    runScripts: 'dangerously',        // necessário para os onclick="" inline
+    runScripts: 'dangerously',        // executa os scripts clássicos do app (handlers agora via delegação)
     pretendToBeVisual: true,
     url: 'http://localhost/',
     virtualConsole
@@ -60,11 +60,14 @@ window.fetch = url => {
     return Promise.resolve({ ok: false, json: () => Promise.resolve(null) });
 };
 
-// ---------- carrega os módulos na ordem do index.html ----------
-// vm.runInContext mantém o escopo léxico global entre scripts (como no navegador),
-// então os `const`/`let` de catalogo.js continuam visíveis para app.js.
-['js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
-    .forEach(f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f }));
+// ---------- carrega os módulos na ordem do entry (js/app.js) ----------
+// Os fontes são ES modules; o jsdom não executa type="module", então este
+// harness remove import/export e roda o mesmo código no contexto compartilhado.
+const stripModuleSyntax = s => s
+    .replace(/^import [^\n]*;\n/gm, '')
+    .replace(/^export \{[^\n]*\};?\n/gm, '');
+['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/app.js']
+    .forEach(f => vm.runInContext(stripModuleSyntax(fs.readFileSync(f, 'utf8')), ctx, { filename: f }));
 
 // ---------- helpers ----------
 let failures = 0;
@@ -118,7 +121,8 @@ navTo('config');
 check('Config continua acessível como quarto grupo', !$('tab-content-config').classList.contains('hidden') && $('nav-subnav').classList.contains('hidden'));
 navTo('diario');
 check('Meus treinos tem tela e navegação próprias', !!$('tab-content-montador') && !!$('nav-montador') && $('nav-montador').textContent.includes('Meus treinos'));
-check('registro rápido aparece antes dos painéis longos', $('tab-content-diario').firstElementChild.id === 'form-card-container');
+check('registro rápido aparece antes dos painéis longos (sessão ativa primeiro)', $('tab-content-diario').firstElementChild.id === 'active-session-card' && $('tab-content-diario').children[1].id === 'form-card-container');
+check('mapa de prontidão e cardio ficam recolhidos por padrão (details sem open)', $('tab-content-diario').querySelector('details:not(#cardio-details) > summary') !== null && !$('tab-content-diario').querySelector('details:not(#cardio-details)').hasAttribute('open') && !$('cardio-details').hasAttribute('open'));
 check('detalhes do registro começam recolhidos, sem perder campos', !!$('advanced-details') && !$('advanced-details').open && !!$('mode') && !!$('sets-box') && !!$('t') && !!$('n') && !!$('warmup-quick-box'));
 check('cardio compacto começa recolhido e conserva formulário', !!$('cardio-details') && !$('cardio-details').open && !!$('cardio-distance') && !!$('cardio-duration') && !!$('cardio-notes'));
 setSelect('mode', 'sets');
@@ -208,11 +212,11 @@ const lbCard = id => $('bosses-grid').querySelector(`[data-boss-id="${id}"]`);
 const lbImg = () => lbOverlay() && lbOverlay().querySelector('#boss-lightbox-img');
 const lbDownload = () => lbOverlay() && lbOverlay().querySelector('#boss-lightbox-download');
 check('lightbox não existe antes do clique', !lbOverlay());
-check('os 12 cards da grade são clicáveis e trazem o id do chefão', $('bosses-grid').querySelectorAll('[data-boss-id]').length === 12 && $('bosses-grid').querySelectorAll('[onclick^="openBossLightbox("]').length === 12);
+check('os 12 cards da grade são clicáveis e trazem o id do chefão', $('bosses-grid').querySelectorAll('[data-boss-id]').length === 12 && $('bosses-grid').querySelectorAll('[data-action="openBossLightbox"]').length === 12);
 check('miniaturas da grade carregam de forma preguiçosa (lazy + async)', [...$('bosses-grid').querySelectorAll('img')].length === 12 && [...$('bosses-grid').querySelectorAll('img')].every(i => i.getAttribute('loading') === 'lazy' && i.getAttribute('decoding') === 'async'));
 const idxAtual = ev('computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).currentIdx');
-const retratoAtivo = $('active-boss-card').querySelector('button[onclick^="openBossLightbox("]');
-check('retrato do chefão ativo (w-20) também é clicável e aponta para o boss em batalha', !!retratoAtivo && retratoAtivo.className.includes('w-20') && retratoAtivo.getAttribute('onclick') === `openBossLightbox('${ev('BOSSES[' + idxAtual + '].id')}')`, retratoAtivo && retratoAtivo.getAttribute('onclick'));
+const retratoAtivo = $('active-boss-card').querySelector('button[data-action="openBossLightbox"]');
+check('retrato do chefão ativo (w-20) também é clicável e aponta para o boss em batalha', !!retratoAtivo && retratoAtivo.className.includes('w-20') && JSON.parse(retratoAtivo.getAttribute('data-args'))[0] === ev('BOSSES[' + idxAtual + '].id'), retratoAtivo && retratoAtivo.getAttribute('data-args'));
 
 const bossAlvo = ev('BOSSES[5].id');
 click(lbCard(bossAlvo));
@@ -515,7 +519,7 @@ check('▲▼ continua funcionando (liberdade total)', ev('draftExercises.map(e 
 
 // ============================ ASSISTENTE — FASE 3 ============================
 console.log('\n== UI 10. Assistente: fadiga real + próximo treino (Fase 3) ==');
-check('mapa de fadiga mostra prontidão real', $('recovery-status-grid').textContent.includes('Prontidão real'));
+check('mapa de prontidão mostra "Prontidão estimada" (renomeado de "Fadiga real")', $('recovery-status-grid').textContent.includes('Prontidão estimada') && !$('recovery-status-grid').textContent.includes('Prontidão real'));
 check('mapa traz séries da semana × faixa 10–20', /séries/.test($('recovery-status-grid').textContent) && /abaixo da meta|na faixa|acima da faixa/.test($('recovery-status-grid').textContent));
 const recoveryBoxes = [...$('recovery-status-grid').children];
 const posteriorBox = recoveryBoxes.find(box => box.querySelector('.font-oswald')?.textContent.trim() === 'Posterior');
@@ -636,7 +640,7 @@ check('grade de conquistas tem 16 badges', badgeCards.length === 16 && badgeSlug
 check('contador de desbloqueios acompanha os 16', $('stat-unlocked-badges').textContent.endsWith('/ 16'), $('stat-unlocked-badges').textContent);
 check('todo badge com arte própria renderiza <img> da série', badgeCards.length === 16 && badgeCards.every(c => !!c.querySelector('img[src^="images/badges/"]')), badgeCards.filter(c => !c.querySelector('img')).length);
 check('cada <img> de badge aponta para um arquivo que existe no disco', badgeSlugs.every(slug => fs.existsSync(ev(`BADGE_ART['${slug}']`))), badgeSlugs.filter(slug => !fs.existsSync(ev(`BADGE_ART['${slug}']`))));
-check('img de badge carrega preguiçosa e com fallback de emoji no onerror', badgeCards.every(c => { const i = c.querySelector('img'); return i && i.getAttribute('loading') === 'lazy' && i.getAttribute('onerror') === 'badgeArtFallback(this)' && !!i.getAttribute('data-fallback'); }));
+check('img de badge carrega preguiçosa e com fallback de emoji delegado (data-error-action)', badgeCards.every(c => { const i = c.querySelector('img'); return i && i.getAttribute('loading') === 'lazy' && i.getAttribute('data-error-action') === 'badgeArtFallback' && !!i.getAttribute('data-fallback'); }));
 const imgSemArquivo = document.createElement('img');
 imgSemArquivo.setAttribute('data-fallback', '🐘');
 document.body.appendChild(imgSemArquivo);
@@ -666,7 +670,7 @@ check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexis
     check('escolher reserva grava em bossPortraits (mesmo mecanismo do upload)', ev('bossPortraits[reservaBossId]') === alvo, ev('bossPortraits[reservaBossId]'));
     check('a grade do Boss passa a mostrar a reserva escolhida', $('bosses-grid').querySelector(`[data-boss-id="${bossAlvo}"] img`).getAttribute('src') === alvo);
     check('select marca o chefão personalizado com 🎨', [...$('reserva-boss-select').options].some(o => o.value === bossAlvo && o.textContent.includes('🎨')));
-    check('tile da reserva ativa fica destacado', [...$('reserva-grid').querySelectorAll('button')].some(b => b.getAttribute('onclick') === `applyReservaPortrait('${alvo}')` && b.className.includes('ring-1')));
+    check('tile da reserva ativa fica destacado', [...$('reserva-grid').querySelectorAll('button')].some(b => b.getAttribute('data-action') === 'applyReservaPortrait' && JSON.parse(b.getAttribute('data-args') || '[]')[0] === alvo && b.className.includes('ring-1')));
     ev('resetBossPortraitToDefault()');
     check('voltar ao padrão limpa o bossPortraits e restaura a arte oficial', ev('bossPortraits[reservaBossId]') === undefined && $('bosses-grid').querySelector(`[data-boss-id="${bossAlvo}"] img`).getAttribute('src') === ev(`DEFAULT_BOSS_PORTRAITS[THEME.id + ':' + reservaBossId]`));
 
@@ -750,6 +754,39 @@ check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexis
         /block truncate text-\[10px\][^"]*leading-tight/.test(appSrcMobile)
         && /width="40" height="40"[^>]*shrink-0/.test(appSrcMobile));
     ev('closeTopOverlay();');
+
+    // ============================ BACKUP PONTA A PONTA ============================
+    console.log('\n== UI 12b. Backup: exportar → apagar → importar → comparar ==');
+    const logsIDsAntes = ev('JSON.stringify(logs.map(l => l.id))');
+    const settingsAntes = ev('JSON.stringify(settings)');
+    const treinosAntes = ev('JSON.stringify(savedWorkouts.map(w => w.id || w.name))');
+    check('há dados do seed para o teste de backup', ev('logs.length') > 0 && ev('savedWorkouts.length') > 0);
+    const payloadStr = await ev('buildBackupPayload().then(p => JSON.stringify(p))');
+    const payload = JSON.parse(payloadStr);
+    check('backup contém logs, treinos, configurações e tema',
+        Array.isArray(payload.logs) && payload.logs.length === ev('logs.length')
+        && Array.isArray(payload.savedWorkouts) && payload.settings && !!payload.gameTheme, { v: payload.version, logs: payload.logs && payload.logs.length });
+    check('backup sem base64 de retrato no save (marcadores idb: ou arte padrão)',
+        Object.values((payload.themeGameSaves && payload.themeGameSaves.classico && payload.themeGameSaves.classico.bossPortraits) || {}).every(v => typeof v === 'string' && !v.startsWith('data:')));
+    // simula a perda total: estado em memória zerado e localStorage esvaziado
+    ev('logs = []; savedWorkouts = []; settings = { weeklyGoal: 3, restDefault: 90, barWeight: DEFAULT_BAR_WEIGHT, sledWeight: DEFAULT_SLED_WEIGHT }; themeGameSaves = {};');
+    window.localStorage.clear();
+    const restaurou = await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(payloadStr)}))`);
+    check('importação do backup conclui', restaurou === true);
+    check('logs restaurados idênticos (ids na mesma ordem)', ev('JSON.stringify(logs.map(l => l.id))') === logsIDsAntes);
+    check('configurações restauradas idênticas', ev('JSON.stringify(settings)') === settingsAntes);
+    check('treinos salvos restaurados idênticos', ev('JSON.stringify(savedWorkouts.map(w => w.id || w.name))') === treinosAntes);
+    check('estado do jogo restaurado (saves por tema recriados)', ev("Object.keys(themeGameSaves).length") === Object.keys(payload.themeGameSaves || {}).length);
+
+    // ============================ DELEGAÇÃO DE EVENTOS ============================
+    console.log('\n== UI 13. Delegação de eventos (js/actions.js) ==');
+    const btnMais30 = [...document.querySelectorAll('[data-action="addSessionTimer"]')].find(b => b.textContent.trim() === '+30');
+    check('botão +30 do descanso usa data-action', !!btnMais30);
+    if (btnMais30) { click(btnMais30); }
+    check('clique delegado dispara a ação (+30 s no cronômetro)', $('session-timer-display').textContent === '00:30', $('session-timer-display').textContent);
+    ev('stopSessionTimer();');
+    const inlineNoIndex = (fs.readFileSync('index.html', 'utf8').match(/on(click|change|input|submit|keydown)="[^"]*"/g) || []);
+    check('index.html não tem mais handlers inline (onclick/onchange/oninput/onsubmit)', inlineNoIndex.length === 0, inlineNoIndex.slice(0, 3));
 
     // ============================ CONSOLE ============================
     console.log('\n== UI 12. Console limpo ==');

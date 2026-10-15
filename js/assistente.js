@@ -1,3 +1,6 @@
+import { MUSCULOS_MAPA, SINERGIA, catalogInfo, exerciseTags, faixaSeriesDoGrupo, normalizeMuscle, normalizeText, recoveryState, sinergiaLogs } from './catalogo.js';
+import { isoWeekRange } from './gamificacao.js';
+import { catalogInfoCustom } from './custom_exercises.js';
 /* ============================================================
    ASSISTENTE DE TREINOS — Fase 2 (ordem sugerida) + Fase 3 (fadiga real e
    próximo treino recomendado)
@@ -461,9 +464,8 @@ const LOMBAR_EXCLUSAO = [
     /leg press|hack squat|agachamento hack|cadeira extensora|leg extension|mesa flexora|leg curl|voador|crucifixo|supino maquina|crossover|peck deck|pulldown|puxada frontal|remada baixa|cadeira adutora|triceps|rosca|face pull|manguito|abdominal sentado|polia baixa/
 ];
 
-// Fallback se custom_exercises ainda não carregou
-if (typeof catalogInfoCustom !== 'function') { function catalogInfoCustom(nome) { return catalogInfo(nome); } }
-if (typeof exercicioCarregaLombarCustom !== 'function') { function exercicioCarregaLombarCustom(nome) { return exercicioCarregaLombar(nome); } }
+// Em módulos, catalogInfoCustom/exercicioCarregaLombarCustom vêm de
+// custom_exercises.js via import (declarado no topo do arquivo).
 
 // Retorna o nível (0–3) de carga da lombar para um exercício
 function nivelCargaLombar(nomeExercicio) {
@@ -613,3 +615,49 @@ function aplicaPenalidadeLombar(score, treino, estadoLombar) {
 }
 
 
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+(function (g) {
+    const exports_ = {
+        ATIVACAO_NOMES,
+    MUSCLE_SIZE_RANK,
+    STABILIZER_GROUPS,
+    isAtivacaoExercise,
+    classifyExercicio,
+    faseDe,
+    bisetBlockRanges,
+    blockPattern,
+    rangeUsaComoApoio,
+    orderWorkoutExercises,
+    assistenteTodayISO,
+    weeklySetsByMuscle,
+    fatigueState,
+    diasDesdeUltimoTreino,
+    suggestNextWorkout,
+    seriesIndiretasSemana,
+    weeklyGaps,
+    LOMBAR_HORAS_POR_SERIE,
+    LOMBAR_HORAS_BASE,
+    LOMBAR_NIVEL,
+    LOMBAR_REGEX_NIVEL,
+    LOMBAR_EXCLUSAO,
+    nivelCargaLombar,
+    exercicioCarregaLombar,
+    regiaoLombarState,
+    aplicaPenalidadeLombar
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    // Ações delegáveis (js/actions.js): toda função pública do módulo fica
+    // disponível para os atributos data-action dos templates.
+    const actionFns = {};
+    Object.keys(exports_).forEach(k => { if (typeof exports_[k] === 'function') actionFns[k] = exports_[k]; });
+    g.registerDiarioActions(actionFns);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/assistente.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);
+export { ATIVACAO_NOMES, MUSCLE_SIZE_RANK, STABILIZER_GROUPS, isAtivacaoExercise, classifyExercicio, faseDe, bisetBlockRanges, blockPattern, rangeUsaComoApoio, orderWorkoutExercises, assistenteTodayISO, weeklySetsByMuscle, fatigueState, diasDesdeUltimoTreino, suggestNextWorkout, seriesIndiretasSemana, weeklyGaps, LOMBAR_HORAS_POR_SERIE, LOMBAR_HORAS_BASE, LOMBAR_NIVEL, LOMBAR_REGEX_NIVEL, LOMBAR_EXCLUSAO, nivelCargaLombar, exercicioCarregaLombar, regiaoLombarState, aplicaPenalidadeLombar };

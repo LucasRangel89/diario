@@ -123,7 +123,7 @@
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2">
             <h1 class="font-oswald text-lg sm:text-xl font-bold tracking-wide text-white uppercase leading-none">Diário</h1>
             <div class="flex items-center gap-1.5 sm:gap-2.5">
-                <button type="button" id="header-theme-button" onclick="showThemeGallery()" title="Trocar tema do jogo" aria-label="Abrir galeria de temas" class="w-9 h-9 flex items-center justify-center rounded-lg bg-berzerker-dark border border-berzerker-border text-xl hover:border-berzerker-500 transition-colors">
+                <button type="button" id="header-theme-button" data-action="showThemeGallery" title="Trocar tema do jogo" aria-label="Abrir galeria de temas" class="w-9 h-9 flex items-center justify-center rounded-lg bg-berzerker-dark border border-berzerker-border text-xl hover:border-berzerker-500 transition-colors">
                     <span id="header-theme-icon">⚔️</span>
                 </button>
                 <span id="header-today-date" title="Data de hoje" class="px-2 py-1 bg-berzerker-border text-gray-300 text-[10px] sm:text-xs font-mono rounded-md whitespace-nowrap">--</span>
@@ -136,10 +136,10 @@
     <nav id="group-navigation" aria-label="Navegação principal" class="sticky top-14 z-30 border-b border-berzerker-border bg-berzerker-card/95 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
             <div id="nav-groups" class="grid grid-cols-4 gap-1 py-1.5">
-                <button type="button" id="nav-group-treino" onclick="selectNavGroup('treino')" aria-current="page" class="min-w-0 px-1 py-2 rounded-lg bg-berzerker-600 text-white text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors">🏋️ Treino</button>
-                <button type="button" id="nav-group-jogo" onclick="selectNavGroup('jogo')" class="min-w-0 px-1 py-2 rounded-lg bg-berzerker-dark text-gray-300 text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors">⚔️ Jogo</button>
-                <button type="button" id="nav-group-voce" onclick="selectNavGroup('voce')" class="min-w-0 px-1 py-2 rounded-lg bg-berzerker-dark text-gray-300 text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors">📊 Você</button>
-                <button type="button" id="nav-group-config" onclick="selectNavGroup('config')" class="min-w-0 px-1 py-2 rounded-lg bg-berzerker-dark text-gray-300 text-[10px] sm:text-xs font-bold uppercase tracking-wide transition-colors">⚙️ Config</button>
+                <button type="button" id="nav-group-treino" data-action="selectNavGroup" data-args='["treino"]' aria-current="page" class="min-w-0 min-h-[44px] px-1 py-2 rounded-lg bg-berzerker-600 text-white text-xs font-bold uppercase tracking-wide transition-colors">🏋️ Treino</button>
+                <button type="button" id="nav-group-jogo" data-action="selectNavGroup" data-args='["jogo"]' class="min-w-0 min-h-[44px] px-1 py-2 rounded-lg bg-berzerker-dark text-gray-300 text-xs font-bold uppercase tracking-wide transition-colors">⚔️ Jogo</button>
+                <button type="button" id="nav-group-voce" data-action="selectNavGroup" data-args='["voce"]' class="min-w-0 min-h-[44px] px-1 py-2 rounded-lg bg-berzerker-dark text-gray-300 text-xs font-bold uppercase tracking-wide transition-colors">📊 Você</button>
+                <button type="button" id="nav-group-config" data-action="selectNavGroup" data-args='["config"]' class="min-w-0 min-h-[44px] px-1 py-2 rounded-lg bg-berzerker-dark text-gray-300 text-xs font-bold uppercase tracking-wide transition-colors">⚙️ Config</button>
             </div>
             <div id="nav-subnav" aria-label="Seções do grupo" class="flex flex-wrap gap-1 pb-2"></div>
         </div>
@@ -162,7 +162,7 @@
                 <div id="stat-boss-dmg" class="font-oswald text-2xl sm:text-3xl font-bold text-amber-400 mt-1">0 DMG</div>
             </div>
             <div class="bg-berzerker-card border border-berzerker-border p-4 rounded-xl">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Patente <button onclick="showRanksModal()" class="ml-1 normal-case text-cyan-400 hover:underline">📜 ver todas</button></span>
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Patente <button data-action="showRanksModal" class="ml-1 normal-case text-cyan-400 hover:underline">📜 ver todas</button></span>
                 <div id="stat-rank" class="font-oswald text-lg sm:text-xl font-bold text-amber-400 mt-1 truncate">
                     🐜 Formiga Atômica
                 </div>
@@ -174,6 +174,58 @@
         <!-- TAB 1: DIÁRIO E REGISTRO -->
         <section id="tab-content-diario" class="space-y-6">
 
+            <!-- MODO TREINO EM ANDAMENTO (SESSÃO ATIVA) -->
+            <div id="active-session-card" class="hidden bg-berzerker-card border-2 border-berzerker-600 rounded-2xl p-6 shadow-xl shadow-berzerker-600/10 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-berzerker-border pb-3">
+                    <div>
+                        <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2 flex-wrap">
+                            <span class="text-berzerker-500">⚔️</span> Treino em Andamento:
+                            <span id="session-title" class="text-berzerker-500"></span>
+                        </h2>
+                        <p class="text-xs text-gray-400">Cargas pré-preenchidas com a sua <b>última performance</b> — ajuste o que realmente fez e toque em ✔ Registrar. O descanso começa sozinho.</p>
+                    </div>
+                    <button data-action="endSession" class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap">
+                        ⏹ Finalizar Treino
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- PROGRESSO DA SESSÃO -->
+                    <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3.5">
+                        <div class="flex justify-between text-xs font-bold uppercase text-gray-400 mb-1.5">
+                            <span>Progresso da Sessão</span>
+                            <span id="session-progress-text" class="text-white">0 / 0 exercícios</span>
+                        </div>
+                        <div class="w-full h-2.5 bg-berzerker-border rounded-full overflow-hidden">
+                            <div id="session-progress-bar" class="h-full bg-gradient-to-r from-berzerker-600 to-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <div id="session-volume-text" class="text-xs text-gray-400 font-mono mt-1.5">0 kg movidos na sessão</div>
+                    </div>
+
+                    <!-- CRONÔMETRO DE DESCANSO -->
+                    <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3.5 flex items-center justify-between gap-3">
+                        <div>
+                            <span class="text-xs font-bold uppercase text-gray-400 block">⏱️ Descanso</span>
+                            <span id="session-timer-display" class="font-oswald text-3xl font-bold text-white leading-none">00:00</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1 justify-center">
+                            <button data-action="addSessionTimer" data-args="[30]" title="Somar 30 s" aria-label="Somar 30 segundos ao descanso" class="min-h-[44px] min-w-[44px] px-3 py-2 text-xs font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+30</button>
+                            <button data-action="addSessionTimer" data-args="[60]" title="Somar 60 s" aria-label="Somar 60 segundos ao descanso" class="min-h-[44px] min-w-[44px] px-3 py-2 text-xs font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+60</button>
+                            <button data-action="addSessionTimer" data-args="[90]" title="Somar 90 s" aria-label="Somar 90 segundos ao descanso" class="min-h-[44px] min-w-[44px] px-3 py-2 text-xs font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+90</button>
+                            <button data-action="addSessionTimer" data-args="[120]" title="Somar 120 s" aria-label="Somar 120 segundos ao descanso" class="min-h-[44px] min-w-[44px] px-3 py-2 text-xs font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+120</button>
+                            <button data-action="stopSessionTimer" title="Zerar" aria-label="Zerar cronômetro de descanso" class="px-2 py-1 text-xs font-bold bg-berzerker-border rounded-md hover:bg-red-900/60 transition-colors">↺</button>
+                        </div>
+                        <button data-action="toggleSessionTimer" id="session-timer-btn" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase rounded-lg transition-colors">Iniciar</button>
+                    </div>
+                </div>
+
+                <!-- CHECKLIST DE EXERCÍCIOS DA SESSÃO -->
+                <div id="session-exercises-list" class="space-y-3"></div>
+
+                <!-- SESSÃO COMPLETA → PRÓXIMO TREINO SUGERIDO -->
+                <div id="session-next-hint" class="hidden bg-berzerker-dark border border-emerald-600/40 rounded-xl p-4"></div>
+            </div>
+
             <!-- REGISTRO RÁPIDO -->
             <div id="form-card-container" class="bg-berzerker-card border border-berzerker-border rounded-2xl p-4 sm:p-5 shadow-xl transition-all duration-300">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-berzerker-border pb-3">
@@ -183,17 +235,17 @@
                         </h2>
                         <p class="text-xs text-gray-400 mt-0.5">Exercício, carga e reps — os detalhes opcionais ficam logo abaixo.</p>
                     </div>
-                    <span class="text-[10px] text-gray-500 uppercase tracking-wider">🏆 PR detectado automaticamente</span>
+                    <span class="text-xs text-gray-400 uppercase tracking-wider">🏆 PR detectado automaticamente</span>
                 </div>
 
-                <form id="workout-form" onsubmit="handleAddLog(event)" class="space-y-3">
+                <form id="workout-form" data-submit-action="handleAddLog" data-args='["$event"]' class="space-y-3">
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div>
-                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Data da Sessão</label>
+                            <label for="log-date" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Data da Sessão</label>
                             <input type="date" id="log-date" required class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Grupo Muscular</label>
+                            <label for="log-muscle" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Grupo Muscular</label>
                             <select id="log-muscle" required class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
                                 <option value="Peito">Peito</option>
                                 <option value="Costas">Costas</option>
@@ -209,10 +261,10 @@
                             </select>
                         </div>
                         <div class="col-span-2">
-                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Nome do Exercício</label>
+                            <label for="log-exercise" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Nome do Exercício</label>
                             <div class="flex gap-1.5">
-                                <input type="text" id="log-exercise" list="wb-exercise-suggestions" oninput="onLogExerciseChange()" placeholder="Ex: Supino Reto com Barra" required class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
-                                <button type="button" onclick="openExercisePicker('log')" title="Buscar por tags e filtros" class="shrink-0 px-3 bg-berzerker-border hover:bg-berzerker-600 text-white text-sm font-bold rounded-lg transition-colors">🔎</button>
+                                <input type="text" id="log-exercise" list="wb-exercise-suggestions" data-input-action="onLogExerciseChange" placeholder="Ex: Supino Reto com Barra" required class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
+                                <button type="button" data-action="openExercisePicker" data-args='["log"]' title="Buscar por tags e filtros" aria-label="Buscar exercício por tags e filtros" class="shrink-0 px-3 bg-berzerker-border hover:bg-berzerker-600 text-white text-sm font-bold rounded-lg transition-colors">🔎</button>
                             </div>
                             <div id="log-tags-line" class="flex flex-wrap gap-1 mt-1.5"></div>
                         </div>
@@ -222,8 +274,8 @@
                         <!-- preenchido por fieldsHTML('', { quickCapture: true }) no boot -->
                     </div>
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                        <p class="text-[10px] text-gray-500">Registro simples em séries iguais; para ajustar o formato, abra <b>Mais detalhes</b>.</p>
-                        <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors shadow-lg shadow-berzerker-600/30">
+                        <p class="text-xs text-gray-400">Registro simples em séries iguais; para ajustar o formato, abra <b>Mais detalhes</b>.</p>
+                        <button type="submit" class="w-full sm:w-auto min-h-[44px] px-6 py-2.5 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors shadow-lg shadow-berzerker-600/30">
                             ⚡ Registrar exercício
                         </button>
                     </div>
@@ -236,68 +288,22 @@
                 <div id="suggestion-content"></div>
             </div>
 
-            <!-- MODO TREINO EM ANDAMENTO (SESSÃO ATIVA) -->
-            <div id="active-session-card" class="hidden bg-berzerker-card border-2 border-berzerker-600 rounded-2xl p-6 shadow-xl shadow-berzerker-600/10 space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-berzerker-border pb-3">
-                    <div>
-                        <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2 flex-wrap">
-                            <span class="text-berzerker-500">⚔️</span> Treino em Andamento:
-                            <span id="session-title" class="text-berzerker-500"></span>
-                        </h2>
-                        <p class="text-xs text-gray-400">Cargas pré-preenchidas com a sua <b>última performance</b> — ajuste o que realmente fez e toque em ✔ Registrar. O descanso começa sozinho.</p>
-                    </div>
-                    <button onclick="endSession()" class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap">
-                        ⏹ Finalizar Treino
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <!-- PROGRESSO DA SESSÃO -->
-                    <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3.5">
-                        <div class="flex justify-between text-[10px] font-bold uppercase text-gray-400 mb-1.5">
-                            <span>Progresso da Sessão</span>
-                            <span id="session-progress-text" class="text-white">0 / 0 exercícios</span>
-                        </div>
-                        <div class="w-full h-2.5 bg-berzerker-border rounded-full overflow-hidden">
-                            <div id="session-progress-bar" class="h-full bg-gradient-to-r from-berzerker-600 to-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
-                        </div>
-                        <div id="session-volume-text" class="text-[10px] text-gray-500 font-mono mt-1.5">0 kg movidos na sessão</div>
-                    </div>
-
-                    <!-- CRONÔMETRO DE DESCANSO -->
-                    <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3.5 flex items-center justify-between gap-3">
-                        <div>
-                            <span class="text-[10px] font-bold uppercase text-gray-400 block">⏱️ Descanso</span>
-                            <span id="session-timer-display" class="font-oswald text-3xl font-bold text-white leading-none">00:00</span>
-                        </div>
-                        <div class="flex flex-wrap gap-1 justify-center">
-                            <button onclick="addSessionTimer(30)" title="Somar 30 s" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+30</button>
-                            <button onclick="addSessionTimer(60)" title="Somar 60 s" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+60</button>
-                            <button onclick="addSessionTimer(90)" title="Somar 90 s" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+90</button>
-                            <button onclick="addSessionTimer(120)" title="Somar 120 s" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border rounded-md hover:bg-berzerker-600 transition-colors">+120</button>
-                            <button onclick="stopSessionTimer()" title="Zerar" class="px-2 py-1 text-[10px] font-bold bg-berzerker-border rounded-md hover:bg-red-900/60 transition-colors">↺</button>
-                        </div>
-                        <button onclick="toggleSessionTimer()" id="session-timer-btn" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold uppercase rounded-lg transition-colors">Iniciar</button>
-                    </div>
-                </div>
-
-                <!-- CHECKLIST DE EXERCÍCIOS DA SESSÃO -->
-                <div id="session-exercises-list" class="space-y-3"></div>
-
-                <!-- SESSÃO COMPLETA → PRÓXIMO TREINO SUGERIDO -->
-                <div id="session-next-hint" class="hidden bg-berzerker-dark border border-emerald-600/40 rounded-xl p-4"></div>
-            </div>
-
-            <!-- MAPA DE FADIGA MUSCULAR -->
+            <!-- MAPA DE PRONTIDÃO (recolhido por padrão: o treino vem primeiro) -->
+            <details class="bg-berzerker-card border border-berzerker-border rounded-2xl shadow-xl">
+                <summary class="cursor-pointer select-none list-none px-5 py-4 flex items-center justify-between gap-3 min-h-[44px]">
+                    <span class="font-oswald text-lg font-bold text-white uppercase tracking-wide">🗺️ Mapa de prontidão muscular</span>
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">abrir ▾</span>
+                </summary>
+                <div class="px-5 pb-5 space-y-3">
             <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-berzerker-border pb-3">
                     <div>
                         <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                            <span class="text-emerald-400">🧬</span> Mapa de Fadiga Muscular
+                            <span class="text-emerald-400">🧬</span> Prontidão e volume da semana
                         </h2>
-                        <p class="text-xs text-gray-400">Fadiga <b>real</b> = recuperação (janela de 24 h a 72 h) + volume da semana (faixa-alvo 10–20 séries por grupo; Antebraço 4–10). Clique num box para registrar aquele grupo.</p>
+                        <p class="text-xs text-gray-400"><b>Prontidão estimada</b> = recuperação (janela de 24 h a 72 h) + volume da semana (faixa-alvo 10–20 séries por grupo; Antebraço 4–10). Clique num box para registrar aquele grupo. Estimativa baseada em tempo desde o último treino e volume semanal; não mede fadiga e não substitui orientação profissional.</p>
                     </div>
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold uppercase">
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold uppercase">
                         <span class="flex items-center gap-1 text-red-400"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Exausto</span>
                         <span class="flex items-center gap-1 text-amber-400"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Recuperando</span>
                         <span class="flex items-center gap-1 text-emerald-400"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 100% pronto</span>
@@ -305,8 +311,12 @@
                 </div>
 
                 <div id="recovery-status-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+                <p class="text-xs text-gray-400 mt-2">Prontidão estimada: estimativa baseada em tempo desde o último treino e volume semanal; não mede fadiga. Não substitui orientação profissional.</p>
                 <div id="lombar-alert-panel" class="mt-3"></div>
             </div>
+                </div>
+
+</details>
 
             <!-- CARDIO / CORRIDA (compacto; expande ao registrar) -->
             <details id="cardio-details" class="bg-berzerker-card border border-cyan-700/40 rounded-2xl shadow-xl">
@@ -317,11 +327,11 @@
                         </h2>
                         <p class="text-xs text-gray-400">Distância e tempo viram XP e dano ao chefão — toque para registrar.</p>
                     </div>
-                    <span class="shrink-0 px-3 py-1.5 bg-cyan-900/40 border border-cyan-700/50 text-cyan-300 text-[10px] font-bold uppercase tracking-wider rounded-lg">＋ Registrar</span>
+                    <span class="shrink-0 px-3 py-1.5 bg-cyan-900/40 border border-cyan-700/50 text-cyan-300 text-xs font-bold uppercase tracking-wider rounded-lg">＋ Registrar</span>
                 </summary>
-                <form onsubmit="registerCorrida(event)" class="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end border-t border-cyan-700/30 px-4 pt-3 pb-4">
-                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Data</label><input type="date" id="cardio-date" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
-                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tipo</label>
+                <form data-submit-action="registerCorrida" data-args='["$event"]' class="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end border-t border-cyan-700/30 px-4 pt-3 pb-4">
+                    <div><label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1" for="cardio-date">Data</label><input type="date" id="cardio-date" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                    <div><label for="cardio-type" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Tipo</label>
                         <select id="cardio-type" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm">
                             <option>Corrida (Esteira)</option>
                             <option>Corrida (Rua)</option>
@@ -330,11 +340,11 @@
                             <option>Remo (Ergômetro)</option>
                         </select>
                     </div>
-                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Distância (km)</label><input type="number" step="0.1" min="0" id="cardio-distance" placeholder="5,2" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
-                    <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tempo (min)</label><input type="number" step="1" min="0" id="cardio-duration" placeholder="28" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                    <div><label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1" for="cardio-distance">Distância (km)</label><input type="number" step="0.1" min="0" id="cardio-distance" placeholder="5,2" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                    <div><label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1" for="cardio-duration">Tempo (min)</label><input type="number" step="1" min="0" id="cardio-duration" placeholder="28" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
                     <div class="col-span-2 sm:col-span-5 flex flex-col sm:flex-row gap-2">
                         <input type="text" id="cardio-notes" placeholder="Obs: pace, terreno, sensação..." class="flex-1 bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm">
-                        <button type="submit" class="px-5 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg whitespace-nowrap">🏃 Registrar cardio</button>
+                        <button type="submit" class="min-h-[44px] px-5 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg whitespace-nowrap">🏃 Registrar cardio</button>
                     </div>
                 </form>
             </details>
@@ -347,8 +357,8 @@
                     </h2>
 
                     <div class="flex items-center gap-2">
-                        <label class="text-xs text-gray-400 uppercase font-bold">Filtrar Data:</label>
-                        <input type="date" id="filter-date" onchange="handleFilterDateChange(this.value)" class="bg-berzerker-dark border border-berzerker-border rounded-md px-2 py-1 text-xs text-white">
+                        <label for="filter-date" class="text-xs text-gray-400 uppercase font-bold">Filtrar Data:</label>
+                        <input type="date" id="filter-date" data-change-action="handleFilterDateChange" data-value-attr="value" class="bg-berzerker-dark border border-berzerker-border rounded-md px-2 py-1 text-xs text-white">
                     </div>
                 </div>
 
@@ -380,12 +390,12 @@
                 <!-- NOME DO TREINO + AÇÕES -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Nome do Treino</label>
+                        <label for="workout-name" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Nome do Treino</label>
                         <input type="text" id="workout-name" placeholder="Ex: Treino A — Peito & Tríceps" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-berzerker-500">
                     </div>
                     <div class="flex items-end gap-2">
-                        <button onclick="saveWorkout()" id="btn-save-workout" class="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors shadow-lg shadow-emerald-600/20">💾 Salvar Treino</button>
-                        <button type="button" onclick="clearDraft()" class="px-4 py-2.5 bg-berzerker-border hover:bg-gray-700 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">🗑 Descartar</button>
+                        <button data-action="saveWorkout" id="btn-save-workout" class="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors shadow-lg shadow-emerald-600/20">💾 Salvar Treino</button>
+                        <button type="button" data-action="clearDraft" class="px-4 py-2.5 bg-berzerker-border hover:bg-gray-700 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">🗑 Descartar</button>
                     </div>
                 </div>
 
@@ -394,8 +404,8 @@
                     <span class="text-[11px] font-bold text-berzerker-500 uppercase tracking-wider block">➕ Adicionar Exercício ao Treino</span>
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grupo Muscular</label>
-                            <select id="wb-muscle" onchange="updateExerciseSuggestions()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                            <label for="wb-muscle" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grupo Muscular</label>
+                            <select id="wb-muscle" data-change-action="updateExerciseSuggestions" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
                                 <option value="Peito">Peito</option>
                                 <option value="Costas">Costas</option>
                                 <option value="Pernas">Pernas</option>
@@ -410,23 +420,23 @@
                             </select>
                         </div>
                         <div class="col-span-2">
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Exercício</label>
+                            <label for="wb-exercise" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Exercício</label>
                             <div class="flex gap-1.5">
-                                <input type="text" id="wb-exercise" list="wb-exercise-suggestions" oninput="onWbExerciseChange()" placeholder="Ex: Supino Reto com Barra" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
-                                <button type="button" onclick="openExercisePicker('wb')" title="Buscar por tags e filtros" class="shrink-0 px-2.5 bg-berzerker-border hover:bg-berzerker-600 text-white text-xs font-bold rounded-lg transition-colors">🔎</button>
+                                <input type="text" id="wb-exercise" list="wb-exercise-suggestions" data-input-action="onWbExerciseChange" placeholder="Ex: Supino Reto com Barra" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                                <button type="button" data-action="openExercisePicker" data-args='["wb"]' title="Buscar por tags e filtros" aria-label="Buscar exercício por tags e filtros" class="shrink-0 px-2.5 bg-berzerker-border hover:bg-berzerker-600 text-white text-xs font-bold rounded-lg transition-colors">🔎</button>
                             </div>
                             <div id="wb-type-hint" class="text-[10px] text-amber-400/90 font-mono mt-0.5">Escolha do catálogo para preencher grupo, tipo de carga e faixa de reps.</div>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Carga Alvo</label>
+                            <label for="wb-weight" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Carga Alvo</label>
                             <input type="number" id="wb-weight" step="0.5" min="0" placeholder="Ex: 100" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Reps Alvo</label>
+                            <label for="wb-reps" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Reps Alvo</label>
                             <input type="text" id="wb-reps" placeholder="Ex: 12, 10, 8" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Técnica</label>
+                            <label for="wb-technique" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Técnica</label>
                             <select id="wb-technique" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
                                 <option value="Convencional">Convencional</option>
                                 <option value="Rest-Pause">Rest-Pause</option>
@@ -439,7 +449,7 @@
                     </div>
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
                         <p class="text-[10px] text-gray-500">💡 Sugestões automáticas do catálogo e do seu histórico ao selecionar o grupo.</p>
-                        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto"><button type="button" onclick="addExerciseToDraft()" class="w-full sm:w-auto px-5 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors shadow-lg shadow-berzerker-600/30 whitespace-nowrap">+ Adicionar Exercício</button><button type="button" id="wb-biset-btn" onclick="addExerciseToDraft(true)" class="w-full sm:w-auto px-5 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap disabled:cursor-not-allowed">🔗 + Bi-set com o anterior</button></div>
+                        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto"><button type="button" data-action="addExerciseToDraft" class="w-full sm:w-auto px-5 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors shadow-lg shadow-berzerker-600/30 whitespace-nowrap">+ Adicionar Exercício</button><button type="button" id="wb-biset-btn" data-action="addExerciseToDraft" data-args="[true]" class="w-full sm:w-auto px-5 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap disabled:cursor-not-allowed">🔗 + Bi-set com o anterior</button></div>
                     </div>
                 </div>
 
@@ -450,7 +460,7 @@
                             📋 Exercícios do Treino
                             <span id="draft-count" class="px-1.5 py-0.5 bg-berzerker-border rounded text-[10px] text-gray-300">0</span>
                         </h3>
-                        <button type="button" onclick="applySuggestedOrder()" class="px-3 py-1.5 bg-berzerker-600/20 border border-berzerker-500/50 hover:bg-berzerker-600/40 text-berzerker-500 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">✨ Ordenar com o assistente</button>
+                        <button type="button" data-action="applySuggestedOrder" class="px-3 py-1.5 bg-berzerker-600/20 border border-berzerker-500/50 hover:bg-berzerker-600/40 text-berzerker-500 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">✨ Ordenar com o assistente</button>
                     </div>
                     <div id="builder-week-gaps" class="mb-3"></div>
                     <div id="draft-exercises-list" class="space-y-2"></div>
@@ -474,27 +484,27 @@
                     <span class="text-berzerker-500">📜</span> Histórico
                 </h2>
                 <div class="flex gap-2">
-                    <button onclick="exportCSV()" class="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all">📥 Exportar CSV (planilha)</button>
+                    <button data-action="exportCSV" class="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all">📥 Exportar CSV (planilha)</button>
                     <label class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer">
                         📤 Importar planilha CSV
-                        <input type="file" accept=".csv,text/csv" onchange="importCSV(event)" class="hidden">
+                        <input type="file" accept=".csv,text/csv" data-change-action="importCSV" data-args='["$event"]' class="hidden">
                     </label>
                 </div>
             </div>
 
             <!-- Seletor de vistas (como as abas da planilha) -->
             <div id="history-views" class="flex gap-1 bg-berzerker-dark p-1.5 rounded-xl border border-berzerker-border w-fit text-xs font-bold uppercase tracking-wider">
-                <button data-view="log" onclick="switchHistoryView('log')" class="seg-btn seg-btn-active px-4 py-2 rounded-lg">Log</button>
-                <button data-view="progresso" onclick="switchHistoryView('progresso')" class="seg-btn px-4 py-2 rounded-lg">Progresso</button>
-                <button data-view="semanas" onclick="switchHistoryView('semanas')" class="seg-btn px-4 py-2 rounded-lg">Semana a semana</button>
-                <button data-view="peso" onclick="switchHistoryView('peso')" class="seg-btn px-4 py-2 rounded-lg">Peso corporal</button>
+                <button data-view="log" data-action="switchHistoryView" data-args='["log"]' class="seg-btn seg-btn-active px-4 py-2 rounded-lg">Log</button>
+                <button data-view="progresso" data-action="switchHistoryView" data-args='["progresso"]' class="seg-btn px-4 py-2 rounded-lg">Progresso</button>
+                <button data-view="semanas" data-action="switchHistoryView" data-args='["semanas"]' class="seg-btn px-4 py-2 rounded-lg">Semana a semana</button>
+                <button data-view="peso" data-action="switchHistoryView" data-args='["peso"]' class="seg-btn px-4 py-2 rounded-lg">Peso corporal</button>
             </div>
 
             <!-- Filtros -->
             <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 bg-berzerker-card border border-berzerker-border rounded-xl p-3">
-                <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Buscar exercício/sessão</label><input type="text" id="hist-busca" oninput="renderHistory()" placeholder="ex: Supino..." class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
-                <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grupo</label>
-                    <select id="hist-grupo" onchange="renderHistory()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm">
+                <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1" for="hist-busca">Buscar exercício/sessão</label><input type="text" id="hist-busca" data-input-action="renderHistory" placeholder="ex: Supino..." class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                <div><label for="hist-grupo" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grupo</label>
+                    <select id="hist-grupo" data-change-action="renderHistory" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm">
                         <option value="">Todos</option>
                         <option>Peito</option><option>Costas</option><option>Pernas</option><option>Posterior</option><option>Ombros</option>
                         <option>Bíceps</option><option>Tríceps</option><option>Abdômen</option>
@@ -502,9 +512,9 @@
                         <option>Cardio</option>
                     </select>
                 </div>
-                <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">De</label><input type="date" id="hist-de" onchange="renderHistory()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
-                <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Até</label><input type="date" id="hist-ate" onchange="renderHistory()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
-                <label class="flex items-center gap-2 cursor-pointer self-end pb-2"><input type="checkbox" id="hist-conferir" onchange="renderHistory()" class="w-4 h-4 rounded text-amber-500 bg-berzerker-dark border-berzerker-border"><span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">⚠️ Só linhas "Conferir?"</span></label>
+                <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1" for="hist-de">De</label><input type="date" id="hist-de" data-change-action="renderHistory" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1" for="hist-ate">Até</label><input type="date" id="hist-ate" data-change-action="renderHistory" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                <label class="flex items-center gap-2 cursor-pointer self-end pb-2"><input type="checkbox" id="hist-conferir" data-change-action="renderHistory" class="w-4 h-4 rounded text-amber-500 bg-berzerker-dark border-berzerker-border"><span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">⚠️ Só linhas "Conferir?"</span></label>
             </div>
 
             <div id="history-content"></div>
@@ -533,8 +543,8 @@
                         </p>
                     </div>
                     <div class="flex gap-2">
-                        <button type="button" onclick="openCustomExModal()" class="px-3 py-2 bg-emerald-600/20 border border-emerald-600/50 hover:bg-emerald-600/40 text-emerald-400 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap">➕ Novo exercício</button>
-                        <button type="button" onclick="clearSearchFilters()" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap">✕ Limpar filtros</button>
+                        <button type="button" data-action="openCustomExModal" class="px-3 py-2 bg-emerald-600/20 border border-emerald-600/50 hover:bg-emerald-600/40 text-emerald-400 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap">➕ Novo exercício</button>
+                        <button type="button" data-action="clearSearchFilters" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap">✕ Limpar filtros</button>
                     </div>
                 </div>
 
@@ -544,24 +554,24 @@
                 <!-- busca textual + filtros -->
                 <div class="grid grid-cols-2 lg:grid-cols-6 gap-2.5 mb-3">
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Buscar</label>
-                        <input type="search" id="cat-q" oninput="setSearchQuery(this.value)" placeholder="Ex: supino, remada, polia, halter..." class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                        <label for="cat-q" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Buscar</label>
+                        <input type="search" id="cat-q" data-input-action="setSearchQuery" data-value-attr="value" placeholder="Ex: supino, remada, polia, halter..." class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grupo muscular</label>
-                        <select id="cat-grupo" onchange="setSearchField('grupo', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
+                        <label for="cat-grupo" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grupo muscular</label>
+                        <select id="cat-grupo" data-change-action="setSearchField" data-args='["grupo"]' data-value-attr="value" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Equipamento</label>
-                        <select id="cat-equip" onchange="setSearchField('equipamento', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
+                        <label for="cat-equip" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Equipamento</label>
+                        <select id="cat-equip" data-change-action="setSearchField" data-args='["equipamento"]' data-value-attr="value" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tipo de carga</label>
-                        <select id="cat-tipo" onchange="setSearchField('tipo', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
+                        <label for="cat-tipo" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tipo de carga</label>
+                        <select id="cat-tipo" data-change-action="setSearchField" data-args='["tipo"]' data-value-attr="value" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Ordenar por</label>
-                        <select id="cat-sort" onchange="setSearchField('sort', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
+                        <label for="cat-sort" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Ordenar por</label>
+                        <select id="cat-sort" data-change-action="setSearchField" data-args='["sort"]' data-value-attr="value" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
                     </div>
                 </div>
 
@@ -592,16 +602,16 @@
 
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3">
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Buscar (exercício, obs, técnica, data)</label>
-                        <input type="search" id="hist-q" oninput="setHistoryField('histQ', this.value)" placeholder="Ex: dor no ombro, drop-set, supino..." class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                        <label for="hist-q" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Buscar (exercício, obs, técnica, data)</label>
+                        <input type="search" id="hist-q" data-input-action="setHistoryField" data-args='["histQ"]' data-value-attr="value" placeholder="Ex: dor no ombro, drop-set, supino..." class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grupo muscular</label>
-                        <select id="hist-muscle" onchange="setHistoryField('histMuscle', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
+                        <label for="hist-muscle" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grupo muscular</label>
+                        <select id="hist-muscle" data-change-action="setHistoryField" data-args='["histMuscle"]' data-value-attr="value" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500"></select>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Período</label>
-                        <select id="hist-period" onchange="setHistoryField('histPeriod', this.value)" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
+                        <label for="hist-period" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Período</label>
+                        <select id="hist-period" data-change-action="setHistoryField" data-args='["histPeriod"]' data-value-attr="value" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500">
                             <option value="todos">Todo o histórico</option>
                             <option value="7">Últimos 7 dias</option>
                             <option value="30">Últimos 30 dias</option>
@@ -652,12 +662,12 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <label for="reserva-boss-select" class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Chefão</label>
-                            <select id="reserva-boss-select" onchange="selectReservaBoss(this.value)" class="bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500 max-w-[220px]"></select>
+                            <select id="reserva-boss-select" data-change-action="selectReservaBoss" data-value-attr="value" class="bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-xs focus:outline-none focus:border-berzerker-500 max-w-[220px]"></select>
                         </div>
                     </div>
                     <div id="reserva-grid" class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 gap-2"></div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <button type="button" onclick="resetBossPortraitToDefault()" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">↩ Voltar ao padrão</button>
+                        <button type="button" data-action="resetBossPortraitToDefault" class="px-3 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors">↩ Voltar ao padrão</button>
                         <span id="reserva-status" class="text-[10px] font-mono text-gray-500"></span>
                     </div>
                 </div>
@@ -703,39 +713,39 @@
                                     <strong id="story-theme-name" class="block truncate text-sm text-white">Berzerker (clássico)</strong>
                                 </div>
                             </div>
-                            <button type="button" onclick="showThemeGallery()" class="shrink-0 rounded-lg border border-berzerker-border px-3 py-2 text-[10px] font-bold uppercase text-gray-300 hover:text-white">Trocar tema</button>
+                            <button type="button" data-action="showThemeGallery" class="shrink-0 rounded-lg border border-berzerker-border px-3 py-2 text-[10px] font-bold uppercase text-gray-300 hover:text-white">Trocar tema</button>
                         </div>
 
                         <!-- CUSTOM BACKGROUND IMAGE UPLOAD -->
                         <div class="space-y-2">
                             <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider">Foto de Fundo Personalizada (Opcional)</label>
-                            <input type="file" id="bg-image-input" accept="image/*" onchange="handleBgImageUpload(event)" class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-berzerker-border file:text-white hover:file:bg-berzerker-600 transition-colors">
+                            <input type="file" id="bg-image-input" accept="image/*" data-change-action="handleBgImageUpload" data-args='["$event"]' class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-berzerker-border file:text-white hover:file:bg-berzerker-600 transition-colors">
 
                             <div class="flex items-center gap-4 pt-1">
-                                <label class="text-xs text-gray-400 uppercase font-bold">Escurecimento Foto:</label>
-                                <input type="range" id="bg-overlay-opacity" min="0.1" max="0.9" step="0.05" value="0.6" oninput="generateStoryCard()" class="flex-1 accent-berzerker-500">
-                                <button type="button" onclick="removeBgImage()" class="text-xs text-red-400 hover:underline">Remover Foto</button>
+                                <label for="bg-overlay-opacity" class="text-xs text-gray-400 uppercase font-bold">Escurecimento Foto:</label>
+                                <input type="range" id="bg-overlay-opacity" min="0.1" max="0.9" step="0.05" value="0.6" data-input-action="generateStoryCard" class="flex-1 accent-berzerker-500">
+                                <button type="button" data-action="removeBgImage" class="text-xs text-red-400 hover:underline">Remover Foto</button>
                             </div>
                         </div>
 
                         <!-- VIBE INTEGRATION -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-berzerker-border">
                             <div>
-                                <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">🎵 Trilha Sonora / Música</label>
-                                <input type="text" id="vibe-music" placeholder="Ex: Rammstein - Deutschland" oninput="generateStoryCard()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-xs">
+                                <label for="vibe-music" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">🎵 Trilha Sonora / Música</label>
+                                <input type="text" id="vibe-music" placeholder="Ex: Rammstein - Deutschland" data-input-action="generateStoryCard" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-xs">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">🌩️ Clima / Temperatura</label>
-                                <input type="text" id="vibe-weather" placeholder="Ex: 12°C Chuvoso" oninput="generateStoryCard()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-xs">
+                                <label for="vibe-weather" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">🌩️ Clima / Temperatura</label>
+                                <input type="text" id="vibe-weather" placeholder="Ex: 12°C Chuvoso" data-input-action="generateStoryCard" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-xs">
                             </div>
                         </div>
 
                         <!-- DOWNLOAD BUTTONS -->
-                        <button onclick="downloadStoryCard()" class="w-full py-3.5 bg-gradient-to-r from-berzerker-600 to-berzerker-800 hover:from-berzerker-500 hover:to-berzerker-700 text-white font-bold text-sm uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-berzerker-600/30 flex items-center justify-center gap-2">
+                        <button data-action="downloadStoryCard" class="w-full py-3.5 bg-gradient-to-r from-berzerker-600 to-berzerker-800 hover:from-berzerker-500 hover:to-berzerker-700 text-white font-bold text-sm uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-berzerker-600/30 flex items-center justify-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                             Baixar Card em Alta Resolução (1080x1920)
                         </button>
-                        <button onclick="openBossDefeatCard()" class="w-full py-3 bg-amber-700/80 hover:bg-amber-600 text-white font-bold text-sm uppercase tracking-widest rounded-xl transition-all">
+                        <button data-action="openBossDefeatCard" class="w-full py-3 bg-amber-700/80 hover:bg-amber-600 text-white font-bold text-sm uppercase tracking-widest rounded-xl transition-all">
                             📸 Card de Chefão Derrotado (1080×1080)
                         </button>
                     </div>
@@ -810,7 +820,7 @@
                     <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
                         <span class="text-cyan-400">🎯</span> Evolução por Exercício (carga & 1RM)
                     </h2>
-                    <select id="ex-chart-select" onchange="renderExerciseChart()" class="bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-sm min-w-[220px]"></select>
+                    <select id="ex-chart-select" data-change-action="renderExerciseChart" class="bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-sm min-w-[220px]"></select>
                 </div>
                 <div class="h-64 sm:h-80 w-full relative">
                     <canvas id="exChart"></canvas>
@@ -861,12 +871,12 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Carga Utilizada (kg)</label>
-                            <input type="number" id="calc-1rm-weight" placeholder="Ex: 100" oninput="calculate1RM()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-sm">
+                            <label for="calc-1rm-weight" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Carga Utilizada (kg)</label>
+                            <input type="number" id="calc-1rm-weight" placeholder="Ex: 100" data-input-action="calculate1RM" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Repetições Feitas</label>
-                            <input type="number" id="calc-1rm-reps" placeholder="Ex: 5" oninput="calculate1RM()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-sm">
+                            <label for="calc-1rm-reps" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Repetições Feitas</label>
+                            <input type="number" id="calc-1rm-reps" placeholder="Ex: 5" data-input-action="calculate1RM" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2 text-white text-sm">
                         </div>
                     </div>
 
@@ -891,8 +901,8 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Carga Alvo de Trabalho (kg)</label>
-                        <input type="number" id="calc-warmup-target" placeholder="Ex: 120" oninput="renderWarmupCalculator()" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm">
+                        <label for="calc-warmup-target" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Carga Alvo de Trabalho (kg)</label>
+                        <input type="number" id="calc-warmup-target" placeholder="Ex: 120" data-input-action="renderWarmupCalculator" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm">
                     </div>
 
                     <div id="warmup-results-container" class="space-y-2"></div>
@@ -900,10 +910,10 @@
                     <div class="border-t border-berzerker-border pt-4 space-y-2">
                         <span class="text-xs font-bold text-gray-300 uppercase tracking-wider block">⚙️ Anilhas por lado</span>
                         <div class="grid grid-cols-2 gap-2">
-                            <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Carga total na barra/carrinho</label><input type="number" step="0.5" min="0" id="plate-target" placeholder="90" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
-                            <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Barra / carrinho (kg)</label><input type="number" step="0.5" min="0" id="plate-base" placeholder="20" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                            <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1" for="plate-target">Carga total na barra/carrinho</label><input type="number" step="0.5" min="0" id="plate-target" placeholder="90" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                            <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1" for="plate-base">Barra / carrinho (kg)</label><input type="number" step="0.5" min="0" id="plate-base" placeholder="20" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
                         </div>
-                        <button type="button" onclick="calculatePlatesFromForm()" class="w-full py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase rounded-lg">Calcular anilhas</button>
+                        <button type="button" data-action="calculatePlatesFromForm" class="w-full py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase rounded-lg">Calcular anilhas</button>
                         <div id="plate-result" class="text-xs font-mono text-amber-300 bg-berzerker-dark border border-amber-700/30 rounded-lg p-2.5"></div>
                     </div>
                 </div>
@@ -923,10 +933,10 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Seu Peso Corporal Atual (kg)</label>
+                    <label for="user-bodyweight" class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Seu Peso Corporal Atual (kg)</label>
                     <div class="flex gap-3">
                         <input type="number" id="user-bodyweight" step="0.5" placeholder="Ex: 80" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2.5 text-white text-sm">
-                        <button onclick="saveBodyweight()" class="px-5 py-2.5 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase rounded-lg">Salvar</button>
+                        <button data-action="saveBodyweight" class="px-5 py-2.5 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase rounded-lg">Salvar</button>
                     </div>
                 </div>
 
@@ -934,13 +944,13 @@
                 <div class="border-t border-berzerker-border pt-6 space-y-3">
                     <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">🏋️ Treino & Recuperação</h3>
                     <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Meta de treinos / semana (streak)</label><input type="number" id="cfg-weekly-goal" min="1" max="7" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
-                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Descanso padrão (s)</label><input type="number" id="cfg-rest" min="15" max="600" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
-                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Peso da barra (kg)</label><input type="number" id="cfg-bar" step="0.5" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
-                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Carrinho leg press (kg)</label><input type="number" id="cfg-sled" step="0.5" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1" for="cfg-weekly-goal">Meta de treinos / semana (streak)</label><input type="number" id="cfg-weekly-goal" min="1" max="7" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1" for="cfg-rest">Descanso padrão (s)</label><input type="number" id="cfg-rest" min="15" max="600" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1" for="cfg-bar">Peso da barra (kg)</label><input type="number" id="cfg-bar" step="0.5" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
+                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1" for="cfg-sled">Carrinho leg press (kg)</label><input type="number" id="cfg-sled" step="0.5" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white text-sm"></div>
                     </div>
-                    <button onclick="saveTrainingSettings()" class="w-full py-2.5 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase rounded-lg">Salvar configurações de treino</button>
-                    <button id="cfg-deload-btn" onclick="toggleDeloadWeek()" class="w-full py-2.5 bg-purple-900/40 border border-purple-700/40 hover:bg-purple-900/70 text-purple-200 font-bold text-xs uppercase rounded-lg">🧘 Planejar semana de deload</button>
+                    <button data-action="saveTrainingSettings" class="w-full py-2.5 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase rounded-lg">Salvar configurações de treino</button>
+                    <button id="cfg-deload-btn" data-action="toggleDeloadWeek" class="w-full py-2.5 bg-purple-900/40 border border-purple-700/40 hover:bg-purple-900/70 text-purple-200 font-bold text-xs uppercase rounded-lg">🧘 Planejar semana de deload</button>
                     <p class="text-[10px] text-gray-500">Semana de deload: volume rende 50% do XP e cada dia de descanso rende +25 XP de recuperação — o app não pune quem recupera. A 4ª semana de cada temporada já é deload automático.</p>
                 </div>
 
@@ -949,14 +959,20 @@
                     <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">📊 CSV (formato da planilha)</h3>
                     <p class="text-xs text-gray-400">Exporte/importe no mesmo formato multi-aba da sua planilha (<code class="text-amber-300">Data;Sessão;Exercício;Carga registrada;S1..S5;...</code> com <code class="text-amber-300">--- Sheet: ... ---</code>) e acabe com a digitação dupla. Também dá para fazer tudo na aba 📜 Histórico.</p>
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <button onclick="exportCSV()" class="flex-1 py-3 bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2">
+                        <button data-action="exportCSV" class="flex-1 py-3 bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2">
                             <span>📥</span> Exportar CSV
                         </button>
                         <label class="flex-1 py-3 bg-berzerker-border hover:bg-gray-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer text-center">
                             <span>📤</span> Importar CSV
-                            <input type="file" id="import-csv-file" accept=".csv,text/csv" onchange="importCSV(event)" class="hidden">
+                            <input type="file" id="import-csv-file" accept=".csv,text/csv" data-change-action="importCSV" data-args='["$event"]' class="hidden">
                         </label>
                     </div>
+                </div>
+
+                <!-- ARMAZENAMENTO (IndexedDB + persistência) -->
+                <div class="border-t border-berzerker-border pt-6 space-y-3">
+                    <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">🗄️ Armazenamento</h3>
+                    <div id="storage-status" class="text-[11px] text-gray-400 bg-berzerker-dark border border-berzerker-border rounded-lg p-2.5">Verificando armazenamento…</div>
                 </div>
 
                 <!-- BACKUP JSON -->
@@ -966,19 +982,19 @@
                     <p class="text-xs text-gray-400">O backup inclui <b>tudo</b>: registros, treinos, tema, retratos dos chefões, testes, temporadas e configurações.</p>
 
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <button onclick="exportJSONBackup()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2">
+                        <button data-action="exportJSONBackup" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2">
                             <span>📥</span> Exportar Backup (.json)
                         </button>
 
                         <label class="flex-1 py-3 bg-berzerker-border hover:bg-gray-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer text-center">
                             <span>📤</span> Importar Backup (.json)
-                            <input type="file" id="import-json-file" accept=".json" onchange="importJSONBackup(event)" class="hidden">
+                            <input type="file" id="import-json-file" accept=".json" data-change-action="importJSONBackup" data-args='["$event"]' class="hidden">
                         </label>
                     </div>
                 </div>
 
                 <div class="border-t border-berzerker-border pt-6">
-                    <button onclick="clearAllData()" class="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-wider">
+                    <button data-action="clearAllData" class="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-wider">
                         ⚠️ Apagar Todo o Histórico
                     </button>
                 </div>
@@ -988,15 +1004,11 @@
 
     </main>
 
-    <!-- App (offline-first: catálogo → gamificação → assistente → núcleo) -->
-    <script src="js/catalogo.js"></script>
-    <script src="js/gamificacao.js"></script>
-    <script src="js/assistente.js"></script>
-    <script src="js/planilha_data.js"></script>
-    <script src="js/historico.js"></script>
-    <script src="js/busca.js"></script>
-    <script src="js/custom_exercises.js"></script>
-    <script src="js/app.js"></script>
+    <!-- App em ES modules nativos (sem bundler): app.js importa os demais na
+         ordem actions → storage → catálogo → gamificação → assistente →
+         planilha → histórico → busca → custom. Funciona offline: o service
+         worker pré-cacheia cada arquivo. -->
+    <script type="module" src="js/app.js"></script>
     <script>
         // PWA: registra o service worker (só em http/https) e pede armazenamento persistente
         if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

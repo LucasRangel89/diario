@@ -1,3 +1,6 @@
+import { EXERCISE_CATALOG_FULL, catalogInfo, inferExerciseType, logCargaEfetiva, logFullMeta, logVolumeKg, normalizeMuscle, sinalProximaSessao } from './catalogo.js';
+import { cardioXP } from './gamificacao.js';
+import { alertModal, escapeHtml, fmtN, getTodayLocalISO, histVolChartInstance, logs, parseCSVRows, refreshAll, saveBodyweight, saveGameState, saveLogsToStorage, saveSettings, setHistVolChartInstance, setLogs, setUserBodyweight, setWeightLog, settings, userBodyweight, weightLog } from './app.js';
 /* ============================================================
    HISTÓRICO — formato da planilha do usuário
    Vistas: Log | Progresso | Semana a semana | Peso corporal
@@ -228,7 +231,7 @@ function historySemanasHTML() {
     return `
     <div class="flex items-end gap-3 mb-4 flex-wrap">
         <label class="text-xs text-gray-400">Início da semana 1 (segunda-feira)
-            <input type="date" value="${w1}" onchange="setWeek1Start(this.value)" class="block bg-gray-800 border border-berzerker-border rounded px-3 py-2 text-white">
+            <input type="date" value="${w1}" data-change-action="setWeek1Start" data-value-attr="value" class="block bg-gray-800 border border-berzerker-border rounded px-3 py-2 text-white">
         </label>
         <p class="text-xs text-gray-400 pb-2">Semanas de ${histDataBR(weeks[0].isoS)} a ${histDataBR(weeks[11].isoE)}.</p>
     </div>
@@ -260,15 +263,15 @@ function historyPesoHTML() {
             <td class="px-2 py-1.5">${histDataBR(w.date)}</td>
             <td class="px-2 py-1.5 text-center font-semibold text-white">${fmtN(w.peso, 1)}</td>
             <td class="px-2 py-1.5 text-xs text-gray-400">${escapeHtml(w.obs || '')}</td>
-            <td class="px-2 py-1.5 text-right"><button onclick="removeWeightLog('${w.date}')" class="text-red-400 hover:text-red-300 text-xs">✕</button></td>
+            <td class="px-2 py-1.5 text-right"><button data-action="removeWeightLog" data-args='["${w.date}"]' class="text-red-400 hover:text-red-300 text-xs">✕</button></td>
         </tr>`).join('');
     return `
     <div class="flex gap-2 items-end flex-wrap mb-4">
         <label class="text-xs text-gray-400">Data<input type="date" id="pw-date" value="${getTodayLocalISO()}" class="block bg-gray-800 border border-berzerker-border rounded px-3 py-2 text-white"></label>
         <label class="text-xs text-gray-400">Peso (kg)<input type="number" id="pw-peso" step="0.1" class="block bg-gray-800 border border-berzerker-border rounded px-3 py-2 text-white w-28" placeholder="80"></label>
         <label class="text-xs text-gray-400">Observação<input type="text" id="pw-obs" class="block bg-gray-800 border border-berzerker-border rounded px-3 py-2 text-white w-52" placeholder="opcional"></label>
-        <button onclick="addWeightLog()" class="bg-berzerker-500 hover:bg-berzerker-100 text-white font-semibold px-4 py-2 rounded">Registrar peso</button>
-        <button onclick="setBodyweightFromLog()" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded text-sm">Usar como peso corporal do app</button>
+        <button data-action="addWeightLog" class="bg-berzerker-500 hover:bg-berzerker-100 text-white font-semibold px-4 py-2 rounded">Registrar peso</button>
+        <button data-action="setBodyweightFromLog" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded text-sm">Usar como peso corporal do app</button>
     </div>
     <div class="overflow-x-auto bg-gray-800/50 rounded-xl border border-berzerker-border">
         <table class="w-full text-xs">
@@ -283,14 +286,14 @@ function addWeightLog() {
     const peso = parseFloat(document.getElementById('pw-peso').value);
     const obs = document.getElementById('pw-obs').value.trim();
     if (!peso || peso < 20) return alertModal('⚠️ Peso inválido — informe um peso em kg (ex.: 80).');
-    weightLog = weightLog.filter(w => w.date !== date);
+    setWeightLog(weightLog.filter(w => w.date !== date));
     weightLog.push({ date, peso, obs });
     saveGameState();
     renderHistory();
 }
 
 function removeWeightLog(date) {
-    weightLog = weightLog.filter(w => w.date !== date);
+    setWeightLog(weightLog.filter(w => w.date !== date));
     saveGameState();
     renderHistory();
 }
@@ -298,7 +301,7 @@ function removeWeightLog(date) {
 function setBodyweightFromLog() {
     const last = weightLog.slice().sort((a, b) => a.date.localeCompare(b.date)).pop();
     if (!last) return alertModal('⚠️ Sem pesagens — registre um peso primeiro.');
-    userBodyweight = last.peso;
+    setUserBodyweight(last.peso);
     document.getElementById('user-bodyweight').value = last.peso;
     saveBodyweight();
     alertModal(`⚖️ Peso corporal do app = ${fmtN(last.peso, 1)} kg (pesagem de ${histDataBR(last.date)}).`);
@@ -317,11 +320,11 @@ function drawVolumeChartMini() {
         vols.push(logs.filter(l => l.kind === 'peso' && l.date >= s.toISOString().slice(0, 10) && l.date <= e.toISOString().slice(0, 10)).reduce((a, l) => a + logVolumeKg(l), 0));
     }
     if (histVolChartInstance) histVolChartInstance.destroy();
-    histVolChartInstance = new Chart(canvas.getContext('2d'), {
+    setHistVolChartInstance(new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: { labels, datasets: [{ label: 'Volume (kg)/semana', data: vols, backgroundColor: '#FF6B00' }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { x: { ticks: { color: '#aaa' } }, y: { ticks: { color: '#aaa' } } } }
-    });
+    }));
 }
 
 /* ================= CSV — formato da planilha (multi-aba, ; ) ================= */
@@ -491,7 +494,7 @@ function importPlanilhaCSV(text) {
 
     if (sheets['log']) {
         const novos = parseSheetLogRows(parseCSVRows(sheets['log'].join('\n'), ';'));
-        logs = [...novos, ...logs];
+        setLogs([...novos, ...logs]);
         const imported = novos.length;
         // Peso corporal
         if (sheets['peso corporal']) {
@@ -499,7 +502,7 @@ function importPlanilhaCSV(text) {
                 const peso = parseFloat(String(c[1]).replace(',', '.'));
                 if (peso) {
                     const date = parseDateBRorISO(c[0]);
-                    weightLog = weightLog.filter(w => w.date !== date);
+                    setWeightLog(weightLog.filter(w => w.date !== date));
                     weightLog.push({ date, peso, obs: c[2] || '' });
                 }
             });
@@ -538,3 +541,48 @@ function importPlanilhaCSV(text) {
     refreshAll();
     alertModal(`✅ CSV importado — ${imported} lançamentos.`);
 }
+
+// ============================================================
+// ETAPA 5.1 — manifesto de exports (fundação para ES modules)
+// Cada arquivo declara explicitamente a sua superfície pública.
+// No carregamento clássico os globais continuam valendo; quando a
+// migração para <script type="module"> acontecer, este bloco vira
+// `export { ... }`.
+// ============================================================
+(function (g) {
+    const exports_ = {
+        historyView,
+    switchHistoryView,
+    historyFilteredLogs,
+    histDataBR,
+    metricaProgresso,
+    histGrupoChipHTML,
+    histSessaoDetalheHTML,
+    renderHistory,
+    historyLogHTML,
+    historyProgressoHTML,
+    getWeek1Start,
+    setWeek1Start,
+    historySemanasHTML,
+    historyPesoHTML,
+    addWeightLog,
+    removeWeightLog,
+    setBodyweightFromLog,
+    drawVolumeChartMini,
+    csvNum,
+    buildPlanilhaCSV,
+    exportCSV,
+    parseDateBRorISO,
+    importCSV,
+    parseSheetLogRows,
+    importPlanilhaCSV
+    };
+    g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
+    // Ações delegáveis (js/actions.js): toda função pública do módulo fica
+    // disponível para os atributos data-action dos templates.
+    const actionFns = {};
+    Object.keys(exports_).forEach(k => { if (typeof exports_[k] === 'function') actionFns[k] = exports_[k]; });
+    g.registerDiarioActions(actionFns);
+    g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/historico.js": Object.keys(exports_).length });
+})(typeof window !== 'undefined' ? window : globalThis);
+export { historyView, switchHistoryView, historyFilteredLogs, histDataBR, metricaProgresso, histGrupoChipHTML, histSessaoDetalheHTML, renderHistory, historyLogHTML, historyProgressoHTML, getWeek1Start, setWeek1Start, historySemanasHTML, historyPesoHTML, addWeightLog, removeWeightLog, setBodyweightFromLog, drawVolumeChartMini, csvNum, buildPlanilhaCSV, exportCSV, parseDateBRorISO, importCSV, parseSheetLogRows, importPlanilhaCSV };
