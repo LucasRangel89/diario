@@ -959,6 +959,12 @@
                     </div>
                 </div>
 
+                <!-- ARMAZENAMENTO (IndexedDB + persistência) -->
+                <div class="border-t border-berzerker-border pt-6 space-y-3">
+                    <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">🗄️ Armazenamento</h3>
+                    <div id="storage-status" class="text-[11px] text-gray-400 bg-berzerker-dark border border-berzerker-border rounded-lg p-2.5">Verificando armazenamento…</div>
+                </div>
+
                 <!-- BACKUP JSON -->
                 <div class="border-t border-berzerker-border pt-6 space-y-4">
                     <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider">💾 Backup & Restauração JSON</h3>
@@ -989,6 +995,7 @@
     </main>
 
     <!-- App (offline-first: catálogo → gamificação → assistente → núcleo) -->
+    <script src="js/storage.js"></script>
     <script src="js/catalogo.js"></script>
     <script src="js/gamificacao.js"></script>
     <script src="js/assistente.js"></script>

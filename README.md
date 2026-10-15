@@ -107,6 +107,7 @@ npm run serve        # servidor local em http://localhost:8080
 npm test             # testes do motor (node test_engine.js)
 ```
 
+- `js/storage.js` — camada única de armazenamento (IndexedDB + espelho no localStorage, migração automática, imagens como Blob)
 - `js/catalogo.js` — catálogo + motor de volume/convenções + tags
 - `js/gamificacao.js` — temas, patentes, chefões
 - `js/assistente.js` — ordem sugerida (Fase 2) + fadiga real/próximo treino (Fase 3)

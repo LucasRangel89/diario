@@ -36,3 +36,4 @@ Testadas em `test_engine.js` (linhas 332–489 e 590–671): `orderWorkoutExerci
 - `ci.yml`: roda `npm ci` e `npm test` em push/PR para `main`; job `cache-offline` verifica bump do VERSION do sw.js.
 - `pages.yml`: build estático (copia arquivos) e deploy no GitHub Pages.
 - Falta: `npm run build:css` e `npm run check:sw` no CI (5.2).
+

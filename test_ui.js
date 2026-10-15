@@ -63,7 +63,7 @@ window.fetch = url => {
 // ---------- carrega os módulos na ordem do index.html ----------
 // vm.runInContext mantém o escopo léxico global entre scripts (como no navegador),
 // então os `const`/`let` de catalogo.js continuam visíveis para app.js.
-['js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
+['js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
     .forEach(f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f }));
 
 // ---------- helpers ----------
@@ -750,6 +750,29 @@ check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexis
         /block truncate text-\[10px\][^"]*leading-tight/.test(appSrcMobile)
         && /width="40" height="40"[^>]*shrink-0/.test(appSrcMobile));
     ev('closeTopOverlay();');
+
+    // ============================ BACKUP PONTA A PONTA ============================
+    console.log('\n== UI 12b. Backup: exportar → apagar → importar → comparar ==');
+    const logsIDsAntes = ev('JSON.stringify(logs.map(l => l.id))');
+    const settingsAntes = ev('JSON.stringify(settings)');
+    const treinosAntes = ev('JSON.stringify(savedWorkouts.map(w => w.id || w.name))');
+    check('há dados do seed para o teste de backup', ev('logs.length') > 0 && ev('savedWorkouts.length') > 0);
+    const payloadStr = await ev('buildBackupPayload().then(p => JSON.stringify(p))');
+    const payload = JSON.parse(payloadStr);
+    check('backup contém logs, treinos, configurações e tema',
+        Array.isArray(payload.logs) && payload.logs.length === ev('logs.length')
+        && Array.isArray(payload.savedWorkouts) && payload.settings && !!payload.gameTheme, { v: payload.version, logs: payload.logs && payload.logs.length });
+    check('backup sem base64 de retrato no save (marcadores idb: ou arte padrão)',
+        Object.values((payload.themeGameSaves && payload.themeGameSaves.classico && payload.themeGameSaves.classico.bossPortraits) || {}).every(v => typeof v === 'string' && !v.startsWith('data:')));
+    // simula a perda total: estado em memória zerado e localStorage esvaziado
+    ev('logs = []; savedWorkouts = []; settings = { weeklyGoal: 3, restDefault: 90, barWeight: DEFAULT_BAR_WEIGHT, sledWeight: DEFAULT_SLED_WEIGHT }; themeGameSaves = {};');
+    window.localStorage.clear();
+    const restaurou = await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(payloadStr)}))`);
+    check('importação do backup conclui', restaurou === true);
+    check('logs restaurados idênticos (ids na mesma ordem)', ev('JSON.stringify(logs.map(l => l.id))') === logsIDsAntes);
+    check('configurações restauradas idênticas', ev('JSON.stringify(settings)') === settingsAntes);
+    check('treinos salvos restaurados idênticos', ev('JSON.stringify(savedWorkouts.map(w => w.id || w.name))') === treinosAntes);
+    check('estado do jogo restaurado (saves por tema recriados)', ev("Object.keys(themeGameSaves).length") === Object.keys(payload.themeGameSaves || {}).length);
 
     // ============================ CONSOLE ============================
     console.log('\n== UI 12. Console limpo ==');

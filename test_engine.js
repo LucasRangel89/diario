@@ -14,8 +14,45 @@ global.navigator = { vibrate: noop };
 global.Image = class { set src(v) { } };
 global.Chart = undefined;
 
+// ---- Stubs de armazenamento: localStorage + IndexedDB falsos (para js/storage.js) ----
+const __lsData = new Map();
+global.localStorage = {
+    getItem: k => (__lsData.has(k) ? __lsData.get(k) : null),
+    setItem: (k, v) => __lsData.set(k, String(v)),
+    removeItem: k => __lsData.delete(k),
+    clear() { __lsData.clear(); },
+    get length() { return __lsData.size; },
+    key(i) { return [...__lsData.keys()][i] ?? null; }
+};
+function makeFakeIDB() {
+    const store = new Map();
+    class FakeReq {
+        constructor(exec) {
+            this.onsuccess = null; this.onerror = null; this.onupgradeneeded = null; this.result = undefined;
+            queueMicrotask(() => {
+                try { exec(this); if (this.onsuccess) this.onsuccess({ target: this }); }
+                catch (e) { if (this.onerror) this.onerror(e); }
+            });
+        }
+    }
+    const db = {
+        objectStoreNames: { contains: () => true },
+        transaction(_name, _mode) {
+            return { objectStore(_store) {
+                return {
+                    get: k => new FakeReq(r => { r.result = store.has(k) ? store.get(k) : undefined; }),
+                    put: (v, k) => new FakeReq(r => { store.set(k, v); r.result = k; }),
+                    getAllKeys: () => new FakeReq(r => { r.result = [...store.keys()]; })
+                };
+            } };
+        }
+    };
+    return { open(_name, _ver) { return new FakeReq(r => { r.result = db; }); } };
+}
+global.indexedDB = makeFakeIDB();
+
 // ---- Carrega os módulos (mesmo escopo) ----
-const src = ['js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
+const src = ['js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
     .map(p => fs.readFileSync(p, 'utf8')).join('\n');
 const api = new Function(src + `
   return {
@@ -41,6 +78,7 @@ const api = new Function(src + `
     get themeSaves() { return themeGameSaves; },
     get STATE() { return { logs, settings, userBodyweight }; },
     setLogs(arr) { logs = arr; },
+    storageRef: storage,
     setBW(v) { userBodyweight = v; },
     setWeightLog(arr) { weightLog = arr; },
     get logsArr() { return logs; },
@@ -818,5 +856,44 @@ check('curva de HP e IDs dos chefões do folclore intactos',
     folclore.bosses.map(b => b.maxHp).join() === Array.from({ length: 12 }, (_, i) => 25000 + 2000 * i).join()
     && folclore.bosses.map(b => b.id).join() === Array.from({ length: 12 }, (_, i) => `b${i}`).join());
 
-console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
-process.exit(failures === 0 ? 0 : 1);
+
+// ============================================================
+// ETAPA 1 — Camada de armazenamento (js/storage.js)
+// Migração localStorage → IndexedDB: automática, idempotente,
+// valida contagem, mantém o localStorage intacto e recupera do espelho.
+// ============================================================
+(async () => {
+    console.log('\n== 1-storage. IndexedDB: migração, idempotência e recuperação ==');
+    const storage = api.storageRef;
+
+    // round-trip síncrono
+    storage.set('berzerker_teste_rt', 'valor-123');
+    check('storage.set/get round-trip', storage.get('berzerker_teste_rt') === 'valor-123');
+
+    // migração: 3 chaves legadas no localStorage
+    __lsData.set('berzerker_legado_a', '1');
+    __lsData.set('berzerker_legado_b', '2');
+    __lsData.set('berzerker_legado_c', '3');
+    const mig1 = await storage.migrate();
+    check('migração conclui com validação de contagem', mig1 && mig1.ok === true, mig1);
+    check('localStorage NÃO é apagado depois da migração (cópia antiga preservada)',
+        __lsData.get('berzerker_legado_a') === '1' && __lsData.get('berzerker_legado_b') === '2' && __lsData.get('berzerker_legado_c') === '3');
+    const mig2 = await storage.migrate();
+    check('segunda migração é pulada (idempotente)', mig2 && mig2.skipped === true, mig2);
+    check('schemaVersion declarado = 1', storage.schemaVersion === 1);
+    check('flag de migração gravada no IndexedDB', await storage.peekRaw('__berzerker_migrated_v1') === '1');
+    check('schemaVersion gravado no IndexedDB', await storage.peekRaw('__berzerker_schema_version') === '1');
+
+    // recuperação: localStorage esvaziado → espelho do IndexedDB restaura
+    const antes = storage.get('berzerker_legado_a');
+    __lsData.delete('berzerker_legado_a');
+    __lsData.delete('berzerker_legado_b');
+    const rec = await storage.recoverFromIndexedDB();
+    check('chaves perdidas são restauradas do espelho do IndexedDB',
+        rec && rec.ok && rec.restored >= 2 && storage.get('berzerker_legado_a') === antes && storage.get('berzerker_legado_b') === '2', rec);
+    const rec2 = await storage.recoverFromIndexedDB();
+    check('recuperação repetida não restaura nada (idempotente)', rec2 && rec2.ok && rec2.restored === 0, rec2);
+
+    console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
+    process.exit(failures === 0 ? 0 : 1);
+})().catch(e => { console.error('❌ ERRO NOS TESTES DE STORAGE:', e); process.exit(1); });

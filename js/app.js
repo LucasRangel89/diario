@@ -25,7 +25,9 @@ let missionsXpTotal = 0;       // XP já resgatado de missões
 let missionsClaimed = {};      // { '2026-W41': true }
 let tests = [];                // Modo Testes
 let seasons = null;            // temporadas de 12 semanas
-let bossPortraits = {};        // retratos do tema ativo { bossId: dataURL }
+let bossPortraits = {};        // retratos do tema ativo { bossId: dataURL | 'idb:portrait:...' }
+const portraitObjectURLs = {};  // marcador 'idb:...' → objectURL do Blob no IndexedDB (sessão atual)
+const STORY_BG_BLOB_KEY = 'story-bg'; // chave do Blob do fundo do Story Card no IndexedDB
 let themeGameSaves = {};       // progresso separado por tema
 let activeGameThemeId = 'classico';
 let selectedStoryBossId = null;
@@ -56,8 +58,14 @@ const STORAGE_KEY_STORY = 'berzerker_story_v1';          // foto de fundo do Sto
 const STORAGE_KEY_BACKUP = 'berzerker_last_backup_at';
 
 const safeStorage = {
-    get(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } },
-    set(key, val) { try { window.localStorage.setItem(key, val); } catch (e) { /* sem persistência */ } }
+    get(key) {
+        try { if (window.storage && typeof window.storage.get === 'function') return window.storage.get(key); } catch (e) { /* fallback */ }
+        try { return window.localStorage.getItem(key); } catch (e) { return null; }
+    },
+    set(key, val) {
+        try { if (window.storage && typeof window.storage.set === 'function') window.storage.set(key, val); } catch (e) { /* fallback */ }
+        try { window.localStorage.setItem(key, val); } catch (e) { /* sem persistência */ }
+    }
 };
 
 // ============================ CONSTANTES UI ============================
@@ -312,6 +320,8 @@ function restoreActiveThemeGameSave(themeId) {
     missionsClaimed = { ...save.missionsClaimed };
     seasons = save.seasons ? JSON.parse(JSON.stringify(save.seasons)) : null;
     bossPortraits = { ...save.bossPortraits };
+    // Blobs do IndexedDB: hidrata objectURLs (e migra dataURLs legados) sem bloquear.
+    if (typeof hydratePortraitBlobs === 'function') { try { hydratePortraitBlobs(); } catch (e) { /* noop */ } }
 }
 
 function isoWeekDateRange(weekKey) {
@@ -440,11 +450,32 @@ function loadStoredData() {
     try {
         const st = JSON.parse(safeStorage.get(STORAGE_KEY_STORY));
         if (st && typeof st === 'object') {
-            // Opções de paleta antigas (Berzerker/Cyberpunk/Minimal) são ignoradas.
-            if (st.bgImageData) {
+            // Novo: fundo vive como Blob no IndexedDB (flag `bgBlob`).
+            if (st.bgBlob === '1' && window.storage && typeof window.storage.getBlob === 'function') {
+                window.storage.getBlob(STORY_BG_BLOB_KEY).then(blob => {
+                    if (!blob) return;
+                    const url = URL.createObjectURL(blob);
+                    const img = new Image();
+                    img.onload = () => { customBgImageData = img; generateStoryCard(); };
+                    img.src = url;
+                }).catch(() => {});
+            } else if (st.bgImageData) {
+                // Legado: dataURL em base64 → migra para Blob e limpa o localStorage.
+                const dataURL = st.bgImageData;
                 const img = new Image();
-                img.onload = () => { customBgImageData = img; generateStoryCard(); };
-                img.src = st.bgImageData;
+                img.onload = () => {
+                    customBgImageData = img;
+                    generateStoryCard();
+                    (async () => {
+                        try {
+                            if (window.storage && typeof window.storage.compressImage === 'function' && typeof window.storage.saveBlob === 'function') {
+                                const blob = await window.storage.compressImage(dataURL, 1080, 0.82, 'image/webp');
+                                if (await window.storage.saveBlob(STORY_BG_BLOB_KEY, blob)) saveStoryState();
+                            }
+                        } catch (e) { /* mantém o legado */ }
+                    })();
+                };
+                img.src = dataURL;
             }
         }
     } catch (e) { /* ok */ }
@@ -477,9 +508,27 @@ function saveGameState() {
     safeStorage.set(STORAGE_KEY_GAME_SHARED, JSON.stringify({ deloadWeeks, tests, weightLog }));
 }
 function saveStoryState() {
+    // O fundo enviado pelo usuário vive como Blob no IndexedDB (`bgBlob: '1'`).
+    // `bgImageData` só fica preenchido em fallback legado (IndexedDB indisponível).
     safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({
-        bgImageData: customBgImageData ? customBgImageData.src : null
+        bgBlob: customBgImageData ? '1' : null,
+        bgImageData: null
     }));
+}
+
+// Fundo em dataURL portátil (para o backup JSON): desenha a imagem num canvas
+// limitado a 1080 px. Retorna null se não der (canvas indisponível).
+function snapshotStoryBgDataURL() {
+    try {
+        if (!customBgImageData || !customBgImageData.naturalWidth) return null;
+        const maxPx = 1080;
+        const scale = Math.min(1, maxPx / Math.max(customBgImageData.naturalWidth, customBgImageData.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.round(customBgImageData.naturalWidth * scale);
+        c.height = Math.round(customBgImageData.naturalHeight * scale);
+        c.getContext('2d').drawImage(customBgImageData, 0, 0, c.width, c.height);
+        return c.toDataURL('image/jpeg', 0.8);
+    } catch (e) { return null; }
 }
 
 function defaultTests() {
@@ -753,7 +802,54 @@ function switchTab(tab) {
     if (tab === 'boss') { renderBossBattleUI(); renderMissions(); renderSeason(); }
     if (tab === 'story') generateStoryCard();
     if (tab === 'stats') { renderBadgesAndStreak(); initVolumeChart(); renderExerciseChart(); renderWeeklySetsChart(); renderTests(); }
-    if (tab === 'config') renderBackupReminder();
+    if (tab === 'config') { renderBackupReminder(); renderStorageStatus(); }
+}
+
+// ============================ ARMAZENAMENTO (IndexedDB) ============================
+// Migração automática no primeiro boot + painel de status (persistência e quota).
+async function initStorageMigration() {
+    try {
+        if (window.storage && typeof window.storage.migrate === 'function') {
+            const r = await window.storage.migrate();
+            if (r && r.ok && !r.skipped) console.log('[storage] migração para IndexedDB concluída:', r);
+            else if (r && !r.ok) console.warn('[storage] migração para IndexedDB não concluída:', r);
+        }
+        if (window.storage && typeof window.storage.recoverFromIndexedDB === 'function') {
+            const rec = await window.storage.recoverFromIndexedDB();
+            if (rec && rec.ok && rec.restored > 0) {
+                console.warn(`[storage] ${rec.restored} chave(s) restaurada(s) do IndexedDB para o localStorage.`);
+                loadStoredData();
+                loadWorkoutsFromStorage();
+            }
+        }
+        if (window.storage && typeof window.storage.persist === 'function') {
+            const jaPersistente = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : false;
+            if (!jaPersistente) await window.storage.persist();
+        }
+    } catch (e) { console.warn('[storage] falha na migração/persistência:', e); }
+}
+
+async function renderStorageStatus() {
+    const el = document.getElementById('storage-status');
+    if (!el) return;
+    let linhas = [];
+    try {
+        if (navigator.storage && typeof navigator.storage.persisted === 'function') {
+            const persistente = await navigator.storage.persisted();
+            linhas.push(persistente
+                ? '✅ Armazenamento <b>persistente</b>: o navegador não apaga seus dados por falta de espaço.'
+                : '⚠️ Armazenamento <b>não persistente</b>: em espaço apertado o navegador pode limpar dados antigos. Faça backup com frequência.');
+        }
+        if (navigator.storage && typeof navigator.storage.estimate === 'function') {
+            const est = await navigator.storage.estimate();
+            const fmt = n => n >= 1073741824 ? (n / 1073741824).toFixed(2) + ' GB' : n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round((n || 0) / 1024) + ' KB';
+            linhas.push(`📦 Uso: <b>${fmt(est.usage || 0)}</b> de ~${fmt(est.quota || 0)} disponíveis.`);
+        }
+        linhas.push('🗃️ Dados gravados no <b>IndexedDB</b> (com espelho no localStorage durante a transição).');
+    } catch (e) {
+        linhas.push('ℹ️ Status de armazenamento indisponível neste navegador.');
+    }
+    el.innerHTML = linhas.map(t => `<div class="leading-relaxed">${t}</div>`).join('');
 }
 
 // ============================ SEED ============================
@@ -2232,8 +2328,53 @@ const DEFAULT_BOSS_PORTRAITS = {
 };
 
 function bossPortraitSrc(bossId) {
-    if (bossPortraits[bossId]) return bossPortraits[bossId]; // upload do usuário
+    if (bossPortraits[bossId]) return resolvePortraitSrc(bossId); // upload do usuário (dataURL legado ou Blob no IndexedDB)
     return DEFAULT_BOSS_PORTRAITS[(THEME ? THEME.id : 'classico') + ':' + bossId] || null;
+}
+
+// Marcador 'idb:portrait:<tema>:<chefe>' → objectURL do Blob carregado nesta sessão.
+// Enquanto o Blob não carregar, devolve null (arte padrão aparece e a UI re-renderiza).
+function resolvePortraitSrc(bossId) {
+    const v = bossPortraits[bossId];
+    if (!v) return null;
+    if (typeof v === 'string' && v.startsWith('idb:')) return portraitObjectURLs[v] || null;
+    return v;
+}
+
+// Converte dataURLs legados de bossPortraits para Blobs no IndexedDB e hidrata
+// os objectURLs dos marcadores. Idempotente: dataURL já migrado vira marcador.
+async function hydratePortraitBlobs() {
+    if (!window.storage || typeof window.storage.saveBlob !== 'function') return;
+    const ids = Object.keys(bossPortraits || {});
+    let mudou = false;
+    for (const bossId of ids) {
+        const v = bossPortraits[bossId];
+        if (!v) continue;
+        if (typeof v === 'string' && v.startsWith('idb:')) {
+            if (!portraitObjectURLs[v]) {
+                try {
+                    const blob = await window.storage.getBlob(v.slice(4));
+                    if (blob) portraitObjectURLs[v] = URL.createObjectURL(blob);
+                } catch (e) { /* sem IndexedDB: segue */ }
+            }
+            continue;
+        }
+        // legado: dataURL → Blob (512 px quadrado, WebP)
+        try {
+            const blob = await window.storage.compressImage(v, 512, 0.82, 'image/webp', { square: true });
+            const key = 'portrait:' + activeGameThemeId + ':' + bossId;
+            const ok = await window.storage.saveBlob(key, blob);
+            if (!ok) continue; // IndexedDB indisponível: mantém o dataURL (sem perda)
+            const marker = 'idb:' + key;
+            portraitObjectURLs[marker] = URL.createObjectURL(blob);
+            bossPortraits[bossId] = marker;
+            mudou = true;
+        } catch (e) { /* imagem inválida: mantém o dataURL */ }
+    }
+    if (mudou) { saveGameState(); renderBossBattleUI(); }
+    else if (ids.some(id => bossPortraits[id] && String(bossPortraits[id]).startsWith('idb:') && portraitObjectURLs[bossPortraits[id]])) {
+        renderBossBattleUI();
+    }
 }
 
 // Cache de imagens para desenho em canvas (o canvas precisa de HTMLImageElement)
@@ -2463,9 +2604,29 @@ document.addEventListener('keydown', e => {
     if (closeTopOverlay()) e.preventDefault();
 });
 
-function uploadBossPortrait(event, bossId) {
+async function uploadBossPortrait(event, bossId) {
     const file = event.target.files[0];
     if (!file) return;
+    // Caminho novo: Blob comprimido (512 px quadrado, WebP) direto no IndexedDB —
+    // nada de base64 no localStorage. Se algo falhar (sem IndexedDB/canvas),
+    // cai no caminho antigo em dataURL para não perder o upload.
+    try {
+        if (window.storage && typeof window.storage.compressImage === 'function' && typeof window.storage.saveBlob === 'function') {
+            const blob = await window.storage.compressImage(file, 512, 0.82, 'image/webp', { square: true });
+            const key = 'portrait:' + activeGameThemeId + ':' + bossId;
+            const ok = await window.storage.saveBlob(key, blob);
+            if (ok) {
+                const marker = 'idb:' + key;
+                if (portraitObjectURLs[marker]) URL.revokeObjectURL(portraitObjectURLs[marker]);
+                portraitObjectURLs[marker] = URL.createObjectURL(blob);
+                bossPortraits[bossId] = marker;
+                saveGameState();
+                renderBossBattleUI();
+                alertModal('🖼️ Retrato do chefão atualizado!');
+                return;
+            }
+        }
+    } catch (e) { /* cai para o caminho legado */ }
     const reader = new FileReader();
     reader.onload = function (e) {
         const img = new Image();
@@ -2525,6 +2686,11 @@ function applyReservaPortrait(src) {
 
 function resetBossPortraitToDefault() {
     if (!reservaBossId) return;
+    const antigo = bossPortraits[reservaBossId];
+    if (typeof antigo === 'string' && antigo.startsWith('idb:')) {
+        if (window.storage && typeof window.storage.removeBlob === 'function') window.storage.removeBlob(antigo.slice(4));
+        if (portraitObjectURLs[antigo]) { URL.revokeObjectURL(portraitObjectURLs[antigo]); delete portraitObjectURLs[antigo]; }
+    }
     delete bossPortraits[reservaBossId];
     saveGameState();
     renderBossBattleUI();
@@ -2668,9 +2834,24 @@ function finishSeasonNow() {
 }
 
 // ============================ STORY CARD ============================
-function handleBgImageUpload(event) {
+async function handleBgImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
+    // Caminho novo: Blob comprimido (máx. 1080 px, WebP) no IndexedDB; o
+    // localStorage guarda só a flag `bgBlob`. Reserva: dataURL legado.
+    try {
+        if (window.storage && typeof window.storage.compressImage === 'function' && typeof window.storage.saveBlob === 'function') {
+            const blob = await window.storage.compressImage(file, 1080, 0.82, 'image/webp');
+            const ok = await window.storage.saveBlob(STORY_BG_BLOB_KEY, blob);
+            if (ok) {
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => { customBgImageData = img; saveStoryState(); generateStoryCard(); };
+                img.src = url;
+                return;
+            }
+        }
+    } catch (e) { /* cai para o caminho legado */ }
     const reader = new FileReader();
     reader.onload = function (e) {
         const img = new Image();
@@ -2686,6 +2867,7 @@ function handleBgImageUpload(event) {
 
 function removeBgImage() {
     customBgImageData = null;
+    if (window.storage && typeof window.storage.removeBlob === 'function') window.storage.removeBlob(STORY_BG_BLOB_KEY);
     document.getElementById('bg-image-input').value = '';
     saveStoryState();
     generateStoryCard();
@@ -3727,10 +3909,26 @@ function parseCSVRows(text, sep) {
 }
 
 // ============================ BACKUP JSON ============================
-function exportJSONBackup() {
+// Monta o payload completo do backup (função separada para ser testável de
+// ponta a ponta: exportar → apagar → importar → comparar). Imagens enviadas
+// pelo usuário entram como dataURL portáteis SÓ no arquivo de backup — no
+// app elas vivem como Blob no IndexedDB, nunca em base64 no localStorage.
+async function buildBackupPayload() {
     saveGameState();
-    const backupData = {
-        version: 4,
+    const portraitImages = {};
+    try {
+        if (window.storage && typeof window.storage.getBlob === 'function' && typeof window.storage.blobToDataURL === 'function') {
+            for (const [bossId, v] of Object.entries(bossPortraits || {})) {
+                if (typeof v === 'string' && v.startsWith('idb:')) {
+                    const blob = await window.storage.getBlob(v.slice(4));
+                    const dataURL = await window.storage.blobToDataURL(blob);
+                    if (dataURL) portraitImages[`${activeGameThemeId}:${bossId}`] = dataURL;
+                }
+            }
+        }
+    } catch (e) { /* backup segue sem as imagens */ }
+    return {
+        version: 5,
         userBodyweight,
         logs,
         savedWorkouts,
@@ -3738,23 +3936,123 @@ function exportJSONBackup() {
         gameTheme: activeGameThemeId,
         themeGameSaves,
         sharedGameState: { deloadWeeks, tests, weightLog },
+        portraitImages,
+        storyBgImageData: snapshotStoryBgDataURL(),
         // Campos legados para que versões antigas ainda consigam importar o backup.
         deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, weightLog,
-        bgImageData: customBgImageData ? customBgImageData.src : null,
+        bgImageData: snapshotStoryBgDataURL(),
         exportDate: new Date().toISOString()
     };
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute('href', dataStr);
-    dlAnchor.setAttribute('download', `berzerker-diario-backup-${getTodayLocalISO()}.json`);
-    document.body.appendChild(dlAnchor);
-    dlAnchor.click();
-    dlAnchor.remove();
+}
 
-    lastBackupAt = getTodayLocalISO();
-    safeStorage.set(STORAGE_KEY_BACKUP, lastBackupAt);
-    renderBackupReminder();
-    alertModal('📥 Backup exportado (dados, temas e progresso dos jogos)!');
+async function exportJSONBackup() {
+    const backupData = await buildBackupPayload();
+    const jsonStr = JSON.stringify(backupData, null, 2);
+    const fileName = `berzerker-diario-backup-${getTodayLocalISO()}.json`;
+    const saveViaPicker = async () => {
+        if (typeof window.showSaveFilePicker !== 'function') return false;
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(jsonStr);
+            await writable.close();
+            return true;
+        } catch (e) { return false; }
+    };
+    (async () => {
+        const ok = await saveViaPicker();
+        if (!ok) {
+            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(jsonStr);
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute('href', dataStr);
+            dlAnchor.setAttribute('download', fileName);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+        lastBackupAt = getTodayLocalISO();
+        safeStorage.set(STORAGE_KEY_BACKUP, lastBackupAt);
+        renderBackupReminder();
+        alertModal('📥 Backup exportado (dados, temas e progresso dos jogos)!');
+    })();
+}
+
+async function applyImportedBackup(parsed) {
+    if (!parsed || !Array.isArray(parsed.logs)) { alertModal('Arquivo JSON inválido!'); return false; }
+    const importedThemeId = THEMES[parsed.gameTheme] ? parsed.gameTheme : activeGameThemeId;
+    logs = parsed.logs.map(migrateLog);
+    if (parsed.userBodyweight) userBodyweight = parsed.userBodyweight;
+    if (Array.isArray(parsed.savedWorkouts)) { savedWorkouts = parsed.savedWorkouts; normalizeSavedWorkouts(); }
+    if (parsed.settings) settings = { ...settings, ...parsed.settings };
+
+    const importedSaves = parsed.themeGameSaves && typeof parsed.themeGameSaves === 'object' ? parsed.themeGameSaves : null;
+    themeGameSaves = {};
+    if (importedSaves) {
+        Object.entries(importedSaves).forEach(([id, save]) => {
+            if (THEMES[id] && save && typeof save === 'object' && !Array.isArray(save)) themeGameSaves[id] = save;
+        });
+    } else {
+        // Backups antigos não tinham saves por tema: migrar tudo para o jogo exportado.
+        themeGameSaves[importedThemeId] = {
+            ...emptyThemeGameSave(),
+            missionsXpTotal: Number(parsed.missionsXpTotal) || 0,
+            missionsClaimed: parsed.missionsClaimed || {},
+            seasons: parsed.seasons || null,
+            bossPortraits: parsed.bossPortraits || {}
+        };
+    }
+    Object.keys(THEMES).forEach(ensureThemeGameSave);
+
+    // Imagens do backup (dataURL portáteis) → Blob no IndexedDB + marcador no save.
+    try {
+        if (window.storage && typeof window.storage.saveBlob === 'function') {
+            const imgs = parsed.portraitImages && typeof parsed.portraitImages === 'object' ? parsed.portraitImages : {};
+            for (const [chave, dataURL] of Object.entries(imgs)) {
+                if (typeof dataURL !== 'string' || !dataURL.startsWith('data:')) continue;
+                const [tema, ...resto] = chave.split(':');
+                const bossId = resto.join(':');
+                if (!THEMES[tema] || !bossId) continue;
+                const blob = await window.storage.dataURLToBlob(dataURL);
+                if (!blob) continue;
+                const key = `portrait:${tema}:${bossId}`;
+                if (await window.storage.saveBlob(key, blob)) {
+                    const save = ensureThemeGameSave(tema);
+                    save.bossPortraits[bossId] = 'idb:' + key;
+                }
+            }
+            if (parsed.storyBgImageData) {
+                const blob = await window.storage.dataURLToBlob(parsed.storyBgImageData);
+                if (blob) await window.storage.saveBlob(STORY_BG_BLOB_KEY, blob);
+            }
+        }
+    } catch (e) { /* import segue sem as imagens */ }
+
+    const shared = parsed.sharedGameState && typeof parsed.sharedGameState === 'object' ? parsed.sharedGameState : parsed;
+    deloadWeeks = Array.isArray(shared.deloadWeeks) ? shared.deloadWeeks : [];
+    tests = Array.isArray(shared.tests) && shared.tests.length ? shared.tests : defaultTests();
+    weightLog = Array.isArray(shared.weightLog) ? shared.weightLog : [];
+    restoreActiveThemeGameSave(importedThemeId);
+    safeStorage.set(STORAGE_KEY_THEME, importedThemeId);
+    applyTheme(importedThemeId);
+    lastRankLevel = null; lastBossesDefeated = null;
+
+    saveLogsToStorage();
+    saveWorkoutsToStorage();
+    saveSettings();
+    saveGameState();
+    saveStoryState();
+    safeStorage.set(STORAGE_KEY_BW, userBodyweight.toString());
+    safeStorage.set(STORAGE_KEY_SEEDED, '1');
+
+    const bwInput = document.getElementById('user-bodyweight');
+    if (bwInput && userBodyweight > 0) bwInput.value = userBodyweight;
+
+    alertModal('Backup importado com sucesso!');
+    refreshAll();
+    return true;
 }
 
 function importJSONBackup(event) {
@@ -3764,62 +4062,8 @@ function importJSONBackup(event) {
     reader.onload = function (e) {
         try {
             const parsed = JSON.parse(e.target.result);
-            if (parsed && Array.isArray(parsed.logs)) {
-                const importedThemeId = THEMES[parsed.gameTheme] ? parsed.gameTheme : activeGameThemeId;
-                logs = parsed.logs.map(migrateLog);
-                if (parsed.userBodyweight) userBodyweight = parsed.userBodyweight;
-                if (Array.isArray(parsed.savedWorkouts)) savedWorkouts = normalizeSavedWorkouts();
-                if (parsed.settings) settings = { ...settings, ...parsed.settings };
-
-                const importedSaves = parsed.themeGameSaves && typeof parsed.themeGameSaves === 'object' ? parsed.themeGameSaves : null;
-                themeGameSaves = {};
-                if (importedSaves) {
-                    Object.entries(importedSaves).forEach(([id, save]) => {
-                        if (THEMES[id] && save && typeof save === 'object' && !Array.isArray(save)) themeGameSaves[id] = save;
-                    });
-                } else {
-                    // Backups antigos não tinham saves por tema: migrar tudo para o jogo exportado.
-                    themeGameSaves[importedThemeId] = {
-                        ...emptyThemeGameSave(),
-                        missionsXpTotal: Number(parsed.missionsXpTotal) || 0,
-                        missionsClaimed: parsed.missionsClaimed || {},
-                        seasons: parsed.seasons || null,
-                        bossPortraits: parsed.bossPortraits || {}
-                    };
-                }
-                Object.keys(THEMES).forEach(ensureThemeGameSave);
-
-                const shared = parsed.sharedGameState && typeof parsed.sharedGameState === 'object' ? parsed.sharedGameState : parsed;
-                deloadWeeks = Array.isArray(shared.deloadWeeks) ? shared.deloadWeeks : [];
-                tests = Array.isArray(shared.tests) && shared.tests.length ? shared.tests : defaultTests();
-                weightLog = Array.isArray(shared.weightLog) ? shared.weightLog : [];
-                restoreActiveThemeGameSave(importedThemeId);
-                safeStorage.set(STORAGE_KEY_THEME, importedThemeId);
-                applyTheme(importedThemeId);
-                // storyTheme de backups antigos é ignorado; o tema do jogo define o visual.
-                if (parsed.bgImageData) {
-                    const img = new Image();
-                    img.onload = () => { customBgImageData = img; saveStoryState(); generateStoryCard(); };
-                    img.src = parsed.bgImageData;
-                }
-                lastRankLevel = null; lastBossesDefeated = null;
-
-                saveLogsToStorage();
-                saveWorkoutsToStorage();
-                saveSettings();
-                saveGameState();
-                saveStoryState();
-                safeStorage.set(STORAGE_KEY_BW, userBodyweight.toString());
-                safeStorage.set(STORAGE_KEY_SEEDED, '1');
-
-                const bwInput = document.getElementById('user-bodyweight');
-                if (bwInput && userBodyweight > 0) bwInput.value = userBodyweight;
-
-                alertModal('Backup importado com sucesso!');
-                refreshAll();
-            } else {
-                alertModal('Arquivo JSON inválido!');
-            }
+            // storyTheme de backups antigos é ignorado; o tema do jogo define o visual.
+            applyImportedBackup(parsed).catch(() => alertModal('Erro ao importar o backup.'));
         } catch (err) {
             alertModal('Erro ao ler o arquivo de backup.');
         }
@@ -3923,6 +4167,7 @@ window.onload = function () {
     loadStoredData();
     loadWorkoutsFromStorage();
     applyTheme(safeStorage.get(STORAGE_KEY_THEME) || 'classico');
+    initStorageMigration();
 
     if (logs.length === 0) seedInitialMockData(todayStr);
 
