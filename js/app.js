@@ -84,9 +84,19 @@ const THEME_IDS_LIST = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', '
 const THEME_ICON_IMGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/temas/${id}.webp`])));
 const THEME_CARD_BGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/cards/${id}.webp`])));
 
+// Escala de espaçamento do Tailwind em px. Serve para dar largura/altura
+// intrínsecas às artes: sem os atributos o navegador reserva 0px até a imagem
+// carregar e a grade inteira "pula" no celular (CLS).
+const TAILWIND_SPACING_PX = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 7: 28, 8: 32, 10: 40, 12: 48, 14: 56, 16: 64, 20: 80, 24: 96 };
+function imgSizeAttrs(cls, fallback = 24) {
+    const m = /(?:^|\s)[wh]-(\d+)(?=\s|$)/.exec(String(cls || ''));
+    const px = (m && TAILWIND_SPACING_PX[Number(m[1])]) || fallback;
+    return `width="${px}" height="${px}" style="width:${px}px;height:${px}px"`;
+}
+
 function themeIconImg(themeId, cls = 'h-6 w-6 rounded-md') {
     const src = THEME_ICON_IMGS[themeId];
-    return src ? `<img src="${src}" alt="" class="${cls}">` : `<span class="text-2xl">${THEME_ICONS[themeId] || '🎭'}</span>`;
+    return src ? `<img src="${src}" alt="" ${imgSizeAttrs(cls)} loading="lazy" decoding="async" class="shrink-0 ${cls}">` : `<span class="text-2xl shrink-0">${THEME_ICONS[themeId] || '🎭'}</span>`;
 }
 
 // Emblema de patente desenhado em arte própria (círculo de ferro + símbolo).
@@ -97,7 +107,7 @@ function rankEmblemSrc(themeId, level) {
 }
 
 function rankEmblemImg(themeId, level, cls = 'h-7 w-7 rounded-full') {
-    return `<img src="${rankEmblemSrc(themeId, level)}" alt="" class="${cls}">`;
+    return `<img src="${rankEmblemSrc(themeId, level)}" alt="" ${imgSizeAttrs(cls, 28)} loading="lazy" decoding="async" class="shrink-0 ${cls}">`;
 }
 
 // Cache de imagens para os cards em canvas (fundo do tema + emblema da patente).
@@ -255,10 +265,14 @@ function migrateLog(l) {
 
 // Treinos salvos também carregam grupos antigos (ex.: seed da planilha trazia
 // Glúteos no Hip Thrust e Pescoço na cervical) — normaliza ao carregar/semeiar.
+// O catálogo manda: se o exercício existe nele, o grupo é o dele (assim a
+// Mesa Flexora salva como "Pernas" volta para Posterior, que é onde ela conta).
 function normalizeSavedWorkouts() {
     (savedWorkouts || []).forEach(w => {
         (w.exercises || []).forEach(e => {
-            if (e && e.muscle) e.muscle = normalizeMuscle(e.muscle);
+            if (!e) return;
+            const cat = catalogInfo(e.exercise);
+            e.muscle = normalizeMuscle(cat ? cat.grupo : e.muscle);
         });
     });
     return savedWorkouts;
@@ -313,30 +327,48 @@ function isoWeekDateRange(weekKey) {
     return [toLocalISO(start), toLocalISO(end)];
 }
 
+// Temporadas do tema: o tema ativo manda pela variável global (que só volta ao
+// save em saveGameState), os demais vivem no próprio save.
+function seasonsDoTema(themeId, save) {
+    return themeId === activeGameThemeId ? (seasons || (save && save.seasons)) : (save && save.seasons);
+}
+
+// Deload efetivo = semanas marcadas à mão (Config) ∪ semanas de deload
+// automático (4ª semana de cada temporada do tema). Tudo que decide XP de
+// descanso ou volume pela metade consulta esta lista, nunca `deloadWeeks` puro.
+function deloadWeeksEfetivos(themeSeasons) {
+    const s = themeSeasons === undefined ? seasons : themeSeasons;
+    return [...new Set([...(Array.isArray(deloadWeeks) ? deloadWeeks : []), ...autoDeloadWeekKeys(s)])];
+}
+
 function ensureDeloadRestAwards() {
-    const activeWeeks = new Set(deloadWeeks);
+    const hoje = getTodayLocalISO();
     const trainingDates = new Set(logs.filter(l => l && l.date).map(l => l.date));
     const assignedDates = new Set();
     let changed = false;
 
     Object.keys(THEMES).forEach(themeId => {
         const save = ensureThemeGameSave(themeId);
+        const semanasTema = new Set(deloadWeeksEfetivos(seasonsDoTema(themeId, save)));
         const keep = [];
         save.deloadRestDays.forEach(date => {
-            const valid = activeWeeks.has(isoWeekKey(date)) && !trainingDates.has(date) && !assignedDates.has(date);
+            const valid = semanasTema.has(isoWeekKey(date)) && !trainingDates.has(date) && !assignedDates.has(date);
             if (valid) { keep.push(date); assignedDates.add(date); }
             else changed = true;
         });
         if (keep.length !== save.deloadRestDays.length) save.deloadRestDays = keep;
     });
 
-    deloadWeeks.forEach(weekKey => {
+    const saveAtivo = ensureThemeGameSave(activeGameThemeId);
+    deloadWeeksEfetivos(seasonsDoTema(activeGameThemeId, saveAtivo)).forEach(weekKey => {
         const range = isoWeekDateRange(weekKey);
         if (!range) return;
         const [start, end] = range;
-        for (let date = start; date <= end; ) {
+        // Só até HOJE: dia futuro ainda pode virar treino, então não pode
+        // render XP de descanso antecipado (o XP tem que ser conquistado).
+        for (let date = start; date <= end && date <= hoje; ) {
             if (!trainingDates.has(date) && !assignedDates.has(date)) {
-                ensureThemeGameSave(activeGameThemeId).deloadRestDays.push(date);
+                saveAtivo.deloadRestDays.push(date);
                 assignedDates.add(date);
                 changed = true;
             }
@@ -542,7 +574,7 @@ function computeThemeXPCtx(themeId, upto) {
     const gameLogs = logsForTheme(t.id);
     const missionXP = t.id === activeGameThemeId ? missionsXpTotal : save.missionsXpTotal;
     return computeXP(upto, {
-        logs: gameLogs, bodyweight: userBodyweight, deloadWeeks,
+        logs: gameLogs, bodyweight: userBodyweight, deloadWeeks: deloadWeeksEfetivos(seasonsDoTema(t.id, save)),
         missionsXpTotal: missionXP, bosses: t.bosses, restDays: save.deloadRestDays
     });
 }
@@ -587,15 +619,15 @@ function showThemeGallery() {
         return `<button type="button" data-theme-id="${theme.id}" onclick="requestGameThemeChange('${theme.id}')" class="text-left rounded-2xl border ${active ? 'border-berzerker-500 bg-berzerker-600/10 ring-1 ring-berzerker-500/30' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'} p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-berzerker-500">
             <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-2 min-w-0">${themeIconImg(theme.id, 'h-8 w-8 rounded-lg border border-berzerker-border')}<strong class="text-sm text-white leading-tight">${escapeHtml(theme.name)}</strong></div>
-                ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[9px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
+                ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[10px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
             </div>
             <div class="mt-3 flex items-end justify-between gap-2">
-                <div class="min-w-0"><span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Patente atual</span><span class="block truncate text-xs font-bold text-amber-300">${rankEmblemImg(theme.id, currentRank.level, 'inline-block h-4 w-4 rounded-full align-[-3px] mr-1')} ${escapeHtml(currentRank.name)}</span></div>
+                <div class="min-w-0"><span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Patente atual</span><span class="block truncate text-xs font-bold text-amber-300">${rankEmblemImg(theme.id, currentRank.level, 'inline-block h-4 w-4 rounded-full align-[-3px] mr-1')} ${escapeHtml(currentRank.name)}</span></div>
                 <span class="shrink-0 text-[10px] font-mono text-gray-400">Nível ${currentRank.level}/10</span>
             </div>
             <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-berzerker-border"><div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-300" style="width:${progress}%"></div></div>
-            <div class="mt-1.5 flex items-center justify-between gap-2 text-[9px] font-mono text-gray-500"><span>${fmtN(data.xp)} XP${nextRank ? ` / ${fmtN(nextRank.minXp)} XP` : ' · nível máximo'}</span><span>${defeated}/${theme.bosses.length} chefões</span></div>
-            <p class="mt-2 line-clamp-2 text-[10px] leading-relaxed text-gray-500">${escapeHtml(theme.desc)}</p>
+            <div class="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-[10px] font-mono text-gray-500"><span>${fmtN(data.xp)} XP${nextRank ? ` / ${fmtN(nextRank.minXp)} XP` : ' · nível máximo'}</span><span>${defeated}/${theme.bosses.length} chefões</span></div>
+            <p class="mt-2 line-clamp-2 text-[11px] leading-snug text-gray-500">${escapeHtml(theme.desc)}</p>
         </button>`;
     }).join('');
     const overlay = document.createElement('div');
@@ -643,7 +675,7 @@ function showRanksModal(themeId) {
         const tag = ['✔ conquistada', '◀ você está aqui', '🔒'][st];
         return `<div class="flex items-center justify-between gap-2 border ${cls} rounded-lg px-3 py-2">
             <div class="flex items-center gap-2 min-w-0">${rankEmblemImg(t.id, lvl)}<span class="text-xs font-bold text-white truncate">${escapeHtml(x.name)}</span></div>
-            <div class="text-right shrink-0"><div class="text-[10px] font-mono text-gray-400">${fmt(x.minXp)} XP</div><div class="text-[9px] font-bold text-gray-500 uppercase">${tag}</div></div>
+            <div class="text-right shrink-0"><div class="text-[10px] font-mono text-gray-400">${fmt(x.minXp)} XP</div><div class="text-[10px] font-bold text-gray-500 uppercase leading-tight">${tag}</div></div>
         </div>`;
     }).join('');
     const tabs = Object.values(THEMES).map(x => `<button onclick="showRanksModal('${x.id}')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${x.id === t.id ? 'bg-berzerker-600 text-white' : 'bg-berzerker-border text-gray-400 hover:text-white'}">${escapeHtml(x.name)}</button>`).join('');
@@ -762,14 +794,49 @@ function onTypeChange(prefix) {
     if (prefix === '') updateTypeHint();
 }
 
+// Destaque verde curto no campo que o app acabou de preencher sozinho:
+// confirma o autofill de relance, sem exigir conferência campo por campo.
+function flashAutofill(el) {
+    if (!el || !el.classList) return;
+    const cls = ['ring-2', 'ring-emerald-500/70'];
+    el.classList.add(...cls);
+    clearTimeout(el._autofillFlash);
+    el._autofillFlash = setTimeout(() => el.classList.remove(...cls), 900);
+}
+
+// Sessão (split do dia) sugerida pelo histórico do grupo: a mais repetida,
+// com desempate pela mais recente. Devolve '' quando não há o que sugerir.
+function suggestSessaoFor(muscle, exercise) {
+    const grupo = normalizeMuscle(muscle || (catalogInfo(exercise) || {}).grupo || '');
+    if (!grupo || grupo === 'Geral' || grupo === 'Cardio') return '';
+    const candidatos = (Array.isArray(logs) ? logs : []).filter(l =>
+        l && l.kind !== 'corrida' && String(l.sessao || '').trim() && normalizeMuscle(l.muscle) === grupo);
+    if (!candidatos.length) return '';
+    const resumo = {};
+    candidatos.forEach(l => {
+        const s = String(l.sessao).trim();
+        const r = resumo[s] || (resumo[s] = { sessao: s, vezes: 0, ultima: '' });
+        r.vezes += 1;
+        if (String(l.date || '') > r.ultima) r.ultima = String(l.date || '');
+    });
+    return Object.values(resumo).sort((a, b) => (b.vezes - a.vezes)
+        || (a.ultima < b.ultima ? 1 : a.ultima > b.ultima ? -1 : a.sessao.localeCompare(b.sessao, 'pt-BR')))[0].sessao;
+}
+
 function onLogExerciseChange() {
     const exName = document.getElementById('log-exercise')?.value.trim();
     const cat = catalogInfo(exName);
     if (cat) {
         const muscleSel = document.getElementById('log-muscle');
         const typeSel = document.getElementById('type');
-        if (muscleSel) muscleSel.value = cat.grupo;
+        if (muscleSel && muscleSel.value !== cat.grupo) { muscleSel.value = cat.grupo; flashAutofill(muscleSel); }
         if (typeSel) typeSel.value = cat.tipo;
+        // A sessão vem do histórico do grupo — só se o campo estiver vazio.
+        const sessaoEl = document.getElementById('sessao');
+        if (sessaoEl && !String(sessaoEl.value || '').trim()) {
+            const sugestao = suggestSessaoFor(cat.grupo, cat.nome);
+            if (sugestao) { sessaoEl.value = sugestao; flashAutofill(sessaoEl); }
+        }
     }
     if (typeof renderExerciseTagLine === 'function') renderExerciseTagLine('log-tags-line', exName || '');
     onTypeChange('');
@@ -1001,13 +1068,20 @@ function repeatLastPerformance(exercise) {
 function handleAddLog(event) {
     event.preventDefault();
     const date = document.getElementById('log-date').value;
-    const muscle = document.getElementById('log-muscle').value;
     const exercise = document.getElementById('log-exercise').value.trim();
     const f = readFields('');
 
     if (!exercise) { alertModal('Digite o nome do exercício!'); return; }
     const temReps = f.mode === 'sets' ? f.sets.length > 0 : f.reps.length > 0;
     if (!temReps) { alertModal('Digite ao menos uma repetição válida (ex: 12, 10, 8) — ou segundos em isometria.'); return; }
+
+    // O grupo vem do catálogo quando o exercício é conhecido: o select pode
+    // estar desatualizado (autofill, nome colado) e é ele que alimenta a meta
+    // semanal, a recuperação e a fraqueza do chefão.
+    const catRegistro = catalogInfo(exercise);
+    const muscle = normalizeMuscle(catRegistro ? catRegistro.grupo : document.getElementById('log-muscle').value);
+    // Sessão vazia → usa a que o histórico indica para este grupo.
+    if (!String(f.sessao || '').trim()) f.sessao = suggestSessaoFor(muscle, exercise);
 
     const newLog = {
         id: newLogId(), date, kind: 'peso', muscle, exercise,
@@ -1164,7 +1238,7 @@ function renderLogsTable() {
 }
 
 // ============================ RENDER: MAPA DE FADIGA ============================
-// Fase 3: fadiga REAL = recuperação (%) + volume da semana vs faixa 10–20 séries
+// Fase 3: fadiga REAL = recuperação (%) + volume da semana vs a faixa do grupo
 function renderRecoveryMap() {
     const gridEl = document.getElementById('recovery-status-grid');
     if (!gridEl) return;
@@ -1172,7 +1246,7 @@ function renderRecoveryMap() {
     const weekly = weeklySetsByMuscle(logs, getTodayLocalISO());
 
     gridEl.innerHTML = MUSCULOS_MAPA.map(m => {
-        const muscleLogs = logs.filter(l => l.kind !== 'corrida' && l.muscle && l.muscle.toLowerCase() === m.toLowerCase());
+        const muscleLogs = logs.filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle) === m);
         const sin = sinergiaState(m, logs, nowMs);
         const st = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs, sin);
         const pctText = st.pct === null ? '—' : `${st.pct}%`;
@@ -1184,7 +1258,7 @@ function renderRecoveryMap() {
             </div>
             <div class="flex items-center justify-between gap-2 flex-wrap">
                 <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${st.badge}">${st.label}</span>
-                <span class="text-[10px] text-gray-500 font-mono">${st.info}</span>
+                <span class="text-[11px] text-gray-500 font-mono leading-snug break-words">${st.info}</span>
             </div>
             <div>
                 <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">
@@ -1194,23 +1268,31 @@ function renderRecoveryMap() {
                     <div class="h-full ${st.bar} rounded-full transition-all duration-500" style="width: ${st.pct === null ? 100 : st.pct}%"></div>
                 </div>
             </div>
-            <div class="text-[10px] font-mono ${st.volumeStatus === 'abaixo' ? 'text-amber-400/90' : st.volumeStatus === 'acima' ? 'text-orange-400/90' : 'text-emerald-400/90'}">${st.volText}</div>
-            ${st.sinergia ? `<div title="${escapeHtml(st.sinergia.exercicios.join(' · '))}" class="text-[10px] font-mono text-cyan-400/80">${escapeHtml(st.sinergiaText)}</div>` : ''}
-            <div class="text-[10px] text-gray-600 truncate border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
+            <div class="text-[11px] font-mono leading-snug ${st.volumeStatus === 'abaixo' ? 'text-amber-400/90' : st.volumeStatus === 'acima' ? 'text-orange-400/90' : 'text-emerald-400/90'}">${st.volText}</div>
+            ${st.sinergia ? `<div title="${escapeHtml(st.sinergia.exercicios.join(' · '))}" class="text-[11px] font-mono leading-snug text-cyan-400/80">${escapeHtml(st.sinergiaText)}</div>` : ''}
+            <div class="text-[11px] text-gray-600 truncate leading-snug border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
         </div>`;
     }).join('');
-    // Painel de ALERTA DA LOMBAR
+    // Painel da LOMBAR — alerta só quando há o que alertar
     const lombarEl = document.getElementById('lombar-alert-panel');
     if (lombarEl) {
         const lombar = regiaoLombarState(logs, nowMs);
-        lombarEl.innerHTML = `
+        if (!lombar.carregada && lombar.pct >= 100) {
+            // Região livre não é emergência: uma linha verde compacta basta, e o
+            // mapa de recuperação abre com informação útil em vez de um aviso
+            // permanente de "⚠️ Lombar" que ninguém consegue desligar.
+            lombarEl.innerHTML = `
+            <div class="bg-emerald-950/20 border ${lombar.border} rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
+                <span class="font-oswald text-sm font-bold text-emerald-400 uppercase tracking-wide leading-none whitespace-nowrap">✅ Lombar 100% — livre</span>
+                ${lombar.last ? `<span class="text-[10px] font-mono text-gray-500 break-words">Última carga: ${escapeHtml(lombar.last)}</span>` : '<span class="text-[10px] font-mono text-gray-500">Sem carga registrada na lombar.</span>'}
+            </div>`;
+        } else lombarEl.innerHTML = `
         <div class="bg-berzerker-dark border ${lombar.border} rounded-xl p-4 space-y-3">
-            <div class="flex items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
-                    <span class="text-xl leading-none">${lombar.icon}</span>
-                    <span class="font-oswald text-lg font-bold text-white uppercase tracking-wide leading-none">⚠️ Lombar</span>
+                    <span class="font-oswald text-lg font-bold text-white uppercase tracking-wide leading-none">Lombar ${lombar.icon}</span>
                 </div>
-                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${lombar.badge}">${lombar.label}</span>
+                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${lombar.badge} whitespace-nowrap">${lombar.label}</span>
             </div>
             <div>
                 <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">
@@ -1500,8 +1582,11 @@ function registerSessionUnit(idxs, isPair) {
     let totalDmg = 0;
     items.forEach(({ item, f }) => {
         const id = newLogId();
+        // Grupo canônico derivado do catálogo (o treino salvo pode trazer um
+        // grupo antigo: a Mesa Flexora de "Pernas" conta em Posterior).
+        const catItem = catalogInfo(item.exercise);
         const newLog = {
-            id, date, kind: 'peso', muscle: item.muscle, exercise: item.exercise,
+            id, date, kind: 'peso', muscle: normalizeMuscle(catItem ? catItem.grupo : item.muscle), exercise: item.exercise,
             xpTheme: activeGameThemeId, ...f, ...(isPair ? { biset: true } : {})
         };
         if (!newLog.sessao) newLog.sessao = activeSession.name;
@@ -1707,7 +1792,7 @@ function updateExerciseSuggestions() {
     if (!datalist || !muscle) return;
     const historyNames = muscle === 'Geral'
         ? logs.map(l => l.exercise)
-        : logs.filter(l => l.muscle === muscle).map(l => l.exercise);
+        : logs.filter(l => normalizeMuscle(l.muscle) === normalizeMuscle(muscle)).map(l => l.exercise);
     const all = [...new Set([...(EXERCISE_CATALOG[muscle] || []), ...historyNames])];
     datalist.innerHTML = all.map(n => {
         const cat = catalogInfo(n);
@@ -1722,7 +1807,7 @@ function onWbExerciseChange() {
     const hint = document.getElementById('wb-type-hint');
     if (cat) {
         const muscleSel = document.getElementById('wb-muscle');
-        if (muscleSel) muscleSel.value = cat.grupo;
+        if (muscleSel && muscleSel.value !== cat.grupo) { muscleSel.value = cat.grupo; flashAutofill(muscleSel); }
         if (hint) hint.textContent = `${cat.equipamento} · ${CATALOG_TIPOS[cat.tipo]?.label || ''} · faixa ${cat.faixa[0]}–${cat.faixa[1]}${cat.tipo === 'isometria' ? ' s' : ' reps'}`;
     } else if (hint) {
         hint.textContent = 'Fora do catálogo — o tipo fica como "carga total".';
@@ -1784,20 +1869,24 @@ function applySuggestedOrder() {
     alertModal('✨ Ordem sugerida aplicada! Cada exercício mostra o porquê — use ▲▼ para mudar quando quiser.');
 }
 
-// Painel "o que falta na semana" (estímulo total = 10–20 séries por grupo)
+// Painel "o que falta na semana" (estímulo total pela faixa de CADA grupo)
 function renderWeekGaps() {
     const el = document.getElementById('builder-week-gaps');
     if (!el) return;
     const gaps = weeklyGaps(logs, getTodayLocalISO());
-    const min = FAIXA_SERIES_SEMANAIS.min, max = FAIXA_SERIES_SEMANAIS.max;
+    const faixas = `${FAIXA_SERIES_SEMANAIS.min}–${FAIXA_SERIES_SEMANAIS.max} séries por grupo`
+        + Object.entries(FAIXA_SERIES_POR_GRUPO).map(([m, f]) => ` · ${m} ${f.min}–${f.max}`).join('');
     if (gaps.length === 0) {
-        el.innerHTML = `<div class="text-[11px] text-emerald-400/90 bg-emerald-950/20 border border-emerald-700/40 rounded-lg p-2.5">✅ Todos os grupos musculares estão dentro (ou acima) da faixa de ${min}–${max} séries/semana. Bom trabalho!</div>`;
+        el.innerHTML = `<div class="text-[11px] text-emerald-400/90 bg-emerald-950/20 border border-emerald-700/40 rounded-lg p-2.5">✅ Todos os grupos musculares estão dentro (ou acima) da própria faixa da semana (${faixas}). Bom trabalho!</div>`;
         return;
     }
     const chips = gaps.map(g => {
+        // O apoio indireto aparece, mas não entra na conta: a meta é de estímulo
+        // direto (senão o antebraço "fecha a semana" só de segurar barra).
+        const indiretos = g.indiretas > 0 ? ` · 🤝 +${String(g.indiretas.toFixed(1)).replace('.', ',')} indiretos` : '';
         const txt = g.status === 'abaixo'
-            ? `${g.muscle}: ${g.series}/${min} min · faltam ${g.faltam}`
-            : `${g.muscle}: ${g.series}/${max} máx · +${g.excesso} acima`;
+            ? `${g.muscle}: ${g.series}/${g.min} min · faltam ${g.faltam}${indiretos}`
+            : `${g.muscle}: ${g.series}/${g.max} máx · +${g.excesso} acima${indiretos}`;
         const cls = g.status === 'abaixo'
             ? 'bg-amber-950/40 border-amber-700/40 text-amber-300'
             : 'bg-orange-950/40 border-orange-700/40 text-orange-300';
@@ -1805,9 +1894,9 @@ function renderWeekGaps() {
     }).join('');
     el.innerHTML = `
         <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3 space-y-2">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">🎯 Estímulo da semana — o que falta (${min}–${max} séries por grupo)</div>
+            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">🎯 Estímulo da semana — o que falta (${faixas})</div>
             <div class="flex flex-wrap gap-1.5">${chips}</div>
-            <div class="text-[10px] text-gray-500">O assistente sugere treinos que cobrem os grupos mais abaixo da meta — mas quem manda é você.</div>
+            <div class="text-[10px] text-gray-500">🤝 = séries equivalentes de apoio indireto (informativo, não abate a meta). O assistente sugere treinos que cobrem os grupos mais abaixo — mas quem manda é você.</div>
         </div>`;
 }
 
@@ -1943,7 +2032,7 @@ function renderSavedWorkouts() {
                 <span class="text-[10px] font-bold px-2 py-0.5 bg-berzerker-border text-gray-300 rounded uppercase whitespace-nowrap">${w.exercises.length} exs</span>
             </div>
             <div class="flex flex-wrap gap-1">
-                ${muscleTags.map(mt => `<span class="text-[9px] font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(mt)}</span>`).join('')}
+                ${muscleTags.map(mt => `<span class="text-[10px] font-bold px-1.5 py-0.5 leading-tight bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(mt)}</span>`).join('')}
             </div>
             <p class="text-[11px] text-gray-500 font-mono leading-relaxed line-clamp-2">${escapeHtml(w.exercises.map((e, i) => (i ? (e.biset ? ' + ' : ' · ') : '') + e.exercise).join(''))}</p>
             <div class="flex gap-2 pt-1 mt-auto">
@@ -2172,18 +2261,18 @@ function renderBossBattleUI() {
     const activeCard = document.getElementById('active-boss-card');
     if (activeCard) {
         activeCard.innerHTML = `
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
-                    <button type="button" onclick="openBossLightbox('${currentBoss.id}')" title="Ampliar retrato de ${escapeHtml(currentBoss.name)}" aria-label="Ampliar retrato de ${escapeHtml(currentBoss.name)}" class="w-20 h-20 sm:w-24 sm:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500">
-                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl" style="image-rendering:pixelated" alt="retrato de ${escapeHtml(currentBoss.name)}">` : `<span class="text-6xl">${currentBoss.icon}</span>`}
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <div class="flex items-start gap-3 sm:gap-4 min-w-0">
+                    <button type="button" onclick="openBossLightbox('${currentBoss.id}')" title="Ampliar retrato de ${escapeHtml(currentBoss.name)}" aria-label="Ampliar retrato de ${escapeHtml(currentBoss.name)}" class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500">
+                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl shrink-0" style="image-rendering:pixelated" alt="retrato de ${escapeHtml(currentBoss.name)}">` : `<span class="text-5xl sm:text-6xl leading-none">${currentBoss.icon}</span>`}
                     </button>
-                    <div>
-                        <span class="text-xs font-bold text-red-400 uppercase tracking-wider block">${THEME.bossLabel} — ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
-                        <h3 class="font-oswald text-3xl font-bold text-white uppercase">${escapeHtml(currentBoss.name)}</h3>
-                        <p class="text-xs text-gray-400 mt-0.5">${escapeHtml(currentBoss.desc)}</p>
-                        <p class="text-[10px] text-purple-200/80 mt-1"><strong>Brecha tática:</strong> ${escapeHtml(currentBoss.weakReason || 'Ataque temático.')}</p>
-                        <div class="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700 uppercase">💢 Fraqueza: ${escapeHtml(currentBoss.weak || '—')} ×1,25</span>
+                    <div class="min-w-0 flex-1">
+                        <span class="flex flex-wrap items-center gap-x-1.5 whitespace-nowrap text-xs font-bold text-red-400 uppercase tracking-wider">${THEME.bossLabel} <span aria-hidden="true">—</span> ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
+                        <h3 class="font-oswald text-2xl sm:text-3xl font-bold text-white uppercase leading-tight break-words">${escapeHtml(currentBoss.name)}</h3>
+                        <p class="text-[11px] leading-snug text-gray-400 mt-0.5 break-words">${escapeHtml(currentBoss.desc)}</p>
+                        <p class="text-[11px] leading-snug text-purple-200/80 mt-1 break-words"><strong>Brecha tática:</strong> ${escapeHtml(currentBoss.weakReason || 'Ataque temático.')}</p>
+                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1.5">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700 uppercase leading-tight break-words">💢 Fraqueza: ${escapeHtml(currentBoss.weak || '—')} ×1,25</span>
                             <label class="text-[10px] font-bold px-2 py-0.5 rounded bg-berzerker-border text-gray-300 cursor-pointer hover:bg-gray-700">🖼️ Retrato
                                 <input type="file" accept="image/*" class="hidden" onchange="uploadBossPortrait(event, '${currentBoss.id}')">
                             </label>
@@ -2191,10 +2280,10 @@ function renderBossBattleUI() {
                         </div>
                     </div>
                 </div>
-                <div class="text-right w-full sm:w-auto">
+                <div class="min-w-0 shrink-0 text-right w-full sm:w-auto">
                     <span class="text-xs text-gray-400 font-bold uppercase block">Vida do Boss (HP)</span>
-                    <div class="font-oswald text-3xl font-bold text-red-500">${fmtN(prog.currentHp)} / ${fmtN(currentBoss.maxHp)} HP</div>
-                    <div class="text-[10px] text-gray-500 font-mono mt-0.5">${prog.critCount} golpes críticos (PR ×2) · ${prog.weakHits} acertos na fraqueza</div>
+                    <div class="font-oswald text-2xl sm:text-3xl font-bold text-red-500 leading-tight">${fmtN(prog.currentHp)} / ${fmtN(currentBoss.maxHp)} HP</div>
+                    <div class="text-[11px] text-gray-500 font-mono mt-0.5 leading-snug">${prog.critCount} golpes críticos (PR ×2) · ${prog.weakHits} acertos na fraqueza</div>
                 </div>
             </div>
             <div class="space-y-1">
@@ -2216,15 +2305,15 @@ function renderBossBattleUI() {
             const thumb = bossPortraitSrc(b.id);
             return `
                 <div role="button" tabindex="0" data-boss-id="${escapeHtml(b.id)}" onclick="openBossLightbox('${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBossLightbox('${b.id}')}" title="Ampliar retrato de ${escapeHtml(b.name)}" class="p-4 rounded-xl border cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500 ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
-                    <div class="flex justify-between items-center">
-                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" loading="lazy" decoding="async" class="w-10 h-10 rounded-lg object-cover border border-berzerker-border" style="image-rendering:pixelated">` : `<span class="text-2xl">${b.icon}</span>`}
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
+                    <div class="flex items-center justify-between gap-2">
+                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" width="40" height="40" style="width:40px;height:40px;image-rendering:pixelated" loading="lazy" decoding="async" class="w-10 h-10 shrink-0 rounded-lg object-cover border border-berzerker-border">` : `<span class="text-2xl shrink-0 leading-none">${b.icon}</span>`}
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded leading-tight ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
                             ${defeated ? 'DERROTADO 🏆' : (idx === prog.currentIdx ? 'EM BATALHA ⚔️' : 'BLOQUEADO 🔒')}
                         </span>
                     </div>
-                    <h4 class="font-oswald font-bold text-white text-lg">${escapeHtml(b.name)}</h4>
-                    <span class="text-[10px] font-mono text-purple-300 block">💢 fraco a ${escapeHtml(b.weak || '—')}</span>
-                    <span class="text-[10px] leading-relaxed text-gray-500 block">${escapeHtml(b.weakReason || 'Ataque temático.')}</span>
+                    <h4 class="font-oswald font-bold text-white text-base sm:text-lg leading-tight break-words">${escapeHtml(b.name)}</h4>
+                    <span class="text-[11px] font-mono text-purple-300 block leading-snug break-words">💢 fraco a ${escapeHtml(b.weak || '—')}</span>
+                    <span class="text-[11px] leading-snug text-gray-500 block break-words">${escapeHtml(b.weakReason || 'Ataque temático.')}</span>
                     <span class="text-xs font-mono text-gray-400 block">${fmtN(b.maxHp)} HP · ${defeated ? '✔' : '🎁'} +${Math.round(b.maxHp / 200)} XP</span>
                 </div>`;
         }).join('');
@@ -2320,15 +2409,15 @@ function renderBossLightbox() {
             </div>
             <div class="grid grid-cols-3 gap-2 text-center">
                 <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
-                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Vida máxima</span>
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Vida máxima</span>
                     <span class="block font-oswald text-lg font-bold text-red-400">${fmtN(b.maxHp)} HP</span>
                 </div>
                 <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
-                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">💢 Fraqueza ×1,25</span>
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">💢 Fraqueza ×1,25</span>
                     <span class="block font-oswald text-lg font-bold text-purple-300">${escapeHtml(b.weak || '—')}</span>
                 </div>
                 <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
-                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Recompensa</span>
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Recompensa</span>
                     <span class="block font-oswald text-lg font-bold text-amber-300">+${fmtN(xpReward)} XP</span>
                 </div>
             </div>
@@ -2468,7 +2557,7 @@ function renderReservaStudio() {
     let html = padrao ? `
         <button type="button" onclick="resetBossPortraitToDefault()" title="Retrato padrão do tema" class="${tileCls(!atual)}">
             <img src="${padrao}" alt="retrato padrão" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
-            <span class="block text-[9px] font-bold uppercase tracking-wide mt-1 ${!atual ? 'text-berzerker-300' : 'text-gray-500'}">Padrão</span>
+            <span class="block text-[10px] font-bold uppercase tracking-wide leading-tight mt-1 ${!atual ? 'text-berzerker-300' : 'text-gray-500'}">Padrão</span>
         </button>` : '';
 
     const grupos = reservaGroups(THEME ? THEME.id : 'classico');
@@ -2476,12 +2565,12 @@ function renderReservaStudio() {
         html += `<div class="col-span-full text-center text-[11px] text-gray-500 border border-dashed border-berzerker-border rounded-xl py-6">Sem reservas por enquanto — o index.json ainda não carregou.</div>`;
     }
     grupos.forEach(g => {
-        if (grupos.length > 1) html += `<div class="col-span-full text-[9px] font-bold uppercase tracking-wider text-gray-500 pt-1">${escapeHtml((THEMES[g.tema] || {}).name || g.tema)}</div>`;
+        if (grupos.length > 1) html += `<div class="col-span-full text-[10px] font-bold uppercase tracking-wider text-gray-500 pt-1">${escapeHtml((THEMES[g.tema] || {}).name || g.tema)}</div>`;
         g.itens.forEach(item => {
             html += `
             <button type="button" onclick="applyReservaPortrait('${escapeHtml(item.file)}')" title="${escapeHtml(item.label)}" class="${tileCls(atual === item.file)}">
                 <img src="${escapeHtml(item.file)}" alt="${escapeHtml(item.label)}" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
-                <span class="block truncate text-[9px] font-bold uppercase tracking-wide mt-1 ${atual === item.file ? 'text-berzerker-300' : 'text-gray-400'}">${escapeHtml(item.label)}</span>
+                <span class="block truncate text-[10px] font-bold uppercase tracking-wide leading-tight mt-1 ${atual === item.file ? 'text-berzerker-300' : 'text-gray-400'}">${escapeHtml(item.label)}</span>
             </button>`;
         });
     });
@@ -2549,11 +2638,12 @@ function renderSeason() {
     el.innerHTML = `
         <div class="flex items-center justify-between text-[11px] text-gray-400 font-mono mb-2">
             <span>Temporada iniciada em ${formatShortBR(s.start)}</span>
-            <span>Semana ${s.currentWeek}/${SEASON_WEEKS} · termina em ${s.endsInDays} dias</span>
+            <span>Semana ${s.currentWeek}/${SEASON_WEEKS} · termina em ${s.endsInDays} dias${s.currentWeek >= SEASON_WEEKS ? ' · 🌙 deload' : ''}</span>
         </div>
         <div class="w-full h-3 bg-berzerker-border rounded-full overflow-hidden">
             <div class="h-full bg-gradient-to-r from-amber-600 to-yellow-400 rounded-full transition-all" style="width:${s.progressPct}%"></div>
         </div>
+        <div class="text-[10px] text-gray-500 font-mono mt-1.5">🌙 Semana ${SEASON_WEEKS} = deload automático: volume rende 50% do XP e cada dia sem treino rende +${XP_REST_PER_DAY} XP de recuperação${s.currentWeek >= SEASON_WEEKS ? ' (você está nele)' : ''}.</div>
         <div class="flex items-center justify-between mt-2">
             <div class="text-xs text-gray-400">XP preservado entre temporadas · <b class="text-amber-400">${fmtN(xpNow)} XP</b></div>
             <button onclick="finishSeasonNow()" class="px-3 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg">🏁 Encerrar agora</button>
@@ -2601,7 +2691,65 @@ function removeBgImage() {
     generateStoryCard();
 }
 
+/* Quebra um texto em até `maxLinhas` linhas de no máximo `maxLargura` px,
+   medindo palavra a palavra com ctx.measureText. O que não couber na última
+   linha é cortado com "…". Medidas não-numéricas (canvas sem implementação
+   real, como no smoke test de UI) contam como 0: assim nada entra em loop nem
+   quebra o texto à toa. */
+function wrapCanvasText(ctx, texto, maxLargura, maxLinhas) {
+    const palavras = String(texto ?? '').split(/\s+/).filter(Boolean);
+    const limiteLinhas = Math.max(1, Number(maxLinhas) || 1);
+    if (!palavras.length) return [];
+    const largura = s => {
+        if (!ctx || typeof ctx.measureText !== 'function') return 0;
+        let n;
+        try { n = Number(ctx.measureText(s)?.width); } catch (e) { return 0; }
+        return Number.isFinite(n) ? n : 0;
+    };
+    const limite = Number(maxLargura) > 0 ? Number(maxLargura) : Infinity;
+    const linhas = [];
+    let atual = '';
+    let i = 0;
+    while (i < palavras.length) {
+        const candidata = atual ? `${atual} ${palavras[i]}` : palavras[i];
+        // A primeira palavra entra sempre, mesmo maior que o limite (senão o
+        // laço não anda).
+        if (!atual || largura(candidata) <= limite) { atual = candidata; i++; continue; }
+        if (linhas.length + 1 >= limiteLinhas) break;   // não há próxima linha: o resto vira "…"
+        linhas.push(atual);
+        atual = '';
+    }
+    if (i < palavras.length) {
+        let corte = atual;
+        while (corte && largura(`${corte}…`) > limite) corte = corte.slice(0, -1).replace(/\s+$/, '');
+        atual = `${corte}…`;
+    }
+    if (atual) linhas.push(atual);
+    return linhas.slice(0, limiteLinhas);
+}
+
+// A arte da moldura é desenhada num quadro de referência 1080×1920 (o formato
+// do Story Card). drawThemedFrame escala esse desenho para o canvas real, senão
+// o Card do Chefão (1080×1080) perdia três lados da moldura — o traço caía
+// fora da área visível e o card saía "sem tema".
+// Medida numérica defensiva: canvas sem implementação (teste de UI) pode
+// devolver objeto no lugar de número — e a moldura não pode quebrar por isso.
+function canvasMeasure(v, fallback) {
+    let n;
+    try { n = Number(v); } catch (e) { return fallback; }
+    return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
 function drawThemedFrame(ctx, palette) {
+    const W = canvasMeasure(ctx && ctx.canvas && ctx.canvas.width, 1080);
+    const H = canvasMeasure(ctx && ctx.canvas && ctx.canvas.height, 1920);
+    ctx.save();
+    ctx.scale(W / 1080, H / 1920);
+    drawThemedFrameArt(ctx, palette);
+    ctx.restore();
+}
+
+function drawThemedFrameArt(ctx, palette) {
     // Moldura acompanhando o tema de gamificação
     const frame = (THEME && THEME.frame) || 'ferro';
     if (frame === 'ouro') {
@@ -3096,27 +3244,34 @@ function generateBossDefeatCard() {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 56px Oswald, sans-serif';
-    ctx.fillText(boss.name.toUpperCase(), 540, 700);
+    ctx.fillText(boss.name.toUpperCase(), 540, 688);
     ctx.fillStyle = '#9ca3af';
     ctx.font = '28px Inter, sans-serif';
-    ctx.fillText(`${fmtN(boss.maxHp)} HP · fraco a ${boss.weak}`, 540, 750);
+    ctx.fillText(`${fmtN(boss.maxHp)} HP · fraco a ${boss.weak}`, 540, 736);
+
+    // Brecha tática: o "porquê" do ponto fraco entra no card (até 2 linhas de
+    // 880 px) — antes o card só dizia "fraco a X" e perdia a dica de treino.
+    ctx.fillStyle = '#c4b5fd';
+    ctx.font = '24px Inter, sans-serif';
+    wrapCanvasText(ctx, `Brecha tática: ${boss.weakReason || 'Ataque temático.'}`, 880, 2)
+        .forEach((linha, i) => ctx.fillText(linha, 540, 782 + i * 30));
 
     ctx.fillStyle = '#fbbf24';
     ctx.font = 'bold 44px Oswald, sans-serif';
-    ctx.fillText(`${fmtN(prog.totalDamage)} DMG ACUMULADOS`, 540, 850);
+    ctx.fillText(`${fmtN(prog.totalDamage)} DMG ACUMULADOS`, 540, 880);
 
     ctx.fillStyle = '#9ca3af';
     ctx.font = '26px Inter, sans-serif';
     const rankImg = getCardImg(rankEmblemSrc(activeGameThemeId || THEME?.id, rank.level));
     if (rankImg && rankImg.complete && rankImg.naturalWidth > 0) {
         ctx.save();
-        ctx.beginPath(); ctx.arc(360, 902, 26, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
-        ctx.drawImage(rankImg, 334, 876, 52, 52);
+        ctx.beginPath(); ctx.arc(360, 932, 26, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+        ctx.drawImage(rankImg, 334, 906, 52, 52);
         ctx.restore();
     }
-    ctx.fillText(`${rank.name} · Nível ${rank.level}`, 540, 910);
+    ctx.fillText(`${rank.name} · Nível ${rank.level}`, 540, 940);
     ctx.font = '22px Inter, sans-serif';
-    ctx.fillText(`Diário de Cargas · ${getTodayLocalISO()}`, 540, 960);
+    ctx.fillText(`Diário de Cargas · ${getTodayLocalISO()}`, 540, 990);
     ctx.textAlign = 'left';
 }
 
@@ -3243,8 +3398,8 @@ function badgeArtSrc(slug) {
 
 function badgeArtImg(slug, icon, unlocked) {
     const src = badgeArtSrc(slug);
-    if (!src) return `<span class="text-3xl" role="img" aria-label="${escapeHtml(icon)}">${icon}</span>`;
-    return `<img src="${src}" alt="emblema da conquista" data-fallback="${escapeHtml(icon)}" loading="lazy" decoding="async" onerror="badgeArtFallback(this)" class="h-12 w-12 rounded-full object-cover border ${unlocked ? 'border-emerald-500/50' : 'border-berzerker-border'}" style="image-rendering:auto">`;
+    if (!src) return `<span class="text-3xl shrink-0" role="img" aria-label="${escapeHtml(icon)}">${icon}</span>`;
+    return `<img src="${src}" alt="emblema da conquista" width="48" height="48" data-fallback="${escapeHtml(icon)}" loading="lazy" decoding="async" onerror="badgeArtFallback(this)" class="h-12 w-12 shrink-0 rounded-full object-cover border ${unlocked ? 'border-emerald-500/50' : 'border-berzerker-border'}" style="width:48px;height:48px;image-rendering:auto">`;
 }
 
 function badgeArtFallback(img) {
@@ -3779,8 +3934,14 @@ window.onload = function () {
     setV('cfg-sled', settings.sledWeight);
     const deloadBtn = document.getElementById('cfg-deload-btn');
     if (deloadBtn) {
-        const isDeload = deloadWeeks.includes(isoWeekKey(todayStr));
-        deloadBtn.textContent = isDeload ? '✔ Semana de deload ATIVA (clique para remover)' : '🧘 Planejar semana de deload (esta semana)';
+        const semanaHoje = isoWeekKey(todayStr);
+        const isDeload = deloadWeeks.includes(semanaHoje);
+        // A 4ª semana da temporada é deload automático: o botão precisa dizer
+        // isso, senão parece que a semana de descarga "apareceu do nada".
+        const isAuto = !isDeload && deloadWeeksEfetivos().includes(semanaHoje);
+        deloadBtn.textContent = isDeload ? '✔ Semana de deload ATIVA (clique para remover)'
+            : isAuto ? `🌙 Deload automático ATIVO (semana ${SEASON_WEEKS} da temporada)`
+                : '🧘 Planejar semana de deload (esta semana)';
     }
 
     // Campos do formulário principal (prefixo vazio)

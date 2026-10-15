@@ -116,9 +116,9 @@ function orderWorkoutExercises(list, options = {}) {
         : {};
     const muscleStateCache = new Map();
     const muscleState = muscle => {
-        const m = muscle || 'Geral';
+        const m = normalizeMuscle(muscle || 'Geral');
         if (!muscleStateCache.has(m)) {
-            const muscleLogs = allLogs.filter(l => l && l.kind !== 'corrida' && (l.muscle || 'Geral') === m);
+            const muscleLogs = allLogs.filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle || 'Geral') === m);
             const state = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs);
             // Mesma lógica da recomendação: prontidão + séries que faltam − excesso.
             state.orderScore = state.pct + state.faltam * 4 - state.excesso * 3;
@@ -265,7 +265,10 @@ function assistenteTodayISO(nowMs) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-// Séries feitas por grupo na semana atual (seg–dom), fora corrida
+// Séries feitas por grupo na semana atual (seg–dom), fora corrida.
+// A chave é sempre o grupo CANÔNICO do catálogo: um registro antigo gravado como
+// "posteriores" ou "Biceps" cai na mesma linha do grupo certo (senão a meta
+// semanal fica dividida e o app cobra séries que você já fez).
 function weeklySetsByMuscle(allLogs, refDateISO) {
     const ref = refDateISO || assistenteTodayISO();
     const [ws, we] = isoWeekRange(ref);
@@ -273,7 +276,7 @@ function weeklySetsByMuscle(allLogs, refDateISO) {
     (allLogs || []).forEach(l => {
         if (!l || l.kind === 'corrida') return;
         if (l.date < ws || l.date > we) return;
-        const m = l.muscle || 'Geral';
+        const m = normalizeMuscle(l.muscle || 'Geral');
         const sets = (Array.isArray(l.sets) && l.sets.length) ? l.sets.length
             : (Array.isArray(l.reps) ? l.reps.length : 0);
         out[m] = (out[m] || 0) + sets;
@@ -285,9 +288,12 @@ function weeklySetsByMuscle(allLogs, refDateISO) {
    Volume acima da faixa (10–20 séries) pesa na recuperação:
    cada série acima do máximo tira 2% da prontidão (mínimo 60% da recuperação). */
 function fatigueState(muscle, muscleLogs, weeklySets, nowMs, sinergia) {
-    const base = recoveryState(muscle, muscleLogs, nowMs);
+    const alvo = normalizeMuscle(muscle);
+    const base = recoveryState(alvo, muscleLogs, nowMs);
     const series = Number(weeklySets) || 0;
-    const min = FAIXA_SERIES_SEMANAIS.min, max = FAIXA_SERIES_SEMANAIS.max;
+    // A meta é do GRUPO: antebraço tem faixa própria, o resto fica em 10–20.
+    const faixa = faixaSeriesDoGrupo(alvo);
+    const min = faixa.min, max = faixa.max;
     const volumeStatus = series < min ? 'abaixo' : (series > max ? 'acima' : 'na-faixa');
     const faltam = Math.max(0, min - series);
     const excesso = Math.max(0, series - max);
@@ -309,7 +315,7 @@ function fatigueState(muscle, muscleLogs, weeklySets, nowMs, sinergia) {
             : `${series}/${min}–${max} séries · na faixa`;
 
     return {
-        muscle,
+        muscle: alvo,
         ...st,
         pct: fadigaReal,                 // prontidão real (o que a UI mostra)
         recuperacaoPct: rec,             // só a janela de recuperação
@@ -340,11 +346,12 @@ function suggestNextWorkout(workouts, allLogs, nowMs) {
     const estadoLombar = regiaoLombarState(allLogs, now);
 
     const scored = (Array.isArray(workouts) ? workouts : []).map(w => {
-        const groups = [...new Set((w.exercises || []).map(e => e && e.muscle).filter(m => m && m !== 'Cardio'))];
+        const groups = [...new Set((w.exercises || []).map(e => e && e.muscle).filter(Boolean)
+            .map(m => normalizeMuscle(m)).filter(m => m !== 'Cardio'))];
         let score = 0;
         const motivos = [];
         groups.forEach(m => {
-            const mLogs = (allLogs || []).filter(l => l && l.kind !== 'corrida' && l.muscle === m);
+            const mLogs = (allLogs || []).filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle) === m);
             const st = fatigueState(m, mLogs, weekly[m] || 0, now);
             score += st.pct + st.faltam * 4 - st.excesso * 3;
             if (st.faltam > 0) motivos.push(`${m}: faltam ${st.faltam} séries para a meta da semana (fez ${st.seriesSemana})`);
@@ -370,17 +377,37 @@ function suggestNextWorkout(workouts, allLogs, nowMs) {
     return scored;
 }
 
-// O que falta para o "estímulo total" da semana (usado no montador)
+// Séries equivalentes de apoio indireto na SEMANA: Σ séries dos sinergiaLogs ×
+// fator do grupo. É só informação — não soma em `series` nem abate `faltam`,
+// porque a meta é de estímulo direto (o apoio já aparece na recuperação).
+function seriesIndiretasSemana(muscle, logsSemana) {
+    const cfg = SINERGIA[normalizeMuscle(muscle)];
+    if (!cfg) return 0;
+    const brutas = sinergiaLogs(muscle, logsSemana).reduce((total, l) => total + (
+        (Array.isArray(l.sets) && l.sets.length) ? l.sets.length
+            : (Array.isArray(l.reps) ? l.reps.length : 0)
+    ), 0);
+    return Math.round(brutas * cfg.fator * 10) / 10;
+}
+
+// O que falta para o "estímulo total" da semana (usado no montador).
+// Cada grupo é cobrado pela PRÓPRIA faixa e traz o apoio indireto visível.
 function weeklyGaps(allLogs, refDateISO) {
-    const weekly = weeklySetsByMuscle(allLogs, refDateISO);
-    const min = FAIXA_SERIES_SEMANAIS.min, max = FAIXA_SERIES_SEMANAIS.max;
+    const ref = refDateISO || assistenteTodayISO();
+    const weekly = weeklySetsByMuscle(allLogs, ref);
+    const [ws, we] = isoWeekRange(ref);
+    const logsSemana = (Array.isArray(allLogs) ? allLogs : [])
+        .filter(l => l && l.kind !== 'corrida' && l.date >= ws && l.date <= we);
     return MUSCULOS_MAPA.map(m => {
+        const faixa = faixaSeriesDoGrupo(m);
         const series = weekly[m] || 0;
-        const faltam = Math.max(0, min - series);
-        const excesso = Math.max(0, series - max);
+        const faltam = Math.max(0, faixa.min - series);
+        const excesso = Math.max(0, series - faixa.max);
         return {
             muscle: m, series, faltam, excesso,
-            status: series < min ? 'abaixo' : (series > max ? 'acima' : 'na-faixa')
+            min: faixa.min, max: faixa.max,
+            indiretas: seriesIndiretasSemana(m, logsSemana),
+            status: series < faixa.min ? 'abaixo' : (series > faixa.max ? 'acima' : 'na-faixa')
         };
     }).filter(g => g.faltam > 0 || g.excesso > 0)
         .sort((a, b) => (b.faltam - a.faltam) || a.muscle.localeCompare(b.muscle, 'pt-BR'));

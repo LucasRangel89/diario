@@ -245,7 +245,7 @@ function searchHistoryLogs() {
     const minDate = days ? shiftLocalISO(getTodayLocalISO(), -days) : '';
     return all.filter(l => {
         if (!l) return false;
-        if (searchState.histMuscle && l.muscle !== searchState.histMuscle) return false;
+        if (searchState.histMuscle && normalizeMuscle(l.muscle) !== searchState.histMuscle) return false;
         if (minDate && String(l.date) < minDate) return false;
         if (searchState.tags.length && !matchesTags(exerciseTags(l.exercise), searchState.tags, searchState.tagMode)) return false;
         if (q && !matchesQuery(`${l.exercise} ${l.muscle} ${l.notes || ''} ${l.technique || ''} ${formatDateBR(l.date)} ${l.date}`, q)) return false;
@@ -256,7 +256,9 @@ function searchHistoryLogs() {
 function renderHistoryResults() {
     const el = document.getElementById('hist-results');
     if (!el) return;
-    const muscles = [...new Set(((typeof logs !== 'undefined' && Array.isArray(logs)) ? logs : []).map(l => l.muscle).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    const muscles = [...new Set(((typeof logs !== 'undefined' && Array.isArray(logs)) ? logs : [])
+        .map(l => normalizeMuscle(l && l.muscle)).filter(m => m && m !== 'Geral'))]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
     const muscleSel = document.getElementById('hist-muscle');
     if (muscleSel) {
         muscleSel.innerHTML = `<option value="">Todos os grupos</option>` + muscles.map(m =>
@@ -295,7 +297,7 @@ function renderHistoryResults() {
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-1.5">
                         <span class="text-[10px] font-mono px-1.5 py-0.5 bg-berzerker-border text-gray-300 rounded">${escapeHtml(formatShortBR(l.date))}</span>
-                        <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-card border border-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(l.muscle || '—')}</span>
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-card border border-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(normalizeMuscle(l.muscle))}</span>
                         ${l.isPR ? '<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded">🏆 PR</span>' : ''}
                         ${l.technique && l.technique !== 'Convencional' ? `<span class="text-[10px] font-mono text-gray-500">[${escapeHtml(l.technique)}]</span>` : ''}
                     </div>

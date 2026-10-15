@@ -125,10 +125,13 @@ const THEMES = {
     },
     folclore: {
         id: 'folclore', name: 'Folclore Brasileiro',
-        desc: 'Do Novato da Roça à Lenda do Brasil: lendas, encantados e figuras da tradição popular.',
-        arena: 'Sertão Encantado — Lendas do Brasil', bossLabel: 'LENDA ATIVA', stageWord: 'LENDA',
-        missionWord: 'Desafio do Sertão', missionWordPlural: 'Desafios do Sertão', frame: 'madeira',
-        ranks: [['Novato da Roça', '🌱'], ['Peão de Boiadeiro', '🤠'], ['Violeiro do Sertão', '🪕'], ['Capanga Valente', '⚔️'], ['Domador de Bestas', '🐎'], ['Herói do Arraial', '🎇'], ['Guardião da Mata', '🌿'], ['Caçador de Encantados', '🔥'], ['Mestre do Folclore', '✨'], ['LENDA DO BRASIL', '🇧🇷']],
+        desc: 'Do Andarilho da Mata à LENDA DO BRASIL: patentes e desafios inspirados na tradição tupi-guarani e nos encantados das matas.',
+        arena: 'Mata Encantada — Lendas do Brasil', bossLabel: 'LENDA ATIVA', stageWord: 'LENDA',
+        missionWord: 'Desafio da Mata', missionWordPlural: 'Desafios da Mata', frame: 'madeira',
+        // Patentes tupi-guarani: Jaci (lua) e Guaraci (sol), Anhangá e Boitatá
+        // (encantados), Tupã (trovão) e Maíra (herói criador) — a mesma raiz
+        // dos chefões do tema, em vez de figuras do sertão genérico.
+        ranks: [['Andarilho da Mata', '🌱'], ['Caçador de Encantados', '🏹'], ['Amigo do Uirapuru', '🐦'], ['Filho de Jaci', '🌙'], ['Filho de Guaraci', '☀️'], ['Guardião do Anhangá', '🔥'], ['Herdeiro de Boitatá', '🐍'], ['Guerreiro de Tupã', '⚡'], ['Maíra Imortal', '✨'], ['LENDA DO BRASIL', '🇧🇷']],
         bosses: mkBosses([
             ['Saci-Pererê', '🌀', 'Travesso de uma perna só, costuma surgir em redemoinhos e pregar peças.', 'Pernas', 'Seu salto e seus redemoinhos dependem de uma única perna de apoio.'],
             ['Curupira', '🦶', 'Guardião das matas; os pés virados confundem quem segue suas pegadas.', 'Pernas', 'Os rastros invertidos dependem de passos rápidos e mudanças de direção.'],
@@ -473,9 +476,25 @@ function missionsState(allLogs, theme, refDate) {
 }
 
 // ============================================================
-// TEMPORADAS — ciclos de 12 semanas, troféu no fim, XP preservado
+// TEMPORADAS — ciclos de 4 semanas, troféu no fim, XP preservado
 // ============================================================
-const SEASON_WEEKS = 12;
+// 4 semanas (28 dias): ciclo curto o bastante para o troféu chegar logo e para
+// a última semana funcionar como deload programado (veja autoDeloadWeekKeys).
+const SEASON_WEEKS = 4;
+
+/* Chaves ISO da semana de DELOAD AUTOMÁTICO: a 4ª semana (dias 21–27) de cada
+   temporada — a atual e as já concluídas. O deload deixa de depender de o
+   usuário lembrar de marcá-lo em Config: quem fecha a temporada descansa. */
+function autoDeloadWeekKeys(seasons) {
+    const s = seasons && typeof seasons === 'object' ? seasons : {};
+    const inicios = [s.start, ...((Array.isArray(s.completed) ? s.completed : []).map(c => c && c.start))]
+        .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(String(d || '')));
+    return [...new Set(inicios.map(inicio => {
+        const d = new Date(`${inicio}T12:00:00`);
+        d.setDate(d.getDate() + (SEASON_WEEKS - 1) * 7);   // dia 21 = abertura da 4ª semana
+        return isoWeekKey(toLocalISO(d));
+    }))];
+}
 
 function seasonState(seasons, todayISO) {
     const s = seasons || { start: todayISO, completed: [] };

@@ -132,6 +132,7 @@ check('seletores têm grupos na ordem certa + Cardio no histórico, sem Glúteos
 check('nenhum log ou treino salvo mantém Pescoço ou Glúteos', !ev("logs.some(l => l.muscle === 'Pescoço' || l.muscle === 'Glúteos')") && !ev("savedWorkouts.some(w => (w.exercises || []).some(e => e.muscle === 'Pescoço' || e.muscle === 'Glúteos'))"));
 check('cervical do seed aparece como Ombros', ev("savedWorkouts.some(w => (w.exercises || []).some(e => e.exercise === 'Extensão Cervical' && e.muscle === 'Ombros'))"));
 check('Hip Thrust do seed migra para Posterior em logs e treino salvo', ev("logs.some(l => l.exercise === 'Elevação Pélvica (Hip Thrust)' && l.muscle === 'Posterior') && savedWorkouts.some(w => (w.exercises || []).some(e => e.exercise === 'Elevação Pélvica (Hip Thrust)' && e.muscle === 'Posterior'))"));
+check('Mesa Flexora do seed volta para Posterior no treino salvo (catálogo manda)', ev("savedWorkouts.some(w => (w.exercises || []).some(e => e.exercise === 'Mesa Flexora' && e.muscle === 'Posterior')) && !savedWorkouts.some(w => (w.exercises || []).some(e => e.exercise === 'Mesa Flexora' && e.muscle === 'Pernas'))"));
 check('IDs e retratos (webp) dos quatro chefões clássicos preservados', ev("THEMES.classico.bosses.slice(0, 4).map(b => b.id).join() === 'boss1,boss2,boss3,boss4' && DEFAULT_BOSS_PORTRAITS['classico:boss1'].endsWith('golem-anilhas.webp') && DEFAULT_BOSS_PORTRAITS['classico:boss2'].endsWith('hidra-titanio.webp') && DEFAULT_BOSS_PORTRAITS['classico:boss3'].endsWith('mecagorila.webp') && DEFAULT_BOSS_PORTRAITS['classico:boss4'].endsWith('behemoth.webp') && THEMES.classico.bosses.length === 12"));
 check('seletor antigo de tema foi removido de Config', !$('game-theme-select') && !$('game-theme-desc'));
 check('Story Card remove paletas antigas', !$('btn-theme-berzerker') && !$('btn-theme-cyberpunk') && !$('btn-theme-minimal') && !/Cyberpunk|Minimalist|Berzerker Red/.test($('tab-content-story').textContent));
@@ -283,6 +284,17 @@ try {
     ev("switchHistoryView('progresso')"); ev("switchHistoryView('semanas')");
     ev("switchHistoryView('peso')"); ev("switchHistoryView('log')");
     check('4 vistas do histórico alternam sem erro', true);
+    const cabecalhoLog = [...$('history-content').querySelectorAll('thead th')].map(th => th.textContent.trim());
+    const primeiraLinha = $('history-content').querySelector('tbody tr');
+    check('tabela do histórico troca a coluna Sessão pela coluna Grupo',
+        cabecalhoLog[1] === 'Grupo' && !cabecalhoLog.includes('Sessão'), cabecalhoLog.slice(0, 3));
+    check('grupo da linha é um chip com o valor canônico',
+        !!primeiraLinha.querySelectorAll('td')[1].querySelector('span')
+        && ev(`normalizeMuscle(${JSON.stringify(primeiraLinha.querySelectorAll('td')[1].textContent.trim())})`) === primeiraLinha.querySelectorAll('td')[1].textContent.trim());
+    check('sessão continua visível como detalhe discreto sob o exercício',
+        !!primeiraLinha.querySelectorAll('td')[2].querySelector('span')
+        && /Peito\/Tríceps\/Ombro|Bíceps\/Costas|Pernas\/Abdômen|Posterior\/Acessórios|Full Body/.test(primeiraLinha.querySelectorAll('td')[2].textContent),
+        primeiraLinha.querySelectorAll('td')[2].textContent);
 } catch (e) { failures++; console.log('  ✘ vistas do histórico:', e.message); }
 
 // ============================ NAVEGAÇÃO ============================
@@ -429,6 +441,8 @@ setInput('hist-q', 'supino');
 check('texto filtra', histCards().length === ev('searchHistoryLogs().length') && histCards().length > 0 && $('hist-results').textContent.includes('Supino'), histCards().length);
 check('resumo traz totais', /registro/.test($('hist-summary').textContent) && /ton/.test($('hist-summary').textContent), $('hist-summary').textContent);
 setInput('hist-q', '');
+const histMuscleOpts = [...$('hist-muscle').options].map(o => o.value).filter(Boolean);
+check('filtro de grupo do histórico lista só valores canônicos', histMuscleOpts.length > 0 && histMuscleOpts.every(v => ev(`normalizeMuscle(${JSON.stringify(v)})`) === v) && !histMuscleOpts.includes('Glúteos'), histMuscleOpts);
 setSelect('hist-muscle', 'Pernas');
 check('grupo filtra', histCards().length === ev("searchHistoryLogs().length") && $('hist-results').textContent.includes('Agachamento'), histCards().length);
 setSelect('hist-muscle', '');
@@ -445,6 +459,21 @@ check('cartão do histórico tem editar + ver dia + tags', /Editar/.test($('hist
 // ============================ REGISTRO COM TAGS ============================
 console.log('\n== UI 8. Registro diário com tags ==');
 navTo('diario');
+$('log-muscle').value = 'Peito';
+$('sessao').value = '';
+setInput('log-exercise', 'stiff');
+check('apelido curto resolve o exercício pelo catálogo', ev("catalogInfo(document.getElementById('log-exercise').value).nome") === 'Stiff com Barra');
+check('grupo é autopreenchido com destaque verde', $('log-muscle').value === 'Posterior' && $('log-muscle').className.includes('ring-2') && $('log-muscle').className.includes('ring-emerald-500/70'), [$('log-muscle').value, $('log-muscle').className]);
+check('sessão vazia recebe a sugestão do histórico do grupo', $('sessao').value === 'Posterior/Acessórios', $('sessao').value);
+setInput('log-exercise', 'mesa flex');
+check('prefixo único de 4+ letras completa o exercício', ev("catalogInfo(document.getElementById('log-exercise').value).nome") === 'Mesa Flexora');
+setInput('sessao', 'Minha sessão');
+setInput('log-exercise', 'terra');
+check('autofill troca o grupo junto com o apelido (terra → Costas)', $('log-muscle').value === 'Costas', $('log-muscle').value);
+check('sessão digitada nunca é sobrescrita pelo autofill', $('sessao').value === 'Minha sessão', $('sessao').value);
+setInput('log-exercise', 'supino inclinado c');
+check('prefixo ambíguo não adivinha exercício nem grupo', ev("catalogInfo(document.getElementById('log-exercise').value)") === null && $('log-muscle').value === 'Costas');
+setInput('sessao', '');
 setInput('log-exercise', 'Rosca Direta com Barra');
 fire($('log-exercise'), 'input');
 check('digitar mostra as tags do exercício', $('log-tags-line').textContent.includes('Puxar') && $('log-tags-line').textContent.includes('Barra'), $('log-tags-line').textContent);
@@ -501,6 +530,27 @@ const apoiosSeedCorretos = Object.entries(apoioEquivalenteSeed).every(([muscle, 
 check('mapa mostra Posterior (não Glúteos), tooltip e equivalentes corretos do seed', !!posteriorBox && !recoveryBoxes.some(box => box.querySelector('.font-oswald')?.textContent.trim() === 'Glúteos') && apoioPosterior && /apoio em .*séries equivalentes/.test(apoioPosterior.textContent) && apoioPosterior.title.includes('Agachamento Hack') && apoioPosterior.title.includes('Leg Press 45°') && apoiosSeedCorretos);
 check('séries equivalentes ficam fora da meta semanal do box Posterior', !!posteriorBox && posteriorBox.textContent.includes(`${seriesDiretasPosterior}/10–20 séries`) && seriesDiretasPosterior === 0 && ev("weeklyGaps(logs, getTodayLocalISO()).find(g => g.muscle === 'Posterior').series === 0"), { seriesDiretasPosterior, text: posteriorBox && posteriorBox.textContent });
 check('painel do montador: o que falta na semana', $('builder-week-gaps').textContent.includes('Estímulo da semana') && /séries/.test($('builder-week-gaps').textContent), $('builder-week-gaps').textContent.slice(0, 120));
+check('painel anuncia a faixa própria do Antebraço', $('builder-week-gaps').textContent.includes('Antebraço 4–10'), $('builder-week-gaps').textContent.slice(0, 160));
+const boxAntebraco = recoveryBoxes.find(el => el.querySelector('.font-oswald')?.textContent.trim() === 'Antebraço');
+check('box do Antebraço cobra 4–10 séries (não 10–20)', !!boxAntebraco && boxAntebraco.textContent.includes('/4–10 séries'), boxAntebraco && boxAntebraco.textContent.match(/\d+\/\d+–\d+ séries/));
+const lombarLivre = $('lombar-alert-panel').textContent;
+check('lombar livre vira linha verde compacta (sem painel de alerta)',
+    lombarLivre.includes('✅ Lombar 100% — livre') && !lombarLivre.includes('Recuperação da região') && !lombarLivre.includes('⚠️ Lombar'),
+    lombarLivre.slice(0, 140));
+ev(`window.__lombarBackup = logs; logs = [{ id: -7, kind: 'peso', muscle: 'Costas', date: getTodayLocalISO(), exercise: 'Levantamento Terra', reps: [5, 5, 5] }]; renderRecoveryMap();`);
+const lombarCarregada = $('lombar-alert-panel').textContent;
+check('lombar carregada mostra o painel completo, com o ícone do estado no título',
+    lombarCarregada.includes('Recuperação da região') && /Lombar\s*⚠️/.test(lombarCarregada)
+    && lombarCarregada.includes('MUITO CARREGADA') && !lombarCarregada.includes('✅ Lombar 100%'),
+    lombarCarregada.slice(0, 140));
+ev('logs = window.__lombarBackup; delete window.__lombarBackup; renderRecoveryMap();');
+check('voltar aos registros reais devolve a linha compacta', $('lombar-alert-panel').textContent.includes('✅ Lombar 100% — livre'));
+ev(`window.__gapsBackup = logs; logs = [{ id: -1, kind: 'peso', muscle: 'Costas', date: getTodayLocalISO(), exercise: 'Remada Baixa na Polia', reps: [10, 10, 10] }]; renderWeekGaps();`);
+check('chip mostra o apoio indireto da semana sem abater a meta',
+    $('builder-week-gaps').textContent.includes('Antebraço: 0/4 min · faltam 4 · 🤝 +1,5 indiretos'),
+    $('builder-week-gaps').textContent.match(/Antebraço:[^·]*·[^·]*·[^·]*/));
+check('painel explica que 🤝 é informativo', $('builder-week-gaps').textContent.includes('não abate a meta'));
+ev('logs = window.__gapsBackup; delete window.__gapsBackup; renderWeekGaps();');
 check('sugestão do dia em linguagem simples', $('suggestion-content').textContent.includes('Próximo treino recomendado') && $('suggestion-content').textContent.includes('Por quê:'));
 check('sugestão explica recuperação e/ou meta semanal', /descansad|séries|faltam|recuper/i.test($('suggestion-content').textContent));
 
@@ -560,6 +610,22 @@ window.localStorage.clear();
 Object.entries(storedBeforeMigrationTest).forEach(([key, value]) => window.localStorage.setItem(key, value));
 ev("loadStoredData(); loadWorkoutsFromStorage(); applyTheme(activeGameThemeId); refreshAll();");
 
+// ============================ TEMPORADA ============================
+console.log('\n== UI 11b. Temporada de 4 semanas e deload automático ==');
+const isoLocal = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const inicioTemporadaTeste = new Date();
+inicioTemporadaTeste.setDate(inicioTemporadaTeste.getDate() - 22);   // dia 22 → semana 4
+ev(`window.__seasonBackup = JSON.stringify(seasons || null);`);
+ev(`seasons = { start: getTodayLocalISO(), completed: [] }; renderSeason();`);
+check('painel anuncia o ciclo curto de 4 semanas', ev('SEASON_WEEKS') === 4 && $('season-content').textContent.includes('Semana 1/4'), $('season-content').textContent.slice(0, 120));
+check('painel explica o deload automático da semana 4', $('season-content').textContent.includes('🌙 Semana 4 = deload automático') && /50% do XP/.test($('season-content').textContent), ($('season-content').textContent.match(/🌙 Semana[^.]*/) || [])[0]);
+check('fora da semana 4 o painel não marca deload ativo', !$('season-content').textContent.includes('· 🌙 deload'), $('season-content').textContent.slice(0, 120));
+ev(`seasons = { start: '${isoLocal(inicioTemporadaTeste)}', completed: [] }; renderSeason();`);
+check('na semana 4 o cabeçalho marca "· 🌙 deload"', /Semana 4\/4 · termina em \d+ dias · 🌙 deload/.test($('season-content').textContent) && $('season-content').textContent.includes('(você está nele)'), ($('season-content').textContent.match(/Semana 4[^·]*·[^·]*·[^.]*/) || [])[0]);
+check('semana de deload automático entra no deload efetivo do tema', ev('deloadWeeksEfetivos().includes(autoDeloadWeekKeys(seasons)[0])') === true, ev('deloadWeeksEfetivos()'));
+check('deload automático vale mesmo sem nenhuma semana marcada à mão', ev('deloadWeeks.length') === 0 || ev('deloadWeeksEfetivos().length >= deloadWeeks.length'), ev('deloadWeeks'));
+ev('seasons = window.__seasonBackup ? JSON.parse(window.__seasonBackup) : null; delete window.__seasonBackup; renderSeason();');
+
 // ============================ BADGES ============================
 console.log('\n== UI 12b. Badges com arte própria ==');
 navTo('stats');
@@ -608,6 +674,82 @@ check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexis
     check('tema sem reserva própria empresta os grupos dos outros temas', $('reserva-grid').querySelectorAll('button').length === 2 && $('reserva-grid').textContent.includes('Saga 2'), $('reserva-grid').querySelectorAll('button').length);
     ev("reservaManifest = JSON.parse(window.__manifestBackup); delete window.__manifestBackup; renderReservaStudio();");
     check('trocar de chefão no select redesenha a grade do estúdio', (ev("selectReservaBoss(BOSSES[3].id)"), ev('reservaBossId')) === ev('BOSSES[3].id') && $('reserva-boss-select').value === ev('BOSSES[3].id'));
+
+    // ============================ CARD DO CHEFÃO ============================
+    console.log('\n== UI 12d. Card do Chefão: moldura escalável e brecha tática ==');
+    navTo('boss');
+    ev('openBossDefeatCard()');
+    const canvasCard = $('boss-card-canvas');
+    check('canvas do card é 1080×1080 (o botão anuncia o tamanho real)',
+        canvasCard.width === 1080 && canvasCard.height === 1080 && /1080×1080/.test(document.body.textContent),
+        [canvasCard.width, canvasCard.height]);
+
+    // Gravador de desenho: o ctx padrão do teste engole tudo, então aqui o
+    // canvas recebe um ctx que anota fillText/scale/save/restore e devolve um
+    // encadeamento vazio para o resto (gradientes, arcos, recortes).
+    const chamadasCard = [];
+    const noopChain = () => new Proxy(function () { }, { get: (t, k) => (k === 'width' ? 0 : noopChain()), set: () => true, apply: () => noopChain() });
+    const alvoCtx = {
+        canvas: canvasCard,
+        save: () => chamadasCard.push(['save']),
+        restore: () => chamadasCard.push(['restore']),
+        scale: (x, y) => chamadasCard.push(['scale', x, y]),
+        fillText: (t, x, y) => chamadasCard.push(['fillText', String(t), x, y]),
+        measureText: t => ({ width: String(t).length * 12 })
+    };
+    canvasCard.getContext = () => new Proxy(alvoCtx, { get: (t, k) => (k in t ? t[k] : noopChain()), set: () => true });
+    ev('generateBossDefeatCard()');
+
+    const escalasCard = chamadasCard.filter(c => c[0] === 'scale');
+    check('moldura é escalada para o canvas real (1080/1080 × 1080/1920)',
+        escalasCard.some(c => c[1] === 1 && Math.abs(c[2] - 1080 / 1920) < 1e-9), escalasCard.slice(0, 3));
+    check('save/restore envolvem a moldura (o resto do card não herda a escala)',
+        chamadasCard.some(c => c[0] === 'save') && chamadasCard.some(c => c[0] === 'restore'));
+    const textosCard = chamadasCard.filter(c => c[0] === 'fillText').map(c => c[1]);
+    const brechasCard = chamadasCard.filter(c => c[0] === 'fillText' && String(c[1]).startsWith('Brecha tática:'));
+    check('card desenha a brecha tática do chefão', brechasCard.length > 0, textosCard.slice(0, 5));
+    check('brecha cabe em até 2 linhas (782 e 812)', brechasCard.length <= 2 && brechasCard.every(c => c[3] === 782 || c[3] === 812), brechasCard.map(c => c[3]));
+    const ysCard = chamadasCard.filter(c => c[0] === 'fillText').map(c => c[3]);
+    check('layout reequilibrado: nome 688 · HP 736 · DMG 880 · patente 940 · data 990',
+        [688, 736, 880, 940, 990].every(y => ysCard.includes(y)), ysCard);
+    check('card continua com título, HP e patente', textosCard.some(t => /CHEFÃO DERROTADO|EM BATALHA/.test(t)) && textosCard.some(t => /HP · fraco a/.test(t)) && textosCard.some(t => /Nível/.test(t)), textosCard.slice(0, 4));
+    ev("document.getElementById('boss-card-overlay')?.remove()");
+
+    // ============================ GRADES NO CELULAR ============================
+    console.log('\n== UI 12e. Grades estáveis e legíveis no celular ==');
+    const appSrcMobile = fs.readFileSync('js/app.js', 'utf8');
+    navTo('boss');
+    ev('renderBossBattleUI(); renderBadgesAndStreak(); showThemeGallery();');
+    const thumbBosses = [...document.querySelectorAll('#bosses-grid img')];
+    check('grade de chefões tem retrato nos 12 tiles', thumbBosses.length === 12, thumbBosses.length);
+    check('thumbs de chefões nascem com 40×40 intrínseco e não encolhem',
+        thumbBosses.every(i => i.getAttribute('width') === '40' && i.getAttribute('height') === '40'
+            && /width:40px;height:40px/.test(i.getAttribute('style') || '') && i.className.includes('shrink-0')),
+        (thumbBosses[0] || {}).outerHTML);
+    const cardHTML = ($('active-boss-card') || {}).innerHTML || '';
+    check('cabeçalho do card do chefão quebra em tela estreita e não corta a meta',
+        /flex-wrap/.test(cardHTML) && /whitespace-nowrap/.test(cardHTML), (cardHTML.match(/<span class="flex[^>]*>/) || [])[0]);
+    check('nome, descrição, brecha e fraqueza do chefão quebram palavra por palavra',
+        /leading-tight break-words/.test(cardHTML) && (cardHTML.match(/break-words/g) || []).length >= 3
+        && /text-\[11px\][^"]*break-words/.test(cardHTML), (cardHTML.match(/break-words/g) || []).length);
+    check('descrições do card e dos tiles em 11px (10px some no celular)', (cardHTML.match(/text-\[11px\]/g) || []).length >= 3
+        && !/text-\[9px\]/.test(appSrcMobile));
+    const imgsGaleria = [...document.querySelectorAll('#theme-gallery-overlay img')];
+    check('galeria de temas renderiza ícones e emblemas de patente', imgsGaleria.length >= 20, imgsGaleria.length);
+    check('ícones de tema e emblemas têm largura/altura intrínsecas (sem pulo da grade)',
+        imgsGaleria.every(i => /^\d+$/.test(i.getAttribute('width') || '') && Number(i.getAttribute('width')) > 0
+            && new RegExp(`width:${i.getAttribute('width')}px;height:${i.getAttribute('width')}px`).test(i.getAttribute('style') || '')
+            && i.className.includes('shrink-0') && i.getAttribute('loading') === 'lazy'),
+        imgsGaleria.slice(0, 2).map(i => i.outerHTML.slice(0, 140)));
+    const imgsBadges = [...document.querySelectorAll('#badges-grid img')];
+    check('arte das conquistas tem 48×48 fixo e não encolhe',
+        imgsBadges.length === 16 && imgsBadges.every(i => i.getAttribute('width') === '48' && i.getAttribute('height') === '48'
+            && /width:48px;height:48px/.test(i.getAttribute('style') || '') && i.className.includes('shrink-0')),
+        (imgsBadges[0] || {}).outerHTML);
+    check('rótulos dos tiles de reserva legíveis (10px) e arte com tamanho fixo',
+        /block truncate text-\[10px\][^"]*leading-tight/.test(appSrcMobile)
+        && /width="40" height="40"[^>]*shrink-0/.test(appSrcMobile));
+    ev('closeTopOverlay();');
 
     // ============================ CONSOLE ============================
     console.log('\n== UI 12. Console limpo ==');

@@ -135,26 +135,111 @@ const EXERCISE_CATALOG_FULL = [
     { nome: 'Remo (Ergômetro)',               grupo: 'Cardio',   equipamento: 'Remo',               como: 'km e minutos',        tipo: 'corrida',      fator: 1, lados: 1, unidade: 'reps', faixa: [0, 0],   extra: null, descanso: 0 }
 ];
 
-// Aliases: nomes antigos do app → nome do catálogo unificado
+// Aliases: nomes antigos do app E apelidos falados → nome do catálogo unificado.
+// O objetivo é o autofill do registro: "stiff", "terra" ou "supino" precisam
+// achar o exercício sem digitar o nome inteiro (no celular, digitar menos é
+// registrar mais). Chaves em texto natural — a busca compara normalizado.
 const CATALOG_ALIASES = {
+    // ---- nomes antigos (migração) ----
     'elevação lateral c/ halter': 'Elevação Lateral c/ Halteres',
     'crossover na polia': 'Crossover na Polia Alta',
     'tríceps polia alta': 'Tríceps na Polia Alta',
     'tríceps francês c/ halter': 'Tríceps Francês na Polia',
     'agachamento búlgaro': 'Afundo Búlgaro',
-    'prancha isometrica': 'Prancha Isométrica'
+    'prancha isometrica': 'Prancha Isométrica',
+    // ---- apelidos de academia ----
+    'supino': 'Supino Reto na Máquina',          // a academia não tem supino com barra
+    'supino reto': 'Supino Reto na Máquina',
+    'supino maquina': 'Supino Reto na Máquina',
+    'supino inclinado': 'Supino Inclinado c/ Halteres',
+    'crucifixo': 'Crucifixo na Máquina',
+    'crossover': 'Crossover na Polia Alta',
+    'flexão': 'Flexão de Braço',
+    'terra': 'Levantamento Terra',
+    'deadlift': 'Levantamento Terra',
+    'stiff': 'Stiff com Barra',
+    'rdl': 'Stiff com Barra',
+    'puxada': 'Puxada Frontal na Polia',
+    'pulldown': 'Pulldown na Polia',
+    'barra fixa': 'Barra Fixa (Pull-up)',
+    'pull up': 'Barra Fixa (Pull-up)',
+    'remada curvada': 'Remada Curvada com Barra',
+    'serrote': 'Remada Unilateral c/ Halter',
+    'leg press': 'Leg Press 45°',
+    'hack': 'Agachamento Hack',
+    'agachamento': 'Agachamento Livre',
+    'sumô': 'Agachamento Sumô',
+    'extensora': 'Cadeira Extensora',
+    'flexora': 'Mesa Flexora',
+    'cadeira flexora': 'Mesa Flexora',
+    'búlgaro': 'Afundo Búlgaro',
+    'afundo': 'Afundo c/ Halteres',
+    'hip thrust': 'Elevação Pélvica (Hip Thrust)',
+    'elevação pélvica': 'Elevação Pélvica (Hip Thrust)',
+    'panturrilha': 'Panturrilha em Pé',
+    'adutora': 'Cadeira Adutora',
+    'swing': 'Swing de Kettlebell',
+    'kettlebell': 'Swing de Kettlebell',
+    'desenvolvimento': 'Desenvolvimento Militar',
+    'militar': 'Desenvolvimento Militar',
+    'elevação lateral': 'Elevação Lateral c/ Halteres',
+    'elevação frontal': 'Elevação Frontal c/ Halter',
+    'encolhimento': 'Encolhimento de Ombros',
+    'manguito': 'Manguito Rotador',
+    'remada alta': 'Remada Alta na Polia',
+    'cervical': 'Extensão Cervical',
+    'rosca': 'Rosca Direta com Barra',
+    'rosca direta': 'Rosca Direta com Barra',
+    'martelo': 'Rosca Martelo',
+    'scott': 'Rosca Scott',
+    'concentrada': 'Rosca Concentrada',
+    'tríceps corda': 'Tríceps Corda na Polia',
+    'tríceps testa': 'Tríceps Testa com Barra W',
+    'francês': 'Tríceps Francês na Polia',
+    'abdominal': 'Abdominal Supra no Solo',
+    'bicicleta': 'Abdominal Bicicleta',
+    'rodinha': 'Ab Wheel',
+    'prancha': 'Prancha Isométrica',
+    'punho': 'Flexão de Punho',
+    'esteira': 'Corrida (Esteira)',
+    'bike': 'Bike / Ergométrico',
+    'remo': 'Remo (Ergômetro)'
 };
 
 // Índices
 const CATALOG_BY_NAME = {};
 EXERCISE_CATALOG_FULL.forEach(e => { CATALOG_BY_NAME[e.nome.toLowerCase()] = e; });
 
+// Apelidos indexados sem acento nem caixa ("stiff", "STIFF", "Stíff" → idem)
+const CATALOG_ALIAS_BY_NORM = {};
+Object.entries(CATALOG_ALIASES).forEach(([apelido, nome]) => {
+    CATALOG_ALIAS_BY_NORM[normalizeText(apelido)] = nome;
+});
+
+// Prefixo de 4+ caracteres que bate com UM exercício só → entrada do catálogo.
+// "mesa flex" acha a Mesa Flexora; "supino" é ambíguo e devolve null (o app
+// prefere não preencher nada a preencher o exercício errado).
+function catalogPrefixMatch(norm) {
+    if (!norm || norm.length < 4) return null;
+    let unico = null;
+    const lista = allExercisesList();
+    for (let i = 0; i < lista.length; i++) {
+        if (!normalizeText(lista[i].nome).startsWith(norm)) continue;
+        if (unico) return null;
+        unico = lista[i];
+    }
+    return unico;
+}
+
 function catalogInfo(exerciseName) {
-    const n = String(exerciseName || '').trim().toLowerCase();
+    const bruto = String(exerciseName || '').trim();
+    if (!bruto) return null;
+    const n = bruto.toLowerCase();
     if (CATALOG_BY_NAME[n]) return CATALOG_BY_NAME[n];
-    const alias = CATALOG_ALIASES[n];
-    if (alias) return CATALOG_BY_NAME[alias.toLowerCase()] || null;
-    return null;
+    const norm = normalizeText(bruto);
+    const alias = CATALOG_ALIAS_BY_NORM[norm];
+    if (alias) return CATALOG_BY_NAME[String(alias).toLowerCase()] || null;
+    return catalogPrefixMatch(norm);
 }
 
 // Sugestões por grupo (builder)
@@ -190,9 +275,36 @@ const MUSCLE_OPTIONS_FULL = [...MUSCULOS_MAPA, 'Geral'];
 // Grupos que deixaram de existir: registros antigos (localStorage, backup JSON,
 // CSV da planilha) são remapeados sem erro na hora de carregar/importar.
 const LEGACY_MUSCLE_ALIASES = { 'Pescoço': 'Ombros', 'Glúteos': 'Posterior' };
+
+// Índice canônico: texto normalizado (sem acento nem caixa) + plural → grupo do
+// catálogo. Sem ele, "posteriores", "Posterior" e "Biceps" viravam três chaves
+// diferentes e o estímulo semanal do mesmo grupo se espalhava em várias linhas.
+const MUSCLE_CANONICAL = (() => {
+    const mapa = {};
+    const add = (variante, canon) => {
+        if (variante && !(variante in mapa)) mapa[variante] = canon;
+    };
+    // Flexões de um nome: o próprio, o plural (‑s / ‑es / ‑is) e o singular.
+    const variantes = nome => {
+        const base = normalizeText(nome);
+        if (!base) return [];
+        const lista = [base];
+        if (/[rz]$/.test(base)) lista.push(`${base}es`);              // posterior → posteriores
+        else if (/l$/.test(base)) lista.push(`${base.slice(0, -1)}is`); // geral → gerais
+        else if (!base.endsWith('s')) lista.push(`${base}s`);         // peito → peitos
+        if (base.endsWith('s')) lista.push(base.slice(0, -1));        // ombros → ombro
+        return lista;
+    };
+    [...MUSCULOS_MAPA, 'Geral', 'Cardio'].forEach(m => variantes(m).forEach(v => add(v, m)));
+    Object.entries(LEGACY_MUSCLE_ALIASES).forEach(([legado, canon]) => variantes(legado).forEach(v => add(v, canon)));
+    return mapa;
+})();
+
 function normalizeMuscle(muscle) {
     const m = String(muscle || '').trim();
-    return LEGACY_MUSCLE_ALIASES[m] || m || 'Geral';
+    if (!m) return 'Geral';
+    // Grupo fora do vocabulário (exercício personalizado) passa adiante intacto.
+    return MUSCLE_CANONICAL[normalizeText(m)] || LEGACY_MUSCLE_ALIASES[m] || m;
 }
 
 // XP legado: pernas e cadeia posterior contam metade.
@@ -200,6 +312,18 @@ const MUSCLE_WEIGHT = { 'Pernas': 0.5, 'Posterior': 0.5 };
 
 // ---------- Séries semanais por grupo (faixa-alvo) ----------
 const FAIXA_SERIES_SEMANAIS = { min: 10, max: 20 };
+
+// Exceções por grupo: músculo pequeno não precisa (nem aguenta) o volume de um
+// grupo grande. O antebraço ainda trabalha como apoio de toda puxada e pegada,
+// então cobrar 10 séries diretas dele é cobrar volume que não existe.
+const FAIXA_SERIES_POR_GRUPO = {
+    'Antebraço': { min: 4, max: 10 }
+};
+
+// Faixa-alvo do grupo (canônico): exceção quando existe, padrão 10–20.
+function faixaSeriesDoGrupo(muscle) {
+    return FAIXA_SERIES_POR_GRUPO[normalizeMuscle(muscle)] || FAIXA_SERIES_SEMANAIS;
+}
 
 // ---------- Anilhas ----------
 const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
@@ -424,20 +548,24 @@ const SINERGIA = {
 };
 
 // Logs de outros grupos que podem gerar apoio indireto para o músculo pedido.
+// Comparação pelo grupo canônico: "posteriores" do registro antigo não conta
+// como grupo diferente de "Posterior" (senão o apoio vira apoio de si mesmo).
 function sinergiaLogs(muscle, allLogs) {
-    const cfg = SINERGIA[muscle];
+    const alvo = normalizeMuscle(muscle);
+    const cfg = SINERGIA[alvo];
     if (!cfg || !Array.isArray(allLogs)) return [];
-    return allLogs.filter(l => l && l.kind !== 'corrida' && l.muscle !== muscle && cfg.re.test(l.exercise || ''));
+    return allLogs.filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle) !== alvo && cfg.re.test(l.exercise || ''));
 }
 
 // Apoio indireto informa a recuperação; suas séries equivalentes não entram na meta semanal.
 function sinergiaState(muscle, allLogs, nowMs) {
-    const cfg = SINERGIA[muscle];
+    const alvo = normalizeMuscle(muscle);
+    const cfg = SINERGIA[alvo];
     if (!cfg) return null;
-    const indiretos = sinergiaLogs(muscle, allLogs);
+    const indiretos = sinergiaLogs(alvo, allLogs);
     if (!indiretos.length) return null;
 
-    const base = recoveryState(muscle, indiretos, nowMs ?? Date.now());
+    const base = recoveryState(alvo, indiretos, nowMs ?? Date.now());
     const seriesBrutas = indiretos.reduce((total, l) => total + (
         (Array.isArray(l.sets) && l.sets.length) ? l.sets.length
             : (Array.isArray(l.reps) ? l.reps.length : 0)
@@ -448,7 +576,7 @@ function sinergiaState(muscle, allLogs, nowMs) {
     const pct = Math.max(2, Math.min(100, Math.round(100 - (100 - base.pct) * cfg.fator)));
 
     return {
-        muscle, pct, fator: cfg.fator, de: cfg.de,
+        muscle: alvo, pct, fator: cfg.fator, de: cfg.de,
         series: Math.round(seriesBrutas * cfg.fator * 10) / 10,
         seriesBrutas, ultimo: base.last, ultimoEm: latest.date,
         exercicios: [...new Set(indiretos.map(l => String(l.exercise || '').trim()).filter(Boolean))]
