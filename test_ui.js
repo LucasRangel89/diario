@@ -9,8 +9,9 @@
    ============================================================ */
 let JSDOM, VirtualConsole;
 try { ({ JSDOM, VirtualConsole } = require('jsdom')); } catch (e) {
-    console.log('\n⚠️  jsdom não instalado — rode `npm install` para o smoke test de UI.');
-    process.exit(0);
+    // Falha EXPLÍCITA: sem jsdom os testes de UI não rodaram, e isso não pode virar aprovação.
+    console.error('\n❌ jsdom não está instalado: os testes de UI NÃO foram executados. Rode `npm ci`.');
+    process.exit(1);
 }
 const fs = require('fs');
 const vm = require('vm');
@@ -189,7 +190,7 @@ navTo('story');
 check('Story Card segue o tema Senhor dos Anéis', $('story-theme-name').textContent === 'Senhor dos Anéis' && $('story-theme-icon').querySelector('img').getAttribute('src') === 'images/temas/aneis.webp');
 ev("changeGameTheme('classico');");
 check('histórico renderizado', !!$('history-content'));
-check('CSV multi-aba com 22 colunas no Log', ev('buildPlanilhaCSV()').split(/--- Sheet: Log ---/)[1].split('\n')[1].split(';').length === 22);
+check('CSV multi-aba: Log com 22 colunas v1 + colunas do formato 2 (parser com aspas)', (() => { const r = ev("parseCSVRows(buildPlanilhaCSV().split(/--- Sheet: Log ---/)[1].split(/--- Sheet:/)[0].trim(), ';')"); return r[0].length === 28 && r[1].length === 28; })());
 check('todos os 120 chefões têm retrato padrão (Ação e Anéis inclusive)', ev("Object.keys(THEMES).every(id => THEMES[id].bosses.every(b => !!DEFAULT_BOSS_PORTRAITS[id + ':' + b.id]))"));
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fs.readFileSync('js/app.js', 'utf8')) && /frame === 'espacial'/.test(fs.readFileSync('js/app.js', 'utf8')));
 const appSrcFrames = fs.readFileSync('js/app.js', 'utf8');
@@ -539,16 +540,16 @@ const boxAntebraco = recoveryBoxes.find(el => el.querySelector('.font-oswald')?.
 check('box do Antebraço cobra 4–10 séries (não 10–20)', !!boxAntebraco && boxAntebraco.textContent.includes('/4–10 séries'), boxAntebraco && boxAntebraco.textContent.match(/\d+\/\d+–\d+ séries/));
 const lombarLivre = $('lombar-alert-panel').textContent;
 check('lombar livre vira linha verde compacta (sem painel de alerta)',
-    lombarLivre.includes('✅ Lombar 100% — livre') && !lombarLivre.includes('Recuperação da região') && !lombarLivre.includes('⚠️ Lombar'),
+    lombarLivre.includes('✅ Lombar sem alerta estimado') && !lombarLivre.includes('Prontidão estimada da região') && !lombarLivre.includes('⚠️ Lombar'),
     lombarLivre.slice(0, 140));
 ev(`window.__lombarBackup = logs; logs = [{ id: -7, kind: 'peso', muscle: 'Costas', date: getTodayLocalISO(), exercise: 'Levantamento Terra', reps: [5, 5, 5] }]; renderRecoveryMap();`);
 const lombarCarregada = $('lombar-alert-panel').textContent;
 check('lombar carregada mostra o painel completo, com o ícone do estado no título',
-    lombarCarregada.includes('Recuperação da região') && /Lombar\s*⚠️/.test(lombarCarregada)
-    && lombarCarregada.includes('MUITO CARREGADA') && !lombarCarregada.includes('✅ Lombar 100%'),
+    lombarCarregada.includes('Prontidão estimada da região') && /Lombar\s*⚠️/.test(lombarCarregada)
+    && lombarCarregada.includes('MUITO CARREGADA') && !lombarCarregada.includes('✅ Lombar sem alerta estimado'),
     lombarCarregada.slice(0, 140));
 ev('logs = window.__lombarBackup; delete window.__lombarBackup; renderRecoveryMap();');
-check('voltar aos registros reais devolve a linha compacta', $('lombar-alert-panel').textContent.includes('✅ Lombar 100% — livre'));
+check('voltar aos registros reais devolve a linha compacta', $('lombar-alert-panel').textContent.includes('✅ Lombar sem alerta estimado'));
 ev(`window.__gapsBackup = logs; logs = [{ id: -1, kind: 'peso', muscle: 'Costas', date: getTodayLocalISO(), exercise: 'Remada Baixa na Polia', reps: [10, 10, 10] }]; renderWeekGaps();`);
 check('chip mostra o apoio indireto da semana sem abater a meta',
     $('builder-week-gaps').textContent.includes('Antebraço: 0/4 min · faltam 4 · 🤝 +1,5 indiretos'),
@@ -777,6 +778,123 @@ check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexis
     check('configurações restauradas idênticas', ev('JSON.stringify(settings)') === settingsAntes);
     check('treinos salvos restaurados idênticos', ev('JSON.stringify(savedWorkouts.map(w => w.id || w.name))') === treinosAntes);
     check('estado do jogo restaurado (saves por tema recriados)', ev("Object.keys(themeGameSaves).length") === Object.keys(payload.themeGameSaves || {}).length);
+
+    // ============================ BACKUP COMPLETO (REGRESSÃO) ============================
+    console.log('\n== UI 12c. Backup completo: treinos, exercícios personalizados, histórico e estado ==');
+    const esperar = ms => new Promise(r => setTimeout(r, ms));
+    const nomeCustom = 'Remada Teste Ç "x"; ação';
+    check('cria exercício personalizado com acento, aspas e ponto e vírgula', ev(`addCustomExercise(${JSON.stringify({ nome: nomeCustom, grupo: 'Costas', equipamento: 'Polia', tipo: 'carga_total', fator: 1, lados: 1, unidade: 'reps', faixaMin: 6, faixaMax: 10, descanso: 120, obs: 'Obs: "x"', sinonimos: 'rt teste, remada ç', tagsExtras: ['iniciante'], cargaLombar: true })})`) === true);
+    const customId = ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeCustom)}).id`);
+    ev(`logs.unshift({ id: 880001, date: getTodayLocalISO(), kind: 'peso', muscle: 'Costas', sessao: 'Costas', exercise: ${JSON.stringify(nomeCustom)}, type: 'carga_total', weight: 30, reps: [8, 7], sets: [{ weight: 30, reps: 8 }, { weight: 25, reps: 7 }], technique: 'Drop-Set', nextGoal: '', isPR: false, rir: 1, conferir: false, notes: 'Linha 1\\nLinha "2"; fim', xpTheme: 'classico' }); saveLogsToStorage();`);
+    ev(`weightLog = [{ date: '2026-10-10', peso: 81.5, obs: 'após "treino"; ok' }]; deloadWeeks = ['2026-W40']; saveGameState();`);
+    const estado = () => ev(`JSON.stringify({
+        logs: logs.map(l => [l.id, l.exercise, l.weight, l.reps, l.sets, l.notes, l.technique, l.sessao]),
+        treinos: savedWorkouts.map(w => [w.id || w.name, (w.exercises || []).map(e => [e.exercise, e.muscle])]),
+        custom: customExercises.map(e => ({ id: e.id, nome: e.nome, grupo: e.grupo, equipamento: e.equipamento, tipo: e.tipo, fator: e.fator, lados: e.lados, unidade: e.unidade, faixa: e.faixa, descanso: e.descanso, obs: e.obs, sinonimos: e.sinonimos, tagsExtras: e.tagsExtras, cargaLombar: e.cargaLombar, tags: e.tags })),
+        peso: weightLog, deload: deloadWeeks, bw: userBodyweight, settings: settings, tema: activeGameThemeId,
+        // deloadRestDays é DERIVADO (ensureDeloadRestAwards reconcilia com registros e com a data de hoje):
+        // não entra na comparação de igualdade; a reprodutibilidade é testada à parte.
+        saves: Object.fromEntries(Object.entries(themeGameSaves).map(([k, v]) => [k, { ...v, deloadRestDays: undefined }]))
+    })`);
+    const estadoCompleto = estado();
+    const payloadCompleto = await ev('buildBackupPayload().then(p => JSON.stringify(p))');
+    const payloadCompletoObj = JSON.parse(payloadCompleto);
+    check('backup v6 inclui os exercícios personalizados (definição completa)', payloadCompletoObj.version === 6 && Array.isArray(payloadCompletoObj.customExercises) && payloadCompletoObj.customExercises.some(e => e.nome === nomeCustom && e.cargaLombar === true && e.descanso === 120));
+    // perda total: apaga personalizado, histórico, treinos, peso, deload e configurações
+    ev(`deleteCustomExercise(${JSON.stringify(customId)}); logs = []; savedWorkouts = []; weightLog = []; deloadWeeks = []; userBodyweight = 55; settings = { weeklyGoal: 2, restDefault: 60, barWeight: 20, sledWeight: 0 };`);
+    check('estado zerado estadoAntes da importação (personalizado apagado)', ev('customExercises.length') === 0 && ev('savedWorkouts.length') === 0 && ev('logs.length') === 0);
+    const restaurouCompleto = await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(payloadCompleto)}))`);
+    check('importação completa conclui', restaurouCompleto === true);
+    check('REGRESSÃO: treinos salvos são restaurados do arquivo (estadoAntes ficavam vazios)', ev('savedWorkouts.length') === payloadCompletoObj.savedWorkouts.length && ev('savedWorkouts.length') > 0, ev('savedWorkouts.length'));
+    check('histórico, peso, deload, configurações e personalizados restaurados identicamente', estado() === estadoCompleto, { diff: estado().slice(0, 200) });
+    const diasDerivadosAntes = ev('JSON.stringify(themeGameSaves.classico.deloadRestDays)');
+    ev('ensureDeloadRestAwards()');
+    check('campos derivados (dias de descanso de deload) são reproduzíveis a partir dos registros restaurados', ev('JSON.stringify(themeGameSaves.classico.deloadRestDays)') === diasDerivadosAntes);
+    const temporadasDoArquivo = JSON.stringify(JSON.parse(payloadCompleto).themeGameSaves.classico.seasons);
+    check('temporadas do tema restauradas idênticas ao arquivo', ev('JSON.stringify(themeGameSaves.classico.seasons)') === temporadasDoArquivo);
+    check('exercício personalizado aparece na busca do catálogo após restaurar', ev(`searchCatalog({ q: 'Remada Teste' }).some(e => e.nome === ${JSON.stringify(nomeCustom)})`));
+    check('exercício personalizado aparece no seletor de exercícios (lista completa)', ev(`allExercisesList().some(e => e.nome === ${JSON.stringify(nomeCustom)})`));
+    check('índices reconstruídos: catalogInfoCustom acha o personalizado restaurado', ev(`!!catalogInfoCustom(${JSON.stringify(nomeCustom)})`));
+    check('registro histórico do personalizado preservado com séries e observações', ev(`logs.some(l => l.id === 880001 && l.sets.length === 2 && l.notes === 'Linha 1\\nLinha "2"; fim' && l.technique === 'Drop-Set')`));
+    check('catálogo principal NÃO mudou ao importar personalizados', ev('EXERCISE_CATALOG_FULL.length') === ev(`EXERCISE_CATALOG_FULL.filter(e => !e.isCustom).length`) && !ev(`EXERCISE_CATALOG_FULL.some(e => e.nome === ${JSON.stringify(nomeCustom)})`));
+    // importar de novo o MESMO arquivo: nada duplicado
+    const nCustom = ev('customExercises.length'), nLogs = ev('logs.length'), nTreinos = ev('savedWorkouts.length');
+    await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(payloadCompleto)}))`);
+    check('reimportar o mesmo backup não duplica personalizados, registros nem treinos', ev('customExercises.length') === nCustom && ev('logs.length') === nLogs && ev('savedWorkouts.length') === nTreinos, [nCustom, nLogs, nTreinos]);
+
+    console.log('\n== UI 12d. Backup inválido, malformado e antigo ==');
+    const estadoInvalido = estado();
+    const invalido = await ev('applyImportedBackup({ logs: "x" })');
+    check('backup inválido retorna false e não altera nada', invalido === false && estado() === estadoInvalido);
+    check('usuário é avisado que nada foi alterado', document.body.textContent.includes('nada foi alterado'));
+    const invalido2 = await ev('applyImportedBackup({ logs: [], savedWorkouts: "x" })');
+    check('treinos de tipo errado rejeitam o backup inteiro (sem apagar o histórico)', invalido2 === false && estado() === estadoInvalido);
+    ev(`importJSONBackup({ target: { files: [new File(['{"logs": [ quebrado'], 'backup.json', { type: 'application/json' })] } })`);
+    await esperar(200);
+    check('arquivo JSON malformado: mensagem de erro e estado preservado', estado() === estadoInvalido && document.body.textContent.includes('Erro ao ler o arquivo de backup'));
+    const legacy = { version: 2, logs: [{ id: 555001, date: '2026-10-01', kind: 'peso', muscle: 'Peito', exercise: 'Supino Reto na Máquina', weight: 50, reps: [10, 10], type: 'carga_total', sessao: 'Peito' }], userBodyweight: 81, deloadWeeks: ['2026-W39'], missionsXpTotal: 300, missionsClaimed: {}, tests: [], seasons: null, bossPortraits: {}, gameTheme: 'classico' };
+    const nCustomAntesLegacy = ev('customExercises.length'), nTreinosAntesLegacy = ev('savedWorkouts.length');
+    const okLegacy = await ev(`applyImportedBackup(${JSON.stringify(legacy)})`);
+    check('backup antigo (sem treinos, personalizados ou sharedGameState) importa', okLegacy === true && ev('logs.length') === 1 && ev('logs[0].id') === 555001 && ev('userBodyweight') === 81);
+    check('backup antigo: campos ausentes não apagam personalizados nem treinos salvos', ev('customExercises.length') === nCustomAntesLegacy && ev('savedWorkouts.length') === nTreinosAntesLegacy);
+    check('backup antigo: deloadWeeks legado é restaurado do topo do arquivo', ev('deloadWeeks.join()') === '2026-W39');
+    await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(payloadCompleto)}))`);
+    check('volta ao estado do backup completo após o teste de compatibilidade', estado() === estadoCompleto);
+
+    console.log('\n== UI 12f. Falha durante a aplicação: rollback sem estado parcial ==');
+    ev('window.__restoreOrig = restoreActiveThemeGameSave; restoreActiveThemeGameSave = function () { throw new Error("falha simulada"); };');
+    const falhou = await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(payloadCompleto)}))`);
+    ev('restoreActiveThemeGameSave = window.__restoreOrig; delete window.__restoreOrig;');
+    check('exceção durante a aplicação devolve false', falhou === false);
+    check('exceção durante a aplicação restaura o estado anterior (sem meia importação)', estado() === estadoCompleto, { diff: estado().slice(0, 160) });
+    check('usuário é avisado e o estado anterior é mantido', document.body.textContent.includes('O estado anterior foi mantido'));
+
+    console.log('\n== UI 12g. Falha de gravação (localStorage recusa) é observável ==');
+    const setItemOrig = window.Storage.prototype.setItem;
+    const avisos = () => [...document.body.querySelectorAll('div')].filter(d => d.classList.contains('fixed') && d.textContent.includes('Não foi possível salvar neste navegador')).length;
+    window.Storage.prototype.setItem = function () { throw new Error('QuotaExceededError (simulado)'); };
+    const a0 = avisos();
+    check('safeStorage.set devolve false quando o navegador recusa a gravação', ev("safeStorage.set('berzerker_teste_falha', '1')") === false);
+    check('a falha é avisada ao usuário', avisos() === a0 + 1, avisos() - a0);
+    ev("safeStorage.set('berzerker_teste_falha', '2'); safeStorage.set('berzerker_teste_falha', '3');");
+    check('falhas seguidas NÃO geram um alerta por chave (aviso único por sequência)', avisos() === a0 + 1, avisos() - a0);
+    check('saveLogsToStorage reporta a falha (fluxo crítico de registro)', ev('saveLogsToStorage()') === false);
+    // avisos do alertModal são banners diretos no body (classe bottom-5); limpa os antigos antes de medir
+    const bannersTexto = () => [...document.body.children].filter(d => String(d.className).includes('bottom-5')).map(d => d.textContent).join(' | ');
+    [...document.body.children].filter(d => String(d.className).includes('bottom-5')).forEach(d => d.remove());
+    const okImport = await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(payloadCompleto)}))`);
+    check('importação com gravação recusada: dados ficam na tela, mas a mensagem NÃO diz "sucesso"', okImport === true && estado() === estadoCompleto && bannersTexto().includes('não confirmou o salvamento') && !bannersTexto().includes('Backup importado com sucesso'), bannersTexto());
+    window.Storage.prototype.setItem = setItemOrig;
+    const a1 = avisos();
+    check('com a gravação restabelecida, safeStorage.set volta a true', ev("safeStorage.set('berzerker_teste_falha', '4')") === true);
+    window.Storage.prototype.setItem = function () { throw new Error('QuotaExceededError (simulado)'); };
+    ev("safeStorage.set('berzerker_teste_falha', '5')");
+    check('uma nova sequência de falhas volta a avisar (aviso rearmado após sucesso)', avisos() === a1 + 1, avisos() - a1);
+    window.Storage.prototype.setItem = setItemOrig;
+    ev("localStorage.removeItem('berzerker_teste_falha');");
+
+    console.log('\n== UI 12e. CSV: importação validada, sem duplicar e com cardio/personalizados ==');
+    const csvAtual = ev('buildPlanilhaCSV()');
+    check('CSV traz o exercício personalizado no Catálogo (campo com aspas dobradas)', csvAtual.includes('"' + nomeCustom.replace(/"/g, '""') + '"'));
+    check('CSV tem abas Cardio e Formato (formato 2)', csvAtual.includes('--- Sheet: Cardio ---') && csvAtual.includes('--- Sheet: Formato ---'));
+    const nCsv = ev('logs.length');
+    ev('logs = []; saveLogsToStorage();');
+    ev(`importPlanilhaCSV(${JSON.stringify(csvAtual)})`);
+    check('importação do CSV restaura os registros (treinos e cardio)', ev('logs.length') === nCsv, ev('logs.length'));
+    ev(`importPlanilhaCSV(${JSON.stringify(csvAtual)})`);
+    check('reimportar o mesmo CSV não duplica nenhum registro', ev('logs.length') === nCsv, ev('logs.length'));
+    check('a mensagem informa quantos já existiam', document.body.textContent.includes('já existente(s) ignorado(s)'));
+    const idsAntesRuim = ev('JSON.stringify(logs.map(l => l.id))');
+    ev(`importPlanilhaCSV(${JSON.stringify('--- Sheet: Log ---\nData;Sessão;Exercício;Carga registrada (kg)\n31/02/2026;;Supino Reto na Máquina;50')})`);
+    check('CSV com data impossível: nada é gravado e o usuário é avisado', ev('JSON.stringify(logs.map(l => l.id))') === idsAntesRuim && document.body.textContent.includes('nada foi alterado'));
+
+    console.log('\n== UI 12h. Textos do mapa de recuperação são de estimativa ==');
+    const mapa = $('recovery-status-grid').textContent;
+    check('mapa não exibe "100% PRONTO" como garantia', !mapa.includes('100% PRONTO') && !mapa.includes('EXAUSTO'));
+    check('mapa usa a terminologia de prontidão estimada', mapa.includes('Prontidão estimada'));
+    check('explicação do mapa diz que os percentuais são heurísticas de planejamento', document.body.textContent.includes('heurísticas de planejamento') && document.body.textContent.includes('100% não garante recuperação completa'));
+    ev(`importPlanilhaCSV(${JSON.stringify('--- Sheet: Log ---\n' + ev('buildPlanilhaCSV()').split('--- Sheet: Log ---\n')[1].split('--- Sheet:')[0])})`);
+    ev(`applyImportedBackup(JSON.parse(${JSON.stringify(payloadCompleto)}))`);
 
     // ============================ DELEGAÇÃO DE EVENTOS ============================
     console.log('\n== UI 13. Delegação de eventos (js/actions.js) ==');

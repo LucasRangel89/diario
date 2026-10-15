@@ -35,6 +35,70 @@ function saveCustomExercises() {
     refreshAll && refreshAll();
 }
 
+// Normalização de uma lista vinda de backup JSON. Regras determinísticas e documentadas:
+//  - item que não é objeto ou não tem nome → erro (o backup inteiro é rejeitado);
+//  - nome igual a exercício do CATÁLOGO PRINCIPAL → não importado e reportado como conflito
+//    (o catálogo nunca é alterado; registros antigos com esse nome continuam usando o catálogo);
+//  - nome repetido dentro do próprio arquivo (sem diferenciar maiúsculas) → vale a primeira ocorrência;
+//  - tipo de carga desconhecido ou números inválidos → erro (afetariam os cálculos).
+// Pura: não altera o estado atual.
+function normalizarExerciciosPersonalizados(lista) {
+    const erros = [], conflitos = [], out = [];
+    if (!Array.isArray(lista)) return { lista: out, erros: ['"customExercises" não é uma lista'], conflitos };
+    const nomesBase = new Set(EXERCISE_CATALOG_FULL.map(e => String(e.nome).toLowerCase()));
+    const vistos = new Set();
+    lista.forEach((raw, i) => {
+        const pos = `exercício personalizado #${i + 1}`;
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) { erros.push(`${pos} não é um objeto`); return; }
+        const nome = typeof raw.nome === 'string' ? raw.nome.trim() : '';
+        if (!nome) { erros.push(`${pos} sem nome`); return; }
+        const chave = nome.toLowerCase();
+        if (nomesBase.has(chave)) { conflitos.push(`"${nome}" já existe no catálogo principal (não importado)`); return; }
+        if (vistos.has(chave)) { conflitos.push(`"${nome}" repetido no arquivo (mantida a primeira ocorrência)`); return; }
+        const tipo = raw.tipo == null ? 'carga_total' : raw.tipo;
+        if (!Object.prototype.hasOwnProperty.call(CATALOG_TIPOS, tipo)) { erros.push(`${pos} (${nome}): tipo de carga desconhecido "${tipo}"`); return; }
+        const fator = raw.fator == null ? 1 : Number(raw.fator);
+        const lados = raw.lados == null ? 1 : Number(raw.lados);
+        if (!(fator > 0) || !(lados > 0)) { erros.push(`${pos} (${nome}): fator/lados inválidos`); return; }
+        const faixa = Array.isArray(raw.faixa) && raw.faixa.length === 2 ? raw.faixa.map(Number) : [8, 12];
+        if (!faixa.every(Number.isFinite)) { erros.push(`${pos} (${nome}): faixa de repetições inválida`); return; }
+        const descanso = raw.descanso == null ? 90 : Number(raw.descanso);
+        if (!Number.isFinite(descanso) || descanso < 0) { erros.push(`${pos} (${nome}): descanso inválido`); return; }
+        vistos.add(chave);
+        out.push({
+            ...raw,
+            id: typeof raw.id === 'string' && raw.id ? raw.id : 'custom_' + Date.now() + '_' + i,
+            nome,
+            grupo: typeof raw.grupo === 'string' && raw.grupo ? raw.grupo : 'Geral',
+            equipamento: typeof raw.equipamento === 'string' ? raw.equipamento : '',
+            tipo, fator, lados,
+            unidade: typeof raw.unidade === 'string' && raw.unidade ? raw.unidade : 'reps',
+            faixa, descanso,
+            obs: typeof raw.obs === 'string' ? raw.obs : '',
+            sinonimos: typeof raw.sinonimos === 'string' ? raw.sinonimos : '',
+            tagsExtras: Array.isArray(raw.tagsExtras) ? raw.tagsExtras.filter(t => typeof t === 'string') : [],
+            cargaLombar: !!raw.cargaLombar,
+            isCustom: true
+        });
+    });
+    return { lista: out, erros, conflitos };
+}
+
+// Substitui a lista inteira (restauração de backup) sem duplicar nada e reconstrói os índices.
+function setCustomExercisesList(lista) {
+    customExercises = (Array.isArray(lista) ? lista : []).map(e => ({
+        tipo: 'carga_total', fator: 1, lados: 1, unidade: 'reps',
+        faixa: [8, 12], descanso: 90, obs: '', sinonimos: '', tagsExtras: [],
+        ...e
+    }));
+    rebuildCustomCatalog();
+    return customExercises;
+}
+
+function getCustomExercises() {
+    return Array.isArray(customExercises) ? customExercises : [];
+}
+
 let customBySearch = {};
 let customByName = {};
 function rebuildCustomCatalog() {
@@ -329,6 +393,9 @@ setCustomExercisesRef(() => customExercises);
     customExercises,
     loadCustomExercises,
     saveCustomExercises,
+    getCustomExercises,
+    setCustomExercisesList,
+    normalizarExerciciosPersonalizados,
     customBySearch,
     customByName,
     rebuildCustomCatalog,
@@ -354,4 +421,4 @@ setCustomExercisesRef(() => customExercises);
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/custom_exercises.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
-export { STORAGE_KEY_CUSTOM_EX, customExercises, loadCustomExercises, saveCustomExercises, customBySearch, customByName, rebuildCustomCatalog, rebuildFullSearchIndex, allExercisesList, catalogInfoCustom, exercicioCarregaLombarCustom, addCustomExercise, updateCustomExercise, deleteCustomExercise, customExerciseFormHTML, updateCustomExFormHint, openCustomExModal, closeCustomExModal, submitCustomExForm, submitDeleteCustomEx };
+export { STORAGE_KEY_CUSTOM_EX, customExercises, loadCustomExercises, saveCustomExercises, getCustomExercises, setCustomExercisesList, normalizarExerciciosPersonalizados, customBySearch, customByName, rebuildCustomCatalog, rebuildFullSearchIndex, allExercisesList, catalogInfoCustom, exercicioCarregaLombarCustom, addCustomExercise, updateCustomExercise, deleteCustomExercise, customExerciseFormHTML, updateCustomExFormHint, openCustomExModal, closeCustomExModal, submitCustomExForm, submitDeleteCustomEx };

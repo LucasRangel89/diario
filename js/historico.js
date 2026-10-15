@@ -1,5 +1,6 @@
-import { EXERCISE_CATALOG_FULL, catalogInfo, inferExerciseType, logCargaEfetiva, logFullMeta, logVolumeKg, normalizeMuscle, sinalProximaSessao } from './catalogo.js';
+import { CATALOG_TIPOS, EXERCISE_CATALOG_FULL, catalogInfo, inferExerciseType, logCargaEfetiva, logFullMeta, logVolumeKg, normalizeMuscle, sinalProximaSessao } from './catalogo.js';
 import { cardioXP } from './gamificacao.js';
+import { getCustomExercises } from './custom_exercises.js';
 import { alertModal, escapeHtml, fmtN, getTodayLocalISO, histVolChartInstance, logs, parseCSVRows, refreshAll, saveBodyweight, saveGameState, saveLogsToStorage, saveSettings, setHistVolChartInstance, setLogs, setUserBodyweight, setWeightLog, settings, userBodyweight, weightLog } from './app.js';
 /* ============================================================
    HISTÓRICO — formato da planilha do usuário
@@ -329,49 +330,139 @@ function drawVolumeChartMini() {
 
 /* ================= CSV — formato da planilha (multi-aba, ; ) ================= */
 
+// ============================================================
+// CSV — formato da planilha (multi-aba, separador ;, datas dd/mm/aaaa)
+// ------------------------------------------------------------
+// FORMATO 2 (atual; aba "Formato" = 2). Compatível com o formato 1 (sem aba Formato):
+//  - Aba Log: as 22 colunas originais, mesma ordem e mesmo significado, seguidas de
+//    6 colunas NOVAS: ID do registro, Tipo de exercício, Grupo do registro, Técnica,
+//    Meta da próxima sessão e Séries (JSON) — a série a série completa (pesos e reps
+//    por série, inclusive drop-set). Arquivos antigos não têm essas colunas: as séries
+//    são lidas de S1–S5 e a identidade é calculada pelo conteúdo (ver planejarImportacaoLogs).
+//  - Aba Cardio (nova): corrida/cardio, separada do volume de musculação.
+//  - Aba Formato (nova): versão do formato.
+// Importáveis: data, sessão, exercício, carga, repetições/séries, RIR, Conferir?,
+//   observações, ID, tipo, grupo, técnica, meta; cardio; peso corporal; início da semana 1.
+// Calculadas (ignoradas na importação; o app recalcula): Unidade, Fator, Lados, Carga
+//   efetiva, Total reps, Volume, Melhor/Menor série, 1RM Epley, Métrica de progresso;
+//   abas Progresso e Semana a semana.
+// Informativas (não reimportadas): aba Catálogo (referência do catálogo + personalizados).
+// Campos com ; " ou quebra de linha são sempre entre aspas (csvField); aspas internas são dobradas.
+// ============================================================
+const CSV_FORMATO_VERSAO = 2;
+const CSV_LOG_COLS_V1 = ['Data', 'Sessão', 'Exercício', 'Carga registrada (kg)', 'S1', 'S2', 'S3', 'S4', 'S5', 'RIR', 'Conferir?', 'Observações', 'Unidade', 'Fator', 'Lados', 'Carga efetiva (kg)', 'Total reps (ou segundos)', 'Volume (kg)', 'Melhor série', 'Menor série', '1RM Epley (kg)', 'Métrica de progresso'];
+const CSV_LOG_COLS = [...CSV_LOG_COLS_V1, 'ID do registro', 'Tipo de exercício', 'Grupo do registro', 'Técnica', 'Meta da próxima sessão', 'Séries (JSON)'];
+const CSV_CARDIO_COLS = ['Data', 'Modalidade', 'Distância (km)', 'Duração (min)', 'Observações', 'ID do registro'];
+const CSV_PESO_COLS = ['Data', 'Peso (kg)', 'Observação'];
+
+// Serialização de um campo: aspas quando há ; " ou quebra de linha; aspas internas dobradas.
+function csvField(v) {
+    const s = (v == null) ? '' : String(v);
+    if (/[;"\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+}
 function csvNum(n) {
     return (n == null || isNaN(n)) ? '' : String(+n.toFixed(2));
+}
+function csvTexto(s) {
+    return String(s == null ? '' : s).replace(/\r\n?/g, '\n');
+}
+// Número lido de célula: aceita vírgula decimal; null se vazio ou inválido.
+function csvNumeroLido(s) {
+    const t = String(s == null ? '' : s).trim().replace(',', '.');
+    if (!/^-?\d+(\.\d+)?$/.test(t)) return null;
+    return Number(t);
+}
+// dd/mm/aaaa ou aaaa-mm-dd → ISO válido; null se a data não existir no calendário.
+function parseDataCSV(s) {
+    const t = String(s == null ? '' : s).trim();
+    let y, m, d, mm = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);
+    if (mm) { d = +mm[1]; m = +mm[2]; y = +mm[3]; }
+    else {
+        mm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+        if (!mm) return null;
+        y = +mm[1]; m = +mm[2]; d = +mm[3];
+    }
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null;
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+// Identidade estável de um registro exportado: o ID importado, ou 'L' + id local.
+function csvLogId(l) {
+    return l.externalId || ('L' + l.id);
+}
+// Séries completas, sem perda (drop-set, pesos diferentes, reps decimais em isometria).
+function csvSeriesJSON(l) {
+    const comSets = Array.isArray(l.sets) && l.sets.length > 0;
+    const series = comSets
+        ? l.sets.map(s => ({ weight: Number(s.weight) || 0, reps: Number(s.reps) || 0 }))
+        : (Array.isArray(l.reps) ? l.reps.map(r => ({ weight: Number(l.weight) || 0, reps: Number(r) || 0 })) : []);
+    return JSON.stringify({ modo: comSets ? 'sets' : 'simples', series });
+}
+function csvLogRow(l) {
+    const meta = logFullMeta(l);
+    const reps = l.reps || [];
+    return [
+        histDataBR(l.date), l.sessao || '', l.exercise || '', csvNum(Number(l.weight) || 0),
+        csvNum(reps[0]), csvNum(reps[1]), csvNum(reps[2]), csvNum(reps[3]), csvNum(reps[4]),
+        l.rir != null ? l.rir : '', l.conferir ? 'Sim' : 'Não', csvTexto(l.notes),
+        meta.unidade, meta.fator, meta.lados,
+        csvNum(meta.cargaEfetiva), csvNum(meta.totalReps), csvNum(meta.volume),
+        csvNum(meta.bestSet), csvNum(meta.worstSet), meta.est1RM != null ? csvNum(meta.est1RM) : '',
+        meta.unidade === 'seg' ? csvNum(meta.bestSet) : csvNum(meta.cargaEfetiva),
+        csvLogId(l), l.type || '', l.muscle || '', l.technique || '', l.nextGoal || '', csvSeriesJSON(l)
+    ];
+}
+function csvCardioRow(l) {
+    return [histDataBR(l.date), l.exercise || '', csvNum(Number(l.distanceKm) || 0), csvNum(Number(l.durationMin) || 0), csvTexto(l.notes), csvLogId(l)];
+}
+
+// Impressão digital do conteúdo de um registro (sem técnica/meta, que são metadados).
+// Usada para detectar duplicatas legítimas e conflitos. Observações: espaços normalizados,
+// porque o formato 1 trocava quebras de linha por espaço.
+function csvLogFingerprint(l) {
+    const r2 = v => (v == null || v === '' || !isFinite(Number(v))) ? '' : String(+Number(v).toFixed(2));
+    const sets = Array.isArray(l.sets) && l.sets.length ? l.sets.map(s => [r2(s.weight), r2(s.reps)]) : null;
+    const reps = Array.isArray(l.reps) ? l.reps.map(r2) : [];
+    return JSON.stringify([
+        l.kind === 'corrida' ? 'corrida' : 'peso', l.date || '', String(l.exercise || '').trim(), String(l.sessao || '').trim(),
+        r2(l.weight), reps, sets, r2(l.rir), !!l.conferir, String(l.notes || '').replace(/\s+/g, ' ').trim(),
+        r2(l.distanceKm), r2(l.durationMin)
+    ]);
 }
 
 function buildPlanilhaCSV() {
     // Texto multi-aba completo no formato da planilha (para export e para o arquivo do repositório)
-    const LOG_COLS = ['Data', 'Sessão', 'Exercício', 'Carga registrada (kg)', 'S1', 'S2', 'S3', 'S4', 'S5', 'RIR', 'Conferir?', 'Observações', 'Unidade', 'Fator', 'Lados', 'Carga efetiva (kg)', 'Total reps (ou segundos)', 'Volume (kg)', 'Melhor série', 'Menor série', '1RM Epley (kg)', 'Métrica de progresso'];
-    const CAT_COLS = ['Exercício', 'Grupo', 'Equipamento', 'Como registrar', 'Fator', 'Lados', 'Unidade', 'Reps mín.', 'Reps máx.', 'Extra estimado (kg)', 'Faixa do extra (kg)', 'Observações'];
-    const PESO_COLS = ['Data', 'Peso (kg)', 'Observação'];
     const parts = [];
+    const pesoLogs = logs.filter(l => l.kind !== 'corrida').slice().sort((a, b) => a.date.localeCompare(b.date));
 
     // --- Sheet: Log ---
     parts.push('--- Sheet: Log ---');
-    parts.push(LOG_COLS.join(';'));
-    logs.filter(l => l.kind === 'peso').slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(l => {
-        const meta = logFullMeta(l);
-        const reps = l.reps || [];
-        const row = [
-            histDataBR(l.date), l.sessao || '', l.exercise, csvNum(l.weight),
-            csvNum(reps[0]), csvNum(reps[1]), csvNum(reps[2]), csvNum(reps[3]), csvNum(reps[4]),
-            l.rir != null ? l.rir : '', l.conferir ? 'Sim' : 'Não', (l.notes || '').replace(/[\r\n]+/g, ' '),
-            meta.unidade, meta.fator, meta.lados,
-            csvNum(meta.cargaEfetiva), csvNum(meta.totalReps), csvNum(meta.volume),
-            csvNum(meta.bestSet), csvNum(meta.worstSet), meta.est1RM != null ? csvNum(meta.est1RM) : '',
-            meta.unidade === 'seg' ? csvNum(meta.bestSet) : csvNum(meta.cargaEfetiva)
-        ];
-        parts.push(row.join(';'));
-    });
+    parts.push(CSV_LOG_COLS.map(csvField).join(';'));
+    pesoLogs.forEach(l => parts.push(csvLogRow(l).map(csvField).join(';')));
 
-    // --- Sheet: Catálogo ---
+    // --- Sheet: Catálogo (catálogo principal + exercícios personalizados) ---
+    const CAT_COLS = ['Exercício', 'Grupo', 'Equipamento', 'Como registrar', 'Fator', 'Lados', 'Unidade', 'Reps mín.', 'Reps máx.', 'Extra estimado (kg)', 'Faixa do extra (kg)', 'Observações'];
     parts.push('--- Sheet: Catálogo ---');
-    parts.push(CAT_COLS.join(';'));
-    Object.values(EXERCISE_CATALOG_FULL).sort((a, b) => a.nome.localeCompare(b.nome)).forEach(c => {
-        if (c.tipo === 'corrida') return;
-        parts.push([c.nome, c.grupo, c.equipamento, c.como, c.fator, c.lados, c.unidade,
-        c.faixa ? c.faixa[0] : '', c.faixa ? c.faixa[1] : '', c.extra || '', c.extraFaixa || '', (c.obs || '').replace(/[\r\n]+/g, ' ')].join(';'));
+    parts.push(CAT_COLS.map(csvField).join(';'));
+    const catalogoCompleto = [...EXERCISE_CATALOG_FULL];
+    try {
+        const custom = (typeof getCustomExercises === 'function') ? getCustomExercises() : [];
+        if (Array.isArray(custom)) catalogoCompleto.push(...custom);
+    } catch (e) { /* sem personalizados */ }
+    catalogoCompleto.sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''))).forEach(c => {
+        if (c.tipo === 'corrida' || c.type === 'corrida') return;
+        const como = c.como || (CATALOG_TIPOS[c.tipo] ? CATALOG_TIPOS[c.tipo].label : '') || c.tipo || '';
+        parts.push([c.nome, c.grupo, c.equipamento, como, c.fator, c.lados, c.unidade,
+        c.faixa ? c.faixa[0] : '', c.faixa ? c.faixa[1] : '', c.extra || '', c.extraFaixa || '', csvTexto(c.obs).replace(/[\r\n]+/g, ' ')].map(csvField).join(';'));
     });
 
     // --- Sheet: Progresso ---
     parts.push('--- Sheet: Progresso ---');
-    parts.push(['Exercício', 'Grupo', 'Sessões', '1ª data', 'Última data', 'Carga 1ª (kg)', 'Carga última (kg)', 'Δ%', 'Carga efetiva última', 'Melhor série última', '1RM est. última', 'Faixa alvo', 'Sinal'].join(';'));
+    parts.push(['Exercício', 'Grupo', 'Sessões', '1ª data', 'Última data', 'Carga 1ª (kg)', 'Carga última (kg)', 'Δ%', 'Carga efetiva última', 'Melhor série última', '1RM est. última', 'Faixa alvo', 'Sinal'].map(csvField).join(';'));
     const byEx = new Map();
-    logs.filter(l => l.kind === 'peso').slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(l => {
+    pesoLogs.forEach(l => {
         if (!byEx.has(l.exercise)) byEx.set(l.exercise, []);
         byEx.get(l.exercise).push(l);
     });
@@ -383,12 +474,12 @@ function buildPlanilhaCSV() {
         parts.push([ex, cat ? cat.grupo : '', hist.length, histDataBR(first.date), histDataBR(last.date),
         csvNum(first.weight), csvNum(last.weight), csvNum(dPct), csvNum(metaL.cargaEfetiva), csvNum(metaL.bestSet),
         metaL.est1RM != null ? csvNum(metaL.est1RM) : '', cat && cat.faixa ? `${cat.faixa[0]}-${cat.faixa[1]}` : '',
-        sinalProximaSessao(last)].join(';'));
+        sinalProximaSessao(last)].map(csvField).join(';'));
     });
 
     // --- Sheet: Semana a semana ---
     parts.push('--- Sheet: Semana a semana ---');
-    parts.push(['Início da semana 1 (segunda-feira)', histDataBR(getWeek1Start())].join(';'));
+    parts.push(['Início da semana 1 (segunda-feira)', histDataBR(getWeek1Start())].map(csvField).join(';'));
     const w1 = getWeek1Start();
     const start = new Date(w1 + 'T12:00:00');
     const weeks = [];
@@ -397,22 +488,33 @@ function buildPlanilhaCSV() {
         const e = new Date(s); e.setDate(s.getDate() + 6);
         weeks.push({ isoS: s.toISOString().slice(0, 10), isoE: e.toISOString().slice(0, 10) });
     }
-    parts.push(['Semana', ...weeks.map((w, i) => `Sem ${i + 1}`)].join(';'));
-    parts.push(['Início', ...weeks.map(w => histDataBR(w.isoS))].join(';'));
-    parts.push(['Volume total (kg)', ...weeks.map(w => csvNum(logs.filter(l => l.kind === 'peso' && l.date >= w.isoS && l.date <= w.isoE).reduce((a, l) => a + logVolumeKg(l), 0)))].join(';'));
+    parts.push(['Semana', ...weeks.map((w, i) => `Sem ${i + 1}`)].map(csvField).join(';'));
+    parts.push(['Início', ...weeks.map(w => histDataBR(w.isoS))].map(csvField).join(';'));
+    parts.push(['Volume total (kg)', ...weeks.map(w => csvNum(pesoLogs.filter(l => l.date >= w.isoS && l.date <= w.isoE).reduce((a, l) => a + logVolumeKg(l), 0)))].map(csvField).join(';'));
     [...byEx.keys()].sort().forEach(ex => {
         parts.push([`Carga efetiva máxima (kg) — ${ex}`, ...weeks.map(w => {
-            const max = logs.filter(l => l.kind === 'peso' && l.exercise === ex && l.date >= w.isoS && l.date <= w.isoE).reduce((a, l) => Math.max(a, logCargaEfetiva(l)), 0);
+            const max = pesoLogs.filter(l => l.exercise === ex && l.date >= w.isoS && l.date <= w.isoE).reduce((a, l) => Math.max(a, logCargaEfetiva(l)), 0);
             return max ? csvNum(max) : '';
-        })].join(';'));
+        })].map(csvField).join(';'));
     });
 
     // --- Sheet: Peso corporal ---
     parts.push('--- Sheet: Peso corporal ---');
-    parts.push(PESO_COLS.join(';'));
+    parts.push(CSV_PESO_COLS.map(csvField).join(';'));
     weightLog.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(w => {
-        parts.push([histDataBR(w.date), csvNum(w.peso), (w.obs || '').replace(/[\r\n]+/g, ' ')].join(';'));
+        parts.push([histDataBR(w.date), csvNum(w.peso), csvTexto(w.obs)].map(csvField).join(';'));
     });
+
+    // --- Sheet: Cardio (corrida/cardio fora do volume de musculação) ---
+    parts.push('--- Sheet: Cardio ---');
+    parts.push(CSV_CARDIO_COLS.map(csvField).join(';'));
+    logs.filter(l => l.kind === 'corrida').slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(l => {
+        parts.push(csvCardioRow(l).map(csvField).join(';'));
+    });
+
+    // --- Sheet: Formato ---
+    parts.push('--- Sheet: Formato ---');
+    parts.push(['Versão do formato', CSV_FORMATO_VERSAO].map(csvField).join(';'));
 
     return parts.join('\n');
 }
@@ -445,101 +547,323 @@ function importCSV(event) {
     event.target.value = '';
 }
 
-function parseSheetLogRows(rows) {
-    // rows = parseCSVRows da aba Log (com cabeçalho). Puro — devolve os logs sem gravar.
-    const header = rows[0].map(h => h.trim().toLowerCase());
-    const idx = name => header.indexOf(name);
-    const out = [];
-    let id = logs.length ? Math.max(...logs.map(l => l.id)) + 1 : 1;
-    rows.slice(1).forEach(c => {
-        const exercise = (idx('exercício') >= 0 ? c[idx('exercício')] : c[2]) || '';
-        if (!exercise.trim()) return;
-        const reps = [];
-        for (let i = 1; i <= 5; i++) {
-            const v = parseFloat(idx(`s${i}`) >= 0 ? c[idx(`s${i}`)] : c[3 + i]);
-            if (!isNaN(v) && v > 0) reps.push(v);
-        }
-        const wStr = idx('carga registrada (kg)') >= 0 ? c[idx('carga registrada (kg)')] : c[3];
-        const weight = parseFloat(String(wStr).replace(',', '.')) || 0;
-        const confStr = idx('conferir?') >= 0 ? c[idx('conferir?')] : (c[7] || '');
-        const conferir = /^(sim|s|true|1)/i.test(confStr.trim());
-        const rirStr = idx('rir') >= 0 ? c[idx('rir')] : c[5];
-        const rir = rirStr !== '' && rirStr != null && !isNaN(parseFloat(rirStr)) ? parseFloat(rirStr) : null;
-        const obs = (idx('observações') >= 0 ? c[idx('observações')] : c[8]) || '';
-        const sessao = (idx('sessão') >= 0 ? c[idx('sessão')] : c[1]) || '';
-        out.push({
-            id: id++, date: parseDateBRorISO(idx('data') >= 0 ? c[idx('data')] : c[0]), kind: 'peso',
-            muscle: normalizeMuscle((catalogInfo(exercise) || {}).grupo || 'Geral'),
-            sessao: sessao.trim(),
-            exercise: exercise.trim(),
-            type: (catalogInfo(exercise) || {}).tipo || inferExerciseType(exercise),
-            weight, reps, sets: null, technique: 'Convencional', nextGoal: '',
-            isPR: false, rir, conferir, notes: obs.trim()
-        });
-    });
-    return out;
-}
-
-function importPlanilhaCSV(text) {
-    // Suporta: multi-aba (--- Sheet: X ---) OU CSV simples antigo do app
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
+// Separa o texto em abas. Usa o parser com aspas (campos com quebra de linha
+// ficam inteiros). Linhas totalmente vazias são descartadas.
+function csvSplitSheets(text) {
+    const rows = parseCSVRows(text, ';');
     const sheets = {};
     let current = '_single';
-    lines.forEach(l => {
-        const m = l.match(/^---\s*Sheet:\s*(.+?)\s*---/i);
-        if (m) { current = m[1].toLowerCase(); sheets[current] = []; return; }
+    rows.forEach(r => {
+        const unica = r.length === 1 ? String(r[0] || '').trim() : '';
+        const m = unica.match(/^---\s*Sheet:\s*(.+?)\s*---$/i);
+        if (m) { current = m[1].trim().toLowerCase(); if (!sheets[current]) sheets[current] = []; return; }
+        if (r.every(c => String(c == null ? '' : c).trim() === '')) return;
         if (!sheets[current]) sheets[current] = [];
-        sheets[current].push(l);
+        sheets[current].push(r);
     });
+    return sheets;
+}
 
-    if (sheets['log']) {
-        const novos = parseSheetLogRows(parseCSVRows(sheets['log'].join('\n'), ';'));
-        setLogs([...novos, ...logs]);
-        const imported = novos.length;
-        // Peso corporal
-        if (sheets['peso corporal']) {
-            parseCSVRows(sheets['peso corporal'].join('\n'), ';').slice(1).forEach(c => {
-                const peso = parseFloat(String(c[1]).replace(',', '.'));
-                if (peso) {
-                    const date = parseDateBRorISO(c[0]);
-                    setWeightLog(weightLog.filter(w => w.date !== date));
-                    weightLog.push({ date, peso, obs: c[2] || '' });
-                }
-            });
-        }
-        // Início da semana 1
-        const sem = sheets['semana a semana'] || [];
-        const w1line = sem.find(l => /início da semana 1/i.test(l));
-        if (w1line) {
-            const v = parseCSVRows(w1line, ';')[0][1];
-            if (v) setWeek1Start(parseDateBRorISO(v.trim()));
-        }
-        saveLogsToStorage();
-        saveGameState();
-        refreshAll();
-        return alertModal(`✅ Planilha importada — ${imported} lançamentos (aba Log) + peso corporal + semana 1.`);
+function csvCabecalho(headerRow) {
+    const h = (headerRow || []).map(x => String(x == null ? '' : x).trim().toLowerCase());
+    return { h, col: nome => h.indexOf(String(nome).toLowerCase()) };
+}
+function csvCelula(c, col, nome) {
+    const k = col(nome);
+    return k >= 0 && c[k] != null ? String(c[k]) : '';
+}
+function csvErroTexto(e) {
+    return `${e.aba ? e.aba + (e.registro ? ', registro ' + e.registro : '') + ': ' : ''}${e.msg}`;
+}
+
+// Aba Log (formato 1 ou 2). Pura: devolve { logs, erros }; não grava nada.
+// Parâmetro: rows = linhas parseadas, com o cabeçalho na primeira posição.
+function analisarLinhasLog(rows) {
+    const erros = [], out = [];
+    if (!rows || rows.length < 2) return { logs: out, erros };
+    const { h, col } = csvCabecalho(rows[0]);
+    const faltando = ['data', 'exercício', 'carga registrada (kg)'].filter(n => col(n) < 0);
+    if (faltando.length) {
+        erros.push({ aba: 'Log', registro: 1, msg: `cabeçalho sem as colunas obrigatórias: ${faltando.join(', ')}` });
+        return { logs: out, erros };
     }
-
-    // CSV simples (formato antigo do app): data;tipo;grupo;exercicio;carga;series_reps;...
-    const rows = parseCSVRows(lines.join('\n'), ';');
-    let imported = 0;
-    let id = logs.length ? Math.max(...logs.map(l => l.id)) + 1 : 1;
-    rows.slice(1).forEach(c => {
-        const exercise = c[3];
-        if (!exercise) return;
-        logs.push({
-            id: id++, date: parseDateBRorISO(c[0]), kind: 'peso', muscle: normalizeMuscle(c[2] || 'Geral'),
-            sessao: '', exercise, type: c[1] || inferExerciseType(exercise),
-            weight: parseFloat(c[4]) || 0,
-            reps: (c[5] || '').split(',').map(x => parseInt(x)).filter(x => !isNaN(x) && x > 0),
-            sets: null, technique: c[6] || 'Convencional', nextGoal: '',
-            isPR: false, rir: c[7] !== '' && c[7] != null ? parseInt(c[7]) : null, conferir: false, notes: c[10] || ''
+    const v2 = col('id do registro') >= 0 || col('séries (json)') >= 0;
+    rows.slice(1).forEach((c, i) => {
+        const registro = i + 2;
+        const cel = nome => csvCelula(c, col, nome);
+        const erro = msg => erros.push({ aba: 'Log', registro, msg });
+        if (c.length > h.length) return erro(`${c.length} colunas, mas o cabeçalho tem ${h.length} (campo com ";" sem aspas?)`);
+        const exercise = cel('exercício').trim();
+        if (!exercise) return erro('exercício vazio');
+        const date = parseDataCSV(cel('data'));
+        if (!date) return erro(`data inválida "${cel('data')}"`);
+        let weight = csvNumeroLido(cel('carga registrada (kg)'));
+        if (weight == null || weight < 0) return erro(`carga inválida "${cel('carga registrada (kg)')}"`);
+        let reps = [], sets = null;
+        const jsonTxt = v2 ? cel('séries (json)').trim() : '';
+        if (jsonTxt) {
+            let obj = null;
+            try { obj = JSON.parse(jsonTxt); } catch (e) { return erro('Séries (JSON) não é JSON válido'); }
+            const serie = obj && Array.isArray(obj.series) ? obj.series : null;
+            const valida = serie && serie.every(s => s && typeof s === 'object' && Number.isFinite(s.weight) && s.weight >= 0 && Number.isFinite(s.reps) && s.reps > 0);
+            if (!valida) return erro('Séries (JSON) com carga ou repetições inválidas');
+            reps = serie.map(s => s.reps);
+            if (obj.modo === 'sets') sets = serie.map(s => ({ weight: s.weight, reps: s.reps }));
+            if (serie.length) weight = serie[0].weight;
+        } else {
+            for (let k = 1; k <= 5; k++) {
+                const raw = cel(`s${k}`).trim();
+                if (!raw) continue;
+                const v = csvNumeroLido(raw);
+                if (v == null || v <= 0) return erro(`repetições inválidas em S${k}: "${raw}"`);
+                reps.push(v);
+            }
+        }
+        const rirRaw = cel('rir').trim();
+        let rir = null;
+        if (rirRaw !== '') {
+            rir = csvNumeroLido(rirRaw);
+            if (rir == null || rir < 0) return erro(`RIR inválido "${rirRaw}"`);
+        }
+        const catItem = catalogInfo(exercise);
+        const grupoCol = v2 ? cel('grupo do registro').trim() : '';
+        const tipoCol = v2 ? cel('tipo de exercício').trim() : '';
+        out.push({
+            id: 0, date, kind: 'peso',
+            muscle: normalizeMuscle((catItem && catItem.grupo) || grupoCol || 'Geral'),
+            sessao: cel('sessão').trim(), exercise,
+            type: (catItem && catItem.tipo) || tipoCol || inferExerciseType(exercise),
+            weight, reps, sets,
+            technique: (v2 && cel('técnica').trim()) || 'Convencional',
+            nextGoal: v2 ? cel('meta da próxima sessão').trim() : '',
+            isPR: false, rir,
+            conferir: /^(sim|s|true|1)/i.test(cel('conferir?').trim()),
+            notes: csvTexto(cel('observações')).trim(),
+            externalId: v2 ? (cel('id do registro').trim() || null) : null
         });
-        imported++;
     });
-    saveLogsToStorage();
+    return { logs: out, erros };
+}
+
+// Compatível com chamadas antigas: devolve só os lançamentos válidos.
+function parseSheetLogRows(rows) {
+    return analisarLinhasLog(rows).logs;
+}
+
+function analisarLinhasCardio(rows) {
+    const erros = [], out = [];
+    if (!rows || rows.length < 2) return { logs: out, erros };
+    const { col } = csvCabecalho(rows[0]);
+    const faltando = ['data', 'modalidade'].filter(n => col(n) < 0);
+    if (faltando.length) { erros.push({ aba: 'Cardio', registro: 1, msg: `cabeçalho sem as colunas obrigatórias: ${faltando.join(', ')}` }); return { logs: out, erros }; }
+    rows.slice(1).forEach((c, i) => {
+        const registro = i + 2;
+        const cel = nome => csvCelula(c, col, nome);
+        const erro = msg => erros.push({ aba: 'Cardio', registro, msg });
+        const date = parseDataCSV(cel('data'));
+        if (!date) return erro(`data inválida "${cel('data')}"`);
+        const exercise = cel('modalidade').trim();
+        if (!exercise) return erro('modalidade vazia');
+        const num = nome => {
+            const raw = cel(nome).trim();
+            if (raw === '') return 0;
+            const v = csvNumeroLido(raw);
+            return (v == null || v < 0) ? NaN : v;
+        };
+        const distanceKm = num('distância (km)'), durationMin = num('duração (min)');
+        if (!Number.isFinite(distanceKm)) return erro(`distância inválida "${cel('distância (km)')}"`);
+        if (!Number.isFinite(durationMin)) return erro(`duração inválida "${cel('duração (min)')}"`);
+        if (distanceKm <= 0 && durationMin <= 0) return erro('informe distância e/ou duração');
+        out.push({
+            id: 0, date, kind: 'corrida', muscle: 'Cardio', exercise, distanceKm, durationMin,
+            notes: csvTexto(cel('observações')).trim(), technique: 'Convencional', isPR: false,
+            nextGoal: '', type: 'corrida', reps: [], externalId: cel('id do registro').trim() || null
+        });
+    });
+    return { logs: out, erros };
+}
+
+function analisarLinhasPeso(rows) {
+    const erros = [], out = [];
+    if (!rows || rows.length < 2) return { pesos: out, erros };
+    const { col } = csvCabecalho(rows[0]);
+    rows.slice(1).forEach((c, i) => {
+        const registro = i + 2;
+        const cel = nome => csvCelula(c, col, nome);
+        const erro = msg => erros.push({ aba: 'Peso corporal', registro, msg });
+        const date = parseDataCSV(cel('data'));
+        if (!date) return erro(`data inválida "${cel('data')}"`);
+        const peso = csvNumeroLido(cel('peso (kg)'));
+        if (peso == null || peso <= 0) return erro(`peso inválido "${cel('peso (kg)')}"`);
+        out.push({ date, peso, obs: csvTexto(cel('observação')).trim() });
+    });
+    return { pesos: out, erros };
+}
+
+// Formato 1 (sem abas): data;tipo;grupo;exercicio;carga;series_reps;tecnica;rir;...;observações(c[10])
+function analisarCSVSimples(rows) {
+    const erros = [], out = [];
+    const cab = (rows && rows[0]) || [];
+    const cabOk = /data/i.test(String(cab[0] || '')) && /exerc/i.test(String(cab[3] || ''));
+    if (!cabOk) {
+        erros.push({ msg: 'arquivo sem a aba "Log" e cabeçalho que não é o formato simples (data;tipo;grupo;exercício;…)' });
+        return { logs: out, erros };
+    }
+    (rows || []).slice(1).forEach((c, i) => {
+        const registro = i + 2;
+        const erro = msg => erros.push({ aba: 'CSV simples', registro, msg });
+        const exercise = String(c[3] || '').trim();
+        if (!exercise) return;
+        const date = parseDataCSV(c[0]);
+        if (!date) return erro(`data inválida "${c[0] || ''}"`);
+        const weight = csvNumeroLido(c[4]);
+        if (weight == null || weight < 0) return erro(`carga inválida "${c[4] || ''}"`);
+        const reps = [];
+        for (const tok of String(c[5] || '').split(',')) {
+            const t = tok.trim();
+            if (!t) continue;
+            const v = csvNumeroLido(t);
+            if (v == null || v <= 0) return erro(`repetições inválidas "${t}"`);
+            reps.push(v);
+        }
+        let rir = null;
+        if (c[7] !== '' && c[7] != null) {
+            rir = csvNumeroLido(c[7]);
+            if (rir == null || rir < 0) return erro(`RIR inválido "${c[7]}"`);
+        }
+        const catItem = catalogInfo(exercise);
+        out.push({
+            id: 0, date, kind: 'peso', muscle: normalizeMuscle(c[2] || 'Geral'), sessao: '', exercise,
+            type: String(c[1] || '').trim() || (catItem && catItem.tipo) || inferExerciseType(exercise),
+            weight, reps, sets: null, technique: String(c[6] || '').trim() || 'Convencional', nextGoal: '',
+            isPR: false, rir, conferir: false, notes: csvTexto(c[10]).trim(), externalId: null
+        });
+    });
+    return { logs: out, erros };
+}
+
+// Lê o texto inteiro SEM gravar nada. Devolve { modo, logs, cardio incluído em logs, pesos, semana1, erros }.
+function lerPlanilhaCSV(text) {
+    const erros = [];
+    const sheets = csvSplitSheets(text);
+    const res = { modo: 'v1', logs: [], pesos: [], semana1: null, erros };
+    if (sheets['log']) {
+        // Aba Formato: uma linha "Versão do formato;N" (casada pela etiqueta, não pela posição).
+        const linhaVersao = (sheets['formato'] || []).find(r => /versão do formato/i.test(String(r[0] || '')));
+        if (linhaVersao) {
+            const versao = csvNumeroLido(linhaVersao[1]);
+            if (versao == null || versao > CSV_FORMATO_VERSAO) erros.push({ aba: 'Formato', msg: `versão ${linhaVersao[1]} não suportada (máximo ${CSV_FORMATO_VERSAO})` });
+            else res.modo = 'v' + versao;
+        }
+        const l = analisarLinhasLog(sheets['log']);
+        erros.push(...l.erros); res.logs.push(...l.logs);
+        if (sheets['cardio']) {
+            const c = analisarLinhasCardio(sheets['cardio']);
+            erros.push(...c.erros); res.logs.push(...c.logs);
+        }
+        if (sheets['peso corporal']) {
+            const p = analisarLinhasPeso(sheets['peso corporal']);
+            erros.push(...p.erros); res.pesos = p.pesos;
+        }
+        const sem = sheets['semana a semana'] || [];
+        const w1 = sem.find(r => /início da semana 1/i.test(String(r[0] || '')));
+        if (w1 && String(w1[1] || '').trim()) {
+            const d = parseDataCSV(w1[1]);
+            if (d) res.semana1 = d;
+            else erros.push({ aba: 'Semana a semana', msg: `início da semana 1 inválido "${w1[1]}"` });
+        }
+    } else if (sheets['_single']) {
+        const s = analisarCSVSimples(sheets['_single']);
+        erros.push(...s.erros); res.logs.push(...s.logs);
+    } else {
+        erros.push({ msg: 'arquivo sem a aba "Log" nem linhas no formato simples' });
+    }
+    return res;
+}
+
+// Deduplicação. Estratégia (documentada em docs/FORMATO_CSV.md):
+//  1) Registro com ID (formato 2): o ID é a identidade. Mesmo ID + mesmo conteúdo → já existente
+//     (ignorado). Mesmo ID + conteúdo diferente → CONFLITO (não sobrescreve, é reportado).
+//  2) Registro sem ID (formato 1 ou CSV de outra origem): identidade = conteúdo. Como dois
+//     treinos iguais podem ser legítimos, conta-se a ocorrência: se o arquivo traz 2 idênticos e o
+//     app já tem 2, nenhum é importado; se o app tem 1, importa-se 1.
+// Função pura: não altera 'existentes' nem grava nada.
+function planejarImportacaoLogs(novos, existentes) {
+    const porId = new Map();
+    const contagemPorConteudo = new Map();
+    (existentes || []).forEach(l => {
+        porId.set(csvLogId(l), l);
+        const fp = csvLogFingerprint(l);
+        contagemPorConteudo.set(fp, (contagemPorConteudo.get(fp) || 0) + 1);
+    });
+    const plano = { novos: [], iguais: 0, conflitos: [] };
+    const idsNoArquivo = new Map();
+    const ocorrenciasNoArquivo = new Map();
+    (novos || []).forEach(n => {
+        const fp = csvLogFingerprint(n);
+        if (n.externalId) {
+            const jaNoApp = porId.get(n.externalId) || null;
+            const jaNoArquivo = idsNoArquivo.has(n.externalId) ? { fp: idsNoArquivo.get(n.externalId) } : null;
+            const referencia = jaNoApp ? csvLogFingerprint(jaNoApp) : (jaNoArquivo ? jaNoArquivo.fp : null);
+            if (referencia !== null) {
+                if (referencia === fp) plano.iguais++;
+                else plano.conflitos.push(n);
+                return;
+            }
+            idsNoArquivo.set(n.externalId, fp);
+            plano.novos.push(n);
+            return;
+        }
+        const k = (ocorrenciasNoArquivo.get(fp) || 0) + 1;
+        ocorrenciasNoArquivo.set(fp, k);
+        if (k <= (contagemPorConteudo.get(fp) || 0)) plano.iguais++;
+        else plano.novos.push(n);
+    });
+    return plano;
+}
+
+// Importação: valida tudo ANTES. Se houver qualquer erro, nada é alterado.
+function importPlanilhaCSV(text) {
+    const lido = lerPlanilhaCSV(text);
+    if (lido.erros.length) {
+        const amostra = lido.erros.slice(0, 5).map(e => '• ' + csvErroTexto(e)).join('\n');
+        const mais = lido.erros.length > 5 ? `\n… e mais ${lido.erros.length - 5}` : '';
+        return alertModal(`❌ Planilha não importada — nada foi alterado. ${lido.erros.length} problema(s): ${amostra.replace(/\n/g, ' ')}${mais}`);
+    }
+    if (!lido.logs.length && !lido.pesos.length && !lido.semana1) {
+        return alertModal('ℹ️ Nenhum lançamento encontrado na planilha.');
+    }
+    const plano = planejarImportacaoLogs(lido.logs, logs);
+    let proximoId = logs.length ? Math.max(...logs.map(l => l.id)) + 1 : 1;
+    plano.novos.forEach(l => { l.id = proximoId++; });
+
+    // Peso corporal: uma pesagem por data (como antes); substituições são contadas.
+    let pesosNovos = 0, pesosSubstituidos = 0;
+    lido.pesos.forEach(p => {
+        const atual = weightLog.find(w => w.date === p.date);
+        if (atual && atual.peso === p.peso && (atual.obs || '') === p.obs) return;
+        if (atual) pesosSubstituidos++; else pesosNovos++;
+        setWeightLog(weightLog.filter(w => w.date !== p.date));
+        weightLog.push({ date: p.date, peso: p.peso, obs: p.obs });
+    });
+    if (lido.semana1) setWeek1Start(lido.semana1);
+
+    setLogs([...plano.novos, ...logs]);
+    const okLogs = saveLogsToStorage();
+    const okShared = saveGameState();
     refreshAll();
-    alertModal(`✅ CSV importado — ${imported} lançamentos.`);
+
+    const novosCardio = plano.novos.filter(l => l.kind === 'corrida').length;
+    const resumo = `${plano.novos.length - novosCardio} treino(s) e ${novosCardio} cardio novo(s); ${plano.iguais} já existente(s) ignorado(s); ${plano.conflitos.length} conflito(s) não importado(s)`;
+    const extraPeso = `peso: ${pesosNovos} novo(s), ${pesosSubstituidos} substituído(s)`;
+    if (!okLogs || !okShared) {
+        return alertModal(`⚠️ Planilha lida (${resumo}), mas o navegador não confirmou o salvamento. Exporte um backup JSON agora.`);
+    }
+    if (plano.conflitos.length) {
+        const ex = plano.conflitos.slice(0, 2).map(l => `${l.exercise} (${histDataBR(l.date)})`).join(', ');
+        return alertModal(`⚠️ Importado: ${resumo}. Conflitos: ${ex}${plano.conflitos.length > 2 ? '…' : ''} — o registro existente foi mantido.`);
+    }
+    return alertModal(`✅ Planilha importada — ${resumo}; ${extraPeso}.`);
 }
 
 // ============================================================
