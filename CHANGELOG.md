@@ -35,6 +35,39 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - Novo job `pages-artefato` valida o mesmo `_site` que o Pages publica (`scripts/build-site.sh`).
 - `test_sw.js`: instalação, falha de cache observável, ativação, estratégia offline e regra de versão.
 
+## [Não lançado] — refatorações da auditoria (branch `arena/f549f63d-diario`)
+
+### NOVO
+- **`js/datas.js` — regra única de data (R1):** `dataISOValida`, `isoDataValida` e
+  `dataDeRegistroValida` passam a viver num só módulo, importado por `js/app.js`,
+  `js/historico.js` e `js/planilha_data.js`. Um teste varre `js/` e falha se a regra
+  voltar a ser duplicada; 43 vetores sintéticos confirmam que a regra do app e a do
+  registro continuam equivalentes (mesma decisão para 2026-02-31, 2028-02-29, vazio, etc.).
+- **Testes por área (R3):** `test_engine.js` e `test_ui.js` viraram runners finos; os
+  trechos vivem em `tests/engine/*.js` e `tests/ui/*.js`, na ordem do nome (síncronos um a
+  um, assíncronos num único wrapper — o mesmo escopo de antes). O texto das checagens é
+  idêntico ao do arquivo único. Cada runner valida o manifesto das áreas e exige um piso
+  de checagens, então apagar/renomear/esvaziar um trecho falha em vez de reduzir cobertura
+  em silêncio.
+
+### ALTERADO
+- **`PR` no CSV é informativa (R4):** a coluna continua sendo exportada (agora como
+  `PR (informativo)`) e a importação **ignora** o valor do arquivo — quem decide PR
+  continua sendo a regra do app, e o XP não muda por causa da planilha. O documento
+  `docs/FORMATO_CSV.md` explica a decisão.
+- **Data futura no mapa de recuperação (P2):** documentado (não é bug) — registro com
+  data no futuro conta como **hoje** para recuperação e fadiga. A regra está em
+  `docs/RECUPERACAO.md` e na explicação do mapa no `index.html`, com teste de regressão.
+
+### CORRIGIDO
+- **Falha de gravação no IndexedDB (P3):** antes, um `put` recusado (cota, aba anônima,
+  transação abortada) era silencioso — e o app ainda podia dizer "Retrato do chefão
+  atualizado!". Agora a gravação de imagem passa por `saveBlobChecked`, que só confirma
+  quando o IndexedDB confirma; sem confirmação o usuário vê "não confirmou o salvamento"
+  (um aviso por sequência de falhas, rearmado após um sucesso), a imagem legada em dataURL
+  é preservada e a importação de backup não anuncia "sucesso" quando alguma imagem não foi
+  gravada.
+
 ## [2.1.0] — 2026-10-15
 
 ### NOVO
