@@ -1,5 +1,5 @@
 import { MUSCLE_WEIGHT, logTstSeconds, logVolumeKg } from './catalogo.js';
-import { logs, toLocalISO } from './app.js';
+import { ANIMAL_RANKS, logs, toLocalISO } from './app.js';
 /* ============================================================
    GAMIFICAÇÃO — patentes, chefões, XP, missões e temporadas
    ============================================================ */
