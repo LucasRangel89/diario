@@ -72,9 +72,10 @@
 
     // ============================ GRADES NO CELULAR ============================
     console.log('\n== UI 12e. Grades estáveis e legíveis no celular ==');
-    // R2: o card do chefão é desenhado em js/app.js + js/cartoes.js (os chips de
-    // tag de js/busca.js usam 9px de propósito e não entram nesta checagem).
-    const appSrcMobile = ['js/app.js', 'js/cartoes.js'].map(f => fs.readFileSync(f, 'utf8')).join('\n');
+    // R2: o card do chefão é desenhado em js/app.js + js/cartoes.js e, desde a rodada 2,
+    // a grade/estúdio de reservas vivem em js/boss.js (os chips de tag de js/busca.js
+    // usam 9px de propósito e não entram nesta checagem).
+    const appSrcMobile = ['js/app.js', 'js/cartoes.js', 'js/boss.js'].map(f => fs.readFileSync(f, 'utf8')).join('\n');
     navTo('boss');
     ev('renderBossBattleUI(); renderBadgesAndStreak(); showThemeGallery();');
     const thumbBosses = [...document.querySelectorAll('#bosses-grid img')];

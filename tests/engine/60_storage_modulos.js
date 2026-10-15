@@ -64,7 +64,10 @@
 
     // ---- Etapa 5.1: toda data-* declarada tem handler registrado; sem handlers inline ----
     console.log('\n== 5.1c. Cobertura da delegação de eventos ==');
-    const fsDeleg = ['index.html', 'js/app.js', 'js/busca.js', 'js/historico.js', 'js/custom_exercises.js', 'js/actions.js'];
+    // Varre index.html + TODO js/*.js: a lista fixa antiga deixava de fora os módulos
+    // extraídos do app na R2 (cartoes, calculadoras, sessao, boss, registro...) e,
+    // com eles, as ações dos templates que mudaram de arquivo.
+    const fsDeleg = ['index.html', ...fs.readdirSync('js').filter(f => f.endsWith('.js')).sort().map(f => 'js/' + f)];
     const acaoRe = /data-(?:action|change-action|input-action|submit-action|error-action)="([\w$]+)"/g;
     const usadas = new Set();
     fsDeleg.forEach(f => {

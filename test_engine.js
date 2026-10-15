@@ -59,7 +59,7 @@ global.indexedDB = makeFakeIDB();
 const stripModuleSyntax = s => s
     .replace(/^import [^\n]*;\n/gm, '')
     .replace(/^export \{[^\n]*\};?\n/gm, '');
-const src = ['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/datas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/app.js']
+const src = ['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/datas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/config.js', 'js/boss.js', 'js/registro.js', 'js/app.js']
     .map(p => stripModuleSyntax(fs.readFileSync(p, 'utf8'))).join('\n');
 const api = new Function(src + `
   return {

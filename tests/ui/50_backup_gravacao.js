@@ -141,18 +141,21 @@
         };
         return { open() { const r = req(); queueMicrotask(() => { r.result = db; if (r.onsuccess) r.onsuccess({ target: r }); }); return r; } };
     };
-    const idbBanners = () => [...document.body.children].filter(d => String(d.className).includes('bottom-5')).map(d => d.textContent).join(' | ');
-    const limpaBanners = () => [...document.body.children].filter(d => String(d.className).includes('bottom-5')).forEach(d => d.remove());
+    // avisos ao usuário: banners do alertModal (bottom-5) + o aviso persistente de imagem
+    // (#blob-save-warning, I5), que substituiu o alertModal no notifyBlobFailure
+    const ehAvisoIdb = d => String(d.className).includes('bottom-5') || d.id === 'blob-save-warning';
+    const idbBanners = () => [...document.body.children].filter(ehAvisoIdb).map(d => d.textContent).join(' | ');
+    const limpaBanners = () => [...document.body.children].filter(ehAvisoIdb).forEach(d => d.remove());
     ev("window.indexedDB = window.__fakeIDB();");
     check('com IndexedDB funcionando, saveBlobChecked confirma a gravação (true)', (await ev("saveBlobChecked('teste:blob', new Blob(['a']))")) === true);
     limpaBanners();
     ev("window.__idbMode = 'falha';");
     check('erro no put: saveBlobChecked devolve false (não confirma o salvamento)', (await ev("saveBlobChecked('teste:blob', new Blob(['a']))")) === false);
     check('erro no put: o usuário é avisado', /não confirmou o salvamento/i.test(idbBanners()), idbBanners().slice(0, 120));
-    const bannersAntes = [...document.body.children].filter(d => String(d.className).includes('bottom-5')).length;
+    const bannersAntes = [...document.body.children].filter(ehAvisoIdb).length;
     await ev("saveBlobChecked('teste:blob2', new Blob(['b'])); saveBlobChecked('teste:blob3', new Blob(['c']));");
     check('falhas seguidas no IndexedDB NÃO geram um aviso por imagem (aviso único por sequência)',
-        [...document.body.children].filter(d => String(d.className).includes('bottom-5')).length === bannersAntes);
+        [...document.body.children].filter(ehAvisoIdb).length === bannersAntes);
     ev("window.__idbMode = 'abort';");
     check('transação abortada: saveBlobChecked também devolve false', (await ev("saveBlobChecked('teste:blob', new Blob(['a']))")) === false);
     limpaBanners();
@@ -207,9 +210,86 @@
 
     // Nenhuma gravação de imagem pode fugir do caminho que confirma (regressão do P3).
     // O único lugar que pode chamar window.storage.saveBlob é o próprio saveBlobChecked.
-    const fontesImagem = ['js/app.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/assistente.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/planilha_data.js'];
+    // TODO js/*.js (a lista fixa antiga não via os módulos extraídos na R2, como js/boss.js,
+    // onde agora vivem o upload e a migração de retratos).
+    const fontesImagem = fs.readdirSync('js').filter(f => f.endsWith('.js')).sort().map(f => 'js/' + f);
     const srcApp = fs.readFileSync('js/app.js', 'utf8').replace(/async function saveBlobChecked[\s\S]*?\n}\n/, '');
     const diretas = fontesImagem.filter(f => /window\.storage\.saveBlob\(/.test(f === 'js/app.js' ? srcApp : fs.readFileSync(f, 'utf8')));
     check('toda gravação de imagem passa por saveBlobChecked (nada de saveBlob direto)', diretas.length === 0, diretas);
     check('o helper que confirma a gravação de Blob chama saveBlob de verdade (não é stub)',
         /window\.storage\.saveBlob\(key, blob\)/.test(fs.readFileSync('js/app.js', 'utf8')));
+
+    console.log('\n== UI 12j. Aviso persistente de imagem não confirmada, com ação de backup ==');
+    // O aviso do notifyBlobFailure era um alertModal (some em ~4 s). Agora fica na tela até
+    // ser dispensado e traz o botão real de exportar o backup — mesma semântica: uma vez por
+    // sequência de falhas, rearmado após gravação confirmada, nunca "salvo" sem confirmação.
+    const avisoBlob = () => document.getElementById('blob-save-warning');
+    const retratoAntesI5 = ev("bossPortraits.boss1");
+    const objURLOrigI5 = window.URL.createObjectURL, revokeOrigI5 = window.URL.revokeObjectURL;
+    const anchorClickOrig = window.HTMLAnchorElement.prototype.click;
+    window.__compressOrigI5 = ev('window.storage.compressImage');   // host guarda e devolve no fim
+    try {
+        limpaBanners();
+        ev("window.__idbMode = 'ok';");
+        await ev("saveBlobChecked('teste:i5:rearme', new Blob(['a']))");
+        check('gravação confirmada não mostra aviso de imagem', !avisoBlob());
+        ev("window.__idbMode = 'falha';");
+        await ev("saveBlobChecked('teste:i5:a', new Blob(['a']))");
+        const primeiroAviso = avisoBlob();
+        check('(1) primeira falha da sequência: aparece o aviso com "não confirmou o salvamento"',
+            !!primeiroAviso && /não confirmou o salvamento/i.test(primeiroAviso.textContent) && primeiroAviso.getAttribute('role') === 'alert');
+        await new Promise(r => setTimeout(r, 3900));   // o alertModal se remove em 3,8 s; o aviso persistente não
+        check('o aviso continua na tela depois do tempo em que um alertModal some (persistente)', !!primeiroAviso && avisoBlob() === primeiroAviso && document.body.contains(primeiroAviso));
+        await ev("saveBlobChecked('teste:i5:b', new Blob(['b'])); saveBlobChecked('teste:i5:c', new Blob(['c']))");
+        ev("mensagemImagemSalva(false, '🖼️ Retrato do chefão atualizado!')");
+        check('(1) falhas seguidas na mesma sequência não recriam nem duplicam o aviso',
+            !!primeiroAviso && avisoBlob() === primeiroAviso && document.querySelectorAll('#blob-save-warning').length === 1);
+        const btnBackupAviso = avisoBlob() && avisoBlob().querySelector('button[data-action="exportJSONBackup"]');
+        check('(2) o aviso traz o botão "Exportar backup JSON" ligado ao exportJSONBackup do app',
+            !!btnBackupAviso && /Exportar backup JSON/i.test(btnBackupAviso.textContent) && window.getDiarioAction('exportJSONBackup') === ev('exportJSONBackup'));
+        const downloadsAviso = [];
+        window.HTMLAnchorElement.prototype.click = function () { downloadsAviso.push(this.getAttribute('download')); };
+        try {
+            if (btnBackupAviso) click(btnBackupAviso);
+            await new Promise(r => setTimeout(r, 200));
+        } finally { window.HTMLAnchorElement.prototype.click = anchorClickOrig; }
+        check('(2) clicar no botão do aviso exporta o backup JSON de verdade (download + confirmação)',
+            downloadsAviso.some(n => /^berzerker-diario-backup-\d{4}-\d{2}-\d{2}\.json$/.test(n || '')) && /Backup exportado/i.test(idbBanners()), downloadsAviso);
+        check('o app continua utilizável: o aviso não é modal (não cobre a tela) e segue na tela após exportar',
+            !!primeiroAviso && !/\binset-0\b/.test(String(primeiroAviso.className)) && avisoBlob() === primeiroAviso);
+        const btnDispensar = avisoBlob() && avisoBlob().querySelector('button[data-action="closeElementById"]');
+        if (btnDispensar) click(btnDispensar);
+        check('"Dispensar" tira o aviso da tela', !!btnDispensar && !avisoBlob());
+        await ev("saveBlobChecked('teste:i5:d', new Blob(['d']))");
+        ev("mensagemImagemSalva(false, '🖼️ Retrato do chefão atualizado!')");
+        check('(3) dispensado, o aviso NÃO reaparece enquanto a sequência de falhas continua', !avisoBlob());
+        ev("window.__idbMode = 'ok';");
+        check('(4) gravação confirmada: saveBlobChecked devolve true e não cria aviso',
+            (await ev("saveBlobChecked('teste:i5:e', new Blob(['e']))")) === true && !avisoBlob());
+        // (4) upload real de retrato com gravação confirmada: a mensagem de sucesso volta, sem aviso
+        limpaBanners();
+        window.URL.createObjectURL = () => 'blob:jsdom';
+        window.URL.revokeObjectURL = () => { };   // jsdom não implementa; o upload revoga a URL antiga
+        ev("window.storage.compressImage = async () => new Blob(['retrato']);");
+        await ev("uploadBossPortrait({ target: { files: [new Blob(['png'])] } }, 'boss1')");
+        check('(4) após o sucesso, upload confirmado diz "Retrato do chefão atualizado!" e não mostra aviso',
+            /Retrato do chefão atualizado!/.test(idbBanners()) && !/não confirmou/i.test(idbBanners()) && !avisoBlob(), idbBanners().slice(0, 140));
+        ev("window.__idbMode = 'falha';");
+        await ev("saveBlobChecked('teste:i5:f', new Blob(['f']))");
+        check('(3) sucesso seguido de nova falha: o aviso volta (rearmado), com a ação de backup',
+            !!avisoBlob() && avisoBlob() !== primeiroAviso && !!avisoBlob().querySelector('button[data-action="exportJSONBackup"]'));
+        check('(5) mensagemImagemSalva(false, …) mantém "não confirmou o salvamento" e não diz "atualizado"',
+            /não confirmou o salvamento/i.test(ev("mensagemImagemSalva(false, '🖼️ Retrato do chefão atualizado!')")) &&
+            !/atualizado/i.test(ev("mensagemImagemSalva(false, '🖼️ Retrato do chefão atualizado!')")));
+    } catch (e) {
+        check('fluxo do aviso persistente roda até o fim sem exceção', false, e.message);
+    } finally {
+        // restaura o estado para os trechos seguintes
+        window.HTMLAnchorElement.prototype.click = anchorClickOrig;
+        window.URL.createObjectURL = objURLOrigI5;
+        window.URL.revokeObjectURL = revokeOrigI5;
+        ev('window.storage.compressImage = window.__compressOrigI5; delete window.__compressOrigI5;');
+        if (retratoAntesI5 === undefined) ev("delete bossPortraits.boss1"); else ev(`bossPortraits.boss1 = ${JSON.stringify(retratoAntesI5)}`);
+        ev("saveGameState(); window.__idbMode = 'ok';");
+        limpaBanners();
+    }

@@ -1,3 +1,11 @@
+> **Documento histórico.** Retrato do estado na Etapa 0 (commit `ffee7c2`, `sw.js` em `v25`),
+> com as notas de progresso da migração para ES modules acrescentadas até o commit `3a6c2e9`
+> (etapa 5.1, sub-etapa 4, `sw.js` em `v32`). Números de linha, versões e bloqueios abaixo
+> descrevem aquele momento — vários já foram resolvidos (migração ESM concluída, setters criados,
+> `regiaoLombarState` exportada e testada, suíte dividida em `tests/engine/*` e `tests/ui/*`,
+> `js/app.js` repartido em módulos). Ver `CHANGELOG.md` para o que mudou depois. Só os ponteiros
+> para arquivos de teste foram atualizados para os caminhos atuais.
+
 # Diagnóstico — Diário de Cargas // Berzerker Mode
 
 Gerado na Etapa 0 (sem alterações de código). Referências no formato `arquivo:linha`.
@@ -25,7 +33,7 @@ Não existe `schemaVersion` nos dados. A única "versão" é a do cache do servi
 
 ## d) Funções do assistente: cobertura de testes
 
-Testadas em `test_engine.js` (linhas 332–489 e 590–671): `orderWorkoutExercises`, `weeklySetsByMuscle`, `fatigueState`, `suggestNextWorkout`, `weeklyGaps`, `diasDesdeUltimoTreino`. `regiaoLombarState` não é exportada nem testada. UI testada em `test_ui.js:518–547` (mapa de prontidão, lombar). Não há teste automatizado de `regiaoLombarState` no motor nem de persistência/migração.
+Testadas (caminhos atuais) em `tests/engine/30_catalogo_busca.js` (§17 ordenação, §18 fadiga + séries semanais, §19 sugestão, lacunas e dias desde o último treino), com casos extras em `tests/engine/20_recuperacao_temas.js` (§12c, co-ativação) e `tests/engine/40_arte_jogo.js` (§26 e §28): `orderWorkoutExercises`, `weeklySetsByMuscle`, `fatigueState`, `suggestNextWorkout`, `weeklyGaps`, `diasDesdeUltimoTreino`. `regiaoLombarState` não era exportada nem testada neste retrato (hoje: `tests/engine/40_arte_jogo.js`, §3.5). UI testada em `tests/ui/30_assistente_sessao.js` (seção `UI 10`: mapa de prontidão, lombar). Não havia teste automatizado de `regiaoLombarState` no motor nem de persistência/migração.
 
 ## e) Estratégia de cache do sw.js e versão
 
@@ -78,8 +86,8 @@ valida os símbolos críticos. Este manifesto é a fonte para gerar os
 ### Bloqueios mapeados para a sub-etapa 2 (descobertos na análise)
 
 1. **jsdom não executa `<script type="module">`** — o smoke test de UI
-   (test_ui.js) sobe o app inteiro com `runScripts: 'dangerously'`, que só
-   roda scripts clássicos. A sub-etapa 2 exige reescrever o harness de
+   (`test_ui.js`, hoje o runner dos trechos em `tests/ui/*.js`) sobe o app
+   inteiro com `runScripts: 'dangerously'`, que só roda scripts clássicos. A sub-etapa 2 exige reescrever o harness de
    testes (ex.: gerar bundle clássico em runtime tirando import/export, ou
    migrar para um runner com navegador de verdade).
 2. **Escritas cross-file**: `planilha_data.js`, `historico.js`,

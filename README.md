@@ -92,8 +92,9 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
   e inputs de texto focam corretamente para abrir o teclado virtual (fonte 16px no mobile evita zoom).
 - **Cadastro de exercício manual:** botão "➕ Novo exercício" na aba Buscar permite criar
   seus próprios exercícios (nome, grupo, equipamento, tipo, faixa, descanso, sinônimos, tags extras,
-  marcação se carrega lombar), salvos em localStorage, editáveis/excluíveis, aparecendo na busca e
-  no seletor.
+  marcação se carrega lombar), salvos em localStorage, aparecendo na busca e no seletor rápido.
+  O formulário tem modo de edição/exclusão (`openCustomExModal(id)`), mas ainda não há botão na
+  interface que o abra.
 - Novos exercícios: Extensão Lombar (Banco Romano), Cadeira Adutora, Desenvolvimento Arnold,
   Swing de Kettlebell, Caminhada do Fazendeiro, Empurrar Trenó, Superman, Agachamento Sumô, Pullover.
 - **Co-ativação (sinergia):** puxadas, empurradas e compostos podem sinalizar apoio indireto
@@ -150,6 +151,13 @@ npm test             # motor + UI + módulos + Service Worker
 - `node test_sw.js` — Service Worker: instalação, offline, ativação e a regra de versão.
 - Cada runner confere o manifesto das áreas e um piso de checagens (`tests/**/99_fechamento.js`):
   apagar, renomear ou esvaziar um trecho de teste falha em vez de reduzir a cobertura em silêncio.
+- `npm run check:docs` — docs e comentários não podem apontar para linha/seção dos runners
+  (os checks vivem em `tests/engine/*` e `tests/ui/*`) nem para um arquivo de área inexistente.
+- `node scripts/validacao-navegador.js` — validação em navegador real (Service Worker, offline,
+  IndexedDB, download do backup, layout 412 px). Fora do `npm test`; precisa de
+  `npm i --no-save playwright-core` e de um Chrome (`DIARIO_CHROME_PATH`). Sem eles, pula com
+  mensagem clara. Na CI roda no job "Validação em navegador real (não bloqueia)". Roteiro e
+  resultados em `docs/VALIDACAO_MANUAL.md`.
 
 - `js/storage.js` — camada única de armazenamento (IndexedDB + espelho no localStorage, migração automática, imagens como Blob)
 - `js/app.js` — entry: importa os demais módulos na ordem certa
@@ -160,10 +168,14 @@ npm test             # motor + UI + módulos + Service Worker
 - `js/planilha_data.js` — seed com o histórico real
 - `js/historico.js` — aba Histórico + CSV multi-aba
 - `js/busca.js` — aba Buscar + seletor rápido
+- `js/custom_exercises.js` — exercícios personalizados (cadastro, índice de busca e a janela "➕ Novo exercício")
 - `js/datas.js` — regra única de data válida (backup, CSV e recuperação)
 - `js/persistencia.js` — gravação do estado (logs, treinos, ajustes, jogo, Story Card)
 - `js/backup.js` — validação do backup JSON, montagem do pacote e parser de CSV
 - `js/cartoes.js` — Story Card e Card do Chefão (canvas, arte temática e símbolos)
 - `js/calculadoras.js` — aba Cálculos (1RM, aquecimento, anilhas), recordes e medalhas
 - `js/sessao.js` — treino ao vivo, cronômetro de descanso, bi-sets e efeitos do boss
+- `js/config.js` — migração para o IndexedDB, painel de armazenamento (Config) e seed do primeiro uso
+- `js/boss.js` — tela do chefão, retratos (padrão, upload e reservas) e lightbox da arte
+- `js/registro.js` — formulário de registro, última vez/repetir, edição, registros do dia, mapa de prontidão, sugestão do dia e cardio
 - `js/app.js` — entry: importa os demais módulos e concentra estado, sessão e UI (núcleo)

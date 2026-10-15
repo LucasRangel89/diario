@@ -6,9 +6,10 @@
    Por que este arquivo existe
    ---------------------------
    `test_engine.js` e `test_ui.js` removem import/export e rodam o
-   código concatenado num MESMO escopo. Isso é ótimo para testar a
-   lógica, mas esconde um modo de falha inteiro: em produção o
-   navegador executa cada `js/*.js` como ES module, com escopo próprio
+   código concatenado num MESMO escopo (os runners continuam fazendo
+   isso; desde a R3 os checks vivem em `tests/engine/*` e `tests/ui/*`).
+   Isso é ótimo para testar a lógica, mas esconde um modo de falha
+   inteiro: em produção o navegador executa cada `js/*.js` como ES module, com escopo próprio
    e em modo estrito. Um nome usado em app.js e declarado em outro
    arquivo SEM import funciona no teste e quebra no navegador
    (ReferenceError no boot), e uma variável global implícita

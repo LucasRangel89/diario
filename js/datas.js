@@ -8,7 +8,7 @@
    (ISO válida, 31/02, 13/01, bissexto 2028-02-29, 2027-02-29,
    vazios, com hora, ano 0000/0100/9999, não-string) e 8 entradas
    que não são registro — e são EQUIVALENTES. Esta é a regra única:
-   qualquer divergência futura é pega por teste (test_engine.js,
+   qualquer divergência futura é pega por teste (tests/engine/50_dados_validacao.js,
    seção 32).
 
    Regra (a mais conservadora das duas, que é a mesma):

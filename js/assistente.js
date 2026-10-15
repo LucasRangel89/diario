@@ -7,7 +7,7 @@ import { catalogInfoCustom } from './custom_exercises.js';
    ------------------------------------------------------------
    Tudo aqui é função PURA (sem DOM): recebe listas/logs e devolve dados.
    A UI (app.js) só apresenta os resultados. Isso deixa o algoritmo testável
-   com vetores fixos no test_engine.js.
+   com vetores fixos em tests/engine/*.
    ------------------------------------------------------------
    REGRAS DE ORDENAÇÃO (prioridade aprovada):
      1. Ativação/correção primeiro (Manguito Rotador, Face Pull);
