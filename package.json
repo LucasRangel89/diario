@@ -6,7 +6,7 @@
   "scripts": {
     "build:css": "tailwindcss -c tailwind.config.js -i src/tailwind.css -o vendor/tailwind.css --minify",
     "watch:css": "tailwindcss -c tailwind.config.js -i src/tailwind.css -o vendor/tailwind.css --watch",
-    "serve": "python3 -m http.server 8080 --bind 0.0.0.0",
+    "serve": "python3 -m http.server 8080 --bind 127.0.0.1",
     "test": "node test_engine.js && node test_ui.js",
     "test:engine": "node test_engine.js",
     "test:ui": "node test_ui.js",
