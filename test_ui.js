@@ -63,7 +63,7 @@ window.fetch = url => {
 // ---------- carrega os módulos na ordem do index.html ----------
 // vm.runInContext mantém o escopo léxico global entre scripts (como no navegador),
 // então os `const`/`let` de catalogo.js continuam visíveis para app.js.
-['js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
+['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/app.js']
     .forEach(f => vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f }));
 
 // ---------- helpers ----------

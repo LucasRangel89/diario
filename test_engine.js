@@ -4,8 +4,10 @@ const fs = require('fs');
 // ---- Stubs de browser ----
 const noop = () => { };
 global.window = { localStorage: { getItem: () => null, setItem: noop }, addEventListener: noop, onload: null };
+const __docListeners = [];
+global.__docListeners = __docListeners; // visível dentro do new Function abaixo
 global.document = {
-    addEventListener: noop,
+    addEventListener: (type, fn) => { __docListeners.push(type); },
     getElementById: () => null,
     createElement: () => ({ classList: { add: noop, remove: noop, toggle: noop }, style: {}, appendChild: noop, remove: noop, setAttribute: noop, querySelector: () => ({ onclick: null }), click: noop }),
     body: { appendChild: noop }
@@ -52,7 +54,7 @@ function makeFakeIDB() {
 global.indexedDB = makeFakeIDB();
 
 // ---- Carrega os módulos (mesmo escopo) ----
-const src = ['js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/app.js']
+const src = ['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/app.js']
     .map(p => fs.readFileSync(p, 'utf8')).join('\n');
 const api = new Function(src + `
   return {
@@ -81,6 +83,9 @@ const api = new Function(src + `
     get STATE() { return { logs, settings, userBodyweight }; },
     setLogs(arr) { logs = arr; },
     storageRef: storage,
+    docListeners: __docListeners,
+    diarioActions: window.__diarioActions,
+    getDiarioAction: window.getDiarioAction,
     setBW(v) { userBodyweight = v; },
     setWeightLog(arr) { weightLog = arr; },
     get logsArr() { return logs; },
@@ -903,6 +908,11 @@ check('lombar carregada apresenta horas restantes aproximadas', lombarCarregada.
         rec && rec.ok && rec.restored >= 2 && storage.get('berzerker_legado_a') === antes && storage.get('berzerker_legado_b') === '2', rec);
     const rec2 = await storage.recoverFromIndexedDB();
     check('recuperação repetida não restaura nada (idempotente)', rec2 && rec2.ok && rec2.restored === 0, rec2);
+
+    // ---- Etapa 5.1 (sub-etapa 3): despachante central de eventos ----
+    console.log('\n== 5.1b. Despachante de eventos (js/actions.js) ==');
+    check('actions.js registra os 5 tipos de evento', ['click','keydown','change','input','submit'].every(t => api.docListeners.includes(t)) && api.docListeners.includes('error'));
+    check('registro de ações existe e registra função', typeof api.diarioActions === 'object' && typeof api.getDiarioAction('registerDiarioAction') === 'undefined');
 
     // ---- Etapa 5.1: manifestos de export (fundação ES modules) ----
     console.log('\n== 5.1. Manifestos de export por arquivo ==');
