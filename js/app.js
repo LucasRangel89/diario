@@ -1245,18 +1245,26 @@ function renderRecoveryMap() {
             <div class="text-[10px] text-gray-600 truncate border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
         </div>`;
     }).join('');
-    // Painel de ALERTA DA LOMBAR
+    // Painel da LOMBAR — alerta só quando há o que alertar
     const lombarEl = document.getElementById('lombar-alert-panel');
     if (lombarEl) {
         const lombar = regiaoLombarState(logs, nowMs);
-        lombarEl.innerHTML = `
+        if (!lombar.carregada && lombar.pct >= 100) {
+            // Região livre não é emergência: uma linha verde compacta basta, e o
+            // mapa de recuperação abre com informação útil em vez de um aviso
+            // permanente de "⚠️ Lombar" que ninguém consegue desligar.
+            lombarEl.innerHTML = `
+            <div class="bg-emerald-950/20 border ${lombar.border} rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
+                <span class="font-oswald text-sm font-bold text-emerald-400 uppercase tracking-wide leading-none whitespace-nowrap">✅ Lombar 100% — livre</span>
+                ${lombar.last ? `<span class="text-[10px] font-mono text-gray-500 break-words">Última carga: ${escapeHtml(lombar.last)}</span>` : '<span class="text-[10px] font-mono text-gray-500">Sem carga registrada na lombar.</span>'}
+            </div>`;
+        } else lombarEl.innerHTML = `
         <div class="bg-berzerker-dark border ${lombar.border} rounded-xl p-4 space-y-3">
-            <div class="flex items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
-                    <span class="text-xl leading-none">${lombar.icon}</span>
-                    <span class="font-oswald text-lg font-bold text-white uppercase tracking-wide leading-none">⚠️ Lombar</span>
+                    <span class="font-oswald text-lg font-bold text-white uppercase tracking-wide leading-none">Lombar ${lombar.icon}</span>
                 </div>
-                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${lombar.badge}">${lombar.label}</span>
+                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${lombar.badge} whitespace-nowrap">${lombar.label}</span>
             </div>
             <div>
                 <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">

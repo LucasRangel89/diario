@@ -533,6 +533,18 @@ check('painel do montador: o que falta na semana', $('builder-week-gaps').textCo
 check('painel anuncia a faixa própria do Antebraço', $('builder-week-gaps').textContent.includes('Antebraço 4–10'), $('builder-week-gaps').textContent.slice(0, 160));
 const boxAntebraco = recoveryBoxes.find(el => el.querySelector('.font-oswald')?.textContent.trim() === 'Antebraço');
 check('box do Antebraço cobra 4–10 séries (não 10–20)', !!boxAntebraco && boxAntebraco.textContent.includes('/4–10 séries'), boxAntebraco && boxAntebraco.textContent.match(/\d+\/\d+–\d+ séries/));
+const lombarLivre = $('lombar-alert-panel').textContent;
+check('lombar livre vira linha verde compacta (sem painel de alerta)',
+    lombarLivre.includes('✅ Lombar 100% — livre') && !lombarLivre.includes('Recuperação da região') && !lombarLivre.includes('⚠️ Lombar'),
+    lombarLivre.slice(0, 140));
+ev(`window.__lombarBackup = logs; logs = [{ id: -7, kind: 'peso', muscle: 'Costas', date: getTodayLocalISO(), exercise: 'Levantamento Terra', reps: [5, 5, 5] }]; renderRecoveryMap();`);
+const lombarCarregada = $('lombar-alert-panel').textContent;
+check('lombar carregada mostra o painel completo, com o ícone do estado no título',
+    lombarCarregada.includes('Recuperação da região') && /Lombar\s*⚠️/.test(lombarCarregada)
+    && lombarCarregada.includes('MUITO CARREGADA') && !lombarCarregada.includes('✅ Lombar 100%'),
+    lombarCarregada.slice(0, 140));
+ev('logs = window.__lombarBackup; delete window.__lombarBackup; renderRecoveryMap();');
+check('voltar aos registros reais devolve a linha compacta', $('lombar-alert-panel').textContent.includes('✅ Lombar 100% — livre'));
 ev(`window.__gapsBackup = logs; logs = [{ id: -1, kind: 'peso', muscle: 'Costas', date: getTodayLocalISO(), exercise: 'Remada Baixa na Polia', reps: [10, 10, 10] }]; renderWeekGaps();`);
 check('chip mostra o apoio indireto da semana sem abater a meta',
     $('builder-week-gaps').textContent.includes('Antebraço: 0/4 min · faltam 4 · 🤝 +1,5 indiretos'),
