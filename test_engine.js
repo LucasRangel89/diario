@@ -32,7 +32,7 @@ const api = new Function(src + `
     weeklySetsByMuscle, fatigueState, suggestNextWorkout, weeklyGaps, diasDesdeUltimoTreino,
     FAIXA_SERIES_SEMANAIS, MUSCULOS_MAPA, MUSCLE_META, normalizeMuscle, PLANILHA_SESSOES,
     normalizeSavedWorkouts, suggestSessaoFor, CATALOG_ALIASES,
-    FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, seriesIndiretasSemana,
+    FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, seriesIndiretasSemana, wrapCanvasText,
     get STATE() { return { logs, settings, userBodyweight }; },
     setLogs(arr) { logs = arr; },
     setBW(v) { userBodyweight = v; },
@@ -684,6 +684,38 @@ check('gaps continuam ordenados pela maior falta', (() => {
     const g = api.weeklyGaps(logsMetaGrupo, '2026-10-14');
     return g.every((x, i) => i === 0 || g[i - 1].faltam >= x.faltam);
 })());
+
+console.log('\n== 29. Card do Chefão: moldura escalável e quebra da brecha tática ==');
+// ctx de mentira que mede 10 px por caractere — suficiente para testar a quebra
+const ctxMedidor = { measureText: s => ({ width: String(s).length * 10 }) };
+check('wrapCanvasText quebra palavra a palavra pela largura',
+    api.wrapCanvasText(ctxMedidor, 'aaa bbb ccc ddd', 100, 2).join('|') === 'aaa bbb|ccc ddd',
+    api.wrapCanvasText(ctxMedidor, 'aaa bbb ccc ddd', 100, 2));
+check('o que não cabe na última linha é cortado com reticências',
+    api.wrapCanvasText(ctxMedidor, 'aaa bbb ccc ddd eee', 70, 2).join('|') === 'aaa bbb|ccc dd…',
+    api.wrapCanvasText(ctxMedidor, 'aaa bbb ccc ddd eee', 70, 2));
+check('maxLinhas 1 devolve uma linha só, cortada',
+    api.wrapCanvasText(ctxMedidor, 'aaa bbb ccc', 70, 1).join('|') === 'aaa bb…',
+    api.wrapCanvasText(ctxMedidor, 'aaa bbb ccc', 70, 1));
+check('texto curto não quebra nem ganha reticências',
+    api.wrapCanvasText(ctxMedidor, 'Brecha tática: curta', 880, 2).join('|') === 'Brecha tática: curta');
+check('medida não-numérica vira 0 (texto inteiro numa linha, sem loop)',
+    api.wrapCanvasText({ measureText: () => ({ width: NaN }) }, 'Brecha tática: texto longo que ninguém consegue medir aqui', 880, 2).length === 1
+    && api.wrapCanvasText({}, 'a b c d', 880, 2).length === 1);
+check('texto vazio devolve lista vazia', api.wrapCanvasText(ctxMedidor, '', 880, 2).length === 0 && api.wrapCanvasText(ctxMedidor, null, 880, 2).length === 0);
+
+const appSrcCard = fs.readFileSync('js/app.js', 'utf8');
+check('drawThemedFrame lê o canvas real e escala a arte 1080×1920',
+    /function drawThemedFrame\(ctx, palette\)[\s\S]{0,420}ctx\.scale\(W \/ 1080, H \/ 1920\)/.test(appSrcCard)
+    && /canvasMeasure\(ctx && ctx\.canvas && ctx\.canvas\.width, 1080\)/.test(appSrcCard)
+    && /canvasMeasure\(ctx && ctx\.canvas && ctx\.canvas\.height, 1920\)/.test(appSrcCard));
+check('moldura continua desenhada entre save() e restore()',
+    /ctx\.save\(\);\s*ctx\.scale\(W \/ 1080, H \/ 1920\);\s*drawThemedFrameArt\(ctx, palette\);\s*ctx\.restore\(\);/.test(appSrcCard));
+check('card do chefão desenha a brecha tática em até 2 linhas de 880 px',
+    /wrapCanvasText\(ctx, `Brecha tática: \$\{boss\.weakReason \|\| 'Ataque temático\.'\}`, 880, 2\)/.test(appSrcCard));
+check('layout do card reequilibrado (688 · 736 · 782 · 880 · 940 · 990)',
+    [688, 736, 782, 880, 940, 990].every(y => appSrcCard.includes(`, 540, ${y}`)),
+    [688, 736, 782, 880, 940, 990].filter(y => !appSrcCard.includes(`, 540, ${y}`)));
 
 console.log('\n' + (failures === 0 ? '✅ TODOS OS TESTES PASSARAM' : `❌ ${failures} FALHA(S)`));
 process.exit(failures === 0 ? 0 : 1);

@@ -647,6 +647,46 @@ check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexis
     ev("reservaManifest = JSON.parse(window.__manifestBackup); delete window.__manifestBackup; renderReservaStudio();");
     check('trocar de chefão no select redesenha a grade do estúdio', (ev("selectReservaBoss(BOSSES[3].id)"), ev('reservaBossId')) === ev('BOSSES[3].id') && $('reserva-boss-select').value === ev('BOSSES[3].id'));
 
+    // ============================ CARD DO CHEFÃO ============================
+    console.log('\n== UI 12d. Card do Chefão: moldura escalável e brecha tática ==');
+    navTo('boss');
+    ev('openBossDefeatCard()');
+    const canvasCard = $('boss-card-canvas');
+    check('canvas do card é 1080×1080 (o botão anuncia o tamanho real)',
+        canvasCard.width === 1080 && canvasCard.height === 1080 && /1080×1080/.test(document.body.textContent),
+        [canvasCard.width, canvasCard.height]);
+
+    // Gravador de desenho: o ctx padrão do teste engole tudo, então aqui o
+    // canvas recebe um ctx que anota fillText/scale/save/restore e devolve um
+    // encadeamento vazio para o resto (gradientes, arcos, recortes).
+    const chamadasCard = [];
+    const noopChain = () => new Proxy(function () { }, { get: (t, k) => (k === 'width' ? 0 : noopChain()), set: () => true, apply: () => noopChain() });
+    const alvoCtx = {
+        canvas: canvasCard,
+        save: () => chamadasCard.push(['save']),
+        restore: () => chamadasCard.push(['restore']),
+        scale: (x, y) => chamadasCard.push(['scale', x, y]),
+        fillText: (t, x, y) => chamadasCard.push(['fillText', String(t), x, y]),
+        measureText: t => ({ width: String(t).length * 12 })
+    };
+    canvasCard.getContext = () => new Proxy(alvoCtx, { get: (t, k) => (k in t ? t[k] : noopChain()), set: () => true });
+    ev('generateBossDefeatCard()');
+
+    const escalasCard = chamadasCard.filter(c => c[0] === 'scale');
+    check('moldura é escalada para o canvas real (1080/1080 × 1080/1920)',
+        escalasCard.some(c => c[1] === 1 && Math.abs(c[2] - 1080 / 1920) < 1e-9), escalasCard.slice(0, 3));
+    check('save/restore envolvem a moldura (o resto do card não herda a escala)',
+        chamadasCard.some(c => c[0] === 'save') && chamadasCard.some(c => c[0] === 'restore'));
+    const textosCard = chamadasCard.filter(c => c[0] === 'fillText').map(c => c[1]);
+    const brechasCard = chamadasCard.filter(c => c[0] === 'fillText' && String(c[1]).startsWith('Brecha tática:'));
+    check('card desenha a brecha tática do chefão', brechasCard.length > 0, textosCard.slice(0, 5));
+    check('brecha cabe em até 2 linhas (782 e 812)', brechasCard.length <= 2 && brechasCard.every(c => c[3] === 782 || c[3] === 812), brechasCard.map(c => c[3]));
+    const ysCard = chamadasCard.filter(c => c[0] === 'fillText').map(c => c[3]);
+    check('layout reequilibrado: nome 688 · HP 736 · DMG 880 · patente 940 · data 990',
+        [688, 736, 880, 940, 990].every(y => ysCard.includes(y)), ysCard);
+    check('card continua com título, HP e patente', textosCard.some(t => /CHEFÃO DERROTADO|EM BATALHA/.test(t)) && textosCard.some(t => /HP · fraco a/.test(t)) && textosCard.some(t => /Nível/.test(t)), textosCard.slice(0, 4));
+    ev("document.getElementById('boss-card-overlay')?.remove()");
+
     // ============================ CONSOLE ============================
     console.log('\n== UI 12. Console limpo ==');
     const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));

@@ -2654,7 +2654,65 @@ function removeBgImage() {
     generateStoryCard();
 }
 
+/* Quebra um texto em até `maxLinhas` linhas de no máximo `maxLargura` px,
+   medindo palavra a palavra com ctx.measureText. O que não couber na última
+   linha é cortado com "…". Medidas não-numéricas (canvas sem implementação
+   real, como no smoke test de UI) contam como 0: assim nada entra em loop nem
+   quebra o texto à toa. */
+function wrapCanvasText(ctx, texto, maxLargura, maxLinhas) {
+    const palavras = String(texto ?? '').split(/\s+/).filter(Boolean);
+    const limiteLinhas = Math.max(1, Number(maxLinhas) || 1);
+    if (!palavras.length) return [];
+    const largura = s => {
+        if (!ctx || typeof ctx.measureText !== 'function') return 0;
+        let n;
+        try { n = Number(ctx.measureText(s)?.width); } catch (e) { return 0; }
+        return Number.isFinite(n) ? n : 0;
+    };
+    const limite = Number(maxLargura) > 0 ? Number(maxLargura) : Infinity;
+    const linhas = [];
+    let atual = '';
+    let i = 0;
+    while (i < palavras.length) {
+        const candidata = atual ? `${atual} ${palavras[i]}` : palavras[i];
+        // A primeira palavra entra sempre, mesmo maior que o limite (senão o
+        // laço não anda).
+        if (!atual || largura(candidata) <= limite) { atual = candidata; i++; continue; }
+        if (linhas.length + 1 >= limiteLinhas) break;   // não há próxima linha: o resto vira "…"
+        linhas.push(atual);
+        atual = '';
+    }
+    if (i < palavras.length) {
+        let corte = atual;
+        while (corte && largura(`${corte}…`) > limite) corte = corte.slice(0, -1).replace(/\s+$/, '');
+        atual = `${corte}…`;
+    }
+    if (atual) linhas.push(atual);
+    return linhas.slice(0, limiteLinhas);
+}
+
+// A arte da moldura é desenhada num quadro de referência 1080×1920 (o formato
+// do Story Card). drawThemedFrame escala esse desenho para o canvas real, senão
+// o Card do Chefão (1080×1080) perdia três lados da moldura — o traço caía
+// fora da área visível e o card saía "sem tema".
+// Medida numérica defensiva: canvas sem implementação (teste de UI) pode
+// devolver objeto no lugar de número — e a moldura não pode quebrar por isso.
+function canvasMeasure(v, fallback) {
+    let n;
+    try { n = Number(v); } catch (e) { return fallback; }
+    return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
 function drawThemedFrame(ctx, palette) {
+    const W = canvasMeasure(ctx && ctx.canvas && ctx.canvas.width, 1080);
+    const H = canvasMeasure(ctx && ctx.canvas && ctx.canvas.height, 1920);
+    ctx.save();
+    ctx.scale(W / 1080, H / 1920);
+    drawThemedFrameArt(ctx, palette);
+    ctx.restore();
+}
+
+function drawThemedFrameArt(ctx, palette) {
     // Moldura acompanhando o tema de gamificação
     const frame = (THEME && THEME.frame) || 'ferro';
     if (frame === 'ouro') {
@@ -3149,27 +3207,34 @@ function generateBossDefeatCard() {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 56px Oswald, sans-serif';
-    ctx.fillText(boss.name.toUpperCase(), 540, 700);
+    ctx.fillText(boss.name.toUpperCase(), 540, 688);
     ctx.fillStyle = '#9ca3af';
     ctx.font = '28px Inter, sans-serif';
-    ctx.fillText(`${fmtN(boss.maxHp)} HP · fraco a ${boss.weak}`, 540, 750);
+    ctx.fillText(`${fmtN(boss.maxHp)} HP · fraco a ${boss.weak}`, 540, 736);
+
+    // Brecha tática: o "porquê" do ponto fraco entra no card (até 2 linhas de
+    // 880 px) — antes o card só dizia "fraco a X" e perdia a dica de treino.
+    ctx.fillStyle = '#c4b5fd';
+    ctx.font = '24px Inter, sans-serif';
+    wrapCanvasText(ctx, `Brecha tática: ${boss.weakReason || 'Ataque temático.'}`, 880, 2)
+        .forEach((linha, i) => ctx.fillText(linha, 540, 782 + i * 30));
 
     ctx.fillStyle = '#fbbf24';
     ctx.font = 'bold 44px Oswald, sans-serif';
-    ctx.fillText(`${fmtN(prog.totalDamage)} DMG ACUMULADOS`, 540, 850);
+    ctx.fillText(`${fmtN(prog.totalDamage)} DMG ACUMULADOS`, 540, 880);
 
     ctx.fillStyle = '#9ca3af';
     ctx.font = '26px Inter, sans-serif';
     const rankImg = getCardImg(rankEmblemSrc(activeGameThemeId || THEME?.id, rank.level));
     if (rankImg && rankImg.complete && rankImg.naturalWidth > 0) {
         ctx.save();
-        ctx.beginPath(); ctx.arc(360, 902, 26, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
-        ctx.drawImage(rankImg, 334, 876, 52, 52);
+        ctx.beginPath(); ctx.arc(360, 932, 26, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+        ctx.drawImage(rankImg, 334, 906, 52, 52);
         ctx.restore();
     }
-    ctx.fillText(`${rank.name} · Nível ${rank.level}`, 540, 910);
+    ctx.fillText(`${rank.name} · Nível ${rank.level}`, 540, 940);
     ctx.font = '22px Inter, sans-serif';
-    ctx.fillText(`Diário de Cargas · ${getTodayLocalISO()}`, 540, 960);
+    ctx.fillText(`Diário de Cargas · ${getTodayLocalISO()}`, 540, 990);
     ctx.textAlign = 'left';
 }
 
