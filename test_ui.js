@@ -715,6 +715,42 @@ check('badge sem slug de arte cai direto no emoji', ev("badgeArtImg('slug-inexis
     check('card continua com título, HP e patente', textosCard.some(t => /CHEFÃO DERROTADO|EM BATALHA/.test(t)) && textosCard.some(t => /HP · fraco a/.test(t)) && textosCard.some(t => /Nível/.test(t)), textosCard.slice(0, 4));
     ev("document.getElementById('boss-card-overlay')?.remove()");
 
+    // ============================ GRADES NO CELULAR ============================
+    console.log('\n== UI 12e. Grades estáveis e legíveis no celular ==');
+    const appSrcMobile = fs.readFileSync('js/app.js', 'utf8');
+    navTo('boss');
+    ev('renderBossBattleUI(); renderBadgesAndStreak(); showThemeGallery();');
+    const thumbBosses = [...document.querySelectorAll('#bosses-grid img')];
+    check('grade de chefões tem retrato nos 12 tiles', thumbBosses.length === 12, thumbBosses.length);
+    check('thumbs de chefões nascem com 40×40 intrínseco e não encolhem',
+        thumbBosses.every(i => i.getAttribute('width') === '40' && i.getAttribute('height') === '40'
+            && /width:40px;height:40px/.test(i.getAttribute('style') || '') && i.className.includes('shrink-0')),
+        (thumbBosses[0] || {}).outerHTML);
+    const cardHTML = ($('active-boss-card') || {}).innerHTML || '';
+    check('cabeçalho do card do chefão quebra em tela estreita e não corta a meta',
+        /flex-wrap/.test(cardHTML) && /whitespace-nowrap/.test(cardHTML), (cardHTML.match(/<span class="flex[^>]*>/) || [])[0]);
+    check('nome, descrição, brecha e fraqueza do chefão quebram palavra por palavra',
+        /leading-tight break-words/.test(cardHTML) && (cardHTML.match(/break-words/g) || []).length >= 3
+        && /text-\[11px\][^"]*break-words/.test(cardHTML), (cardHTML.match(/break-words/g) || []).length);
+    check('descrições do card e dos tiles em 11px (10px some no celular)', (cardHTML.match(/text-\[11px\]/g) || []).length >= 3
+        && !/text-\[9px\]/.test(appSrcMobile));
+    const imgsGaleria = [...document.querySelectorAll('#theme-gallery-overlay img')];
+    check('galeria de temas renderiza ícones e emblemas de patente', imgsGaleria.length >= 20, imgsGaleria.length);
+    check('ícones de tema e emblemas têm largura/altura intrínsecas (sem pulo da grade)',
+        imgsGaleria.every(i => /^\d+$/.test(i.getAttribute('width') || '') && Number(i.getAttribute('width')) > 0
+            && new RegExp(`width:${i.getAttribute('width')}px;height:${i.getAttribute('width')}px`).test(i.getAttribute('style') || '')
+            && i.className.includes('shrink-0') && i.getAttribute('loading') === 'lazy'),
+        imgsGaleria.slice(0, 2).map(i => i.outerHTML.slice(0, 140)));
+    const imgsBadges = [...document.querySelectorAll('#badges-grid img')];
+    check('arte das conquistas tem 48×48 fixo e não encolhe',
+        imgsBadges.length === 16 && imgsBadges.every(i => i.getAttribute('width') === '48' && i.getAttribute('height') === '48'
+            && /width:48px;height:48px/.test(i.getAttribute('style') || '') && i.className.includes('shrink-0')),
+        (imgsBadges[0] || {}).outerHTML);
+    check('rótulos dos tiles de reserva legíveis (10px) e arte com tamanho fixo',
+        /block truncate text-\[10px\][^"]*leading-tight/.test(appSrcMobile)
+        && /width="40" height="40"[^>]*shrink-0/.test(appSrcMobile));
+    ev('closeTopOverlay();');
+
     // ============================ CONSOLE ============================
     console.log('\n== UI 12. Console limpo ==');
     const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));

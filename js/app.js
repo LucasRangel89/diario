@@ -84,9 +84,19 @@ const THEME_IDS_LIST = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', '
 const THEME_ICON_IMGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/temas/${id}.webp`])));
 const THEME_CARD_BGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/cards/${id}.webp`])));
 
+// Escala de espaçamento do Tailwind em px. Serve para dar largura/altura
+// intrínsecas às artes: sem os atributos o navegador reserva 0px até a imagem
+// carregar e a grade inteira "pula" no celular (CLS).
+const TAILWIND_SPACING_PX = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 7: 28, 8: 32, 10: 40, 12: 48, 14: 56, 16: 64, 20: 80, 24: 96 };
+function imgSizeAttrs(cls, fallback = 24) {
+    const m = /(?:^|\s)[wh]-(\d+)(?=\s|$)/.exec(String(cls || ''));
+    const px = (m && TAILWIND_SPACING_PX[Number(m[1])]) || fallback;
+    return `width="${px}" height="${px}" style="width:${px}px;height:${px}px"`;
+}
+
 function themeIconImg(themeId, cls = 'h-6 w-6 rounded-md') {
     const src = THEME_ICON_IMGS[themeId];
-    return src ? `<img src="${src}" alt="" class="${cls}">` : `<span class="text-2xl">${THEME_ICONS[themeId] || '🎭'}</span>`;
+    return src ? `<img src="${src}" alt="" ${imgSizeAttrs(cls)} loading="lazy" decoding="async" class="shrink-0 ${cls}">` : `<span class="text-2xl shrink-0">${THEME_ICONS[themeId] || '🎭'}</span>`;
 }
 
 // Emblema de patente desenhado em arte própria (círculo de ferro + símbolo).
@@ -97,7 +107,7 @@ function rankEmblemSrc(themeId, level) {
 }
 
 function rankEmblemImg(themeId, level, cls = 'h-7 w-7 rounded-full') {
-    return `<img src="${rankEmblemSrc(themeId, level)}" alt="" class="${cls}">`;
+    return `<img src="${rankEmblemSrc(themeId, level)}" alt="" ${imgSizeAttrs(cls, 28)} loading="lazy" decoding="async" class="shrink-0 ${cls}">`;
 }
 
 // Cache de imagens para os cards em canvas (fundo do tema + emblema da patente).
@@ -609,15 +619,15 @@ function showThemeGallery() {
         return `<button type="button" data-theme-id="${theme.id}" onclick="requestGameThemeChange('${theme.id}')" class="text-left rounded-2xl border ${active ? 'border-berzerker-500 bg-berzerker-600/10 ring-1 ring-berzerker-500/30' : 'border-berzerker-border bg-berzerker-dark hover:border-gray-500'} p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-berzerker-500">
             <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-2 min-w-0">${themeIconImg(theme.id, 'h-8 w-8 rounded-lg border border-berzerker-border')}<strong class="text-sm text-white leading-tight">${escapeHtml(theme.name)}</strong></div>
-                ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[9px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
+                ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[10px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
             </div>
             <div class="mt-3 flex items-end justify-between gap-2">
-                <div class="min-w-0"><span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Patente atual</span><span class="block truncate text-xs font-bold text-amber-300">${rankEmblemImg(theme.id, currentRank.level, 'inline-block h-4 w-4 rounded-full align-[-3px] mr-1')} ${escapeHtml(currentRank.name)}</span></div>
+                <div class="min-w-0"><span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Patente atual</span><span class="block truncate text-xs font-bold text-amber-300">${rankEmblemImg(theme.id, currentRank.level, 'inline-block h-4 w-4 rounded-full align-[-3px] mr-1')} ${escapeHtml(currentRank.name)}</span></div>
                 <span class="shrink-0 text-[10px] font-mono text-gray-400">Nível ${currentRank.level}/10</span>
             </div>
             <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-berzerker-border"><div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-300" style="width:${progress}%"></div></div>
-            <div class="mt-1.5 flex items-center justify-between gap-2 text-[9px] font-mono text-gray-500"><span>${fmtN(data.xp)} XP${nextRank ? ` / ${fmtN(nextRank.minXp)} XP` : ' · nível máximo'}</span><span>${defeated}/${theme.bosses.length} chefões</span></div>
-            <p class="mt-2 line-clamp-2 text-[10px] leading-relaxed text-gray-500">${escapeHtml(theme.desc)}</p>
+            <div class="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-[10px] font-mono text-gray-500"><span>${fmtN(data.xp)} XP${nextRank ? ` / ${fmtN(nextRank.minXp)} XP` : ' · nível máximo'}</span><span>${defeated}/${theme.bosses.length} chefões</span></div>
+            <p class="mt-2 line-clamp-2 text-[11px] leading-snug text-gray-500">${escapeHtml(theme.desc)}</p>
         </button>`;
     }).join('');
     const overlay = document.createElement('div');
@@ -665,7 +675,7 @@ function showRanksModal(themeId) {
         const tag = ['✔ conquistada', '◀ você está aqui', '🔒'][st];
         return `<div class="flex items-center justify-between gap-2 border ${cls} rounded-lg px-3 py-2">
             <div class="flex items-center gap-2 min-w-0">${rankEmblemImg(t.id, lvl)}<span class="text-xs font-bold text-white truncate">${escapeHtml(x.name)}</span></div>
-            <div class="text-right shrink-0"><div class="text-[10px] font-mono text-gray-400">${fmt(x.minXp)} XP</div><div class="text-[9px] font-bold text-gray-500 uppercase">${tag}</div></div>
+            <div class="text-right shrink-0"><div class="text-[10px] font-mono text-gray-400">${fmt(x.minXp)} XP</div><div class="text-[10px] font-bold text-gray-500 uppercase leading-tight">${tag}</div></div>
         </div>`;
     }).join('');
     const tabs = Object.values(THEMES).map(x => `<button onclick="showRanksModal('${x.id}')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${x.id === t.id ? 'bg-berzerker-600 text-white' : 'bg-berzerker-border text-gray-400 hover:text-white'}">${escapeHtml(x.name)}</button>`).join('');
@@ -1248,7 +1258,7 @@ function renderRecoveryMap() {
             </div>
             <div class="flex items-center justify-between gap-2 flex-wrap">
                 <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${st.badge}">${st.label}</span>
-                <span class="text-[10px] text-gray-500 font-mono">${st.info}</span>
+                <span class="text-[11px] text-gray-500 font-mono leading-snug break-words">${st.info}</span>
             </div>
             <div>
                 <div class="flex justify-between text-[10px] font-bold uppercase text-gray-500 mb-1">
@@ -1258,9 +1268,9 @@ function renderRecoveryMap() {
                     <div class="h-full ${st.bar} rounded-full transition-all duration-500" style="width: ${st.pct === null ? 100 : st.pct}%"></div>
                 </div>
             </div>
-            <div class="text-[10px] font-mono ${st.volumeStatus === 'abaixo' ? 'text-amber-400/90' : st.volumeStatus === 'acima' ? 'text-orange-400/90' : 'text-emerald-400/90'}">${st.volText}</div>
-            ${st.sinergia ? `<div title="${escapeHtml(st.sinergia.exercicios.join(' · '))}" class="text-[10px] font-mono text-cyan-400/80">${escapeHtml(st.sinergiaText)}</div>` : ''}
-            <div class="text-[10px] text-gray-600 truncate border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
+            <div class="text-[11px] font-mono leading-snug ${st.volumeStatus === 'abaixo' ? 'text-amber-400/90' : st.volumeStatus === 'acima' ? 'text-orange-400/90' : 'text-emerald-400/90'}">${st.volText}</div>
+            ${st.sinergia ? `<div title="${escapeHtml(st.sinergia.exercicios.join(' · '))}" class="text-[11px] font-mono leading-snug text-cyan-400/80">${escapeHtml(st.sinergiaText)}</div>` : ''}
+            <div class="text-[11px] text-gray-600 truncate leading-snug border-t border-berzerker-border pt-1.5">Último: ${escapeHtml(st.last)} · janela ${st.hoursNeed}h</div>
         </div>`;
     }).join('');
     // Painel da LOMBAR — alerta só quando há o que alertar
@@ -2022,7 +2032,7 @@ function renderSavedWorkouts() {
                 <span class="text-[10px] font-bold px-2 py-0.5 bg-berzerker-border text-gray-300 rounded uppercase whitespace-nowrap">${w.exercises.length} exs</span>
             </div>
             <div class="flex flex-wrap gap-1">
-                ${muscleTags.map(mt => `<span class="text-[9px] font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(mt)}</span>`).join('')}
+                ${muscleTags.map(mt => `<span class="text-[10px] font-bold px-1.5 py-0.5 leading-tight bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(mt)}</span>`).join('')}
             </div>
             <p class="text-[11px] text-gray-500 font-mono leading-relaxed line-clamp-2">${escapeHtml(w.exercises.map((e, i) => (i ? (e.biset ? ' + ' : ' · ') : '') + e.exercise).join(''))}</p>
             <div class="flex gap-2 pt-1 mt-auto">
@@ -2251,18 +2261,18 @@ function renderBossBattleUI() {
     const activeCard = document.getElementById('active-boss-card');
     if (activeCard) {
         activeCard.innerHTML = `
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
-                    <button type="button" onclick="openBossLightbox('${currentBoss.id}')" title="Ampliar retrato de ${escapeHtml(currentBoss.name)}" aria-label="Ampliar retrato de ${escapeHtml(currentBoss.name)}" class="w-20 h-20 sm:w-24 sm:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500">
-                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl" style="image-rendering:pixelated" alt="retrato de ${escapeHtml(currentBoss.name)}">` : `<span class="text-6xl">${currentBoss.icon}</span>`}
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <div class="flex items-start gap-3 sm:gap-4 min-w-0">
+                    <button type="button" onclick="openBossLightbox('${currentBoss.id}')" title="Ampliar retrato de ${escapeHtml(currentBoss.name)}" aria-label="Ampliar retrato de ${escapeHtml(currentBoss.name)}" class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500">
+                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl shrink-0" style="image-rendering:pixelated" alt="retrato de ${escapeHtml(currentBoss.name)}">` : `<span class="text-5xl sm:text-6xl leading-none">${currentBoss.icon}</span>`}
                     </button>
-                    <div>
-                        <span class="text-xs font-bold text-red-400 uppercase tracking-wider block">${THEME.bossLabel} — ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
-                        <h3 class="font-oswald text-3xl font-bold text-white uppercase">${escapeHtml(currentBoss.name)}</h3>
-                        <p class="text-xs text-gray-400 mt-0.5">${escapeHtml(currentBoss.desc)}</p>
-                        <p class="text-[10px] text-purple-200/80 mt-1"><strong>Brecha tática:</strong> ${escapeHtml(currentBoss.weakReason || 'Ataque temático.')}</p>
-                        <div class="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700 uppercase">💢 Fraqueza: ${escapeHtml(currentBoss.weak || '—')} ×1,25</span>
+                    <div class="min-w-0 flex-1">
+                        <span class="flex flex-wrap items-center gap-x-1.5 whitespace-nowrap text-xs font-bold text-red-400 uppercase tracking-wider">${THEME.bossLabel} <span aria-hidden="true">—</span> ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
+                        <h3 class="font-oswald text-2xl sm:text-3xl font-bold text-white uppercase leading-tight break-words">${escapeHtml(currentBoss.name)}</h3>
+                        <p class="text-[11px] leading-snug text-gray-400 mt-0.5 break-words">${escapeHtml(currentBoss.desc)}</p>
+                        <p class="text-[11px] leading-snug text-purple-200/80 mt-1 break-words"><strong>Brecha tática:</strong> ${escapeHtml(currentBoss.weakReason || 'Ataque temático.')}</p>
+                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1.5">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700 uppercase leading-tight break-words">💢 Fraqueza: ${escapeHtml(currentBoss.weak || '—')} ×1,25</span>
                             <label class="text-[10px] font-bold px-2 py-0.5 rounded bg-berzerker-border text-gray-300 cursor-pointer hover:bg-gray-700">🖼️ Retrato
                                 <input type="file" accept="image/*" class="hidden" onchange="uploadBossPortrait(event, '${currentBoss.id}')">
                             </label>
@@ -2270,10 +2280,10 @@ function renderBossBattleUI() {
                         </div>
                     </div>
                 </div>
-                <div class="text-right w-full sm:w-auto">
+                <div class="min-w-0 shrink-0 text-right w-full sm:w-auto">
                     <span class="text-xs text-gray-400 font-bold uppercase block">Vida do Boss (HP)</span>
-                    <div class="font-oswald text-3xl font-bold text-red-500">${fmtN(prog.currentHp)} / ${fmtN(currentBoss.maxHp)} HP</div>
-                    <div class="text-[10px] text-gray-500 font-mono mt-0.5">${prog.critCount} golpes críticos (PR ×2) · ${prog.weakHits} acertos na fraqueza</div>
+                    <div class="font-oswald text-2xl sm:text-3xl font-bold text-red-500 leading-tight">${fmtN(prog.currentHp)} / ${fmtN(currentBoss.maxHp)} HP</div>
+                    <div class="text-[11px] text-gray-500 font-mono mt-0.5 leading-snug">${prog.critCount} golpes críticos (PR ×2) · ${prog.weakHits} acertos na fraqueza</div>
                 </div>
             </div>
             <div class="space-y-1">
@@ -2295,15 +2305,15 @@ function renderBossBattleUI() {
             const thumb = bossPortraitSrc(b.id);
             return `
                 <div role="button" tabindex="0" data-boss-id="${escapeHtml(b.id)}" onclick="openBossLightbox('${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBossLightbox('${b.id}')}" title="Ampliar retrato de ${escapeHtml(b.name)}" class="p-4 rounded-xl border cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500 ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
-                    <div class="flex justify-between items-center">
-                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" loading="lazy" decoding="async" class="w-10 h-10 rounded-lg object-cover border border-berzerker-border" style="image-rendering:pixelated">` : `<span class="text-2xl">${b.icon}</span>`}
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
+                    <div class="flex items-center justify-between gap-2">
+                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" width="40" height="40" style="width:40px;height:40px;image-rendering:pixelated" loading="lazy" decoding="async" class="w-10 h-10 shrink-0 rounded-lg object-cover border border-berzerker-border">` : `<span class="text-2xl shrink-0 leading-none">${b.icon}</span>`}
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded leading-tight ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
                             ${defeated ? 'DERROTADO 🏆' : (idx === prog.currentIdx ? 'EM BATALHA ⚔️' : 'BLOQUEADO 🔒')}
                         </span>
                     </div>
-                    <h4 class="font-oswald font-bold text-white text-lg">${escapeHtml(b.name)}</h4>
-                    <span class="text-[10px] font-mono text-purple-300 block">💢 fraco a ${escapeHtml(b.weak || '—')}</span>
-                    <span class="text-[10px] leading-relaxed text-gray-500 block">${escapeHtml(b.weakReason || 'Ataque temático.')}</span>
+                    <h4 class="font-oswald font-bold text-white text-base sm:text-lg leading-tight break-words">${escapeHtml(b.name)}</h4>
+                    <span class="text-[11px] font-mono text-purple-300 block leading-snug break-words">💢 fraco a ${escapeHtml(b.weak || '—')}</span>
+                    <span class="text-[11px] leading-snug text-gray-500 block break-words">${escapeHtml(b.weakReason || 'Ataque temático.')}</span>
                     <span class="text-xs font-mono text-gray-400 block">${fmtN(b.maxHp)} HP · ${defeated ? '✔' : '🎁'} +${Math.round(b.maxHp / 200)} XP</span>
                 </div>`;
         }).join('');
@@ -2399,15 +2409,15 @@ function renderBossLightbox() {
             </div>
             <div class="grid grid-cols-3 gap-2 text-center">
                 <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
-                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Vida máxima</span>
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Vida máxima</span>
                     <span class="block font-oswald text-lg font-bold text-red-400">${fmtN(b.maxHp)} HP</span>
                 </div>
                 <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
-                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">💢 Fraqueza ×1,25</span>
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">💢 Fraqueza ×1,25</span>
                     <span class="block font-oswald text-lg font-bold text-purple-300">${escapeHtml(b.weak || '—')}</span>
                 </div>
                 <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
-                    <span class="block text-[9px] font-bold uppercase tracking-wider text-gray-500">Recompensa</span>
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Recompensa</span>
                     <span class="block font-oswald text-lg font-bold text-amber-300">+${fmtN(xpReward)} XP</span>
                 </div>
             </div>
@@ -2547,7 +2557,7 @@ function renderReservaStudio() {
     let html = padrao ? `
         <button type="button" onclick="resetBossPortraitToDefault()" title="Retrato padrão do tema" class="${tileCls(!atual)}">
             <img src="${padrao}" alt="retrato padrão" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
-            <span class="block text-[9px] font-bold uppercase tracking-wide mt-1 ${!atual ? 'text-berzerker-300' : 'text-gray-500'}">Padrão</span>
+            <span class="block text-[10px] font-bold uppercase tracking-wide leading-tight mt-1 ${!atual ? 'text-berzerker-300' : 'text-gray-500'}">Padrão</span>
         </button>` : '';
 
     const grupos = reservaGroups(THEME ? THEME.id : 'classico');
@@ -2555,12 +2565,12 @@ function renderReservaStudio() {
         html += `<div class="col-span-full text-center text-[11px] text-gray-500 border border-dashed border-berzerker-border rounded-xl py-6">Sem reservas por enquanto — o index.json ainda não carregou.</div>`;
     }
     grupos.forEach(g => {
-        if (grupos.length > 1) html += `<div class="col-span-full text-[9px] font-bold uppercase tracking-wider text-gray-500 pt-1">${escapeHtml((THEMES[g.tema] || {}).name || g.tema)}</div>`;
+        if (grupos.length > 1) html += `<div class="col-span-full text-[10px] font-bold uppercase tracking-wider text-gray-500 pt-1">${escapeHtml((THEMES[g.tema] || {}).name || g.tema)}</div>`;
         g.itens.forEach(item => {
             html += `
             <button type="button" onclick="applyReservaPortrait('${escapeHtml(item.file)}')" title="${escapeHtml(item.label)}" class="${tileCls(atual === item.file)}">
                 <img src="${escapeHtml(item.file)}" alt="${escapeHtml(item.label)}" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
-                <span class="block truncate text-[9px] font-bold uppercase tracking-wide mt-1 ${atual === item.file ? 'text-berzerker-300' : 'text-gray-400'}">${escapeHtml(item.label)}</span>
+                <span class="block truncate text-[10px] font-bold uppercase tracking-wide leading-tight mt-1 ${atual === item.file ? 'text-berzerker-300' : 'text-gray-400'}">${escapeHtml(item.label)}</span>
             </button>`;
         });
     });
@@ -3388,8 +3398,8 @@ function badgeArtSrc(slug) {
 
 function badgeArtImg(slug, icon, unlocked) {
     const src = badgeArtSrc(slug);
-    if (!src) return `<span class="text-3xl" role="img" aria-label="${escapeHtml(icon)}">${icon}</span>`;
-    return `<img src="${src}" alt="emblema da conquista" data-fallback="${escapeHtml(icon)}" loading="lazy" decoding="async" onerror="badgeArtFallback(this)" class="h-12 w-12 rounded-full object-cover border ${unlocked ? 'border-emerald-500/50' : 'border-berzerker-border'}" style="image-rendering:auto">`;
+    if (!src) return `<span class="text-3xl shrink-0" role="img" aria-label="${escapeHtml(icon)}">${icon}</span>`;
+    return `<img src="${src}" alt="emblema da conquista" width="48" height="48" data-fallback="${escapeHtml(icon)}" loading="lazy" decoding="async" onerror="badgeArtFallback(this)" class="h-12 w-12 shrink-0 rounded-full object-cover border ${unlocked ? 'border-emerald-500/50' : 'border-berzerker-border'}" style="width:48px;height:48px;image-rendering:auto">`;
 }
 
 function badgeArtFallback(img) {
