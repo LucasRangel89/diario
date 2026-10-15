@@ -522,8 +522,19 @@ function detectAutoPR(newLog, allLogs, bodyweight) {
 }
 
 // ---------- Recuperação muscular ----------
+// Registro com data inválida (vazia, mal formatada ou inexistente) não entra na estimativa:
+// antes gerava NaN e a função devolvia "100% PRONTO" para dado inválido.
+function dataDeRegistroValida(l) {
+    if (!l || typeof l.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(l.date)) return false;
+    // confere o calendário: new Date('2026-02-31') rola para 03/03 e não pode ser aceito
+    const [y, m, d] = l.date.split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+
 function recoveryState(muscle, muscleLogs, nowMs) {
     const meta = MUSCLE_META[muscle] || MUSCLE_META['Geral'];
+    muscleLogs = Array.isArray(muscleLogs) ? muscleLogs.filter(dataDeRegistroValida) : [];
     if (!muscleLogs || muscleLogs.length === 0) {
         return { label: 'SEM REGISTRO', icon: '✨', pct: null,
             badge: 'bg-berzerker-border text-gray-400 border-gray-700', bar: 'bg-gray-600',
@@ -540,18 +551,18 @@ function recoveryState(muscle, muscleLogs, nowMs) {
 
     let st;
     if (pct < 33) {
-        st = { label: 'EXAUSTO', icon: '🔥', badge: 'bg-red-950 text-red-400 border-red-800', bar: 'bg-red-500',
+        st = { label: 'FADIGA ALTA', icon: '🔥', badge: 'bg-red-950 text-red-400 border-red-800', bar: 'bg-red-500',
             border: 'border-red-600/60 shadow-lg shadow-red-950/40' };
     } else if (pct < 100) {
-        st = { label: 'RECUPERANDO', icon: '⏳', badge: 'bg-amber-950 text-amber-400 border-amber-800', bar: 'bg-amber-500',
+        st = { label: 'EM RECUPERAÇÃO', icon: '⏳', badge: 'bg-amber-950 text-amber-400 border-amber-800', bar: 'bg-amber-500',
             border: 'border-amber-500/60 shadow-lg shadow-amber-950/40' };
     } else {
-        st = { label: '100% PRONTO', icon: '✅', badge: 'bg-emerald-950 text-emerald-400 border-emerald-800', bar: 'bg-emerald-500',
+        st = { label: 'PRONTO (ESTIMADO)', icon: '✅', badge: 'bg-emerald-950 text-emerald-400 border-emerald-800', bar: 'bg-emerald-500',
             border: 'border-emerald-500/60 shadow-lg shadow-emerald-950/40' };
     }
     const dias = Math.floor(hoursSince / 24);
     st.pct = pct;
-    st.info = pct >= 100 ? (dias > 0 ? `Descansado há ${dias}d` : 'Recuperado') : `≈ ${Math.round(hoursNeed - hoursSince)}h p/ 100% (estimativa)`;
+    st.info = pct >= 100 ? (dias > 0 ? `Sem treino há ${dias}d (janela estimada cumprida)` : 'Janela estimada cumprida') : `≈ ${Math.round(hoursNeed - hoursSince)}h até a janela estimada (estimativa)`;
     st.last = last.exercise;
     st.hoursNeed = hoursNeed;
     return st;
@@ -582,7 +593,8 @@ function sinergiaState(muscle, allLogs, nowMs) {
     const alvo = normalizeMuscle(muscle);
     const cfg = SINERGIA[alvo];
     if (!cfg) return null;
-    const indiretos = sinergiaLogs(alvo, allLogs);
+    // Registro sem data válida não pode informar recuperação (senão viraria um apoio com % inventado).
+    const indiretos = sinergiaLogs(alvo, allLogs).filter(dataDeRegistroValida);
     if (!indiretos.length) return null;
 
     const base = recoveryState(alvo, indiretos, nowMs ?? Date.now());

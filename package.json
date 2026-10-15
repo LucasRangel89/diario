@@ -7,9 +7,11 @@
     "build:css": "tailwindcss -c tailwind.config.js -i src/tailwind.css -o vendor/tailwind.css --minify",
     "watch:css": "tailwindcss -c tailwind.config.js -i src/tailwind.css -o vendor/tailwind.css --watch",
     "serve": "python3 -m http.server 8080 --bind 127.0.0.1",
-    "test": "node test_engine.js && node test_ui.js",
+    "test": "node test_engine.js && node test_ui.js && node test_sw.js",
     "test:engine": "node test_engine.js",
     "test:ui": "node test_ui.js",
+    "test:sw": "node test_sw.js",
+    "check:sw-core": "node scripts/check-sw.js",
     "check:sw": "node scripts/check-sw-version.js",
     "check:modules": "node --experimental-vm-modules scripts/check-modules.js"
   },

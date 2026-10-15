@@ -26,7 +26,14 @@ jobs:
       - name: Dependências
         run: npm ci
 
-      - name: Testes (test_engine.js + test_ui.js)
+      # Falha ANTES da suíte se o Service Worker não compilar (um SyntaxError no sw.js
+      # derruba o app offline inteiro) e se algum arquivo do cache não existir no repo.
+      - name: Service Worker — sintaxe e arquivos do CORE
+        run: |
+          node --check sw.js
+          npm run check:sw-core
+
+      - name: Testes (motor + UI + Service Worker)
         run: npm test
 
       # O jsdom não executa type="module": esta checagem linka e avalia o
@@ -82,3 +89,25 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: node scripts/check-sw-version.js "$BASE_SHA"
+
+  # Valida o MESMO artefato que o Pages vai publicar: se um arquivo do CORE não estiver
+  # no _site, o cache offline falha na instalação em produção.
+  pages-artefato:
+    name: Artefato do GitHub Pages contém o CORE do Service Worker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Monta _site (mesmo script do pages.yml)
+        run: bash scripts/build-site.sh _site
+
+      - name: Verifica sw.js e CORE contra o _site
+        run: |
+          node --check _site/sw.js
+          node scripts/check-sw.js _site

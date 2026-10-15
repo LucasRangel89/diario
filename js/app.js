@@ -11,6 +11,7 @@ import { storage } from './storage.js';
 import { DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, FAIXA_SERIES_SEMANAIS, MUSCLE_META, MUSCLE_OPTIONS_FULL, MUSCULOS_MAPA, formatLoadText, formatPlates, formatRepsText, logEst1RM, logVolumeKg } from './catalogo.js';
 import { SEASON_WEEKS, STORAGE_KEY_THEME, THEMES, XP_REST_PER_DAY, completeSeason, computeBossProgress, isoWeekKey, isoWeekRange, missionsState, rankFromXP, seasonState } from './gamificacao.js';
 import { renderHistory } from './historico.js';
+import { getCustomExercises, normalizarExerciciosPersonalizados, saveCustomExercises, setCustomExercisesList } from './custom_exercises.js';
 /* ============================================================
    DIÁRIO DE CARGAS — núcleo do app (estado, sessão, UI, dados)
    ============================================================ */
@@ -70,14 +71,35 @@ const STORAGE_KEY_GAME_SHARED = 'berzerker_game_shared_v1';
 const STORAGE_KEY_STORY = 'berzerker_story_v1';          // foto de fundo do Story Card
 const STORAGE_KEY_BACKUP = 'berzerker_last_backup_at';
 
+// Falha de gravação é OBSERVÁVEL: safeStorage.set devolve false e avisa o usuário
+// uma única vez por sequência de falhas (sem um alerta por chave). Uma gravação
+// bem-sucedida rearma o aviso.
+let _storageFailureNotified = false;
+function notifyStorageFailure() {
+    if (_storageFailureNotified) return;
+    _storageFailureNotified = true;
+    try {
+        if (typeof alertModal === 'function') alertModal('⚠️ Não foi possível salvar neste navegador. Exporte um backup JSON agora: alterações recentes podem não estar salvas.');
+    } catch (e) { /* sem UI disponível */ }
+}
+
 const safeStorage = {
     get(key) {
         try { if (window.storage && typeof window.storage.get === 'function') return window.storage.get(key); } catch (e) { /* fallback */ }
         try { return window.localStorage.getItem(key); } catch (e) { return null; }
     },
+    // Retorna true quando a gravação não falhou. Não é garantia de disco físico:
+    // mede apenas exceções/falhas observáveis do navegador.
     set(key, val) {
-        try { if (window.storage && typeof window.storage.set === 'function') window.storage.set(key, val); } catch (e) { /* fallback */ }
-        try { window.localStorage.setItem(key, val); } catch (e) { /* sem persistência */ }
+        let ok = true;
+        try {
+            if (window.storage && typeof window.storage.set === 'function') ok = window.storage.set(key, val) !== false;
+            else if (val == null) window.localStorage.removeItem(key);
+            else window.localStorage.setItem(key, val);
+        } catch (e) { ok = false; }
+        if (ok) _storageFailureNotified = false;
+        else notifyStorageFailure();
+        return ok;
     }
 };
 
@@ -524,13 +546,14 @@ function saveLogsToStorage() {
     logs.forEach(log => {
         if (!THEMES[log.xpTheme]) log.xpTheme = activeGameThemeId;
     });
-    safeStorage.set(STORAGE_KEY_LOGS, JSON.stringify(logs));
+    const ok = safeStorage.set(STORAGE_KEY_LOGS, JSON.stringify(logs));
     if (ensureDeloadRestAwards()) saveGameState();
     checkRankUp();
+    return ok;
 }
-function saveWorkoutsToStorage() { safeStorage.set(STORAGE_KEY_WORKOUTS, JSON.stringify(savedWorkouts)); }
+function saveWorkoutsToStorage() { return safeStorage.set(STORAGE_KEY_WORKOUTS, JSON.stringify(savedWorkouts)); }
 function saveSettings() {
-    safeStorage.set(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+    return safeStorage.set(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
 }
 function saveGameState() {
     const activeSave = ensureThemeGameSave(activeGameThemeId);
@@ -538,13 +561,14 @@ function saveGameState() {
     activeSave.missionsClaimed = { ...missionsClaimed };
     activeSave.seasons = seasons ? JSON.parse(JSON.stringify(seasons)) : null;
     activeSave.bossPortraits = { ...bossPortraits };
-    safeStorage.set(STORAGE_KEY_THEME_GAMES, JSON.stringify(themeGameSaves));
-    safeStorage.set(STORAGE_KEY_GAME_SHARED, JSON.stringify({ deloadWeeks, tests, weightLog }));
+    const okSaves = safeStorage.set(STORAGE_KEY_THEME_GAMES, JSON.stringify(themeGameSaves));
+    const okShared = safeStorage.set(STORAGE_KEY_GAME_SHARED, JSON.stringify({ deloadWeeks, tests, weightLog }));
+    return okSaves && okShared;
 }
 function saveStoryState() {
     // O fundo enviado pelo usuário vive como Blob no IndexedDB (`bgBlob: '1'`).
     // `bgImageData` só fica preenchido em fallback legado (IndexedDB indisponível).
-    safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({
+    return safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({
         bgBlob: customBgImageData ? '1' : null,
         bgImageData: null
     }));
@@ -1413,7 +1437,7 @@ function renderRecoveryMap() {
             // permanente de "⚠️ Lombar" que ninguém consegue desligar.
             lombarEl.innerHTML = `
             <div class="bg-emerald-950/20 border ${lombar.border} rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
-                <span class="font-oswald text-sm font-bold text-emerald-400 uppercase tracking-wide leading-none whitespace-nowrap">✅ Lombar 100% — livre</span>
+                <span class="font-oswald text-sm font-bold text-emerald-400 uppercase tracking-wide leading-none whitespace-nowrap">✅ Lombar sem alerta estimado</span>
                 ${lombar.last ? `<span class="text-xs font-mono text-gray-400 break-words">Última carga: ${escapeHtml(lombar.last)}</span>` : '<span class="text-xs font-mono text-gray-400">Sem carga registrada na lombar.</span>'}
             </div>`;
         } else lombarEl.innerHTML = `
@@ -1426,7 +1450,7 @@ function renderRecoveryMap() {
             </div>
             <div>
                 <div class="flex justify-between text-xs font-bold uppercase text-gray-400 mb-1">
-                    <span>Recuperação da região</span><span class="text-gray-400">${lombar.pct}%</span>
+                    <span>Prontidão estimada da região</span><span class="text-gray-400">${lombar.pct}%</span>
                 </div>
                 <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
                     <div class="h-full ${lombar.bar} rounded-full transition-all duration-500" style="width: ${lombar.pct}%"></div>
@@ -1599,7 +1623,7 @@ function renderSession() {
                 </div>
             </div>
             ${e.orderReason ? `<div class="text-xs text-gray-400 leading-relaxed"><span class="text-berzerker-500 font-bold">📌 Por que nesta posição:</span> ${escapeHtml(e.orderReason)}</div>` : ''}
-            ${fat.pct !== null && fat.pct < 100 ? `<div class="text-xs text-amber-400/90 font-mono">⏳ ${escapeHtml(e.muscle)} ainda em recuperação (${fat.pct}%) — considere uma carga mais leve</div>` : ''}
+            ${fat.pct !== null && fat.pct < 100 ? `<div class="text-xs text-amber-400/90 font-mono">⏳ ${escapeHtml(e.muscle)} ainda em recuperação estimada (${fat.pct}%) — considere uma carga mais leve</div>` : ''}
             ${exercicioCarregaLombar(e.exercise) && lombarEstado.carregada ? `<div class="text-xs text-red-400/90 font-mono">⚠️ Este exercício exige a lombar — ainda carregada (${lombarEstado.horasRestantes}h restantes): priorize técnica perfeita e carga mais leve</div>` : ''}
             ${catInfo && catInfo.descanso ? `<div class="text-xs text-gray-400 font-mono">⏱ Descanso do catálogo: ${catInfo.descanso}s · faixa ${catInfo.faixa[0]}–${catInfo.faixa[1]}${catInfo.tipo === 'isometria' ? ' s' : ' reps'}</div>` : ''}
             ${lastPerformanceHTML(e.exercise)}
@@ -1620,7 +1644,7 @@ function renderSession() {
     const lombarEstado = regiaoLombarState(logs, nowMs);
     const temExercicioLombar = ex.some(e => !e.done && exercicioCarregaLombar(e.exercise));
     if (lombarEstado.carregada && temExercicioLombar) {
-        html += `<div class="text-xs bg-red-950/40 border border-red-600/50 rounded-lg px-3 py-2 text-red-300">⚠️ <b>Sua lombar ainda está ${lombarEstado.label.toLowerCase()} (${lombarEstado.pct}% de recuperação, ${lombarEstado.horasRestantes}h restantes).</b> ${escapeHtml(lombarEstado.dica)}</div>`;
+        html += `<div class="text-xs bg-red-950/40 border border-red-600/50 rounded-lg px-3 py-2 text-red-300">⚠️ <b>Sua lombar ainda está ${lombarEstado.label.toLowerCase()} (${lombarEstado.pct}% de prontidão estimada, ${lombarEstado.horasRestantes}h restantes).</b> ${escapeHtml(lombarEstado.dica)}</div>`;
     }
     for (let i = 0; i < ex.length; i++) {
         const pair = !!(ex[i + 1] && ex[i + 1].biset);
@@ -3934,7 +3958,7 @@ function parseCSVRows(text, sep) {
                 if (text[i + 1] === '"') { cur += '"'; i++; }
                 else inQuotes = false;
             } else cur += c;
-        } else if (c === '"') inQuotes = true;
+        } else if (c === '"' && cur === '') inQuotes = true;   // aspas só abrem campo no início (aspas soltas no meio são literais)
         else if (c === sep) { row.push(cur); cur = ''; }
         else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
         else if (c !== '\r') cur += c;
@@ -3963,11 +3987,13 @@ async function buildBackupPayload() {
         }
     } catch (e) { /* backup segue sem as imagens */ }
     return {
-        version: 5,
+        version: 6,
         userBodyweight,
         logs,
         savedWorkouts,
         settings,
+        // Formato 6: exercícios personalizados (definições completas, sem o catálogo principal).
+        customExercises: getCustomExercises(),
         gameTheme: activeGameThemeId,
         themeGameSaves,
         sharedGameState: { deloadWeeks, tests, weightLog },
@@ -4015,78 +4041,177 @@ async function exportJSONBackup() {
     })();
 }
 
-async function applyImportedBackup(parsed) {
-    if (!parsed || !Array.isArray(parsed.logs)) { alertModal('Arquivo JSON inválido!'); return false; }
-    const importedThemeId = THEMES[parsed.gameTheme] ? parsed.gameTheme : activeGameThemeId;
-    logs = parsed.logs.map(migrateLog);
-    if (parsed.userBodyweight) userBodyweight = parsed.userBodyweight;
-    if (Array.isArray(parsed.savedWorkouts)) { savedWorkouts = parsed.savedWorkouts; normalizeSavedWorkouts(); }
-    if (parsed.settings) settings = { ...settings, ...parsed.settings };
+// ---------- Validação do backup (pura: não altera o estado) ----------
+// Formato 6 (atual): acrescenta "customExercises". Backups 1–5 continuam importáveis:
+// campos AUSENTES mantêm o valor atual (savedWorkouts, settings, customExercises) ou
+// recebem o padrão do formato antigo (deloadWeeks, tests, weightLog). Campos PRESENTES
+// e com tipo errado fazem o backup inteiro ser rejeitado, sem alterar nada.
+function isoDataValida(s) {
+    if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+    const [y, m, d] = s.split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+function isObjetoSimples(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
 
-    const importedSaves = parsed.themeGameSaves && typeof parsed.themeGameSaves === 'object' ? parsed.themeGameSaves : null;
-    themeGameSaves = {};
-    if (importedSaves) {
-        Object.entries(importedSaves).forEach(([id, save]) => {
-            if (THEMES[id] && save && typeof save === 'object' && !Array.isArray(save)) themeGameSaves[id] = save;
-        });
-    } else {
-        // Backups antigos não tinham saves por tema: migrar tudo para o jogo exportado.
-        themeGameSaves[importedThemeId] = {
-            ...emptyThemeGameSave(),
-            missionsXpTotal: Number(parsed.missionsXpTotal) || 0,
-            missionsClaimed: parsed.missionsClaimed || {},
-            seasons: parsed.seasons || null,
-            bossPortraits: parsed.bossPortraits || {}
-        };
+function validarBackupJSON(parsed) {
+    const erros = [];
+    if (!isObjetoSimples(parsed)) return { ok: false, erros: ['o arquivo não contém um objeto de backup'] };
+    if (!Array.isArray(parsed.logs)) return { ok: false, erros: ['campo "logs" ausente ou não é uma lista'] };
+
+    const logsOk = [];
+    parsed.logs.forEach((raw, i) => {
+        const pos = `registro #${i + 1}`;
+        if (!isObjetoSimples(raw)) { erros.push(`${pos} não é um objeto`); return; }
+        if (!isoDataValida(raw.date)) { erros.push(`${pos}: data inválida "${raw.date}"`); return; }
+        if (typeof raw.exercise !== 'string' || !raw.exercise.trim()) { erros.push(`${pos}: exercício ausente`); return; }
+        if (raw.kind !== undefined && raw.kind !== 'peso' && raw.kind !== 'corrida') { erros.push(`${pos}: tipo de registro "${raw.kind}" desconhecido`); return; }
+        if (raw.weight !== undefined && !(Number.isFinite(Number(raw.weight)) && Number(raw.weight) >= 0)) { erros.push(`${pos}: carga inválida`); return; }
+        if (raw.reps !== undefined && (!Array.isArray(raw.reps) || !raw.reps.every(r => Number.isFinite(Number(r))))) { erros.push(`${pos}: repetições inválidas`); return; }
+        if (raw.sets !== undefined && raw.sets !== null && (!Array.isArray(raw.sets) || !raw.sets.every(s => isObjetoSimples(s) && Number.isFinite(Number(s.weight)) && Number.isFinite(Number(s.reps))))) { erros.push(`${pos}: séries (sets) inválidas`); return; }
+        logsOk.push(raw);
+    });
+    if (erros.length) return { ok: false, erros: erros.slice(0, 10) };
+
+    const d = { logs: logsOk.map(migrateLog), hasSavedWorkouts: false, savedWorkouts: null };
+    // Ids ausentes ou repetidos no arquivo: edição e exclusão usam o id, então cada registro precisa de um.
+    // Regra determinística: a primeira ocorrência mantém o id; as seguintes recebem um id novo.
+    const idsUsados = new Set();
+    let proximoIdBackup = Math.max(0, ...d.logs.map(l => Number(l.id) || 0)) + 1;
+    d.logs.forEach((l, i) => {
+        if (l.id === undefined || l.id === null || l.id === '' || idsUsados.has(l.id)) l.id = proximoIdBackup++;
+        idsUsados.add(l.id);
+    });
+
+    if (parsed.savedWorkouts !== undefined) {
+        if (!Array.isArray(parsed.savedWorkouts) || !parsed.savedWorkouts.every(isObjetoSimples)) return { ok: false, erros: ['"savedWorkouts" deve ser uma lista de treinos'] };
+        d.hasSavedWorkouts = true;
+        d.savedWorkouts = parsed.savedWorkouts.map(w => ({ ...w }));
     }
-    Object.keys(THEMES).forEach(ensureThemeGameSave);
+    if (parsed.userBodyweight !== undefined && parsed.userBodyweight !== null && !(Number(parsed.userBodyweight) > 0)) return { ok: false, erros: ['"userBodyweight" inválido'] };
+    if (parsed.settings !== undefined && parsed.settings !== null && !isObjetoSimples(parsed.settings)) return { ok: false, erros: ['"settings" deve ser um objeto'] };
+    if (parsed.themeGameSaves !== undefined && parsed.themeGameSaves !== null && !isObjetoSimples(parsed.themeGameSaves)) return { ok: false, erros: ['"themeGameSaves" deve ser um objeto'] };
+    if (parsed.gameTheme !== undefined && typeof parsed.gameTheme !== 'string') return { ok: false, erros: ['"gameTheme" deve ser texto'] };
 
-    // Imagens do backup (dataURL portáteis) → Blob no IndexedDB + marcador no save.
+    const shared = isObjetoSimples(parsed.sharedGameState) ? parsed.sharedGameState : parsed;
+    if (shared.deloadWeeks !== undefined && (!Array.isArray(shared.deloadWeeks) || !shared.deloadWeeks.every(x => typeof x === 'string'))) return { ok: false, erros: ['"deloadWeeks" deve ser uma lista de semanas'] };
+    if (shared.tests !== undefined && (!Array.isArray(shared.tests) || !shared.tests.every(isObjetoSimples))) return { ok: false, erros: ['"tests" deve ser uma lista'] };
+    if (shared.weightLog !== undefined && (!Array.isArray(shared.weightLog) || !shared.weightLog.every(w => isObjetoSimples(w) && isoDataValida(w.date) && Number(w.peso) > 0))) return { ok: false, erros: ['"weightLog" (pesagens) inválido'] };
+
+    let custom = { lista: null, erros: [], conflitos: [] };
+    if (parsed.customExercises !== undefined && parsed.customExercises !== null) {
+        custom = normalizarExerciciosPersonalizados(parsed.customExercises);
+        if (custom.erros.length) return { ok: false, erros: custom.erros.slice(0, 10) };
+    }
+
+    return {
+        ok: true, erros: [], dados: d,
+        shared: {
+            deloadWeeks: shared.deloadWeeks, tests: shared.tests, weightLog: shared.weightLog
+        },
+        custom: { presente: parsed.customExercises !== undefined && parsed.customExercises !== null, lista: custom.lista || [], conflitos: custom.conflitos }
+    };
+}
+
+// Aplica um backup validado. Tudo-ou-nada na memória: se algo lançar exceção durante
+// a aplicação, o estado anterior é restaurado (snapshot). Falhas de gravação são reportadas.
+async function applyImportedBackup(parsed) {
+    const v = validarBackupJSON(parsed);
+    if (!v.ok) {
+        alertModal(`❌ Backup inválido — nada foi alterado. ${v.erros.slice(0, 3).join('; ')}`);
+        return false;
+    }
+    const importedThemeId = (parsed.gameTheme && THEMES[parsed.gameTheme]) ? parsed.gameTheme : activeGameThemeId;
+    const snapshot = {
+        logs, savedWorkouts, settings, userBodyweight, deloadWeeks, tests, weightLog, themeGameSaves,
+        activeGameThemeId, lastRankLevel, lastBossesDefeated,
+        customExercises: getCustomExercises().slice()
+    };
     try {
-        if (window.storage && typeof window.storage.saveBlob === 'function') {
-            const imgs = parsed.portraitImages && typeof parsed.portraitImages === 'object' ? parsed.portraitImages : {};
-            for (const [chave, dataURL] of Object.entries(imgs)) {
-                if (typeof dataURL !== 'string' || !dataURL.startsWith('data:')) continue;
-                const [tema, ...resto] = chave.split(':');
-                const bossId = resto.join(':');
-                if (!THEMES[tema] || !bossId) continue;
-                const blob = await window.storage.dataURLToBlob(dataURL);
-                if (!blob) continue;
-                const key = `portrait:${tema}:${bossId}`;
-                if (await window.storage.saveBlob(key, blob)) {
-                    const save = ensureThemeGameSave(tema);
-                    save.bossPortraits[bossId] = 'idb:' + key;
+        logs = v.dados.logs;
+        if (v.dados.hasSavedWorkouts) { savedWorkouts = v.dados.savedWorkouts; normalizeSavedWorkouts(); }
+        if (parsed.userBodyweight) userBodyweight = Number(parsed.userBodyweight);
+        if (isObjetoSimples(parsed.settings)) settings = { ...settings, ...parsed.settings };
+
+        const importedSaves = isObjetoSimples(parsed.themeGameSaves) ? parsed.themeGameSaves : null;
+        themeGameSaves = {};
+        if (importedSaves) {
+            Object.entries(importedSaves).forEach(([id, save]) => {
+                if (THEMES[id] && isObjetoSimples(save)) themeGameSaves[id] = save;
+            });
+        } else {
+            // Backups antigos (sem saves por tema): migra o progresso para o tema exportado.
+            themeGameSaves[importedThemeId] = {
+                ...emptyThemeGameSave(),
+                missionsXpTotal: Number(parsed.missionsXpTotal) || 0,
+                missionsClaimed: isObjetoSimples(parsed.missionsClaimed) ? parsed.missionsClaimed : {},
+                seasons: parsed.seasons || null,
+                bossPortraits: isObjetoSimples(parsed.bossPortraits) ? parsed.bossPortraits : {}
+            };
+        }
+        Object.keys(THEMES).forEach(ensureThemeGameSave);
+
+        deloadWeeks = Array.isArray(v.shared.deloadWeeks) ? v.shared.deloadWeeks : [];
+        tests = Array.isArray(v.shared.tests) && v.shared.tests.length ? v.shared.tests : defaultTests();
+        weightLog = Array.isArray(v.shared.weightLog) ? v.shared.weightLog.map(w => ({ date: w.date, peso: Number(w.peso), obs: w.obs || '' })) : [];
+        if (v.custom.presente) setCustomExercisesList(v.custom.lista);
+
+        restoreActiveThemeGameSave(importedThemeId);
+        applyTheme(importedThemeId);
+        lastRankLevel = null; lastBossesDefeated = null;
+
+        // Imagens do backup (dataURL portáteis) → Blob no IndexedDB + marcador no save.
+        // Falha de imagem não cancela a importação dos dados (como antes), mas é contada.
+        try {
+            if (window.storage && typeof window.storage.saveBlob === 'function') {
+                const imgs = isObjetoSimples(parsed.portraitImages) ? parsed.portraitImages : {};
+                for (const [chave, dataURL] of Object.entries(imgs)) {
+                    if (typeof dataURL !== 'string' || !dataURL.startsWith('data:')) continue;
+                    const [tema, ...resto] = chave.split(':');
+                    const bossId = resto.join(':');
+                    if (!THEMES[tema] || !bossId) continue;
+                    const blob = await window.storage.dataURLToBlob(dataURL);
+                    if (!blob) continue;
+                    const key = `portrait:${tema}:${bossId}`;
+                    if (await window.storage.saveBlob(key, blob)) {
+                        const save = ensureThemeGameSave(tema);
+                        save.bossPortraits[bossId] = 'idb:' + key;
+                    }
+                }
+                if (parsed.storyBgImageData) {
+                    const blob = await window.storage.dataURLToBlob(parsed.storyBgImageData);
+                    if (blob) await window.storage.saveBlob(STORY_BG_BLOB_KEY, blob);
                 }
             }
-            if (parsed.storyBgImageData) {
-                const blob = await window.storage.dataURLToBlob(parsed.storyBgImageData);
-                if (blob) await window.storage.saveBlob(STORY_BG_BLOB_KEY, blob);
-            }
-        }
-    } catch (e) { /* import segue sem as imagens */ }
-
-    const shared = parsed.sharedGameState && typeof parsed.sharedGameState === 'object' ? parsed.sharedGameState : parsed;
-    deloadWeeks = Array.isArray(shared.deloadWeeks) ? shared.deloadWeeks : [];
-    tests = Array.isArray(shared.tests) && shared.tests.length ? shared.tests : defaultTests();
-    weightLog = Array.isArray(shared.weightLog) ? shared.weightLog : [];
-    restoreActiveThemeGameSave(importedThemeId);
-    safeStorage.set(STORAGE_KEY_THEME, importedThemeId);
-    applyTheme(importedThemeId);
-    lastRankLevel = null; lastBossesDefeated = null;
-
-    saveLogsToStorage();
-    saveWorkoutsToStorage();
-    saveSettings();
-    saveGameState();
-    saveStoryState();
-    safeStorage.set(STORAGE_KEY_BW, userBodyweight.toString());
-    safeStorage.set(STORAGE_KEY_SEEDED, '1');
+        } catch (e) { /* segue sem imagens */ }
+    } catch (err) {
+        // Restaura o estado anterior: nada fica pela metade na memória.
+        logs = snapshot.logs; savedWorkouts = snapshot.savedWorkouts; settings = snapshot.settings;
+        userBodyweight = snapshot.userBodyweight; deloadWeeks = snapshot.deloadWeeks; tests = snapshot.tests;
+        weightLog = snapshot.weightLog; themeGameSaves = snapshot.themeGameSaves;
+        setCustomExercisesList(snapshot.customExercises);
+        lastRankLevel = snapshot.lastRankLevel; lastBossesDefeated = snapshot.lastBossesDefeated;
+        alertModal('❌ Erro ao aplicar o backup. O estado anterior foi mantido.');
+        return false;
+    }
 
     const bwInput = document.getElementById('user-bodyweight');
     if (bwInput && userBodyweight > 0) bwInput.value = userBodyweight;
 
-    alertModal('Backup importado com sucesso!');
+    const okParts = [
+        saveLogsToStorage(), saveWorkoutsToStorage(), saveSettings(), saveGameState(), saveStoryState(),
+        safeStorage.set(STORAGE_KEY_BW, String(userBodyweight)), safeStorage.set(STORAGE_KEY_SEEDED, '1')
+    ];
+    if (v.custom.presente) saveCustomExercises();
     refreshAll();
+    const conflitos = v.custom.conflitos;
+    if (okParts.some(ok => !ok)) {
+        alertModal('⚠️ Backup aplicado na tela, mas o navegador não confirmou o salvamento. Exporte um backup agora.');
+    } else if (conflitos.length) {
+        alertModal(`✅ Backup importado. ${conflitos.length} exercício(s) personalizado(s) não importado(s): ${conflitos[0]}`);
+    } else {
+        alertModal('Backup importado com sucesso!');
+    }
     return true;
 }
 

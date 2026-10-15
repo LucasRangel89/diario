@@ -141,10 +141,11 @@ const storage = {
     set(key, val) {
         const s = (val == null) ? null : String(val);
         _storageCache.set(key, s);
-        try { if (typeof localStorage !== 'undefined') { if (s === null) localStorage.removeItem(key); else localStorage.setItem(key, s); } } catch (e) { /* ignore */ }
+        let ok = true;
+        try { if (typeof localStorage !== 'undefined') { if (s === null) localStorage.removeItem(key); else localStorage.setItem(key, s); } } catch (e) { ok = false; }
         // persistência assíncrona no IndexedDB
         _idbSet(key, s).catch(() => {});
-        return true;
+        return ok;
     },
     remove(key) {
         _storageCache.delete(key);

@@ -307,11 +307,11 @@ function fatigueState(muscle, muscleLogs, weeklySets, nowMs, sinergia) {
 
     let st;
     if (fadigaReal < 33) {
-        st = { label: 'EXAUSTO', icon: '🔥', badge: 'bg-red-950 text-red-400 border-red-800', bar: 'bg-red-500', border: 'border-red-600/60 shadow-lg shadow-red-950/40' };
+        st = { label: 'FADIGA ALTA', icon: '🔥', badge: 'bg-red-950 text-red-400 border-red-800', bar: 'bg-red-500', border: 'border-red-600/60 shadow-lg shadow-red-950/40' };
     } else if (fadigaReal < 100) {
-        st = { label: 'RECUPERANDO', icon: '⏳', badge: 'bg-amber-950 text-amber-400 border-amber-800', bar: 'bg-amber-500', border: 'border-amber-500/60 shadow-lg shadow-amber-950/40' };
+        st = { label: 'EM RECUPERAÇÃO', icon: '⏳', badge: 'bg-amber-950 text-amber-400 border-amber-800', bar: 'bg-amber-500', border: 'border-amber-500/60 shadow-lg shadow-amber-950/40' };
     } else {
-        st = { label: '100% PRONTO', icon: '✅', badge: 'bg-emerald-950 text-emerald-400 border-emerald-800', bar: 'bg-emerald-500', border: 'border-emerald-500/60 shadow-lg shadow-emerald-950/40' };
+        st = { label: 'PRONTO (ESTIMADO)', icon: '✅', badge: 'bg-emerald-950 text-emerald-400 border-emerald-800', bar: 'bg-emerald-500', border: 'border-emerald-500/60 shadow-lg shadow-emerald-950/40' };
     }
     const volText = volumeStatus === 'abaixo' ? `${series}/${min}–${max} séries · abaixo da meta`
         : volumeStatus === 'acima' ? `${series}/${min}–${max} séries · acima da faixa`
@@ -551,7 +551,7 @@ function regiaoLombarState(allLogs, nowMs) {
         border = 'border-red-600/60 shadow-lg shadow-red-950/40';
         dica = 'Hoje: PREFIRA Hack, Extensora, Cadeira Flexora, Puxada na Polia, Supino Máquina. EVITE COMPLETAMENTE Terra, Agachamento Livre, Stiff ou qualquer dobradiça de quadril pesada.';
     } else if (pct < 100 || nivelMedio >= 1.5) {
-        label = 'RECUPERANDO';
+        label = 'EM RECUPERAÇÃO';
         icon = '⏳';
         badge = 'bg-amber-950 text-amber-400 border-amber-800';
         bar = 'bg-amber-500';

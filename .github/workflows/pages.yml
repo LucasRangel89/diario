@@ -25,12 +25,14 @@ jobs:
       # O app é 100% estático (sem build em produção): basta copiar os arquivos
       # de runtime. Testes, fontes do repo e CI ficam de fora do artefato.
       - name: Monta _site
+        run: bash scripts/build-site.sh _site
+
+      # Não publica um site cujo Service Worker não compila ou cujo cache aponta para
+      # arquivos que não foram copiados para o artefato.
+      - name: Valida sw.js e CORE no _site
         run: |
-          mkdir -p _site
-          cp -r index.html manifest.webmanifest sw.js _site/
-          cp -r icon-192.png icon-512.png apple-touch-icon.png _site/
-          cp -r js vendor images _site/
-          du -sh _site
+          node --check _site/sw.js
+          node scripts/check-sw.js _site
 
       - name: Configura o Pages
         uses: actions/configure-pages@v5
