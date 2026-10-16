@@ -1,6 +1,6 @@
 import { CATALOG_ALIASES, CATALOG_BY_NAME, CATALOG_BY_SEARCH, CATALOG_TIPOS, EXERCISE_CATALOG_FULL, MUSCLE_OPTIONS_FULL, SINONIMOS, TAG_DEFS, TAG_IDS, catalogInfo, deriveTags, normalizeText, setCustomExercisesRef } from './catalogo.js';
 import { exercicioCarregaLombar } from './assistente.js';
-import { alertModal, escapeHtml, refreshAll, safeStorage, updateExerciseSuggestions } from './app.js';
+import { alertModal, confirmModal, escapeHtml, refreshAll, safeStorage, updateExerciseSuggestions } from './app.js';
 import { renderSearchScreen } from './busca.js';
 /* ============================================================
    EXERCÍCIOS CUSTOMIZADOS PELO USUÁRIO
@@ -402,11 +402,12 @@ function submitCustomExForm(ev) {
 }
 
 function submitDeleteCustomEx(id) {
-    if (!confirm('Tem certeza que quer excluir este exercício? Os registros antigos dele continuam no histórico.')) return;
-    deleteCustomExercise(id);
-    closeModal();
-    alertModal('🗑️ Exercício excluído.');
-    renderSearchScreen();
+    confirmModal('Tem certeza que quer excluir este exercício? Os registros antigos dele continuam no histórico.', () => {
+        deleteCustomExercise(id);
+        closeModal();
+        alertModal('🗑️ Exercício excluído.');
+        renderSearchScreen();
+    });
 }
 
 // ============================================================
