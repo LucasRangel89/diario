@@ -7,6 +7,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - **D8:** o CORE do Service Worker passa a incluir as **110 imagens** previstas de `images/patentes/*.webp` (100) e `images/cards/*.webp` (10), total medido de **1.057.982 bytes** (≈1,06 MB; ≈1,01 MiB) em `44659fe` (main com a PR #19/B3 mesclada). Nenhuma outra imagem foi acrescentada. O CORE sobe de 175 para **285** arquivos locais.
 - Falha em qualquer item do precache continua rejeitando a instalação (sem `skipWaiting`): a versão anterior funcional permanece disponível, e removida a falha a instalação completa e a ativação funcionam. Testes novos no `test_sw.js` (seção SW 3b, usando uma imagem de patente real) e checks de cobertura/tamanho da B5; gate de navegador real confere as 110 imagens no cache e amostras offline.
 - Cache offline: `sw.js` **v46 → v47** (o conteúdo do CORE mudou; nenhum arquivo de `images/**` ou `js/**` foi editado). Sem novas dependências de produção.
+- **Merge da B5:** PR [#20](https://github.com/LucasRangel89/diario/pull/20) mesclada em `main` em **2026-10-16**; commit B5 `f9ad635694b2db1e14cda2a56588e01e4e510d1c`, merge commit `5bd9186a5e77864ff567740f23d22cf4445448c9`. Fechamento B0–B5 em `docs/RELATORIO_POS_PR17.md`.
 
 ## [Não lançado] — B3: interface de corridas (branch `arena/7d08417f-diario`)
 

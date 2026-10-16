@@ -1,7 +1,8 @@
 # Relatório técnico — manutenção pós-PR #17 e registro de corridas
 
-> As seções A1–B4 abaixo documentam a branch da PR #18 antes de seu merge; o
-> resultado **B3 após o merge** e a nova base `main` estão na seção final deste arquivo.
+> As seções A1–B4 documentam a branch da PR #18 antes de seu merge; B3 partiu
+> do `main` após a PR #18, e B5 do `main` após a PR #19. O fechamento após o
+> merge da PR #20 e o estado do roteiro B0–B5 estão no fim deste arquivo.
 
 ## Base e método
 
@@ -54,7 +55,7 @@ Versões consultadas em 2026-10-16 via `gh api repos/actions/<ação>/releases/l
 | B0 | Achados e script acima; sem mudança de comportamento | `793acdd` |
 | B1 | `js/corridas.js` puro: parse/formatação de tempo, pace, filtro corrida, semanas ISO/mês/ano, recordes e km por tênis; teste de 25 casos sintéticos | `877e0dd` |
 | B2 | Editor específico nos dois pontos de entrada, fórmulas/PR, limpeza de campos de musculação no save, migração e fingerprint corrida; D6 opcional no registro | `b2f6ff9` |
-| B4 | Validação D6 em backup JSON v6 e CSV v3 aditivo; leitor v1/v2 compatível; testes sintéticos de round-trip/atomicidade | commit desta etapa |
+| B4 | Validação D6 em backup JSON v6 e CSV v3 aditivo; leitor v1/v2 compatível; testes sintéticos de round-trip/atomicidade | `f94d769` |
 
 ## B4 — compatibilidade e validação dos campos D6
 
@@ -218,3 +219,26 @@ segue pendente (`docs/VALIDACAO_MANUAL.md`). Nenhuma foto/dado pessoal foi usado
 - **Navegador real (headless, fora do repositório):** `@sparticuz/chromium` 153.0.8010.0 + `playwright-core` só em `/tmp`, com `DIARIO_EXIGIR_NAVEGADOR=1`: **46/46 checagens OK**, cache v47 — incluindo `patentes = 100`/`cards = 10` no cache, amostras dos dois diretórios respondendo offline via `caches.match`, app offline e atualização simulada v47 → v48 (instala, ativa, apaga o cache antigo). A CI da branch precisa confirmar o mesmo gate com o Chrome do sistema (bloqueante, sem skip).
 - **Não testado / lacunas:** Chrome do sistema local (inexistente neste sandbox — usado Chromium empacotado em `/tmp`), PWA instalável de ponta a ponta, offline geral, aparelho físico, toque/teclado virtual, tela de 360 px e queda de rede real. Nada disso é declarado validado; o roteiro pendente está em `docs/VALIDACAO_MANUAL.md`. Dados apenas sintéticos nos testes.
 - **PR:** separada para `main`, a partir desta branch; **não mesclar** sem autorização explícita.
+
+## Fechamento pós-merge da B5 — roteiro B0–B5 CONCLUÍDO
+
+- **Base desta PR documental (2026-10-16):** após `git fetch origin main`, `HEAD` da branch desta sessão e `origin/main` = `5bd9186a5e77864ff567740f23d22cf4445448c9` (merge da PR #20). Nenhuma branch anterior foi reutilizada e `main` não foi editada diretamente.
+- **Roteiro:** B0, B1, B2 e B4 entraram pela [PR #18](https://github.com/LucasRangel89/diario/pull/18) (merge `5945689`); B3, pela [PR #19](https://github.com/LucasRangel89/diario/pull/19) (merge `44659fe`); B5, pela [PR #20](https://github.com/LucasRangel89/diario/pull/20), commit de implementação `f9ad635694b2db1e14cda2a56588e01e4e510d1c`, mesclada em **2026-10-16** no merge `5bd9186a5e77864ff567740f23d22cf4445448c9`. O roteiro **B0–B5 está CONCLUÍDO quanto às entregas e merges**, não quanto aos testes manuais em aparelho.
+- **Estado após o merge:** `sw.js` segue com `VERSION = 'v47'` e CORE de **285 arquivos locais**. No checkout foram conferidas **100** imagens de patentes (**846.830 bytes**) e **10** de cards (**211.152 bytes**): **110 imagens, 1.057.982 bytes** no total. Esta PR só documenta o resultado; não muda CORE nem `VERSION`.
+- **Site publicado:** a leitura de <https://lucasrangel89.github.io/diario/sw.js> (GitHub Pages de `main`) retornou `v47` e listou no CORE as **100** entradas `images/patentes/*.webp` e **10** `images/cards/*.webp`. O tamanho em bytes acima foi medido **no checkout**, não via download das imagens publicadas; não foram conferidos individualmente os 110 arquivos por HTTP nem cache/uso offline de um aparelho.
+
+**Checks da PR #20 após o merge:** `gh pr checks 20` mostrou os cinco jobs da execução de PR [38921285323](https://github.com/LucasRangel89/diario/actions/runs/38921285323) como aprovados:
+
+| Check (nome atual) | Estado |
+|---|---|
+| [Testes (motor + UI)](https://github.com/LucasRangel89/diario/actions/runs/38921285323/job/117041549133) | **Sucesso** (obrigatório) |
+| [vendor/tailwind.css atualizado](https://github.com/LucasRangel89/diario/actions/runs/38921285323/job/117041549509) | **Sucesso** (obrigatório) |
+| [Versão do cache offline](https://github.com/LucasRangel89/diario/actions/runs/38921285323/job/117041549465) | **Sucesso** (obrigatório) |
+| [Artefato do GitHub Pages contém o CORE do Service Worker](https://github.com/LucasRangel89/diario/actions/runs/38921285323/job/117041549523) | **Sucesso** (obrigatório) |
+| [Validação em navegador real](https://github.com/LucasRangel89/diario/actions/runs/38921285323/job/117041549634) | **Sucesso** (bloqueante; steps Chrome/validação/relatório aprovados, sem skip) |
+
+**Evidências locais da B5 (pré-merge):** `npm ci && npm test` passou com **913/913**, 0 falhas (motor **453**, UI **407**, módulos **14**, SW **39**); o navegador headless local exigido passou **46/46** com Chromium em `/tmp`, incluindo as 110 entradas no cache, amostras offline e atualização simulada v47 → v48. O resultado **46/46 é da execução local**, não uma contagem inferida da CI: o job de Chrome real da PR #20 foi conferido separadamente e concluiu seus steps com sucesso.
+
+**Gates reexecutados nesta PR documental (local):** `npm ci && npm test` passou novamente com **913/913**, 0 falhas (453 motor, 407 UI, 14 módulos, 39 SW); `node --check sw.js && npm run check:sw-core` confirmou v47/285 arquivos; `npm run check:modules && npm run check:docs` passou (20 módulos, 61 arquivos); `npm run build:css && git diff --exit-code -- vendor/tailwind.css` passou sem diferença. `node scripts/check-sw-version.js origin/main` confirmou que nenhum `js/**` ou `images/**` mudou. O `git diff --stat` lista somente este relatório, `docs/VALIDACAO_MANUAL.md` e `CHANGELOG.md`. Não se repetiu localmente o teste headless de navegador nesta PR; o **46/46** acima é histórico da B5, e a CI da PR documental deve cumprir o gate bloqueante sem skip.
+
+**Limites deste encerramento:** não se instalou o PWA nem se validou offline geral, toque/teclado, tela de 360 px, queda real de rede ou backup entre aparelhos. O teste headless com viewport emulado e a leitura do `sw.js` publicado **não** substituem as validações em aparelho físico ainda pendentes em `docs/VALIDACAO_MANUAL.md` (seções 1–5). Nenhuma funcionalidade nova ou código de produção/teste foi alterado nesta PR documental.
