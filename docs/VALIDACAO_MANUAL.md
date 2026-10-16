@@ -189,14 +189,18 @@ falha de gravação do localStorage e da imagem (IndexedDB recusando).
 - [ ] **Não validado automaticamente**: exportação/importação entre aparelhos
       diferentes e cota de armazenamento cheia num navegador real (o item acima é o roteiro).
 
-## 6. Pendências conhecidas (não são deste checklist)
+## 6. Histórico de pendências resolvidas (não são deste checklist)
 
 - ~~`js/custom_exercises.js` chama `openModal`/`closeModal`/`renderSearchTab`, que não
   existem~~ — **resolvido** na manutenção pós-PR #16 (I2): a janela passou a existir no
   próprio módulo (mesmo padrão de overlay do app) e a aba Buscar é redesenhada com
   `renderSearchScreen`. Ver o item "➕ Novo exercício" na seção 4.
-- Edição/exclusão de exercício personalizado: o formulário tem esse modo
-  (`openCustomExModal(id)`), mas nenhum botão da interface o abre hoje.
+- ~~Edição/exclusão de exercício personalizado não tem entrada na interface~~ —
+  **resolvido em A2/A3 (pós-PR #17):** `js/busca.js` renderiza **✏️ Editar** nos cards
+  personalizados com `data-action="openCustomExModal"` e o id do exercício;
+  `js/custom_exercises.js` abre o formulário em modo de edição e oferece **Excluir**
+  via `confirmModal`. Ver A2/A3 em `CHANGELOG.md`. Toque no aparelho ainda requer a
+  validação manual da seção 4.
 - ~~Offline na primeira visita: `images/patentes/*` e `images/cards/*` não estão no CORE do
   `sw.js`~~ — **resolvido na B5/D8** (`sw.js` v47): as 110 imagens (1.057.982 bytes) entraram
   no precache; o custo é esse tamanho a mais na instalação/atualização offline.
