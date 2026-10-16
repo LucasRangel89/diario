@@ -38,13 +38,13 @@ Versões consultadas em 2026-10-16 via `gh api repos/actions/<ação>/releases/l
 | upload-pages-artifact | v5.0.0 |
 | deploy-pages | v5.0.1 |
 
-`ci.yml` e `pages.yml` foram atualizados para esses majors e Node 24, preservando `ubuntu-latest` e os nomes dos checks. Ainda não há execução CI desta branch neste relatório; Node 24 e a imagem do runner novo precisam ser confirmados pelos checks remotos antes de declarar o aceite A1.
+`ci.yml` e `pages.yml` foram atualizados para esses majors e Node 24, preservando `ubuntu-latest` e os nomes dos quatro checks obrigatórios. O CI também roda em pushes `arena/**`; o navegador real é bloqueante e exige Chrome. Na execução da branch em 2026-10-16, os cinco jobs passaram; o navegador reportou 37/37 com Chrome do sistema 155.0.8059.39 (run [38905951781](https://github.com/LucasRangel89/diario/actions/runs/38905951781)).
 
 ## Implementação e validação por item
 
 | Item | Situação nesta branch | Commit |
 |---|---|---|
-| A1 | Actions atuais e workflows em Node 24; CI remoto pendente | `927a9e6` |
+| A1 | Actions atuais e workflows em Node 24; CI remoto aprovado, navegador 37/37 com Chrome do sistema | `927a9e6` + `3eba104` |
 | A2 | Editar nos cards personalizados da Busca; fluxo criar → editar → salvar coberto | `ba0f451` |
 | A3 | Exclusão usa `confirmModal`; Cancelar/Confirmar e ausência de `window.confirm` cobertos | `dca57d0` |
 | A4 | Falha de localStorage usa aviso persistente com exportação JSON; rearme, dispensar e convivência com aviso de imagem cobertos | `cfdcde1` |
@@ -85,7 +85,8 @@ ignorando D6: reimportar arquivo antigo para log enriquecido conta como igual, n
 - `npm run build:css && git diff --exit-code -- vendor/tailwind.css`: passou; nenhum diff gerado em `vendor/tailwind.css`.
 - `node scripts/check-sw-version.js origin/main`: passou, v39 → v45, 7 arquivos JS/ativos no diff.
 - `npm ci` reportou 7 vulnerabilidades já presentes no lockfile (2 moderadas, 5 altas); dependências não foram atualizadas.
-- **CI remoto e navegador real não foram executados/validados nesta continuação.** Nenhum PR foi aberto ou mesclado; PWA/offline/celular não são declarados como validados.
+- CI remoto do push `3eba104` finalizou com sucesso nos cinco jobs: `Testes (motor + UI)`, `Artefato do GitHub Pages contém o CORE do Service Worker`, `vendor/tailwind.css atualizado`, `Versão do cache offline` e `Validação em navegador real`. Navegador: **37/37**, Chrome do sistema `/usr/bin/google-chrome`, versão `155.0.8059.39`; artefato e relatório disponíveis na [execução 38905951781](https://github.com/LucasRangel89/diario/actions/runs/38905951781).
+- Nenhum PR foi aberto ou mesclado. O resultado é validação do gate de CI e do harness de navegador; não declara PWA/offline em geral nem uso em celular como validados.
 
 ### Reverts controlados A1–B2
 
