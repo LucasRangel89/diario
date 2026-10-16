@@ -302,7 +302,7 @@ function renderHistoryResults() {
                     <div class="flex flex-wrap items-center gap-1.5">
                         <span class="text-[10px] font-mono px-1.5 py-0.5 bg-berzerker-border text-gray-300 rounded">${escapeHtml(formatShortBR(l.date))}</span>
                         <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-card border border-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(normalizeMuscle(l.muscle))}</span>
-                        ${l.isPR ? '<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded">🏆 PR</span>' : ''}
+                        ${l.isPR ? `<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded">${l.kind === 'corrida' ? '🏆 PR de distância' : '🏆 PR'}</span>` : ''}
                         ${l.technique && l.technique !== 'Convencional' ? `<span class="text-[10px] font-mono text-gray-500">[${escapeHtml(l.technique)}]</span>` : ''}
                     </div>
                     <div class="font-bold text-white text-sm mt-1 truncate">${escapeHtml(l.exercise)}</div>

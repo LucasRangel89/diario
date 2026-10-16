@@ -429,15 +429,22 @@ function csvCardioRow(l) {
     return [histDataBR(l.date), l.exercise || '', csvNum(Number(l.distanceKm) || 0), csvNum(Number(l.durationMin) || 0), csvTexto(l.notes), csvLogId(l)];
 }
 
-// Impressão digital do conteúdo de um registro (sem técnica/meta, que são metadados).
-// Usada para detectar duplicatas legítimas e conflitos. Observações: espaços normalizados,
-// porque o formato 1 trocava quebras de linha por espaço.
+// Impressão digital do conteúdo de um registro, usada para detectar duplicatas/conflitos.
+// Corrida usa apenas data, modalidade, observações, distância e duração: campos de musculação
+// nunca alteram a identidade; campos opcionais D6 são metadados e não invalidam CSVs antigos.
+// Observações normalizam espaços porque o formato 1 trocava quebras de linha por espaço.
 function csvLogFingerprint(l) {
     const r2 = v => (v == null || v === '' || !isFinite(Number(v))) ? '' : String(+Number(v).toFixed(2));
     const sets = Array.isArray(l.sets) && l.sets.length ? l.sets.map(s => [r2(s.weight), r2(s.reps)]) : null;
+    if (l.kind === 'corrida') {
+        return JSON.stringify([
+            'corrida', l.date || '', String(l.exercise || '').trim(),
+            String(l.notes || '').replace(/\s+/g, ' ').trim(), r2(l.distanceKm), r2(l.durationMin)
+        ]);
+    }
     const reps = Array.isArray(l.reps) ? l.reps.map(r2) : [];
     return JSON.stringify([
-        l.kind === 'corrida' ? 'corrida' : 'peso', l.date || '', String(l.exercise || '').trim(), String(l.sessao || '').trim(),
+        'peso', l.date || '', String(l.exercise || '').trim(), String(l.sessao || '').trim(),
         r2(l.weight), reps, sets, r2(l.rir), !!l.conferir, String(l.notes || '').replace(/\s+/g, ' ').trim(),
         r2(l.distanceKm), r2(l.durationMin)
     ]);

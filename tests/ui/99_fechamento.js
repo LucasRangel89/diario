@@ -5,6 +5,6 @@
    Avaliado pelo runner no MESMO escopo dos demais trechos (ordem do nome).
    ============================================================ */
 
-check('nenhuma checagem foi perdida na divisão por área (mínimo de 353)', globalThis.totalChecks >= 353, globalThis.totalChecks);
+check('nenhuma checagem foi perdida na divisão por área (mínimo de 376)', globalThis.totalChecks >= 376, globalThis.totalChecks);
     console.log('\n' + (failures === 0 ? '✅ SMOKE TEST DE UI PASSOU' : `❌ ${failures} FALHA(S) DE UI`));
     process.exit(failures === 0 ? 0 : 1);
