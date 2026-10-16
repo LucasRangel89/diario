@@ -125,6 +125,14 @@ async function disparaFetch(sw, url, { method = 'GET', mode = 'cors' } = {}) {
     // Regressão: as conquistas estavam sem vírgula no array (SyntaxError que derrubava o SW inteiro).
     const badgesDisco = fs.readdirSync(path.join(REPO, 'images', 'badges')).filter(f => f.endsWith('.webp')).map(f => './images/badges/' + f);
     check('todas as conquistas (badges) do disco estão no CORE', badgesDisco.length > 0 && badgesDisco.every(b => sw.CORE.includes(b)), badgesDisco.filter(b => !sw.CORE.includes(b)));
+    // B5/D8: exatamente as imagens de patentes e cards previstas entram no precache.
+    const patentesDisco = fs.readdirSync(path.join(REPO, 'images', 'patentes')).filter(f => f.endsWith('.webp')).sort().map(f => './images/patentes/' + f);
+    const cardsDisco = fs.readdirSync(path.join(REPO, 'images', 'cards')).filter(f => f.endsWith('.webp')).sort().map(f => './images/cards/' + f);
+    const b5Disco = [...patentesDisco, ...cardsDisco];
+    const b5Bytes = b5Disco.reduce((soma, p) => soma + fs.statSync(path.join(REPO, p.slice(2))).size, 0);
+    check('B5: disco tem 100 patentes + 10 cards = 110 imagens .webp', patentesDisco.length === 100 && cardsDisco.length === 10 && b5Disco.length === 110, [patentesDisco.length, cardsDisco.length]);
+    check('B5: todas as 110 imagens de patentes/cards estão no CORE (sem extras desses diretórios)', b5Disco.every(b => sw.CORE.includes(b)) && sw.CORE.filter(p => /^\.\/images\/(patentes|cards)\//.test(p)).length === 110, sw.CORE.filter(p => /^\.\/images\/(patentes|cards)\//.test(p)).length);
+    check('B5: tamanho total das 110 imagens fica na faixa esperada (~1,2 MB)', b5Bytes > 1_000_000 && b5Bytes < 1_300_000, b5Bytes);
 
     console.log('\n== SW 2. Instalação ==');
     const r1 = await dispararCiclo(sw, 'install');
@@ -144,6 +152,28 @@ async function disparaFetch(sw, url, { method = 'GET', mode = 'cors' } = {}) {
     const motivo = r2.find(x => x.status === 'rejected');
     check('o erro de instalação nomeia o arquivo que falhou', !!motivo && String(motivo.reason && motivo.reason.message).includes(swFalha.CORE[5]), motivo && motivo.reason && motivo.reason.message);
     check('skipWaiting NÃO é chamado quando a instalação falha', swFalha.skipWaitingCalls === 0, swFalha.skipWaitingCalls);
+
+    console.log('\n== SW 3b. B5: falha num item do precache não aposenta a versão anterior; corrigida, a atualização completa ==');
+    const swB5 = carregarSW();
+    const cacheAntigo = await swB5.caches.open('berzerker-v46');
+    await cacheAntigo.put('./index.html', new FakeResponse('versao-anterior'));
+    const alvoB5 = './images/patentes/classico-01.webp';
+    netFailUrls.add(new FakeRequest(alvoB5).url);
+    const rB5falha = await dispararCiclo(swB5, 'install');
+    check('B5: falha numa imagem de patente REJEITA a instalação da nova versão', rB5falha.some(x => x.status === 'rejected'), rB5falha.map(x => x.status));
+    check('B5: skipWaiting não é chamado com o precache incompleto', swB5.skipWaitingCalls === 0, swB5.skipWaitingCalls);
+    // Sem ativação da versão incompleta, o cache da versão anterior segue intacto e servível.
+    const nomesAposFalha = await swB5.caches.keys();
+    const anterior = nomesAposFalha.includes('berzerker-v46') ? await (await swB5.caches.open('berzerker-v46')).match('./index.html') : undefined;
+    check('B5: versão anterior funcional permanece disponível após a falha', !!anterior && anterior.body === 'versao-anterior', nomesAposFalha);
+    netFailUrls.delete(new FakeRequest(alvoB5).url);
+    const rB5ok = await dispararCiclo(swB5, 'install');
+    const cacheNovoB5 = await swB5.caches.open(swB5.CACHE);
+    check('B5: removida a falha, a instalação completa é aprovada', rB5ok.every(x => x.status === 'fulfilled'), rB5ok.map(x => x.status));
+    check('B5: após a recuperação, todas as 110 imagens estão no cache novo', b5Disco.every(p => cacheNovoB5.m.has(new FakeRequest(p).url)), b5Disco.filter(p => !cacheNovoB5.m.has(new FakeRequest(p).url)).slice(0, 3));
+    const rB5ativa = await dispararCiclo(swB5, 'activate');
+    const nomesAposAtiva = await swB5.caches.keys();
+    check('B5: só após a instalação completa a ativação troca para a nova versão', rB5ativa.every(x => x.status === 'fulfilled') && nomesAposAtiva.includes(swB5.CACHE) && !nomesAposAtiva.includes('berzerker-v46'), nomesAposAtiva);
 
     console.log('\n== SW 4. Ativação limpa caches antigos ==');
     const sw4 = carregarSW();

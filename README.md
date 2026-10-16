@@ -164,7 +164,9 @@ npm test             # motor + UI + módulos + Service Worker
   (boot/navegação, busca e registro, assistente/sessão, reservas e card, backup,
   CSV/mapa de recuperação e fluxos da aba Corridas em `tests/ui/90_corridas_aba.js`).
 - `node --experimental-vm-modules test_modules.js` — avalia o grafo real de ES modules.
-- `node test_sw.js` — Service Worker: instalação, offline, ativação e a regra de versão.
+- `node test_sw.js` — Service Worker: instalação, offline, ativação, a regra de versão e o
+  precache B5/D8 (as 110 imagens de `images/patentes/*.webp` + `images/cards/*.webp`,
+  1.057.982 bytes medidos; falha num item não ativa a versão nova e preserva a anterior).
 - Cada runner confere o manifesto das áreas e um piso de checagens (`tests/**/99_fechamento.js`):
   apagar, renomear ou esvaziar um trecho de teste falha em vez de reduzir a cobertura em silêncio.
 - `npm run check:docs` — docs e comentários não podem apontar para linha/seção dos runners

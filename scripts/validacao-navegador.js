@@ -331,11 +331,17 @@ const server = http.createServer((req, res) => {
     const reg = await navigator.serviceWorker.getRegistration();
     const chaves = await caches.keys();
     const nomes = chaves.length ? await (await caches.open(chaves[0])).keys() : [];
-    return { temSW: !!reg, controlado: !!navigator.serviceWorker.controller, versao: chaves, arquivos: nomes.length };
+    const urls = nomes.map(r => new URL(r.url).pathname);
+    return {
+      temSW: !!reg, controlado: !!navigator.serviceWorker.controller, versao: chaves, arquivos: nomes.length,
+      patentes: urls.filter(u => u.includes('/images/patentes/') && u.endsWith('.webp')).length,
+      cards: urls.filter(u => u.includes('/images/cards/') && u.endsWith('.webp')).length
+    };
   });
   check('service worker registrado e ativo', sw.temSW, JSON.stringify(sw));
   check('cache offline criado com o CORE', sw.arquivos > 100, sw.arquivos);
   check(`cache da versão ${VERSAO} (lida do sw.js)`, (sw.versao || []).includes('berzerker-' + VERSAO), JSON.stringify(sw.versao));
+  check('B5: 100 imagens de patentes + 10 de cards estão no cache (110 no precache)', sw.patentes === 100 && sw.cards === 10, JSON.stringify(sw));
 
   await context.setOffline(true);
   fase = 'offline';
@@ -350,6 +356,13 @@ const server = http.createServer((req, res) => {
   check('app abre OFFLINE (service worker servindo o cache)', offline.exports > 400 && offline.logs > 0, JSON.stringify(offline));
   check('sugestões de exercício carregadas offline (datalist)', offline.linhas >= 5, offline.linhas);
   check('histórico continua no DOM offline', offline.historico > 0, offline.historico);
+  const b5Offline = await page.evaluate(async () => {
+    const amostras = ['./images/patentes/classico-01.webp', './images/patentes/zodiaco-10.webp', './images/cards/classico.webp', './images/cards/zodiaco.webp'];
+    const achadas = [];
+    for (const a of amostras) { const r = await caches.match(a); achadas.push(!!r && r.ok); }
+    return achadas;
+  });
+  check('B5: amostras de patentes/cards respondem do cache OFFLINE', b5Offline.every(Boolean), JSON.stringify(b5Offline));
   await context.setOffline(false);
   fase = 'online-de-novo';
 
