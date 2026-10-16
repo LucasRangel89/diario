@@ -170,9 +170,9 @@ Resultados de referência após B2: `npm test` aprovado — motor **437**, UI **
   locais no CORE; `npm run check:modules`: OK, grafo de **20** módulos;
   `npm run check:docs`: OK, **61** arquivos verificados.
 - `npm run build:css` gerou diferenças esperadas pelas classes novas da aba;
-  `vendor/tailwind.css` regenerado e incluído no commit B3.
+  `vendor/tailwind.css` foi regenerado e incluído no commit B3.
   `npm run build:css && git diff --exit-code -- vendor/tailwind.css` passou
-  após staging do CSS e será repetido após o commit.
+  após staging **e novamente após o commit**.
 - Navegador local **real e exigido** (`DIARIO_EXIGIR_NAVEGADOR=1`), com driver e
   `@sparticuz/chromium` **153.0.8010.0** instalados só em `/tmp`, fora do repo:
   **44/44 aprovações**, 0 falhas, cache v46, viewport emulado 412 px. O
@@ -184,13 +184,23 @@ Resultados de referência após B2: `npm test` aprovado — motor **437**, UI **
   após `setLogs`; restaurava `[]` e causava três falhas de backup em cascata.
   O teste passou a ler os logs pelo `buildBackupPayload()` existente antes e
   depois do fluxo, restaurou o seed no `finally` e voltou a **44/44**.
-- `node scripts/check-sw-version.js origin/main`: aguardando commit B3 para
-  comparar `origin/main` com `HEAD` (o script não considera alterações soltas).
-- CI da branch/**Chrome do sistema** e PR: a registrar **após gates verdes**, sem
-  abrir PR antecipadamente. Os quatro checks obrigatórios mantêm os nomes
-  `Testes (motor + UI)`, `vendor/tailwind.css atualizado`, `Versão do cache offline`
-  e `Artefato do GitHub Pages contém o CORE do Service Worker`; o quinto job,
-  `Validação em navegador real`, é **bloqueante** e não pode ser pulado.
+- `node scripts/check-sw-version.js origin/main`: OK no commit `a5bff94`;
+  `v45 → v46` pelos três arquivos `js/app.js`, `js/corridas.js`, `js/registro.js`.
+- CI da branch `arena/7d08417f-diario`, commit funcional `a5bff94`:
+  **5/5 jobs concluídos com sucesso** no [run 38918305668](https://github.com/LucasRangel89/diario/actions/runs/38918305668),
+  iniciado por push antes da PR. Os quatro checks obrigatórios mantiveram os
+  nomes e aprovaram: `Testes (motor + UI)`, `vendor/tailwind.css atualizado`,
+  `Versão do cache offline` e
+  `Artefato do GitHub Pages contém o CORE do Service Worker`. O quinto job,
+  **`Validação em navegador real`**, também aprovou, com os steps `Chrome do
+  runner`, `Validação em navegador real` e `Relatório da validação` todos
+  concluídos com sucesso. `DIARIO_EXIGIR_NAVEGADOR=1` impede aprovação por
+  skip; o artefato `validacao-navegador` foi publicado pelo job. O ZIP do log
+  não ficou acessível neste sandbox, logo **44/44** acima é a contagem da
+  execução **local**, não uma contagem presumida da CI. Confirmar a CI do
+  HEAD após o commit deste relatório antes da revisão da PR.
+- PR: abrir separadamente para `main` depois de todos os gates verdes; **não
+  mesclar** sem autorização explícita.
 
 Navegador headless em 412 px **não** é validação de toque, teclado virtual,
 instalação em aparelho nem PWA/offline geral. A lacuna preexistente de imagens

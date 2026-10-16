@@ -41,9 +41,10 @@ por modalidade, abre o editor com só duas opções/D6, vê pace ao digitar, cri
 verifica `logs`, backup JSON v6, CSV v3 e PR global de cardio; a rodada de layout em 412 px
 inclui Corridas. **Execução local exigida** com `@sparticuz/chromium`
 153.0.8010.0 fora do repositório: **44/44**, cache v46, lacuna conhecida em
-`/images/cards/classico.webp` na primeira visita offline. Chrome do sistema na
-CI ainda precisa confirmar o gate; o resultado será registrado em
-`docs/RELATORIO_POS_PR17.md`. Viewport emulado não valida aparelho físico.
+`/images/cards/classico.webp` na primeira visita offline. O Chrome do sistema
+na CI da branch aprovou o gate bloqueante no [run 38918305668](https://github.com/LucasRangel89/diario/actions/runs/38918305668)
+(commit `a5bff94`); consultar `docs/RELATORIO_POS_PR17.md` e confirmar a CI do
+HEAD da PR. Viewport emulado não valida aparelho físico.
 
 **Lacuna conhecida (achado, não corrigido):** na **primeira visita**, as imagens que ficam fora do
 CORE (`images/patentes/*.webp`, `images/cards/*.webp` — 110 arquivos, ~1,2 MB) são pedidas antes
