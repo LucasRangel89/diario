@@ -2,8 +2,8 @@
 
 PWA 100% local para registrar cargas, treinos e evolução — com gamificação (XP, patentes,
 chefões, missões e temporadas), integração com a planilha de treino e um pool de exercícios
-com tags. Sem backend, sem conta, sem nuvem: tudo vive no `localStorage` do aparelho e
-continua funcionando **offline na academia**.
+com tags. Sem backend, sem conta, sem nuvem: os dados vivem no IndexedDB do aparelho,
+com espelho no `localStorage`, e continuam funcionando **offline na academia**.
 
 **App publicado:** <https://lucasrangel89.github.io/diario/> (GitHub Pages, branch `main`)
 **Novidades por versão:** [CHANGELOG.md](CHANGELOG.md)
@@ -22,6 +22,19 @@ Fator, Lados, Carga efetiva, Total reps, Volume, Melhor/Menor série, 1RM Epley,
 Métrica de progresso). Import/export **CSV multi-aba** (`--- Sheet: ... ---`, `;`,
 dd/mm/aaaa) — sem digitação dupla. O arquivo `planilha_diario.exemplo.csv` traz
 dados fictícios de exemplo (o histórico real fica só no seu aparelho).
+
+### 🏃 Corridas (última aba de Treino)
+A navegação mantém os quatro grupos **Treino · Jogo · Você · Config**. Em **Treino → Corridas**
+aparecem **somente Corrida (Rua) e Corrida (Esteira)**: registro/edição com tempo `h:mm:ss`,
+pace ao digitar, campos opcionais de tipo, RPE, FC média e tênis; exclusão com confirmação.
+O painel mostra totais, resumos por semana ISO/mês/ano, recordes informativos (pace médio da
+corrida inteira, não tempo oficial), km por tênis e uma lista filtrável por modalidade/ano.
+Nomes antigos de corrida/esteira aparecem com rótulo canônico sem reescrever o registro ao
+editar apenas outros campos. Os filtros afetam só a lista; totais e recordes usam todas as
+corridas. **Recordes do painel não alteram o PR global de cardio, o XP ou o combate.**
+Bike, elíptico e remo continuam no Histórico/CSV Cardio e no formulário de cardio de Hoje,
+fora da aba Corridas. Todos os registros permanecem na mesma coleção `logs`; backup JSON
+v5/v6, CSV v1/v2/v3 (inclusive D6 e `PR (informativo)`) continuam compatíveis.
 
 ### 🏋️ Convenções de registro (nunca mudam)
 - **Carga registrada** = o número que você vê (pino; 1 haltere em pares; soma das anilhas
@@ -87,12 +100,10 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
   de quais exercícios evitar ou fazer com carga leve, mostra aviso em cada exercício durante a sessão,
   e penaliza treinos que usam lombar na sugestão automática quando a região está carregada.
   **Estimativa baseada no tempo desde a última sessão e no volume; não substitui orientação profissional.**
-- **Corridas no histórico:** corridas, bike e cardio aparecem na aba Histórico
-  com distância, tempo, pace e XP, com opção de filtrar por grupo "Cardio". Corridas podem
-  ser editadas pelo editor próprio a partir da lista do dia ou do histórico da Busca; o editor
-  preserva a identidade/tema do registro e não mistura campos de musculação. O registro
-  também pode guardar, opcionalmente, tipo de corrida, RPE, frequência cardíaca média e tênis;
-  esses dados continuam em `logs` e o CSV formato 3 os transporta (sem alterar o backup JSON 6).
+- **Cardio no histórico:** corridas, bike, elíptico e remo aparecem na aba Histórico
+  com distância, tempo, pace e XP, com opção de filtrar por grupo "Cardio". A lista do dia
+  e o histórico da Busca também abrem o editor dedicado de corrida, preservando id e tema
+  sem misturar campos de musculação. Campos opcionais D6 seguem em `logs`/CSV 3 (JSON 6).
 - **Teclado no celular:** campos de data abrem o seletor nativo no Android
   e inputs de texto focam corretamente para abrir o teclado virtual (fonte 16px no mobile evita zoom).
 - **Cadastro de exercício manual:** botão "➕ Novo exercício" na aba Buscar permite criar
@@ -137,7 +148,7 @@ qualquer caminho — inclusive os arquivos de `reserva/`.
 ## Desenvolvimento
 
 ```bash
-npm install          # só o Tailwind CLI (dev)
+npm ci               # dependências de desenvolvimento (jsdom e Tailwind CLI)
 npm run build:css    # regenera vendor/tailwind.css (necessário ao criar classes novas)
 npm run serve        # servidor local em http://localhost:8080
 npm test             # motor + UI + módulos + Service Worker
@@ -150,8 +161,8 @@ npm test             # motor + UI + módulos + Service Worker
   validação de dados, armazenamento, CSV e backup). Os trechos rodam no mesmo escopo,
   na ordem do nome do arquivo.
 - `node test_ui.js` — runner da UI (jsdom): avalia os trechos de `tests/ui/*.js`
-  (boot/navegação, busca e registro, assistente/sessão, reservas e card, backup e
-  gravação, CSV/mapa de recuperação).
+  (boot/navegação, busca e registro, assistente/sessão, reservas e card, backup,
+  CSV/mapa de recuperação e fluxos da aba Corridas em `tests/ui/90_corridas_aba.js`).
 - `node --experimental-vm-modules test_modules.js` — avalia o grafo real de ES modules.
 - `node test_sw.js` — Service Worker: instalação, offline, ativação e a regra de versão.
 - Cada runner confere o manifesto das áreas e um piso de checagens (`tests/**/99_fechamento.js`):
@@ -159,10 +170,11 @@ npm test             # motor + UI + módulos + Service Worker
 - `npm run check:docs` — docs e comentários não podem apontar para linha/seção dos runners
   (os checks vivem em `tests/engine/*` e `tests/ui/*`) nem para um arquivo de área inexistente.
 - `node scripts/validacao-navegador.js` — validação em navegador real (Service Worker, offline,
-  IndexedDB, download do backup, layout 412 px). Fora do `npm test`; precisa de
-  `npm i --no-save playwright-core` e de um Chrome (`DIARIO_CHROME_PATH`). Sem eles, pula com
-  mensagem clara. Na CI roda no job "Validação em navegador real (não bloqueia)". Roteiro e
-  resultados em `docs/VALIDACAO_MANUAL.md`.
+  IndexedDB, download do backup, Corridas, layout 412 px). Fora do `npm test`; precisa de
+  `npm i --no-save playwright-core` e de um Chrome (`DIARIO_CHROME_PATH`). Sem eles, o
+  script local avisa que pulou; na CI o job **Validação em navegador real** exige o Chrome
+  do sistema (`DIARIO_EXIGIR_NAVEGADOR=1`) e é bloqueante. Roteiro/limites em
+  `docs/VALIDACAO_MANUAL.md`.
 
 - `js/storage.js` — camada única de armazenamento (IndexedDB + espelho no localStorage, migração automática, imagens como Blob)
 - `js/app.js` — entry: importa os demais módulos na ordem certa
@@ -175,7 +187,7 @@ npm test             # motor + UI + módulos + Service Worker
 - `js/busca.js` — aba Buscar + seletor rápido
 - `js/custom_exercises.js` — exercícios personalizados (cadastro, índice de busca e a janela "➕ Novo exercício")
 - `js/datas.js` — regra única de data válida (backup, CSV e recuperação)
-- `js/corridas.js` — funções puras de duração, pace, resumos ISO e recordes informativos de corrida (logs recebidos por parâmetro; sem estado/DOM)
+- `js/corridas.js` — funções puras de duração, pace, classificação Rua/Esteira (inclusive nomes legados), resumos ISO e recordes informativos de corrida/km por tênis (logs por parâmetro; sem estado/DOM)
 - `js/persistencia.js` — gravação do estado (logs, treinos, ajustes, jogo, Story Card)
 - `js/backup.js` — validação do backup JSON, montagem do pacote e parser de CSV
 - `js/cartoes.js` — Story Card e Card do Chefão (canvas, arte temática e símbolos)
@@ -183,5 +195,5 @@ npm test             # motor + UI + módulos + Service Worker
 - `js/sessao.js` — treino ao vivo, cronômetro de descanso, bi-sets e efeitos do boss
 - `js/config.js` — migração para o IndexedDB, painel de armazenamento (Config) e seed do primeiro uso
 - `js/boss.js` — tela do chefão, retratos (padrão, upload e reservas) e lightbox da arte
-- `js/registro.js` — formulário de registro, última vez/repetir, edição, registros do dia, mapa de prontidão, sugestão do dia e cardio
-- `js/app.js` — entry: importa os demais módulos e concentra estado, sessão e UI (núcleo)
+- `js/registro.js` — registro, edição/criação de corrida com editor compartilhado, registros do dia, mapa de prontidão, sugestão e cardio
+- `js/app.js` — entry: importa os módulos, concentra estado e desenha a aba Corridas a partir de `logs`

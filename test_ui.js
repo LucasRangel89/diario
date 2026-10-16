@@ -105,7 +105,7 @@ const cards = () => [...$('cat-results').children].filter(c => c.dataset.ex);   
 const titles = () => cards().map(c => (c.querySelector('h3') || {}).textContent || '');
 const histCards = () => [...$('hist-results').querySelectorAll('[data-log-id]')];
 const pickerRows = () => [...$('picker-results').querySelectorAll('button[data-ex]')];
-const navGroupFor = tab => ({ diario: 'treino', montador: 'treino', historico: 'treino', busca: 'treino', boss: 'jogo', story: 'jogo', stats: 'voce', calcs: 'voce', config: 'config' })[tab];
+const navGroupFor = tab => ({ diario: 'treino', montador: 'treino', historico: 'treino', busca: 'treino', corridas: 'treino', boss: 'jogo', story: 'jogo', stats: 'voce', calcs: 'voce', config: 'config' })[tab];
 function navTo(tab) {
     const group = navGroupFor(tab);
     if (group) click($(`nav-group-${group}`));
@@ -121,7 +121,7 @@ Object.assign(globalThis, expostos);
 const AREAS_DIR = path.join(__dirname, 'tests', 'ui');
 const AREAS = fs.readdirSync(AREAS_DIR).filter(f => /^\d\d_.*\.js$/.test(f)).sort();
 // manifesto explícito: perder/renomear um trecho de teste NÃO pode passar em silêncio
-const ESPERADAS = ['10_boot_navegacao.js', '20_busca_tags.js', '30_assistente_sessao.js', '40_reservas_card.js', '50_backup_gravacao.js', '60_csv_mapa_delegacao.js', '70_corridas_editor.js', '80_corridas_backup.js', '99_fechamento.js'];
+const ESPERADAS = ['10_boot_navegacao.js', '20_busca_tags.js', '30_assistente_sessao.js', '40_reservas_card.js', '50_backup_gravacao.js', '60_csv_mapa_delegacao.js', '70_corridas_editor.js', '80_corridas_backup.js', '90_corridas_aba.js', '99_fechamento.js'];
 const faltando = ESPERADAS.filter(f => !AREAS.includes(f));
 const extras = AREAS.filter(f => !ESPERADAS.includes(f));
 if (faltando.length || extras.length) { console.error('\n❌ trechos de teste ausentes ou inesperados em tests/ui:', { faltando, extras }); process.exit(1); }

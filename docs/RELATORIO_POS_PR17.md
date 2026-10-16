@@ -1,5 +1,8 @@
 # Relatório técnico — manutenção pós-PR #17 e registro de corridas
 
+> As seções A1–B4 abaixo documentam a branch da PR #18 antes de seu merge; o
+> resultado **B3 após o merge** e a nova base `main` estão na seção final deste arquivo.
+
 ## Base e método
 
 - `git fetch origin` foi executado antes de qualquer edição.
@@ -99,3 +102,98 @@ ignorando D6: reimportar arquivo antigo para log enriquecido conta como igual, n
 - **B2 / CSV:** reverti temporariamente o ramo de fingerprint de corrida ao fingerprint genérico; o round-trip deixou de ser igual e o teste de fingerprint falhou. Restaurei e passou.
 
 Resultados de referência após B2: `npm test` aprovado — motor **437**, UI **377**, módulos **13**, SW **30** = **857 aprovações**, 0 falhas; pisos motor 436 e UI 376. `npm run check:modules`, `npm run check:sw-core`, `npm run check:docs` e `node --check sw.js` também passaram com v44 e 175 arquivos locais no CORE.
+
+## B3 — interface de Corridas após o merge da PR #18
+
+### Base verificada, escopo e decisões
+
+- Em 2026-10-16, **antes de editar**: `main`, `origin/main`, `HEAD` da branch
+  `arena/7d08417f-diario` e `git ls-remote origin refs/heads/main` apontavam todos para
+  `59456894359414d79c1e5197f75d25bea8a02602` (merge da PR #18); árvore limpa.
+  Nenhuma troca de branch, edição de `main` ou uso de branch antiga. Baseline local
+  `npm ci && npm test`: **875/875**, motor 451, UI 381, módulos 13 e SW 30.
+- **D2 explicitado em `NAV_GROUPS`/`index.html`:** Treino (Hoje, Histórico, Buscar,
+  Meus treinos), Jogo (Boss, Story Card), Você (Stats, Calcs), Config (Config).
+  Corridas entra **no fim** de Treino; os quatro grupos continuam exatamente esses.
+- **D3:** somente Corrida (Rua) e Corrida (Esteira) no painel e no editor iniciado
+  nele; nomes legados de corrida/esteira recebem rótulo canônico **só na UI**. Bike,
+  elíptico e remo seguem nos mesmos `logs`, no Histórico/CSV Cardio e no formulário
+  de cardio de Hoje. **D4:** `detectAutoPR` permanece global para cardio (bike pode
+  impedir o PR de uma corrida); recordes da aba são informativos e não alimentam jogo.
+- Reutilizado o editor B2 para criar/editar (tempo `h:mm:ss`, pace ao alterar tempo
+  **ou** distância, D6 validado antes de gravar); id/tema preservados ao editar,
+  sem coleção/chave nova. Dados textuais escapados; nomes legados não são
+  rebatizados ao editar apenas outros campos. Resumos semana ISO/mês/ano, recordes,
+  total e km por tênis leem os helpers puros; nomes de tênis como `__proto__` e
+  `toString` são contados por `Map`, não por propriedades herdadas de objeto.
+- **Fora de escopo:** B5, gamificação, fórmulas de XP/dano/combate/volume/1RM, PR
+  global e esquemas de backup/CSV. JSON v5/v6, CSV v1/v2/v3, D6 e a coluna
+  `PR (informativo)` seguem cobertos pelos testes existentes, sem alteração nos
+  respectivos módulos. Sem nova dependência de produção, módulo JS ou overlay
+  (o `edit-log-overlay` já está em `OVERLAY_CLOSE_ORDER`); SW `v45` → `v46`.
+
+### Testes sintéticos e reverts controlados
+
+- `tests/engine/55_corridas.js`: rótulos Rua/Esteira/legados, exclusão de outros
+  cardios e km por tênis com nomes reservados. `tests/ui/90_corridas_aba.js`:
+  navegação, isolamento, resumos/recordes, filtros, escape, legacy edit, registro
+  D6/validação/pace, fórmulas preservadas, PR global, JSON/CSV, edição, exclusão e
+  estado vazio (try/catch/finally, estado sintético restaurado).
+  `test_modules.js` cobre o mesmo fluxo em módulos ESM reais; o harness
+  `scripts/validacao-navegador.js` acrescenta checks bloqueantes no Chrome do
+  sistema com viewport emulado de 412 px, inclusive layout da nova aba.
+- **Red antes do código:** `node test_ui.js` reprovou 2 checagens (D2 ausente e
+  navegação para Corridas impossível); `node test_engine.js` reprovou 1 checagem
+  de `runModality` ausente. Depois, antes de corrigir os casos descobertos,
+  editar notas num nome legado reprovou 1 checagem (rebatismo); tênis com nome
+  reservado reprovou 1 checagem (perda de km). Todos passaram após correção.
+- **Reverts controlados, com cópia de segurança fora do repo + `trap` de
+  restauração:** ampliar o filtro a todo `kind: corrida` → UI reprovou D3
+  (4 falhas ao todo); remover whitelist da modalidade criada → UI reprovou
+  a recusa de bike forjada (2 falhas, incluindo cascata de overlay); suprimir
+  redesenho em `refreshAll` → UI reprovou atualização da lista após criar
+  (2 falhas, incluindo cascata); retirar preservação do nome legado → UI
+  reprovou edição de notas (1); retirar listener de distância → UI reprovou
+  atualização do pace (1); interpolar notas sem escape → UI reprovou
+  segurança do HTML (1); trocar `Map` por objeto de tênis → motor reprovou
+  nomes reservados (1). **Após cada restauração**, a respectiva suíte
+  `node test_ui.js` ou `node test_engine.js` voltou a passar. Nenhum revert
+  temporário permanece no diff.
+
+### Gates e limitações da B3
+
+- `npm ci && npm test`: **904/904 aprovações**, 0 falhas (motor **453**, UI **407**,
+  módulos reais **14**, Service Worker **30**). O `npm ci` relatou as mesmas
+  **7 vulnerabilidades preexistentes** do lockfile (2 moderadas, 5 altas);
+  dependências não foram alteradas.
+- `node --check sw.js && npm run check:sw-core`: OK, `v46`, **175** arquivos
+  locais no CORE; `npm run check:modules`: OK, grafo de **20** módulos;
+  `npm run check:docs`: OK, **61** arquivos verificados.
+- `npm run build:css` gerou diferenças esperadas pelas classes novas da aba;
+  `vendor/tailwind.css` regenerado e incluído no commit B3.
+  `npm run build:css && git diff --exit-code -- vendor/tailwind.css` passou
+  após staging do CSS e será repetido após o commit.
+- Navegador local **real e exigido** (`DIARIO_EXIGIR_NAVEGADOR=1`), com driver e
+  `@sparticuz/chromium` **153.0.8010.0** instalados só em `/tmp`, fora do repo:
+  **44/44 aprovações**, 0 falhas, cache v46, viewport emulado 412 px. O
+  harness apontou a lacuna preexistente `/images/cards/classico.webp` fora
+  do CORE na primeira visita offline (não reprovante). **Isso não substitui
+  Chrome do sistema na CI nem teste em celular.**
+- Na primeira execução local do novo harness, **4/44 reprovaram**: o teste
+  lia `window.__diarioExports.logs` (snapshot do boot), em vez do binding vivo
+  após `setLogs`; restaurava `[]` e causava três falhas de backup em cascata.
+  O teste passou a ler os logs pelo `buildBackupPayload()` existente antes e
+  depois do fluxo, restaurou o seed no `finally` e voltou a **44/44**.
+- `node scripts/check-sw-version.js origin/main`: aguardando commit B3 para
+  comparar `origin/main` com `HEAD` (o script não considera alterações soltas).
+- CI da branch/**Chrome do sistema** e PR: a registrar **após gates verdes**, sem
+  abrir PR antecipadamente. Os quatro checks obrigatórios mantêm os nomes
+  `Testes (motor + UI)`, `vendor/tailwind.css atualizado`, `Versão do cache offline`
+  e `Artefato do GitHub Pages contém o CORE do Service Worker`; o quinto job,
+  `Validação em navegador real`, é **bloqueante** e não pode ser pulado.
+
+Navegador headless em 412 px **não** é validação de toque, teclado virtual,
+instalação em aparelho nem PWA/offline geral. A lacuna preexistente de imagens
+fora do CORE na primeira visita offline continua; checagem manual de
+Android/iOS, tela de 360 px, restauração entre aparelhos e queda de rede real
+segue pendente (`docs/VALIDACAO_MANUAL.md`). Nenhuma foto/dado pessoal foi usado.

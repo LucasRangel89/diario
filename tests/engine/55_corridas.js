@@ -16,6 +16,14 @@
     check('predicado reconhece corrida de rua e esteira', runAPI.isRunLog({kind:'corrida',exercise:'Corrida (Rua)'}) && runAPI.isRunLog({kind:'corrida',exercise:'Corrida (Esteira)'}));
     check('predicado reconhece nome legado Esteira mesmo antes de migrateLog', runAPI.isRunLog({exercise:'Esteira',distanceKm:5}));
     check('predicado não inclui bike, elíptico, remo ou modalidades não-corrida', !runAPI.isRunLog({kind:'corrida',exercise:'Bike'}) && !runAPI.isRunLog({kind:'corrida',exercise:'Elíptico'}) && !runAPI.isRunLog({kind:'corrida',exercise:'Remo'}) && !runAPI.isRunLog({kind:'peso',exercise:'Supino'}));
+    check('modalidade da aba usa só Rua/Esteira (inclusive nomes legados), nunca bike/elíptico/remo',
+        typeof runAPI.runModality === 'function' &&
+        runAPI.runModality({kind:'corrida',exercise:'Corrida (Rua)'}) === 'Corrida (Rua)' &&
+        runAPI.runModality({kind:'corrida',exercise:'Corrida (Esteira)'}) === 'Corrida (Esteira)' &&
+        runAPI.runModality({kind:'corrida',exercise:'Esteira'}) === 'Corrida (Esteira)' &&
+        runAPI.runModality({exercise:'treadmill'}) === 'Corrida (Esteira)' &&
+        runAPI.runModality({kind:'corrida',exercise:'running'}) === 'Corrida (Rua)' &&
+        ['Bike / Ergométrico', 'Elíptico', 'Remo (Ergômetro)'].every(exercise => runAPI.runModality({kind:'corrida',exercise}) === null));
     check('virada de ano: 01/01/2021 pertence à semana ISO 2020-W53', runAPI.runISOWeekKey('2021-01-01') === '2020-W53');
     check('segunda-feira 04/01/2021 abre a semana ISO 2021-W01', runAPI.runISOWeekKey('2021-01-04') === '2021-W01');
     check('data ISO impossível não gera chave semanal', runAPI.runISOWeekKey('2021-02-30') === null);
@@ -37,5 +45,11 @@
     check('melhor pace para ≥5 km é o pace médio da corrida inteira e tem rótulo honesto', records.bestPaceByDistance[0].pace === '4:55/km' && records.bestPaceByDistance[0].log.id === 1 && records.bestPaceByDistance[0].label.includes('pace médio da corrida inteira') && records.bestPaceByDistance[0].label.includes('não é tempo oficial'));
     check('distâncias ≥10, 21,1 e 42,2 sem corrida elegível ficam sem recorde', records.bestPaceByDistance.slice(1).every(r => r.log === null && r.pace === ''));
     check('quilometragem por tênis soma só as corridas', records.shoeKm.length === 2 && records.shoeKm.find(x => x.shoe === 'Tênis A').km === 6 && records.shoeKm.find(x => x.shoe === 'Tênis B').km === 2);
+    const shoeNames = runAPI.runRecords([
+        {kind:'corrida',exercise:'Corrida (Rua)',date:'2026-10-15',distanceKm:3,durationMin:15,shoe:'__proto__'},
+        {kind:'corrida',exercise:'Corrida (Esteira)',date:'2026-10-16',distanceKm:2,durationMin:12,shoe:'toString'}
+    ]).shoeKm;
+    check('tênis com nome igual a propriedade do objeto mantém km e não contamina o resumo',
+        shoeNames.length === 2 && shoeNames.find(x => x.shoe === '__proto__')?.km === 3 && shoeNames.find(x => x.shoe === 'toString')?.km === 2);
     check('logs vazios produzem resumos e recordes vazios sem NaN', runAPI.summarizeRunsByWeek([]).length === 0 && runAPI.runRecords([]).longestDistance === null);
 }

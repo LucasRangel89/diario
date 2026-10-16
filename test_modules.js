@@ -137,6 +137,7 @@ function modOf(file) {
     passo('refreshAll', () => app.refreshAll());
     passo('renderRecoveryMap', () => app.renderRecoveryMap());
     passo('switchTab busca', () => app.switchTab('busca'));
+    passo('switchTab corridas', () => app.switchTab('corridas'));
     passo('switchTab boss', () => app.switchTab('boss'));
     passo('renderBossBattleUI', () => app.renderBossBattleUI());
     passo('generateStoryCard', () => app.generateStoryCard());
@@ -155,6 +156,16 @@ function modOf(file) {
     app.setLogs([]);
     app.setLogs([{ id: 900001, date: app.getTodayLocalISO(), kind: 'peso', muscle: 'Peito', exercise: 'Supino Reto com Barra', type: 'carga_total', weight: 80, reps: [8, 8], isPR: false, xpTheme: 'classico' }]);
     check('setLogs + renderLogsTable funcionam no grafo real', app.logs.length === 1 && document.getElementById('logs-container').children.length >= 1);
+    const logPeso = app.logs[0];
+    app.setLogs([
+        { id: 900002, date: '2026-10-15', kind: 'corrida', muscle: 'Cardio', exercise: 'Corrida (Rua)', distanceKm: 5, durationMin: 25 },
+        { id: 900003, date: '2026-10-15', kind: 'corrida', muscle: 'Cardio', exercise: 'Bike / Ergométrico', distanceKm: 80, durationMin: 60 }
+    ]);
+    app.switchTab('corridas');
+    check('grafo ESM real apresenta só corrida na aba, sem bike',
+        document.querySelectorAll('#runs-results [data-run-id]').length === 1 &&
+        !document.getElementById('tab-content-corridas').textContent.includes('Bike / Ergométrico'));
+    app.setLogs([logPeso]);
     const payload = await app.buildBackupPayload();
     check('backup exportado tem logs e versão 6', Array.isArray(payload.logs) && payload.logs.length === 1 && payload.version === 6, payload.version);
     const json = JSON.parse(JSON.stringify(payload));

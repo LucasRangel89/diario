@@ -83,7 +83,7 @@ const api = new Function(src + `
     lerPlanilhaCSV, planejarImportacaoLogs, csvLogFingerprint, csvField, csvLogId, analisarLinhasLog,
     validarBackupJSON, normalizarExerciciosPersonalizados, setCustomExercisesList, getCustomExercises,
     dataDeRegistroValida, isoDataValida, dataISOValida, fatigueState, sinergiaState, parseDataCSV,
-    parseRunDuration, formatRunDuration, paceSecondsPerKm, formatRunPace, isRunLog, runISOWeekKey,
+    parseRunDuration, formatRunDuration, paceSecondsPerKm, formatRunPace, isRunLog, runModality, runISOWeekKey,
     summarizeRunsByWeek, summarizeRunsByMonth, summarizeRunsByYear, runRecords,
     deloadWeeksEfetivos,
     setDeloadWeeks(arr) { deloadWeeks = arr; },
