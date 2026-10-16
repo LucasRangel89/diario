@@ -8,6 +8,7 @@ import './historico.js';
 import './busca.js';
 import './custom_exercises.js';
 import './datas.js';
+import './corridas.js';
 import { storage } from './storage.js';
 import { DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, FAIXA_SERIES_SEMANAIS, MUSCLE_META, MUSCLE_OPTIONS_FULL, MUSCULOS_MAPA, formatLoadText, formatPlates, formatRepsText, logEst1RM, logVolumeKg, CATALOG_TIPOS, EXERCISE_CATALOG, FAIXA_SERIES_POR_GRUPO, MUSCLE_WEIGHT, catalogInfo, detectAutoPR, duplaProgressao, inferExerciseType, logTstSeconds, normalizeMuscle, sinergiaState } from './catalogo.js';
 import { SEASON_WEEKS, STORAGE_KEY_THEME, THEMES, XP_REST_PER_DAY, completeSeason, computeBossProgress, isoWeekKey, isoWeekRange, missionsState, rankFromXP, seasonState, XP_GROUP_DAY_CAP, XP_MIN, XP_PR, autoDeloadWeekKeys, cardioXP, computeXP, logDamageKg } from './gamificacao.js';
