@@ -24,7 +24,7 @@ if (!process.execArgv.some(a => a.includes('experimental-vm-modules'))) {
 const FILES = [
     'js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js',
     'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js',
-    'js/custom_exercises.js', 'js/datas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/config.js', 'js/boss.js', 'js/registro.js', 'js/app.js'
+    'js/custom_exercises.js', 'js/datas.js', 'js/corridas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/config.js', 'js/boss.js', 'js/registro.js', 'js/app.js'
 ];
 const ROOT = path.resolve(__dirname, '..');
 

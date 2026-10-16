@@ -8,6 +8,7 @@ import './historico.js';
 import './busca.js';
 import './custom_exercises.js';
 import './datas.js';
+import './corridas.js';
 import { storage } from './storage.js';
 import { DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, FAIXA_SERIES_SEMANAIS, MUSCLE_META, MUSCLE_OPTIONS_FULL, MUSCULOS_MAPA, formatLoadText, formatPlates, formatRepsText, logEst1RM, logVolumeKg, CATALOG_TIPOS, EXERCISE_CATALOG, FAIXA_SERIES_POR_GRUPO, MUSCLE_WEIGHT, catalogInfo, detectAutoPR, duplaProgressao, inferExerciseType, logTstSeconds, normalizeMuscle, sinergiaState } from './catalogo.js';
 import { SEASON_WEEKS, STORAGE_KEY_THEME, THEMES, XP_REST_PER_DAY, completeSeason, computeBossProgress, isoWeekKey, isoWeekRange, missionsState, rankFromXP, seasonState, XP_GROUP_DAY_CAP, XP_MIN, XP_PR, autoDeloadWeekKeys, cardioXP, computeXP, logDamageKg } from './gamificacao.js';
@@ -95,7 +96,8 @@ function notifyStorageFailure() {
     if (_storageFailureNotified) return;
     _storageFailureNotified = true;
     try {
-        if (typeof alertModal === 'function') alertModal('⚠️ Não foi possível salvar neste navegador. Exporte um backup JSON agora: alterações recentes podem não estar salvas.');
+        if (typeof showBlobFailureWarning === 'function') showBlobFailureWarning('⚠️ Não foi possível salvar neste navegador. Exporte um backup JSON agora: alterações recentes podem não estar salvas.');
+        else if (typeof alertModal === 'function') alertModal('⚠️ Não foi possível salvar neste navegador. Exporte um backup JSON agora: alterações recentes podem não estar salvas.');
     } catch (e) { /* sem UI disponível */ }
 }
 
@@ -133,11 +135,11 @@ function notifyBlobFailure() {
     } catch (e) { /* sem UI disponível */ }
 }
 
-// Aviso PERSISTENTE da imagem não confirmada: ao contrário do alertModal (some em
-// ~4 s), fica na tela até a pessoa dispensar e traz a ação que protege os dados —
-// o mesmo exportJSONBackup do botão de Config. Não é modal: não cobre a tela nem
-// bloqueia o registro. Um só por vez (id fixo); quem decide QUANDO aparecer é o
-// notifyBlobFailure (uma vez por sequência de falhas, rearmado após sucesso).
+// Aviso PERSISTENTE de gravação não confirmada (localStorage ou imagem): ao contrário
+// do alertModal (some em ~4 s), fica na tela até a pessoa dispensar e traz a ação que
+// protege os dados — o mesmo exportJSONBackup do botão de Config. Não é modal: não
+// cobre a tela nem bloqueia o registro. Um só por vez (id fixo); cada notificador
+// decide quando reaparece, uma vez por sequência de falhas e rearmado após sucesso.
 const BLOB_WARNING_ID = 'blob-save-warning';
 function showBlobFailureWarning(msg) {
     document.getElementById(BLOB_WARNING_ID)?.remove();

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'arena/**']
   pull_request:
     branches: [main]
 
@@ -12,15 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # histórico completo: a checagem do sw.js precisa do SHA base do diff
           fetch-depth: 0
 
-      - name: Node 22
-        uses: actions/setup-node@v4
+      - name: Node 24
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Dependências
@@ -51,12 +51,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Node 22
-        uses: actions/setup-node@v4
+      - name: Node 24
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Dependências
@@ -79,14 +79,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Node 22
-        uses: actions/setup-node@v4
+      - name: Node 24
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       # Se o PR mexeu em js/** ou images/**, o VERSION do sw.js tem que subir —
       # senão quem já tem o app instalado continua servindo o bundle velho offline.
@@ -102,12 +102,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Node 22
-        uses: actions/setup-node@v4
+      - name: Node 24
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Monta _site (mesmo script do pages.yml)
         run: bash scripts/build-site.sh _site
@@ -117,26 +117,21 @@ jobs:
           node --check _site/sw.js
           node scripts/check-sw.js _site
 
-  # Validação em NAVEGADOR REAL (Chrome da imagem do runner): boot em ES modules,
-  # Service Worker + offline, IndexedDB, download real do backup, layout em 412 px,
-  # atualização de versão do cache, "➕ Novo exercício" e o aviso persistente de imagem.
-  # AINDA NÃO É GATE: o harness é novo na CI e depende do Chrome que vem na imagem
-  # (versão muda sem aviso) — continue-on-error até provar estabilidade em várias PRs.
-  # Sem driver/Chrome o script sai com sucesso dizendo "validação em navegador pulada"
-  # (e um ::warning::); nada aqui entra no npm test nem no artefato do Pages.
+  # Gate em navegador real (Chrome do runner): boot em módulos ES, Service Worker,
+  # IndexedDB, downloads, layout e fluxos principais. Sem Chrome, o job deve falhar;
+  # não é permitido aprovar a CI com a validação pulada.
   navegador:
-    name: Validação em navegador real (não bloqueia)
+    name: Validação em navegador real
     runs-on: ubuntu-latest
-    continue-on-error: true
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Node 22
-        uses: actions/setup-node@v4
+      - name: Node 24
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Dependências
@@ -159,12 +154,13 @@ jobs:
       - name: Validação em navegador real
         env:
           DIARIO_CHROME_PATH: ${{ steps.chrome.outputs.path }}
+          DIARIO_EXIGIR_NAVEGADOR: '1'
           DIARIO_REPORT: ${{ runner.temp }}/validacao-navegador.json
         run: node scripts/validacao-navegador.js
 
       - name: Relatório da validação
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: validacao-navegador
           path: ${{ runner.temp }}/validacao-navegador.json

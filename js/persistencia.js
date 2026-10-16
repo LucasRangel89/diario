@@ -86,7 +86,7 @@ function migrateLog(l) {
         if (l.type === 'peso_corporal' && (!l.weight || l.weight <= 0) && userBodyweight > 0) l.weight = userBodyweight;
         if (l.conferir === undefined) l.conferir = false;
     }
-    if (l.kind === 'corrida') { l.muscle = 'Cardio'; }
+    if (l.kind === 'corrida') { l.muscle = 'Cardio'; l.type = 'corrida'; }
     return l;
 }
 

@@ -8,7 +8,7 @@
     console.log('\n== UI 12e. CSV: importação validada, sem duplicar e com cardio/personalizados ==');
     const csvAtual = ev('buildPlanilhaCSV()');
     check('CSV traz o exercício personalizado no Catálogo (campo com aspas dobradas)', csvAtual.includes('"' + nomeCustom.replace(/"/g, '""') + '"'));
-    check('CSV tem abas Cardio e Formato (formato 2)', csvAtual.includes('--- Sheet: Cardio ---') && csvAtual.includes('--- Sheet: Formato ---'));
+    check('CSV exporta formato 3 com as abas Cardio e Formato', csvAtual.includes('--- Sheet: Cardio ---') && csvAtual.includes('--- Sheet: Formato ---') && csvAtual.includes('Versão do formato;3'));
     const nCsv = ev('logs.length');
     ev('logs = []; saveLogsToStorage();');
     ev(`importPlanilhaCSV(${JSON.stringify(csvAtual)})`);
@@ -81,6 +81,15 @@
         check('a aba Buscar é redesenhada com o exercício novo (renderSearchScreen)', cardNovoEx(), titles().slice(0, 3));
         check('a confirmação de criação aparece para o usuário', document.body.textContent.includes('Exercício criado com sucesso'));
         check('nenhum erro não capturado no fluxo de criação', jsErrors.length === errosAntesCex, novosErrosCex());
+        const cardExPersonalizado = [...document.querySelectorAll('#cat-results > div[data-ex]')].find(c => c.dataset.ex === nomeNovoEx);
+        const btnEditarExPersonalizado = cardExPersonalizado?.querySelector('[data-action="openCustomExModal"]');
+        check('card de exercício personalizado na Busca oferece Editar com alvo de toque de 44 px', !!btnEditarExPersonalizado && btnEditarExPersonalizado.classList.contains('min-h-[44px]'));
+        if (btnEditarExPersonalizado) click(btnEditarExPersonalizado);
+        await esperaFormCex();
+        check('Editar no card abre o formulário existente em modo de edição', !!$('custom-ex-form') && $('custom-ex-form').dataset.editingId === String(ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeNovoEx)}).id`)));
+        $('cex-obs').value = 'observação editada';
+        click($('custom-ex-form').querySelector('button[type="submit"]'));
+        check('criar → editar → salvar atualiza a definição sem duplicar o exercício', ev(`customExercises.filter(e => e.nome === ${JSON.stringify(nomeNovoEx)}).length`) === 1 && ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeNovoEx)}).obs`) === 'observação editada' && !$('custom-ex-overlay'));
         ev(`openExercisePicker('log'); setPickerQuery(${JSON.stringify(nomeNovoEx)});`);
         check('o seletor rápido também oferece o exercício novo', pickerRows().some(r => r.dataset.ex === nomeNovoEx));
         ev('closeExercisePicker()');
@@ -90,10 +99,18 @@
         await esperaFormCex();
         check('abrir com um id existente mostra "✏️ Editar exercício" com o botão Excluir', textoDe('custom-ex-overlay').includes('✏️ Editar exercício') && !!btnIn($('custom-ex-form'), 'Excluir'));
         const confirmOriginalCex = window.confirm;
-        window.confirm = () => true;
-        try { click(btnIn($('custom-ex-form'), 'Excluir')); } finally { window.confirm = confirmOriginalCex; }
-        check('"Excluir" remove o personalizado, fecha a janela e redesenha a busca, sem erro',
-            ev('customExercises.length') === nCustomAntesCex && !$('custom-ex-overlay') && !cardNovoEx() && jsErrors.length === errosAntesCex, novosErrosCex());
+        let confirmNativoChamadoCex = 0;
+        window.confirm = () => { confirmNativoChamadoCex++; return true; };
+        try {
+            click(btnIn($('custom-ex-form'), 'Excluir'));
+            check('Excluir abre confirmModal (não exclui antes da decisão)', !!$('confirm-modal-overlay') && ev('customExercises.length') === nCustomAntesCex + 1);
+            click($('confirm-modal-no'));
+            check('Cancelar no confirmModal mantém o personalizado e fecha só a confirmação', !$('confirm-modal-overlay') && !!$('custom-ex-overlay') && ev('customExercises.length') === nCustomAntesCex + 1);
+            click(btnIn($('custom-ex-form'), 'Excluir'));
+            click($('confirm-modal-yes'));
+        } finally { window.confirm = confirmOriginalCex; }
+        check('Confirmar remove o personalizado, fecha a janela e redesenha a busca; window.confirm nunca é chamado',
+            confirmNativoChamadoCex === 0 && ev('customExercises.length') === nCustomAntesCex && !$('custom-ex-overlay') && !cardNovoEx() && jsErrors.length === errosAntesCex, novosErrosCex());
     } catch (e) {
         check('fluxo "➕ Novo exercício" roda até o fim sem exceção', false, e.message);
         document.getElementById('custom-ex-overlay')?.remove();

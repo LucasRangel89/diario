@@ -108,6 +108,12 @@ execução) e ver o cache antigo ser apagado.
       (automatizado em 412 px; conferir 360 px e fonte grande do sistema).
 - [ ] Registrar um treino completo com uma mão: seletor de exercício, séries, tags,
       salvar. Esperado: cartão aparece no histórico e sobrevive a recarregar.
+- [ ] Em uma corrida sintética de teste, usar **Editar** tanto na lista do dia quanto no
+      histórico da Busca. Esperado: abre o editor de corrida (sem reps/carga), editar e salvar
+      mantém o id/tema e a modalidade; conferir a apresentação de PR de distância. Os campos
+      opcionais de tipo, RPE, FC média e tênis devem aceitar valores válidos; RPE inválido não
+      deve salvar nem alterar o registro. O toque e o teclado virtual do aparelho continuam
+      exigindo validação manual.
 - [ ] Cronômetro de descanso: som/vibração (Android) e o número regressivo correto
       com a tela bloqueada/bloqueando durante o descanso.
 - [ ] Rotação de tela e modo escuro do sistema não quebram layout.
@@ -121,8 +127,8 @@ execução) e ver o cache antigo ser apagado.
 
 ## 5. Backup e restauração — manual
 
-Automatizado já foi: exportar (download real de JSON v6), reaplicar, e o caminho de
-falha de gravação de imagem (IndexedDB recusando).
+Automatizado já foi: exportar (download real de JSON v6), reaplicar, e os caminhos de
+falha de gravação do localStorage e da imagem (IndexedDB recusando).
 
 - [ ] Config → **Exportar backup JSON**: baixa o arquivo; abrir e conferir
       `"version": 6` e os `"logs"`.
@@ -131,20 +137,28 @@ falha de gravação de imagem (IndexedDB recusando).
 - [ ] Em outro aparelho/navegador: importar o mesmo arquivo e conferir o mesmo resultado.
 - [ ] Importar um arquivo **antigo** (versão 5) e um **corrompido** (texto qualquer):
       o primeiro deve entrar; o segundo deve ser recusado sem alterar nada.
-- [ ] Exportar CSV (multi-aba) e reimportar: nada duplica, cardio e personalizados
-      voltam (ver `docs/FORMATO_CSV.md`; a coluna `PR (informativo)` é ignorada na
-      importação de propósito).
-- [ ] **Cota cheia → aviso com ação de backup** (Chrome desktop): DevTools → Application →
-      Storage → marcar **Simulate custom storage quota** com um valor pequeno (ex.: 1 MB) e
-      recarregar. Na aba Jogo, enviar uma foto grande como retrato de chefão ou como fundo do
-      Story Card. Esperado: aparece no topo o aviso "⚠️ A imagem **não confirmou o
-      salvamento** …" que **não some sozinho**, com **💾 Exportar backup JSON** (baixa o
-      `berzerker-diario-backup-AAAA-MM-DD.json`) e **Dispensar**; o app segue utilizável
-      (registrar um treino com o aviso na tela funciona). Uma segunda falha logo em seguida
-      **não** traz o aviso de volta depois de dispensado. Desmarcar a simulação, enviar de
-      novo (mensagem "Retrato do chefão atualizado!", sem aviso) e repetir a falha: o aviso
-      volta. (Automatizado no jsdom com IndexedDB simulado: `tests/ui/50_backup_gravacao.js`,
-      seção `UI 12j`.)
+- [ ] Exportar CSV formato 3 (multi-aba) e reimportar: nada duplica, cardio e metadados
+      opcionais voltam; importar também amostras antigas CSV 1 e 2 (ver `docs/FORMATO_CSV.md`).
+      A coluna `PR (informativo)` é ignorada na importação de propósito.
+- [ ] Exportar JSON v6 com corrida D6 e reimportar; conferir `runType`, `rpe`, `hrAvg` e `shoe`
+      dentro de `logs`. Num arquivo sintético separado, corromper cada campo (tipo/valor) e
+      confirmar que o backup é recusado sem alterar estado. JSON continua v6; não se validam
+      `distanceKm`/`durationMin` de forma mais estrita nesta mudança.
+- [ ] **Falha de gravação → aviso com ação de backup**: no DevTools, em Console, guardar
+      `const setItemOriginal = Storage.prototype.setItem` e substituir temporariamente
+      `Storage.prototype.setItem = function () { throw new DOMException('QuotaExceededError') }`;
+      acione uma gravação (ex.: registrar um treino). Esperado: aviso persistente com
+      **💾 Exportar backup JSON** e **Dispensar**; clicar exporta um JSON válido. Gravações
+      falhas seguidas não empilham avisos; após restaurar o método original e confirmar uma
+      gravação bem-sucedida, uma falha nova volta a exibir o aviso. Restaure sempre com
+      `Storage.prototype.setItem = setItemOriginal`.
+- [ ] **Cota cheia para imagem** (Chrome desktop): DevTools → Application → Storage → marcar
+      **Simulate custom storage quota** com um valor pequeno (ex.: 1 MB) e recarregar. Na aba
+      Jogo, enviar uma foto grande como retrato de chefão ou fundo do Story Card. Esperado:
+      aviso persistente "⚠️ A imagem **não confirmou o salvamento** …", botão **💾 Exportar
+      backup JSON** e **Dispensar**; o app segue utilizável. Uma segunda falha não empilha;
+      após uma gravação confirmada, a falha volta a avisar. Automatizado com IndexedDB simulado
+      em `tests/ui/50_backup_gravacao.js`, seção `UI 12j`.
 - [ ] **Não validado automaticamente**: exportação/importação entre aparelhos
       diferentes e cota de armazenamento cheia num navegador real (o item acima é o roteiro).
 

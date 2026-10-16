@@ -6,16 +6,17 @@ duplicar dados em importações repetidas.
 
 ## 1. CSV (planilha multi-aba, separador `;`)
 
-Versão do formato: **2** (aba `Formato`). Arquivos sem a aba `Formato` são o
-**formato 1** (o de antes) e continuam sendo importados.
+Versão do formato exportado: **3** (aba `Formato`). Arquivos sem a aba `Formato` são o
+**formato 1**; CSV com `Versão do formato;2` continua importável. Os formatos 1 e 2 são
+legados compatíveis; o atual é o 3.
 
 | Aba | Conteúdo | Importável? |
 |---|---|---|
 | `Log` | Um registro de musculação por linha (22 colunas do formato 1 + 6 do formato 2) | **Sim** |
-| `Cardio` | Corrida e cardio (distância, duração, modalidade) — fora do volume | **Sim** |
+| `Cardio` | Corrida e cardio (distância, duração, modalidade; no formato 3 também tipo, RPE, FC média e tênis) — fora do volume | **Sim** |
 | `Peso corporal` | Pesagens (data, peso, observação) | **Sim** |
 | `Semana a semana` | Início da semana 1 (linha `Início da semana 1…`) | **Sim** (só a data) |
-| `Formato` | `Versão do formato;2` | Lida (valida a versão) |
+| `Formato` | `Versão do formato;3` (exportação atual) | Lida (valida as versões 1, 2 e 3) |
 | `Catálogo` | Catálogo principal + exercícios personalizados (referência) | Não (informativa) |
 | `Progresso` | Resumo por exercício | Não (calculada) |
 | `Semana a semana` (demais linhas) | Volume e carga máxima por semana | Não (calculada) |
@@ -40,7 +41,16 @@ Versão do formato: **2** (aba `Formato`). Arquivos sem a aba `Formato` são o
   manual do formulário. Motivo: PR multiplica o dano no chefão por 2, soma `XP_PR` e
   cumpre missão semanal — aceitar `PR = Sim` de um arquivo daria XP e gamificação sem
   treino. A coluna é exportada para leitura humana na planilha; versões anteriores do
-  app simplesmente ignoram a coluna (o formato continua 2).
+  app simplesmente ignoram a coluna (a aba `Log` preserva as colunas do formato 2; a versão global atual é 3).
+
+### Colunas da aba `Cardio` (formato 3)
+
+Ordem exportada: `Data`, `Modalidade`, `Distância (km)`, `Duração (min)`,
+`Observações`, `ID do registro`, `Tipo de corrida`, `RPE`, `FC média (bpm)`, `Tênis`.
+Os quatro campos D6 são opcionais e ficam no fim da aba. Formatos 1 e 2, que não
+trazem essas colunas, continuam importáveis; os campos ausentes ficam ausentes no log.
+`RPE` aceita inteiro de 1 a 10, `FC média` deve ser maior que zero e `Tipo de corrida`
+precisa estar na lista suportada.
 
 ### Regras de escrita
 
@@ -81,6 +91,13 @@ Cada registro exportado tem um **ID do registro** (`L` + id local). Ao importar:
 Consequência: reimportar o mesmo arquivo não duplica nada, e dois treinos iguais
 registrados de propósito continuam sendo dois.
 
+**Corrida:** a impressão digital usa modalidade, data, distância, duração e observações;
+campos de musculação nunca participam. Os campos adicionais de corrida (tipo, RPE, FC média
+e tênis) também são metadados, não identidade: omiti-los da impressão digital permite que um
+CSV formato 2 antigo reimportado em uma versão nova seja reconhecido como igual, sem conflito
+falso nem duplicata. (Formato 3 os transporta como colunas, mas a versão do formato não muda
+a identidade do registro.)
+
 A coluna `PR (informativo)` **não entra** na identidade do registro: dois treinos com o
 mesmo conteúdo continuam sendo o mesmo registro, com ou sem PR.
 
@@ -110,6 +127,11 @@ Regras:
 - **Validação antes de qualquer alteração.** Estrutura, datas, tipos, cargas, séries,
   `savedWorkouts`, `customExercises`, `weightLog` e `userBodyweight` são verificados. Um
   problema rejeita o backup inteiro e informa o motivo; nada é alterado.
+- Campos opcionais de corrida (`runType`, `rpe`, `hrAvg`, `shoe`) viajam no próprio objeto
+  de `logs`; o formato JSON permanece **6**. Se presentes, `runType` deve ser um dos valores
+  aceitos, `rpe` inteiro 1–10, `hrAvg` número > 0 e `shoe` texto. Tipo inválido rejeita o
+  backup inteiro antes de alterar estado. `distanceKm` e `durationMin` mantêm a política de
+  validação preexistente: não foram endurecidos nesta versão.
 - **Aplicação tudo-ou-nada na memória.** Se algo lançar exceção no meio da aplicação, o
   estado anterior é restaurado.
 - **Falha de gravação é informada.** Se o navegador recusar a gravação, o app mantém os

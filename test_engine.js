@@ -59,7 +59,7 @@ global.indexedDB = makeFakeIDB();
 const stripModuleSyntax = s => s
     .replace(/^import [^\n]*;\n/gm, '')
     .replace(/^export \{[^\n]*\};?\n/gm, '');
-const src = ['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/datas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/config.js', 'js/boss.js', 'js/registro.js', 'js/app.js']
+const src = ['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/datas.js', 'js/corridas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/config.js', 'js/boss.js', 'js/registro.js', 'js/app.js']
     .map(p => stripModuleSyntax(fs.readFileSync(p, 'utf8'))).join('\n');
 const api = new Function(src + `
   return {
@@ -83,6 +83,8 @@ const api = new Function(src + `
     lerPlanilhaCSV, planejarImportacaoLogs, csvLogFingerprint, csvField, csvLogId, analisarLinhasLog,
     validarBackupJSON, normalizarExerciciosPersonalizados, setCustomExercisesList, getCustomExercises,
     dataDeRegistroValida, isoDataValida, dataISOValida, fatigueState, sinergiaState, parseDataCSV,
+    parseRunDuration, formatRunDuration, paceSecondsPerKm, formatRunPace, isRunLog, runISOWeekKey,
+    summarizeRunsByWeek, summarizeRunsByMonth, summarizeRunsByYear, runRecords,
     deloadWeeksEfetivos,
     setDeloadWeeks(arr) { deloadWeeks = arr; },
     setSeasons(s) { seasons = s; },
@@ -133,7 +135,7 @@ globalThis.stripModuleSyntax = stripModuleSyntax;
 const AREAS_DIR = path.join(__dirname, 'tests', 'engine');
 const AREAS = fs.readdirSync(AREAS_DIR).filter(f => /^\d\d_.*\.js$/.test(f)).sort();
 // manifesto explícito: perder/renomear um trecho de teste NÃO pode passar em silêncio
-const ESPERADAS = ['10_volume_rm_xp.js', '20_recuperacao_temas.js', '30_catalogo_busca.js', '40_arte_jogo.js', '50_dados_validacao.js', '60_storage_modulos.js', '70_csv_backup.js', '99_fechamento.js'];
+const ESPERADAS = ['10_volume_rm_xp.js', '20_recuperacao_temas.js', '30_catalogo_busca.js', '40_arte_jogo.js', '50_dados_validacao.js', '55_corridas.js', '60_storage_modulos.js', '70_csv_backup.js', '75_corridas_backup_csv.js', '99_fechamento.js'];
 const faltando = ESPERADAS.filter(f => !AREAS.includes(f));
 const extras = AREAS.filter(f => !ESPERADAS.includes(f));
 if (faltando.length || extras.length) { console.error('\n❌ trechos de teste ausentes ou inesperados em tests/engine:', { faltando, extras }); process.exit(1); }

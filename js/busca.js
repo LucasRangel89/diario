@@ -235,6 +235,7 @@ function renderCatalogResults() {
                 <button type="button" data-ex="${escapeHtml(e.nome)}" data-action="useExerciseInBuilder" data-attr-args="data-ex" class="px-2.5 py-1.5 bg-cyan-700 hover:bg-cyan-600 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">🎯 No treino</button>
                 <button type="button" data-ex="${escapeHtml(e.nome)}" data-action="showExerciseProgress" data-attr-args="data-ex" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors"${uses ? '' : ' disabled'}>📊 Evolução</button>
                 ${uses ? `<button type="button" data-ex="${escapeHtml(e.nome)}" data-action="repeatLastPerformance" data-attr-args="data-ex" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">↻ Repetir última</button>` : ''}
+                ${e.isCustom ? `<button type="button" data-action="openCustomExModal" data-args='[${JSON.stringify(e.id)}]' class="px-2.5 py-1.5 min-h-[44px] bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">✏️ Editar</button>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -301,7 +302,7 @@ function renderHistoryResults() {
                     <div class="flex flex-wrap items-center gap-1.5">
                         <span class="text-[10px] font-mono px-1.5 py-0.5 bg-berzerker-border text-gray-300 rounded">${escapeHtml(formatShortBR(l.date))}</span>
                         <span class="text-[10px] font-bold px-1.5 py-0.5 bg-berzerker-card border border-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(normalizeMuscle(l.muscle))}</span>
-                        ${l.isPR ? '<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded">🏆 PR</span>' : ''}
+                        ${l.isPR ? `<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded">${l.kind === 'corrida' ? '🏆 PR de distância' : '🏆 PR'}</span>` : ''}
                         ${l.technique && l.technique !== 'Convencional' ? `<span class="text-[10px] font-mono text-gray-500">[${escapeHtml(l.technique)}]</span>` : ''}
                     </div>
                     <div class="font-bold text-white text-sm mt-1 truncate">${escapeHtml(l.exercise)}</div>
