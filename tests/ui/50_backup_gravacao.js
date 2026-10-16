@@ -99,27 +99,46 @@
 
     console.log('\n== UI 12g. Falha de gravação (localStorage recusa) é observável ==');
     const setItemOrig = window.Storage.prototype.setItem;
-    const avisos = () => [...document.body.querySelectorAll('div')].filter(d => d.classList.contains('fixed') && d.textContent.includes('Não foi possível salvar neste navegador')).length;
-    window.Storage.prototype.setItem = function () { throw new Error('QuotaExceededError (simulado)'); };
-    const a0 = avisos();
-    check('safeStorage.set devolve false quando o navegador recusa a gravação', ev("safeStorage.set('berzerker_teste_falha', '1')") === false);
-    check('a falha é avisada ao usuário', avisos() === a0 + 1, avisos() - a0);
-    ev("safeStorage.set('berzerker_teste_falha', '2'); safeStorage.set('berzerker_teste_falha', '3');");
-    check('falhas seguidas NÃO geram um alerta por chave (aviso único por sequência)', avisos() === a0 + 1, avisos() - a0);
-    check('saveLogsToStorage reporta a falha (fluxo crítico de registro)', ev('saveLogsToStorage()') === false);
-    // avisos do alertModal são banners diretos no body (classe bottom-5); limpa os antigos antes de medir
+    const anchorClickStorageOrig = window.HTMLAnchorElement.prototype.click;
+    const avisoStorage = () => document.getElementById('blob-save-warning');
+    const avisos = () => document.querySelectorAll('#blob-save-warning').length;
     const bannersTexto = () => [...document.body.children].filter(d => String(d.className).includes('bottom-5')).map(d => d.textContent).join(' | ');
-    [...document.body.children].filter(d => String(d.className).includes('bottom-5')).forEach(d => d.remove());
-    const okImport = await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(payloadCompleto)}))`);
-    check('importação com gravação recusada: dados ficam na tela, mas a mensagem NÃO diz "sucesso"', okImport === true && estado() === estadoCompleto && bannersTexto().includes('não confirmou o salvamento') && !bannersTexto().includes('Backup importado com sucesso'), bannersTexto());
-    window.Storage.prototype.setItem = setItemOrig;
-    const a1 = avisos();
-    check('com a gravação restabelecida, safeStorage.set volta a true', ev("safeStorage.set('berzerker_teste_falha', '4')") === true);
-    window.Storage.prototype.setItem = function () { throw new Error('QuotaExceededError (simulado)'); };
-    ev("safeStorage.set('berzerker_teste_falha', '5')");
-    check('uma nova sequência de falhas volta a avisar (aviso rearmado após sucesso)', avisos() === a1 + 1, avisos() - a1);
-    window.Storage.prototype.setItem = setItemOrig;
-    ev("localStorage.removeItem('berzerker_teste_falha');");
+    const downloadsStorage = [];
+    try {
+        window.Storage.prototype.setItem = function () { throw new Error('QuotaExceededError (simulado)'); };
+        const a0 = avisos();
+        check('safeStorage.set devolve false quando o navegador recusa a gravação', ev("safeStorage.set('berzerker_teste_falha', '1')") === false);
+        const primeiroAvisoStorage = avisoStorage();
+        check('(1) falha de localStorage mostra aviso persistente com ação de backup', !!primeiroAvisoStorage && /Não foi possível salvar neste navegador/i.test(primeiroAvisoStorage.textContent) && !!primeiroAvisoStorage.querySelector('button[data-action="exportJSONBackup"]'));
+        check('a falha cria só um aviso persistente de gravação', avisos() === a0 + 1, avisos() - a0);
+        window.HTMLAnchorElement.prototype.click = function () { downloadsStorage.push(this.getAttribute('download')); };
+        const btnExportarStorage = primeiroAvisoStorage?.querySelector('button[data-action="exportJSONBackup"]');
+        if (btnExportarStorage) click(btnExportarStorage);
+        await new Promise(r => setTimeout(r, 200));
+        window.HTMLAnchorElement.prototype.click = anchorClickStorageOrig;
+        check('(1) botão do aviso de localStorage exporta JSON de verdade', downloadsStorage.some(n => /^berzerker-diario-backup-\d{4}-\d{2}-\d{2}\.json$/.test(n || '')));
+        ev("safeStorage.set('berzerker_teste_falha', '2'); safeStorage.set('berzerker_teste_falha', '3');");
+        check('(2) falhas seguidas NÃO empilham nem recriam o aviso', avisos() === 1 && avisoStorage() === primeiroAvisoStorage);
+        check('saveLogsToStorage reporta a falha (fluxo crítico de registro)', ev('saveLogsToStorage()') === false);
+        [...document.body.children].filter(d => String(d.className).includes('bottom-5')).forEach(d => d.remove());
+        const okImport = await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(payloadCompleto)}))`);
+        check('importação com gravação recusada: dados ficam na tela, mas a mensagem NÃO diz "sucesso"', okImport === true && estado() === estadoCompleto && bannersTexto().includes('não confirmou o salvamento') && !bannersTexto().includes('Backup importado com sucesso'), bannersTexto());
+        const btnDispensarStorage = avisoStorage()?.querySelector('button[data-action="closeElementById"]');
+        if (btnDispensarStorage) click(btnDispensarStorage);
+        check('(4) Dispensar fecha o aviso de localStorage', !!btnDispensarStorage && !avisoStorage());
+        window.Storage.prototype.setItem = setItemOrig;
+        check('(3) gravação confirmada rearma a sequência de falhas', ev("safeStorage.set('berzerker_teste_falha', '4')") === true);
+        window.Storage.prototype.setItem = function () { throw new Error('QuotaExceededError (simulado)'); };
+        ev("safeStorage.set('berzerker_teste_falha', '5')");
+        check('(3) a próxima falha após sucesso mostra o aviso novamente', avisos() === 1 && /Não foi possível salvar/.test(avisoStorage()?.textContent || ''));
+    } catch (e) {
+        check('fluxo persistente de falha do localStorage roda até o fim sem exceção', false, e.message);
+    } finally {
+        window.Storage.prototype.setItem = setItemOrig;
+        window.HTMLAnchorElement.prototype.click = anchorClickStorageOrig;
+        avisoStorage()?.remove();
+        ev("localStorage.removeItem('berzerker_teste_falha'); safeStorage.set('berzerker_teste_rearme', 'ok'); localStorage.removeItem('berzerker_teste_rearme');");
+    }
 
     console.log('\n== UI 12i. Falha de gravação no IndexedDB (imagens e fundo) é observável ==');
     // IndexedDB simulado: modo 'ok' | 'falha' (put dispara onerror) | 'abort' (transação aborta).
