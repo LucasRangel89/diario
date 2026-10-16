@@ -5,7 +5,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 ## [Não lançado] — manutenção pós-PR #17 (branch `arena/1c7fe137-diario`)
 
 ### CI
-- Atualizadas as Actions para as versões estáveis atuais consultadas em `repos/actions/*/releases/latest` em 2026-10-16: checkout v7.0.1, setup-node v7.1.0, upload-artifact v7.0.2, configure-pages v6.0.0, upload-pages-artifact v5.0.0 e deploy-pages v5.0.1. Os workflows usam Node 24 e mantêm `ubuntu-latest` e os nomes dos checks.
+- Atualizadas as Actions para as versões estáveis atuais consultadas em `repos/actions/*/releases/latest` em 2026-10-16: checkout v7.0.1, setup-node v7.1.0, upload-artifact v7.0.2, configure-pages v6.0.0, upload-pages-artifact v5.0.0 e deploy-pages v5.0.1. Os workflows usam Node 24 e mantêm `ubuntu-latest` e os nomes dos quatro checks obrigatórios. O CI também executa em pushes `arena/**`; o job de navegador real passou a ser bloqueante e exige Chrome (sem caminho de skip).
 
 ### CORRIGIDO
 - **Edição de exercício personalizado alcançável (A2):** medição na base `90805e3` confirmou que a única entrada de UI era “➕ Novo exercício”; nenhum card personalizado reabria o formulário. Os cards da aba Buscar agora têm **✏️ Editar**, com alvo mínimo de 44 px. O teste criar → editar → salvar também revelou que o modo de edição não preenchia `dataset.editingId`, então o submit criava um novo em vez de atualizar; a abertura agora define esse vínculo. Teste UI cobre o fluxo real sem duplicar. `sw.js` sobe para v40.
