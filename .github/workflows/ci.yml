@@ -12,15 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # histórico completo: a checagem do sw.js precisa do SHA base do diff
           fetch-depth: 0
 
-      - name: Node 22
-        uses: actions/setup-node@v4
+      - name: Node 24
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Dependências
@@ -51,12 +51,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Node 22
-        uses: actions/setup-node@v4
+      - name: Node 24
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Dependências
@@ -79,14 +79,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Node 22
-        uses: actions/setup-node@v4
+      - name: Node 24
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       # Se o PR mexeu em js/** ou images/**, o VERSION do sw.js tem que subir —
       # senão quem já tem o app instalado continua servindo o bundle velho offline.
@@ -102,12 +102,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Node 22
-        uses: actions/setup-node@v4
+      - name: Node 24
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Monta _site (mesmo script do pages.yml)
         run: bash scripts/build-site.sh _site
@@ -131,12 +131,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Node 22
-        uses: actions/setup-node@v4
+      - name: Node 24
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Dependências
@@ -164,7 +164,7 @@ jobs:
 
       - name: Relatório da validação
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: validacao-navegador
           path: ${{ runner.temp }}/validacao-navegador.json
