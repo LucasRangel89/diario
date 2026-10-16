@@ -46,12 +46,14 @@ na CI da branch aprovou o gate bloqueante no [run 38918305668](https://github.co
 (commit `a5bff94`); consultar `docs/RELATORIO_POS_PR17.md` e confirmar a CI do
 HEAD da PR. Viewport emulado não valida aparelho físico.
 
-**Lacuna conhecida (achado, não corrigido):** na **primeira visita**, as imagens que ficam fora do
-CORE (`images/patentes/*.webp`, `images/cards/*.webp` — 110 arquivos, ~1,2 MB) são pedidas antes
-de o Service Worker controlar a página e não entram no cache em runtime; se a pessoa ficar offline
-logo depois, o emblema da patente e a arte do Story Card não carregam (o resto do app funciona). O
-harness lista isso como "lacuna conhecida" sem reprovar; numa segunda visita online as imagens já
-passam pelo cache em runtime. Ver a seção 6.
+**B5/D8 (cache v47):** as 110 imagens de `images/patentes/*.webp` (100) e
+`images/cards/*.webp` (10) — **1.057.982 bytes** medidos — entraram no CORE, fechando a
+lacuna conhecida anterior da primeira visita offline. O gate de navegador real agora
+confere `patentes = 100` e `cards = 10` no cache e amostras dos dois diretórios
+respondendo **offline** por `caches.match`; a atualização simulada v47 → v48 instala,
+ativa e apaga o cache antigo. Execução local exigida com `@sparticuz/chromium`
+153.0.8010.0 fora do repositório: **46/46**. Isso **não** declara PWA, offline geral
+ou uso em celular plenamente validados: são testes headless com viewport emulado.
 
 Reproduzir:
 
@@ -97,15 +99,18 @@ Pré-requisito: servir por **https** ou `localhost` (o app só registra o SW em 
 - [ ] Confirmar que nada de novo foi baixado (DevTools → Application → Cache Storage →
       `berzerker-v<VERSION do sw.js>` com o CORE; fora isso, só `vendor/chart.umd.js` é externo).
 - [ ] Ficar offline **logo na primeira visita** e conferir o emblema da patente (cabeçalho) e a
-      arte do Story Card: hoje eles podem faltar (lacuna conhecida da seção 0 — imagens fora do
-      CORE); numa segunda visita online elas já ficam no cache.
+      arte do Story Card: desde a B5 (v47) as 110 imagens estão no CORE, então devem carregar;
+      o gate headless já confere a presença no cache e amostras offline, mas a conferência
+      visual no aparelho continua manual.
 - [ ] **Não validado automaticamente**: queda de rede real no meio do uso e
       comportamento em rede instável/lenta.
 
 ## 3. Atualização de versão (cache novo) — manual
 
-Automatizado já foi: instalar `VERSION`+1 por cima da versão atual (v40 sobre v39 na última
-execução) e ver o cache antigo ser apagado.
+Automatizado já foi: instalar `VERSION`+1 por cima da versão atual (v48 sobre v47 na execução
+da B5) e ver o cache antigo ser apagado. No `test_sw.js` (SW 3b), uma falha simulada numa
+imagem de patente reprova a instalação, preserva a versão anterior e, removida a falha, a
+atualização completa instala e ativa.
 
 - [ ] Com o app aberto em uma versão antiga, publicar uma versão nova (`sw.js`
       `VERSION` maior) e recarregar duas vezes.
@@ -192,5 +197,6 @@ falha de gravação do localStorage e da imagem (IndexedDB recusando).
   `renderSearchScreen`. Ver o item "➕ Novo exercício" na seção 4.
 - Edição/exclusão de exercício personalizado: o formulário tem esse modo
   (`openCustomExModal(id)`), mas nenhum botão da interface o abre hoje.
-- Offline na primeira visita: `images/patentes/*` e `images/cards/*` não estão no CORE do
-  `sw.js` (seção 0). Corrigir é decisão de produto (≈1,2 MB a mais na instalação offline).
+- ~~Offline na primeira visita: `images/patentes/*` e `images/cards/*` não estão no CORE do
+  `sw.js`~~ — **resolvido na B5/D8** (`sw.js` v47): as 110 imagens (1.057.982 bytes) entraram
+  no precache; o custo é esse tamanho a mais na instalação/atualização offline.

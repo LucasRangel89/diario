@@ -2,6 +2,12 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Não lançado] — B5: precache das imagens de patentes e cards (D8)
+
+- **D8:** o CORE do Service Worker passa a incluir as **110 imagens** previstas de `images/patentes/*.webp` (100) e `images/cards/*.webp` (10), total medido de **1.057.982 bytes** (≈1,06 MB; ≈1,01 MiB) em `44659fe` (main com a PR #19/B3 mesclada). Nenhuma outra imagem foi acrescentada. O CORE sobe de 175 para **285** arquivos locais.
+- Falha em qualquer item do precache continua rejeitando a instalação (sem `skipWaiting`): a versão anterior funcional permanece disponível, e removida a falha a instalação completa e a ativação funcionam. Testes novos no `test_sw.js` (seção SW 3b, usando uma imagem de patente real) e checks de cobertura/tamanho da B5; gate de navegador real confere as 110 imagens no cache e amostras offline.
+- Cache offline: `sw.js` **v46 → v47** (o conteúdo do CORE mudou; nenhum arquivo de `images/**` ou `js/**` foi editado). Sem novas dependências de produção.
+
 ## [Não lançado] — B3: interface de corridas (branch `arena/7d08417f-diario`)
 
 - **D2:** quatro grupos existentes preservados (Treino, Jogo, Você, Config); Corridas é a última aba de Treino, com tela própria e sem nova coleção.
