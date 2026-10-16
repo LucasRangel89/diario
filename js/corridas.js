@@ -51,13 +51,23 @@ function formatRunPace(secondsPerKm) {
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}/km`;
 }
 
+function normalizedRunName(log) {
+    return String(log.exercise || log.modalidade || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
 function isRunLog(log) {
     if (!log || typeof log !== 'object') return false;
-    const name = String(log.exercise || log.modalidade || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const name = normalizedRunName(log);
     if (/\b(bike|bicicleta|eliptic[oa]|remo|rowing|rower)\b/.test(name)) return false;
     const legacyRunName = /(^|\b)(corrida|esteira|running|treadmill)(\b|$)/.test(name);
     if (!legacyRunName) return false;
     return log.kind === 'corrida' || !log.kind;
+}
+
+// Rótulo canônico apenas para a UI; nomes históricos continuam intactos em logs/CSV.
+function runModality(log) {
+    if (!isRunLog(log)) return null;
+    return /\b(esteira|treadmill)\b/.test(normalizedRunName(log)) ? 'Corrida (Esteira)' : 'Corrida (Rua)';
 }
 
 function validISODateParts(date) {
@@ -126,24 +136,24 @@ function runRecords(logs) {
             pace: best ? formatRunPace(best.paceSecondsPerKm) : ''
         };
     });
-    const shoeKm = {};
+    const shoeKm = new Map();
     runs.forEach(log => {
         const shoe = typeof log.shoe === 'string' ? log.shoe.trim() : '';
         const km = Number(log.distanceKm);
         if (!shoe || !Number.isFinite(km) || km <= 0) return;
-        shoeKm[shoe] = (shoeKm[shoe] || 0) + km;
+        shoeKm.set(shoe, (shoeKm.get(shoe) || 0) + km);
     });
     return {
         longestDistance: longest ? { log: longest, distanceKm: Number(longest.distanceKm) } : null,
         bestPaceByDistance: thresholds,
-        shoeKm: Object.entries(shoeKm).sort((a, b) => a[0].localeCompare(b[0], 'pt-BR')).map(([shoe, km]) => ({ shoe, km }))
+        shoeKm: [...shoeKm].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR')).map(([shoe, km]) => ({ shoe, km }))
     };
 }
 
 (function (g) {
-    const exports_ = { parseRunDuration, formatRunDuration, paceSecondsPerKm, formatRunPace, isRunLog, runISOWeekKey, summarizeRunsByWeek, summarizeRunsByMonth, summarizeRunsByYear, runRecords };
+    const exports_ = { parseRunDuration, formatRunDuration, paceSecondsPerKm, formatRunPace, isRunLog, runModality, runISOWeekKey, summarizeRunsByWeek, summarizeRunsByMonth, summarizeRunsByYear, runRecords };
     g.__diarioExports = Object.assign(g.__diarioExports || {}, exports_);
     if (typeof g.registerDiarioActions === 'function') g.registerDiarioActions({});
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { 'js/corridas.js': Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
-export { parseRunDuration, formatRunDuration, paceSecondsPerKm, formatRunPace, isRunLog, runISOWeekKey, summarizeRunsByWeek, summarizeRunsByMonth, summarizeRunsByYear, runRecords };
+export { parseRunDuration, formatRunDuration, paceSecondsPerKm, formatRunPace, isRunLog, runModality, runISOWeekKey, summarizeRunsByWeek, summarizeRunsByMonth, summarizeRunsByYear, runRecords };

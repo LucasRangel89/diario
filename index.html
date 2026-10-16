@@ -627,6 +627,64 @@
 
         </section>
 
+        <!-- TAB: CORRIDAS (somente Rua e Esteira; os demais cardios permanecem no Histórico) -->
+        <section id="tab-content-corridas" class="hidden space-y-6">
+            <div class="bg-berzerker-card border border-cyan-700/40 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="font-oswald text-2xl font-bold text-white uppercase tracking-wider">🏃 Corridas</h2>
+                    <p class="text-xs text-gray-400 mt-1">Corrida (Rua) e Corrida (Esteira). Outras modalidades de cardio continuam no Histórico.</p>
+                </div>
+                <button type="button" data-action="openNewRunLog" class="min-h-[44px] px-5 py-2.5 rounded-xl bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold uppercase whitespace-nowrap">＋ Registrar corrida</button>
+            </div>
+
+            <div id="runs-overview" aria-label="Resumo geral de corridas" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+
+            <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 sm:p-6 space-y-4">
+                <div>
+                    <h3 class="font-oswald text-xl font-bold text-white uppercase">Evolução por período</h3>
+                    <p class="text-xs text-gray-400">Totais de todas as corridas: pace médio = tempo total ÷ km total. Semanas seguem o calendário ISO.</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="min-w-0"><h4 class="text-xs font-bold text-cyan-300 uppercase mb-2">Semanas ISO recentes</h4><div id="runs-weeks" class="space-y-2"></div></div>
+                    <div class="min-w-0"><h4 class="text-xs font-bold text-cyan-300 uppercase mb-2">Meses recentes</h4><div id="runs-months" class="space-y-2"></div></div>
+                    <div class="min-w-0"><h4 class="text-xs font-bold text-cyan-300 uppercase mb-2">Anos recentes</h4><div id="runs-years" class="space-y-2"></div></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 sm:p-6 space-y-3 min-w-0">
+                    <h3 class="font-oswald text-xl font-bold text-white uppercase">🏅 Recordes informativos</h3>
+                    <p class="text-xs text-gray-400">Pace médio da corrida inteira, não tempo oficial de prova. Estes recordes não alteram o PR de cardio, XP ou combate do jogo.</p>
+                    <div id="runs-records" class="space-y-2"></div>
+                </div>
+                <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 sm:p-6 space-y-3 min-w-0">
+                    <h3 class="font-oswald text-xl font-bold text-white uppercase">👟 Km por tênis</h3>
+                    <p class="text-xs text-gray-400">Somente corridas com tênis informado; nomes antigos dos registros não são modificados.</p>
+                    <div id="runs-shoes" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 sm:p-6 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                    <div>
+                        <h3 class="font-oswald text-xl font-bold text-white uppercase">Histórico de corridas</h3>
+                        <p class="text-xs text-gray-400">Filtros afetam somente esta lista. Para todos os cardios, use Histórico.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <div><label for="runs-modality" class="block text-xs text-gray-400 mb-1">Modalidade</label>
+                            <select id="runs-modality" data-change-action="renderRunsTab" class="min-h-[44px] bg-berzerker-dark border border-berzerker-border rounded-lg px-2 py-2 text-white text-sm">
+                                <option value="">Rua e Esteira</option><option value="Corrida (Rua)">Corrida (Rua)</option><option value="Corrida (Esteira)">Corrida (Esteira)</option>
+                            </select>
+                        </div>
+                        <div><label for="runs-year" class="block text-xs text-gray-400 mb-1">Ano</label>
+                            <select id="runs-year" data-change-action="renderRunsTab" class="min-h-[44px] bg-berzerker-dark border border-berzerker-border rounded-lg px-2 py-2 text-white text-sm"><option value="">Todos os anos</option></select>
+                        </div>
+                    </div>
+                </div>
+                <div id="runs-results" aria-live="polite" class="space-y-2"></div>
+            </div>
+        </section>
+
         <!-- TAB: BOSS BATTLE MODE -->
         <section id="tab-content-boss" class="hidden space-y-6">
             <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl relative overflow-hidden">

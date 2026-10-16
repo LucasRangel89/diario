@@ -1,8 +1,9 @@
 # Validação manual — PWA, offline e celular
 
 O `npm test` cobre motor, UI (jsdom), grafo real de módulos e Service Worker simulado.
-O que **só um navegador de verdade** (ou um celular) responde está listado aqui, com o
-que já foi validado automaticamente em 2026-10-15 e o que continua exigindo uma pessoa.
+O que **só um navegador de verdade** (ou um celular) responde está listado aqui. Os
+resultados históricos de 2026-10-15 e o gate da B3 são distintos; tocar no aparelho,
+instalar e usar PWA/offline em geral continuam exigindo uma pessoa.
 
 > Regra da auditoria: comportamento não validado **não** é declarado validado.
 
@@ -12,12 +13,12 @@ que já foi validado automaticamente em 2026-10-15 e o que continua exigindo uma
 de verdade com viewport de celular (412×915, touch, deviceScaleFactor 2.6). Nada é instalado no
 projeto: o driver (`playwright-core`) entra com `--no-save` e o navegador vem do sistema.
 
-**Últimas execuções (2026-10-15, app em `v39`): 37 checagens, todas aprovadas** (antes eram 30;
-a versão do cache agora é lida do `sw.js`):
+**Referência histórica (2026-10-15, app em `v39`, antes da B3): 37 checagens, todas
+aprovadas** (antes eram 30; a versão do cache é lida do `sw.js`):
 
 - local, fora do repositório: Chromium 153 do `@sparticuz/chromium`;
-- **CI** (PR #17, job "Validação em navegador real (não bloqueia)", `ubuntu-latest`): **Google
-  Chrome 155** da imagem do runner — o resultado sai como anotação na PR
+- **CI na época da PR #17** (job então não bloqueante, `ubuntu-latest`): **Google
+  Chrome 155** da imagem do runner — o resultado saiu como anotação na PR
   (`37/37 checagens OK · Chrome do sistema (/usr/bin/google-chrome) · 155.0.8059.39 · cache v39`).
 
 | Área | O que foi checado |
@@ -28,11 +29,22 @@ a versão do cache agora é lida do `sw.js`):
 | Storage | `storage.set/get` (IndexedDB + espelho no localStorage) e `saveBlob/getBlob` reais |
 | ➕ Novo exercício | o botão da aba Buscar abre o formulário sem erro, cabe nos 412 px e o ESC fecha |
 | Offline | Service Worker instalado, cache `berzerker-<VERSION>` com > 100 arquivos, **app abre offline** com catálogo e histórico; nenhum arquivo do CORE falha offline |
-| Celular | nenhuma das 8 abas estoura a largura de 412 px |
+| Viewport de 412 px (headless) | as 8 telas percorridas na época não estouraram a largura; isso não valida toque/teclado de um celular |
 | Instalação | manifest linkado e servido (`display: standalone`, ícones 192/512), `apple-touch-icon`, `theme-color`, SW controlando a página |
 | Atualização | cópia com `VERSION` **N+1** (N lido do `sw.js`; na última execução v40 sobre v39): instala, ativa, popula o cache novo e **apaga o cache antigo**; app segue funcionando |
 | Backup | `buildBackupPayload` (v6) e `applyImportedBackup` reaplicando; **download real** do `exportJSONBackup` lido do disco pelo navegador |
 | Aviso de imagem | com o IndexedDB recusando, o aviso "não confirmou o salvamento" aparece dentro da tela de 412 px, **continua lá depois de 4,5 s**, o botão baixa o backup JSON v6 de verdade (clique real), "Dispensar" fecha e o aviso não volta na mesma sequência |
+
+**B3 (cache v46):** o gate de Chrome do sistema agora também clica na última aba do grupo
+Treino, confere D3 com dados sintéticos (Rua, Esteira legada, bike, elíptico e remo), filtra
+por modalidade, abre o editor com só duas opções/D6, vê pace ao digitar, cria corrida e
+verifica `logs`, backup JSON v6, CSV v3 e PR global de cardio; a rodada de layout em 412 px
+inclui Corridas. **Execução local exigida** com `@sparticuz/chromium`
+153.0.8010.0 fora do repositório: **44/44**, cache v46, lacuna conhecida em
+`/images/cards/classico.webp` na primeira visita offline. O Chrome do sistema
+na CI da branch aprovou o gate bloqueante no [run 38918305668](https://github.com/LucasRangel89/diario/actions/runs/38918305668)
+(commit `a5bff94`); consultar `docs/RELATORIO_POS_PR17.md` e confirmar a CI do
+HEAD da PR. Viewport emulado não valida aparelho físico.
 
 **Lacuna conhecida (achado, não corrigido):** na **primeira visita**, as imagens que ficam fora do
 CORE (`images/patentes/*.webp`, `images/cards/*.webp` — 110 arquivos, ~1,2 MB) são pedidas antes
@@ -44,9 +56,9 @@ passam pelo cache em runtime. Ver a seção 6.
 Reproduzir:
 
 ```bash
-# CI (job "navegador" em .github/workflows/ci.yml, ainda não bloqueia a PR)
+# CI atual (.github/workflows/ci.yml): navegador real é bloqueante, sem skip
 npm ci && npm i --no-save playwright-core
-DIARIO_CHROME_PATH="$(command -v google-chrome)" node scripts/validacao-navegador.js
+DIARIO_EXIGIR_NAVEGADOR=1 DIARIO_CHROME_PATH="$(command -v google-chrome)" node scripts/validacao-navegador.js
 
 # sandbox sem Chrome (tudo fora do repositório; o Chromium precisa das libs NSS do pacote)
 mkdir -p /tmp/realbrowser && cd /tmp/realbrowser && npm i @sparticuz/chromium playwright-core
@@ -57,8 +69,9 @@ cd /home/user/diario
 DIARIO_BROWSER_DEPS=/tmp/realbrowser LD_LIBRARY_PATH=/tmp/chrlibs/lib node scripts/validacao-navegador.js
 ```
 
-Sem driver ou sem navegador o script **não falha**: imprime "validação em navegador pulada: …"
-(na CI, também um `::warning::`). `DIARIO_EXIGIR_NAVEGADOR=1` transforma o pulo em erro.
+Sem driver ou navegador, a execução **local sem** `DIARIO_EXIGIR_NAVEGADOR=1` avisa
+"validação em navegador pulada: …". **Isso não é aprovação.** Na CI,
+`DIARIO_EXIGIR_NAVEGADOR=1` transforma qualquer pulo em erro e o job é obrigatório.
 
 ## 1. Instalação (PWA) — manual
 
@@ -104,8 +117,9 @@ execução) e ver o cache antigo ser apagado.
 
 ## 4. Uso no celular — manual
 
-- [ ] Tela estreita (360–430 px): todas as 8 abas sem rolagem horizontal
-      (automatizado em 412 px; conferir 360 px e fonte grande do sistema).
+- [ ] Tela estreita (360–430 px): todas as 10 seções sem rolagem horizontal
+      (9 seções percorridas pelo Chrome headless em 412 px; conferir Montador, 360 px,
+      fonte grande do sistema e aparelho físico).
 - [ ] Registrar um treino completo com uma mão: seletor de exercício, séries, tags,
       salvar. Esperado: cartão aparece no histórico e sobrevive a recarregar.
 - [ ] Em uma corrida sintética de teste, usar **Editar** tanto na lista do dia quanto no
@@ -114,6 +128,14 @@ execução) e ver o cache antigo ser apagado.
       opcionais de tipo, RPE, FC média e tênis devem aceitar valores válidos; RPE inválido não
       deve salvar nem alterar o registro. O toque e o teclado virtual do aparelho continuam
       exigindo validação manual.
+- [ ] Em **Treino → Corridas**, confirmar que Corridas é a última aba de Treino e que só
+      Rua/Esteira aparecem (inclusive um registro antigo chamado apenas "Esteira"). Bike,
+      elíptico e remo devem continuar em Histórico → Cardio, nunca no painel Corridas.
+      Registrar uma corrida de teste por ali: data, distância, tempo `h:mm:ss`, pace enquanto
+      digita, tipo/RPE/FC/tênis; recusar RPE inválido sem criar log. Editar, filtrar por ano e
+      modalidade, cancelar/confirmar exclusão e conferir que o Histórico acompanha a mudança.
+      Totais e recordes informativos não devem mudar ao aplicar filtro só à lista. Um recorde
+      exibido não é um PR do jogo (a regra global de cardio continua incluindo outras modalidades).
 - [ ] Cronômetro de descanso: som/vibração (Android) e o número regressivo correto
       com a tela bloqueada/bloqueando durante o descanso.
 - [ ] Rotação de tela e modo escuro do sistema não quebram layout.

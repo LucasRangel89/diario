@@ -11,13 +11,13 @@
      3. @sparticuz/chromium                     (sandbox sem Chrome; precisa das libs NSS)
      4. Chrome/Chromium em caminhos padrão (/usr/bin/google-chrome, /usr/bin/chromium…)
 
-   Sem driver ou sem navegador, o script SAI COM SUCESSO e diz claramente
-   "validação em navegador pulada: …" (na CI vira um ::warning::). Para exigir
-   o navegador (quando virar gate), use DIARIO_EXIGIR_NAVEGADOR=1.
+   Sem driver ou navegador, a execução LOCAL sem exigir pode pular com aviso;
+   isso NÃO é aprovação. Na CI, DIARIO_EXIGIR_NAVEGADOR=1 faz o skip
+   reprovar o job bloqueante (Chrome do sistema obrigatório).
 
    CI (ver .github/workflows/ci.yml, job "navegador"):
      npm ci && npm i --no-save playwright-core
-     DIARIO_CHROME_PATH="$(command -v google-chrome)" node scripts/validacao-navegador.js
+     DIARIO_EXIGIR_NAVEGADOR=1 DIARIO_CHROME_PATH="$(command -v google-chrome)" node scripts/validacao-navegador.js
 
    Sandbox local sem Chrome (tudo FORA do repositório):
      mkdir -p /tmp/realbrowser && cd /tmp/realbrowser
@@ -36,8 +36,8 @@
    Cobre o que o jsdom não cobre: ES modules reais, Service Worker,
    offline, IndexedDB, download real do backup, layout em 412 px,
    pré-requisitos de instalação, atualização de versão do cache
-   (VERSION atual → VERSION+1, lida do sw.js), a janela "➕ Novo exercício"
-   e o aviso persistente de imagem não confirmada.
+   (VERSION atual → VERSION+1, lida do sw.js), a janela "➕ Novo exercício",
+   a aba Corridas D2/D3 e o aviso persistente de imagem não confirmada.
    ============================================================ */
 'use strict';
 const http = require('http');
@@ -232,6 +232,97 @@ const server = http.createServer((req, res) => {
   await page.waitForTimeout(150);
   check('ESC fecha a janela do exercício personalizado', !(await page.evaluate(() => !!document.getElementById('custom-ex-overlay'))));
 
+  console.log('\n== NAV 2c. Corridas D2/D3 com módulos e cliques reais ==');
+  fase = 'corridas';
+  // __diarioExports.logs é um snapshot do boot; use a API de backup para ler
+  // o binding vivo depois de setLogs (e restaurar o seed no finally).
+  const logsAntesB3 = await page.evaluate(async () => JSON.stringify((await window.__diarioExports.buildBackupPayload()).logs));
+  try {
+    // Isola o cenário sintético; nenhuma modalidade é criada fora de logs.
+    await page.evaluate(() => {
+      const ex = window.__diarioExports;
+      ex.setLogs([
+        { id: 992001, date: '2026-10-14', kind: 'corrida', muscle: 'Cardio', exercise: 'Corrida (Rua)', distanceKm: 5, durationMin: 25, shoe: 'Tênis Chrome', xpTheme: 'classico', isPR: false },
+        { id: 992002, date: '2026-10-15', kind: 'corrida', muscle: 'Cardio', exercise: 'Esteira', distanceKm: 2, durationMin: 12, xpTheme: 'classico', isPR: false },
+        { id: 992003, date: '2026-10-15', kind: 'corrida', muscle: 'Cardio', exercise: 'Bike / Ergométrico', distanceKm: 90, durationMin: 60, xpTheme: 'classico', isPR: false },
+        { id: 992004, date: '2026-10-15', kind: 'corrida', muscle: 'Cardio', exercise: 'Elíptico', distanceKm: 20, durationMin: 30, xpTheme: 'classico', isPR: false },
+        { id: 992005, date: '2026-10-15', kind: 'corrida', muscle: 'Cardio', exercise: 'Remo (Ergômetro)', distanceKm: 10, durationMin: 40, xpTheme: 'classico', isPR: false }
+      ]);
+      ex.refreshAll();
+    });
+    await page.click('#nav-group-treino');
+    await page.click('#nav-corridas');
+    const runsB3 = await page.evaluate(() => {
+      const tab = document.getElementById('tab-content-corridas');
+      return {
+        grupos: document.getElementById('nav-groups').children.length,
+        ultima: document.getElementById('nav-subnav').lastElementChild?.id,
+        visivel: !tab.classList.contains('hidden'),
+        cards: [...document.querySelectorAll('#runs-results [data-run-id]')].map(el => el.textContent),
+        km: document.getElementById('runs-overview').textContent,
+        recordes: document.getElementById('runs-records').textContent,
+        scroll: document.documentElement.scrollWidth, tela: window.innerWidth
+      };
+    });
+    check('D2: quatro grupos e Corridas no fim de Treino (clique real)',
+      runsB3.grupos === 4 && runsB3.ultima === 'nav-corridas' && runsB3.visivel, JSON.stringify(runsB3).slice(0, 300));
+    check('D3: somente Rua/Esteira e recordes informativos no DOM real, sem outros cardios',
+      runsB3.cards.length === 2 && runsB3.cards.every(text => /Corrida \((Rua|Esteira)\)/.test(text)) &&
+      !/Bike|Elíptico|Remo/.test(runsB3.cards.join(' ')) && runsB3.km.includes('7 km') && runsB3.recordes.includes('não é tempo oficial'), JSON.stringify(runsB3).slice(0, 300));
+    await page.selectOption('#runs-modality', 'Corrida (Esteira)');
+    const filtradasB3 = await page.locator('#runs-results [data-run-id]').count();
+    check('filtro de Corridas funciona no navegador sem alterar o total', filtradasB3 === 1 &&
+      (await page.locator('#runs-overview').textContent()).includes('7 km'), String(filtradasB3));
+    await page.selectOption('#runs-modality', '');
+    await page.click('#tab-content-corridas [data-action="openNewRunLog"]');
+    const modalB3 = await page.evaluate(() => ({
+      modalidades: [...document.querySelectorAll('#er-exercise option')].map(o => o.value),
+      d6: ['er-run-type', 'er-rpe', 'er-hr-avg', 'er-shoe'].every(id => !!document.getElementById(id)),
+      scroll: document.documentElement.scrollWidth, tela: window.innerWidth,
+      dialogo: document.getElementById('edit-log-overlay')?.getAttribute('aria-label')
+    }));
+    check('editor reutilizado no Chrome: só duas modalidades e D6, sem estouro em 412 px',
+      JSON.stringify(modalB3.modalidades) === JSON.stringify(['Corrida (Rua)', 'Corrida (Esteira)']) &&
+      modalB3.d6 && modalB3.dialogo === 'Registrar corrida' && modalB3.scroll <= modalB3.tela + 2, JSON.stringify(modalB3));
+    await page.fill('#er-date', '2026-10-16');
+    await page.fill('#er-distance', '6');
+    await page.fill('#er-duration', '00:30:00');
+    await page.selectOption('#er-run-type', 'intervalado');
+    await page.fill('#er-rpe', '7');
+    await page.fill('#er-hr-avg', '160');
+    await page.fill('#er-shoe', 'Tênis Teste Chrome');
+    check('pace ao digitar no Chrome: 6 km em 30 min = 5:00/km', (await page.locator('#er-pace').textContent()) === '5:00/km');
+    await page.click('#edit-log-overlay [data-action="saveEditedRunLog"]');
+    const novoB3 = await page.evaluate(async () => {
+      const ex = window.__diarioExports;
+      const backup = await ex.buildBackupPayload();
+      const novo = backup.logs.find(l => l.shoe === 'Tênis Teste Chrome');
+      const csv = ex.buildPlanilhaCSV();
+      return { log: novo, count: backup.logs.length, ui: document.getElementById('runs-results').textContent,
+        backup: backup.version === 6 && backup.logs.some(l => l.shoe === 'Tênis Teste Chrome' && l.rpe === 7),
+        csv: csv.includes('Versão do formato;3') && csv.includes('Tênis Teste Chrome') && csv.includes('PR (informativo)'),
+        date: document.getElementById('filter-date').value };
+    });
+    check('criar corrida pelo clique usa logs, preserva D6/JSON v6/CSV v3 e PR global de cardio',
+      novoB3.count === 6 && novoB3.log?.exercise === 'Corrida (Rua)' && novoB3.log?.xpTheme === 'classico' &&
+      novoB3.log?.rpe === 7 && novoB3.log?.hrAvg === 160 && novoB3.log?.runType === 'intervalado' &&
+      novoB3.log?.isPR === false && novoB3.backup && novoB3.csv && novoB3.ui.includes('Tênis Teste Chrome'),
+      JSON.stringify(novoB3).slice(0, 300));
+    check('aba Corridas e editor não causaram overflow ou pageerror em 412 px',
+      runsB3.scroll <= runsB3.tela + 2 && pageErrors.length === errosAntesCex, JSON.stringify(pageErrors.slice(errosAntesCex)));
+  } catch (e) {
+    check('fluxo completo de Corridas no Chrome real', false, e.stack || e.message);
+  } finally {
+    // Restaura o seed para os checks seguintes (SW/backup), mesmo se um clique falhar.
+    await page.evaluate(original => {
+      const ex = window.__diarioExports;
+      document.getElementById('edit-log-overlay')?.remove();
+      ex.setLogs(JSON.parse(original));
+      ex.saveLogsToStorage();
+      ex.refreshAll();
+    }, logsAntesB3);
+  }
+
   console.log('\n== NAV 3. Service Worker + offline ==');
   fase = 'sw';
   await page.evaluate(() => navigator.serviceWorker.ready);
@@ -265,7 +356,7 @@ const server = http.createServer((req, res) => {
   console.log('\n== NAV 3b. Celular: layout sem estouro horizontal ==');
   fase = 'layout';
   const mobile = [];
-  for (const [aba, grupo] of [['diario', 'treino'], ['busca', 'treino'], ['historico', 'treino'], ['boss', 'jogo'], ['story', 'jogo'], ['stats', 'voce'], ['calcs', 'voce'], ['config', 'config']]) {
+  for (const [aba, grupo] of [['diario', 'treino'], ['busca', 'treino'], ['historico', 'treino'], ['corridas', 'treino'], ['boss', 'jogo'], ['story', 'jogo'], ['stats', 'voce'], ['calcs', 'voce'], ['config', 'config']]) {
     await page.click(`#nav-group-${grupo}`).catch(() => {});
     await page.click(`#nav-${aba}`).catch(() => {});
     await page.waitForTimeout(250);

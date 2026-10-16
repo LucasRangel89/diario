@@ -15,14 +15,15 @@
 
 import { CATALOG_TIPOS, MUSCULOS_MAPA, catalogInfo, detectAutoPR, duplaProgressao, formatLoadText, formatRepsText, inferExerciseType, logTstSeconds, logVolumeKg, normalizeMuscle, sinergiaState } from './catalogo.js';
 import { cardioXP } from './gamificacao.js';
-import { formatRunDuration, formatRunPace, paceSecondsPerKm, parseRunDuration } from './corridas.js';
+import { formatRunDuration, formatRunPace, isRunLog, paceSecondsPerKm, parseRunDuration, runModality } from './corridas.js';
+import { isoDataValida } from './datas.js';
 import { fatigueState, regiaoLombarState, suggestNextWorkout, weeklySetsByMuscle } from './assistente.js';
 import { renderExerciseTagLine } from './busca.js';
 import { generateStoryCard } from './cartoes.js';
 import { saveLogsToStorage } from './persistencia.js';
 import { renderSession, spawnDamageFloat } from './sessao.js';
 import { renderBossBattleUI } from './boss.js';
-import { INP, LBL, MUSCLE_OPTIONS, NEXT_GOALS, TECHNIQUES, activeGameThemeId, activeSession, alertModal, escapeHtml, fmtN, formatShortBR, getTodayLocalISO, logs, refreshAll, savedWorkouts, setEditorState, shakeElement, updateSummaryMetrics, userBodyweight } from './app.js';
+import { INP, LBL, MUSCLE_OPTIONS, NEXT_GOALS, TECHNIQUES, activeGameThemeId, activeSession, activeTab, alertModal, escapeHtml, fmtN, formatShortBR, getTodayLocalISO, logs, refreshAll, savedWorkouts, setEditorState, shakeElement, updateSummaryMetrics, userBodyweight } from './app.js';
 
 // ============================ FORMULÁRIO DE REGISTRO ============================
 function updateTypeHint() {
@@ -380,27 +381,36 @@ const RUN_TYPE_OPTIONS = [
     ['leve', 'Leve'], ['longo', 'Longo'], ['intervalado', 'Intervalado'],
     ['ritmo/limiar', 'Ritmo/limiar'], ['prova', 'Prova'], ['regenerativo', 'Regenerativo'], ['outro', 'Outro']
 ];
-const CARDIO_MODALITIES = ['Corrida (Rua)', 'Corrida (Esteira)', 'Bike / Ergométrico', 'Elíptico', 'Remo (Ergômetro)'];
+const RUN_MODALITIES = ['Corrida (Rua)', 'Corrida (Esteira)'];
+const CARDIO_MODALITIES = [...RUN_MODALITIES, 'Bike / Ergométrico', 'Elíptico', 'Remo (Ergômetro)'];
 
-function editRunLog(log) {
+// O mesmo editor B2 atende criar e editar; não há formulário/regras D6 paralelos.
+// O overlay já existe no OVERLAY_CLOSE_ORDER, inclusive para o modo de criação.
+function openNewRunLog() {
+    editRunLog({ kind: 'corrida', date: getTodayLocalISO(), exercise: RUN_MODALITIES[0] }, true);
+}
+
+function editRunLog(log, isNew = false) {
     document.getElementById('edit-log-overlay')?.remove();
-    const exercise = String(log.exercise || 'Corrida (Rua)');
-    const modalities = CARDIO_MODALITIES.includes(exercise) ? CARDIO_MODALITIES : [...CARDIO_MODALITIES, exercise];
+    const exercise = String(log.exercise || RUN_MODALITIES[0]);
+    const onlyRuns = isNew || (activeTab === 'corridas' && isRunLog(log));
+    const modalities = onlyRuns ? RUN_MODALITIES : (CARDIO_MODALITIES.includes(exercise) ? CARDIO_MODALITIES : [...CARDIO_MODALITIES, exercise]);
+    const selectedExercise = onlyRuns ? runModality(log) : exercise;
     const runType = RUN_TYPE_OPTIONS.map(([value, label]) => `<option value="${value}"${value === log.runType ? ' selected' : ''}>${label}</option>`).join('');
-    const modalityOptions = modalities.map(value => `<option value="${escapeHtml(value)}"${value === exercise ? ' selected' : ''}>${escapeHtml(value)}</option>`).join('');
+    const modalityOptions = modalities.map(value => `<option value="${escapeHtml(value)}"${value === selectedExercise ? ' selected' : ''}>${escapeHtml(value)}</option>`).join('');
     const overlay = document.createElement('div');
     overlay.id = 'edit-log-overlay';
     overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-start sm:items-center justify-center p-4 overflow-y-auto';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', 'Editar corrida');
+    overlay.setAttribute('aria-label', isNew ? 'Registrar corrida' : 'Editar corrida');
     overlay.innerHTML = `
         <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-5 max-w-lg w-full shadow-2xl">
-            <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider mb-3">✏️ Editar corrida</h3>
+            <h3 class="font-oswald text-lg font-bold text-white uppercase tracking-wider mb-3">${isNew ? '🏃 Registrar corrida' : '✏️ Editar corrida'}</h3>
             <div class="grid grid-cols-2 gap-3">
                 <div><label for="er-date" class="${LBL}">Data</label><input id="er-date" type="date" value="${escapeHtml(log.date || '')}" class="${INP} min-h-[44px]"></div>
                 <div><label for="er-exercise" class="${LBL}">Modalidade</label><select id="er-exercise" class="${INP} min-h-[44px]">${modalityOptions}</select></div>
-                <div><label for="er-distance" class="${LBL}">Distância (km)</label><input id="er-distance" type="number" min="0" step="0.01" value="${Number(log.distanceKm) || ''}" class="${INP} min-h-[44px]"></div>
+                <div><label for="er-distance" class="${LBL}">Distância (km)</label><input id="er-distance" type="number" min="0" step="0.01" value="${Number(log.distanceKm) || ''}" data-input-action="updateRunEditPace" class="${INP} min-h-[44px]"></div>
                 <div><label for="er-duration" class="${LBL}">Tempo (h:mm:ss)</label><input id="er-duration" type="text" inputmode="numeric" placeholder="00:24:37" value="${escapeHtml(Number(log.durationMin) > 0 ? formatRunDuration(log.durationMin) : '')}" class="${INP} min-h-[44px]" data-input-action="updateRunEditPace"></div>
                 <div class="col-span-2 rounded-lg border border-cyan-700/30 bg-berzerker-dark px-3 py-2 text-sm text-cyan-300">Pace médio da corrida: <strong id="er-pace">—</strong></div>
                 <div><label for="er-run-type" class="${LBL}">Tipo de corrida (opcional)</label><select id="er-run-type" class="${INP} min-h-[44px]"><option value="">Não informado</option>${runType}</select></div>
@@ -411,7 +421,7 @@ function editRunLog(log) {
             </div>
             <div class="flex gap-3 justify-end mt-4">
                 <button type="button" data-action="closeElementById" data-args='["edit-log-overlay"]' class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Cancelar</button>
-                <button type="button" data-action="saveEditedRunLog" data-args="[${log.id}]" class="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">💾 Salvar corrida</button>
+                <button type="button" data-action="saveEditedRunLog" data-args="[${isNew ? 'null' : log.id}]" class="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">💾 ${isNew ? 'Registrar corrida' : 'Salvar corrida'}</button>
             </div>
         </div>`;
     overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
@@ -429,8 +439,21 @@ function updateRunEditPace() {
 }
 
 function saveEditedRunLog(id) {
-    const log = logs.find(item => item.id === id);
-    if (!log || log.kind !== 'corrida') return;
+    const isNew = id === null;
+    const existing = isNew ? null : logs.find(item => item.id === id);
+    if (!isNew && (!existing || existing.kind !== 'corrida')) return;
+    const date = document.getElementById('er-date').value;
+    if (isNew && !isoDataValida(date)) { alertModal('Informe uma data válida para a corrida.'); return; }
+    let exercise = document.getElementById('er-exercise').value;
+    const onlyRuns = isNew || (activeTab === 'corridas' && isRunLog(existing));
+    if (onlyRuns && !RUN_MODALITIES.includes(exercise)) {
+        alertModal('Selecione Corrida (Rua) ou Corrida (Esteira).'); return;
+    }
+    // A lista mostra um rótulo canônico, mas editar apenas notas/tempo não deve
+    // rebatizar o registro legado nem mudar sua impressão digital no CSV.
+    if (!isNew && onlyRuns && !RUN_MODALITIES.includes(existing.exercise) && exercise === runModality(existing)) {
+        exercise = existing.exercise;
+    }
     const durationText = document.getElementById('er-duration').value.trim();
     const durationMin = durationText ? parseRunDuration(durationText) : 0;
     const distanceText = document.getElementById('er-distance').value.trim().replace(',', '.');
@@ -448,9 +471,12 @@ function saveEditedRunLog(id) {
     const shoe = document.getElementById('er-shoe').value.trim();
     if (rpe != null && (!Number.isInteger(rpe) || rpe < 1 || rpe > 10)) { alertModal('O RPE deve ser um número inteiro de 1 a 10.'); return; }
     if (hrAvg != null && (!Number.isFinite(hrAvg) || hrAvg <= 0)) { alertModal('A frequência cardíaca média deve ser maior que zero.'); return; }
+    // Só cria id e altera logs depois de todas as validações. O PR segue a regra
+    // global de cardio, comparando com todas as modalidades já registradas.
+    const log = existing || { id: newLogId(), xpTheme: activeGameThemeId, isPR: false };
     Object.assign(log, {
-        date: document.getElementById('er-date').value || log.date,
-        exercise: document.getElementById('er-exercise').value,
+        date: date || log.date,
+        exercise,
         distanceKm,
         durationMin,
         notes: document.getElementById('er-notes').value.trim(),
@@ -465,13 +491,14 @@ function saveEditedRunLog(id) {
     // desconhecidos, id, tema e demais dados do registro ficam intactos.
     ['weight', 'reps', 'mode', 'perSide', 'rir', 'sessao', 'conferir', 'sets', 'repsText', 'technique', 'nextGoal', 'biset'].forEach(key => delete log[key]);
     log.isPR = detectAutoPR(log, logs, userBodyweight);
+    if (isNew) logs.unshift(log);
     saveLogsToStorage();
     document.getElementById('edit-log-overlay')?.remove();
     const filter = document.getElementById('filter-date');
     if (filter) filter.value = log.date;
     refreshAll();
     renderSession();
-    alertModal('✅ Corrida atualizada!');
+    alertModal(isNew ? '✅ Corrida registrada!' : '✅ Corrida atualizada!');
 }
 
 function editLog(id) {
@@ -741,6 +768,7 @@ function registerCorrida(event) {
         _lastLogId,
         newLogId,
         editLog,
+        openNewRunLog,
         saveEditedLog,
         saveEditedRunLog,
         updateRunEditPace,
@@ -761,4 +789,4 @@ function registerCorrida(event) {
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/registro.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
 
-export { updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, saveEditedLog, saveEditedRunLog, updateRunEditPace, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida };
+export { updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, openNewRunLog, saveEditedLog, saveEditedRunLog, updateRunEditPace, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida };

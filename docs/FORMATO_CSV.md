@@ -52,6 +52,10 @@ trazem essas colunas, continuam importáveis; os campos ausentes ficam ausentes 
 `RPE` aceita inteiro de 1 a 10, `FC média` deve ser maior que zero e `Tipo de corrida`
 precisa estar na lista suportada.
 
+A aba **Corridas** do app filtra somente Corrida (Rua) e Corrida (Esteira); isso não
+muda o esquema nem a aba `Cardio` do CSV, que continua transportando também bike,
+elíptico e remo. O filtro é de apresentação, não de importação/exportação.
+
 ### Regras de escrita
 
 - Campos com `;`, `"` ou quebra de linha vão entre aspas; aspas internas são dobradas (`""`).

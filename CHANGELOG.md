@@ -2,6 +2,13 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Não lançado] — B3: interface de corridas (branch `arena/7d08417f-diario`)
+
+- **D2:** quatro grupos existentes preservados (Treino, Jogo, Você, Config); Corridas é a última aba de Treino, com tela própria e sem nova coleção.
+- **D3:** só Rua/Esteira na aba e no fluxo de criação/edição iniciado nela. Lista por ano/modalidade, totais, semanas ISO/meses/anos, recordes informativos e km por tênis usam os utilitários puros e `logs`; bike, elíptico e remo seguem em Histórico/CSV Cardio e no formulário de Hoje. Nomes legados são exibidos como Rua/Esteira, sem rebatismo ao editar outros campos.
+- O editor de B2 é reutilizado para criar corridas com D6 e validação antes da gravação; PR segue a regra global de cardio. Pace atualiza ao mudar distância ou tempo. Tênis cujo nome coincide com propriedade nativa de objeto tem km contabilizados corretamente.
+- JSON v5/v6, CSV v1/v2/v3 (D6 e `PR (informativo)`), XP, dano, combate, volume e 1RM continuam inalterados. Testes sintéticos do motor/UI/ESM e do Chrome real (gate da CI) cobrem os fluxos. Cache offline: `sw.js` **v46**. **B5 não incluído.**
+
 ## [Não lançado] — manutenção pós-PR #17 (branch `arena/1c7fe137-diario`)
 
 ### CI

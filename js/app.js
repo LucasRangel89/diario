@@ -8,7 +8,7 @@ import './historico.js';
 import './busca.js';
 import './custom_exercises.js';
 import './datas.js';
-import './corridas.js';
+import { formatRunDuration, formatRunPace, isRunLog, paceSecondsPerKm, runModality, runRecords, summarizeRunsByWeek, summarizeRunsByMonth, summarizeRunsByYear } from './corridas.js';
 import { storage } from './storage.js';
 import { DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, FAIXA_SERIES_SEMANAIS, MUSCLE_META, MUSCLE_OPTIONS_FULL, MUSCULOS_MAPA, formatLoadText, formatPlates, formatRepsText, logEst1RM, logVolumeKg, CATALOG_TIPOS, EXERCISE_CATALOG, FAIXA_SERIES_POR_GRUPO, MUSCLE_WEIGHT, catalogInfo, detectAutoPR, duplaProgressao, inferExerciseType, logTstSeconds, normalizeMuscle, sinergiaState } from './catalogo.js';
 import { SEASON_WEEKS, STORAGE_KEY_THEME, THEMES, XP_REST_PER_DAY, completeSeason, computeBossProgress, isoWeekKey, isoWeekRange, missionsState, rankFromXP, seasonState, XP_GROUP_DAY_CAP, XP_MIN, XP_PR, autoDeloadWeekKeys, cardioXP, computeXP, logDamageKg } from './gamificacao.js';
@@ -185,7 +185,7 @@ const INP = 'w-full bg-berzerker-dark border border-berzerker-border rounded-lg 
 const LBL = 'block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1';
 const MUSCLE_OPTIONS = MUSCLE_OPTIONS_FULL; // catálogo completo (10 grupos + Geral)
 const NAV_GROUPS = [
-    { id: 'treino', label: 'Treino', tabs: [['diario', 'Hoje'], ['historico', 'Histórico'], ['busca', 'Buscar'], ['montador', 'Meus treinos']] },
+    { id: 'treino', label: 'Treino', tabs: [['diario', 'Hoje'], ['historico', 'Histórico'], ['busca', 'Buscar'], ['montador', 'Meus treinos'], ['corridas', 'Corridas']] },
     { id: 'jogo', label: 'Jogo', tabs: [['boss', 'Boss'], ['story', 'Story Card']] },
     { id: 'voce', label: 'Você', tabs: [['stats', 'Stats'], ['calcs', 'Calcs']] },
     { id: 'config', label: 'Config', tabs: [['config', 'Config']] }
@@ -709,6 +709,108 @@ function showRanksModal(themeId) {
     document.body.appendChild(o);
 }
 
+// ============================ CORRIDAS (somente apresentação; a fonte é logs) ============================
+function runPeriodCards(rows) {
+    if (!rows.length) return '<p class="text-xs text-gray-500">Nenhuma corrida neste período.</p>';
+    return rows.slice(-6).reverse().map(row => `
+        <div class="bg-berzerker-dark border border-berzerker-border rounded-lg p-3 min-w-0">
+            <div class="flex flex-wrap justify-between gap-1 text-xs"><strong class="text-white">${escapeHtml(row.period)}</strong><span class="text-gray-400">${row.runs} corrida(s)</span></div>
+            <div class="font-oswald text-lg text-cyan-300">${fmtN(row.km)} km <span class="text-xs font-sans text-gray-400">· ${row.durationMin > 0 ? escapeHtml(row.pace || '—') : '—'}</span></div>
+            <div class="text-xs text-gray-500">${formatRunDuration(row.durationMin)} · maior ${fmtN(row.longestDistanceKm)} km</div>
+        </div>`).join('');
+}
+
+function renderRunsTab() {
+    const overview = document.getElementById('runs-overview');
+    if (!overview) return;
+    // O histórico de cardio é compartilhado. Este painel só lê as corridas
+    // reconhecidas pelo módulo puro, sem mudar kind, PR, XP ou os registros.
+    const runs = logs.filter(isRunLog);
+    const weeks = summarizeRunsByWeek(runs);
+    const months = summarizeRunsByMonth(runs);
+    const years = summarizeRunsByYear(runs);
+    const records = runRecords(runs);
+    const total = years.reduce((sum, row) => ({
+        runs: sum.runs + row.runs, km: sum.km + row.km, durationMin: sum.durationMin + row.durationMin
+    }), { runs: 0, km: 0, durationMin: 0 });
+    const pace = total.durationMin > 0 ? paceSecondsPerKm(total.durationMin, total.km) : null;
+    const overviewItem = (title, value, hint) => `
+        <div class="bg-berzerker-card border border-berzerker-border rounded-xl p-4 min-w-0">
+            <span class="block text-xs font-bold text-gray-400 uppercase">${title}</span>
+            <strong class="block font-oswald text-xl sm:text-2xl text-cyan-300 mt-1">${value}</strong>
+            <span class="text-xs text-gray-500">${hint}</span>
+        </div>`;
+    overview.innerHTML = overviewItem('Corridas', `${total.runs} corridas`, 'Rua e Esteira') +
+        overviewItem('Distância total', `${fmtN(total.km)} km`, 'Todo o histórico') +
+        overviewItem('Tempo total', formatRunDuration(total.durationMin), 'Todo o histórico') +
+        overviewItem('Pace médio', pace == null ? '—' : formatRunPace(pace), 'Tempo total ÷ distância total');
+    document.getElementById('runs-weeks').innerHTML = runPeriodCards(weeks);
+    document.getElementById('runs-months').innerHTML = runPeriodCards(months);
+    document.getElementById('runs-years').innerHTML = runPeriodCards(years);
+
+    const longest = records.longestDistance;
+    document.getElementById('runs-records').innerHTML = `
+        <div class="bg-berzerker-dark border border-berzerker-border rounded-lg p-3">
+            <div class="text-xs text-gray-400">Maior distância em uma corrida</div>
+            <strong class="text-cyan-300">${longest ? `${fmtN(longest.distanceKm)} km` : '—'}</strong>
+            ${longest ? `<span class="text-xs text-gray-500 ml-2">${escapeHtml(formatDateBR(longest.log.date))}</span>` : ''}
+        </div>` + records.bestPaceByDistance.map(record => `
+        <div class="bg-berzerker-dark border border-berzerker-border rounded-lg p-3">
+            <div class="text-xs text-gray-400">${escapeHtml(record.label)}</div>
+            <strong class="text-cyan-300">${escapeHtml(record.pace || '—')}</strong>
+            ${record.log ? `<span class="text-xs text-gray-500 ml-2">${escapeHtml(formatDateBR(record.log.date))}</span>` : ''}
+        </div>`).join('');
+    document.getElementById('runs-shoes').innerHTML = records.shoeKm.length
+        ? records.shoeKm.map(row => `
+            <div class="bg-berzerker-dark border border-berzerker-border rounded-lg p-3 flex flex-wrap justify-between gap-2 text-sm min-w-0">
+                <span class="text-gray-200 break-words min-w-0">${escapeHtml(row.shoe)}</span><strong class="text-cyan-300">${fmtN(row.km)} km</strong>
+            </div>`).join('')
+        : '<p class="text-xs text-gray-500">Nenhum tênis informado nas corridas.</p>';
+
+    // Os filtros são apenas da lista. Recriar as opções a partir dos resumos
+    // válidos evita regra de calendário paralela e preserva a seleção ao editar.
+    const yearSelect = document.getElementById('runs-year');
+    const selectedYear = yearSelect.value;
+    yearSelect.innerHTML = '<option value="">Todos os anos</option>' + years.slice().reverse().map(row =>
+        `<option value="${escapeHtml(row.period)}">${escapeHtml(row.period)}</option>`).join('');
+    yearSelect.value = years.some(row => row.period === selectedYear) ? selectedYear : '';
+    const selectedModality = document.getElementById('runs-modality').value;
+    const filtered = runs.filter(log => (!selectedModality || runModality(log) === selectedModality) &&
+        (!yearSelect.value || String(log.date || '').startsWith(yearSelect.value + '-')))
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || Number(b.id) - Number(a.id));
+    const LIMIT = 60;
+    document.getElementById('runs-results').innerHTML = filtered.length ? filtered.slice(0, LIMIT).map(log => {
+        const modality = runModality(log);
+        const km = Number(log.distanceKm), min = Number(log.durationMin);
+        const seconds = Number.isFinite(min) && min > 0 ? paceSecondsPerKm(min, km) : null;
+        const details = [
+            log.runType ? `Tipo: ${escapeHtml(log.runType)}` : '',
+            log.rpe != null ? `RPE ${escapeHtml(log.rpe)}` : '',
+            log.hrAvg != null ? `FC média ${escapeHtml(log.hrAvg)} bpm` : '',
+            log.shoe ? `👟 ${escapeHtml(log.shoe)}` : ''
+        ].filter(Boolean).join(' · ');
+        // IDs dos registros são numéricos; não colocar dados livres em data-args.
+        const actions = Number.isSafeInteger(log.id) ? `
+            <div class="flex flex-wrap gap-2 shrink-0">
+                <button type="button" data-action="editLog" data-args="[${log.id}]" class="min-h-[44px] px-3 py-2 rounded-lg bg-berzerker-border text-white text-xs font-bold">✏️ Editar</button>
+                <button type="button" data-action="deleteLog" data-args="[${log.id}]" class="min-h-[44px] px-3 py-2 rounded-lg border border-red-900/50 text-red-300 text-xs font-bold">Excluir</button>
+            </div>` : '';
+        return `
+            <article data-run-id="${escapeHtml(log.id)}" class="bg-berzerker-dark border border-berzerker-border rounded-xl p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 min-w-0">
+                <div class="min-w-0 space-y-1">
+                    <div class="flex flex-wrap items-center gap-2 text-xs text-gray-400"><time datetime="${escapeHtml(log.date)}">${escapeHtml(formatDateBR(log.date))}</time>
+                        <strong class="text-cyan-300">${escapeHtml(modality)}</strong>
+                        ${log.isPR ? '<span title="PR de cardio do jogo (todas as modalidades)" class="text-emerald-400">🏆 PR de cardio (jogo)</span>' : ''}
+                    </div>
+                    <div class="text-sm text-white font-bold">${Number.isFinite(km) && km >= 0 ? `${fmtN(km)} km` : '—'} · ${Number.isFinite(min) && min >= 0 ? formatRunDuration(min) : '—'} · ${seconds == null ? '—' : formatRunPace(seconds)}</div>
+                    ${details ? `<div class="text-xs text-gray-400 break-words">${details}</div>` : ''}
+                    ${log.notes ? `<p class="text-xs text-gray-500 break-words">${escapeHtml(log.notes)}</p>` : ''}
+                </div>${actions}
+            </article>`;
+    }).join('') + (filtered.length > LIMIT ? `<p class="text-xs text-gray-500 text-center">Mostrando ${LIMIT} de ${filtered.length} corridas — filtre por ano ou modalidade.</p>` : '')
+        : '<p class="text-center py-6 text-gray-400 border border-dashed border-berzerker-border rounded-xl">Nenhuma corrida com esses filtros.</p>';
+}
+
 // ============================ TABS ============================
 function renderNavigation() {
     NAV_GROUPS.forEach(group => {
@@ -761,6 +863,7 @@ function switchTab(tab) {
     if (tab === 'montador') { renderDraftList(); renderSavedWorkouts(); renderWeekGaps(); }
     if (tab === 'historico') renderHistory();
     if (tab === 'busca') renderSearchScreen();
+    if (tab === 'corridas') renderRunsTab();
     if (tab === 'boss') { renderBossBattleUI(); renderMissions(); renderSeason(); }
     if (tab === 'story') generateStoryCard();
     if (tab === 'stats') { renderBadgesAndStreak(); initVolumeChart(); renderExerciseChart(); renderWeeklySetsChart(); renderTests(); }
@@ -1727,6 +1830,7 @@ function refreshAll() {
     if (document.getElementById('builder-week-gaps')) renderWeekGaps();
     if (document.getElementById('tests-container')) renderTests();
     if (document.getElementById('history-content')) renderHistory();
+    if (activeTab === 'corridas') renderRunsTab();
 }
 
 // ============================ BOOT ============================
@@ -1974,6 +2078,7 @@ window.onload = function () {
     showThemeGallery,
     checkRankUp,
     showRanksModal,
+    renderRunsTab,
     renderNavigation,
     selectNavGroup,
     switchTab,
@@ -2130,4 +2235,4 @@ window.onload = function () {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/app.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
-export { logs, savedWorkouts, draftExercises, editingWorkoutId, activeSession, userBodyweight, customBgImageData, volumeChartInstance, exChartInstance, setsChartInstance, weightLog, histVolChartInstance, settings, deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, portraitObjectURLs, STORY_BG_BLOB_KEY, themeGameSaves, activeGameThemeId, selectedStoryBossId, THEME, BOSSES, ANIMAL_RANKS, lastRankLevel, timer, wakeLock, lastKnownTodayISO, lastBackupAt, setEditorState, STORAGE_KEY_LOGS, STORAGE_KEY_BW, STORAGE_KEY_WORKOUTS, STORAGE_KEY_SEEDED, STORAGE_KEY_SETTINGS, STORAGE_KEY_GAME, STORAGE_KEY_THEME_GAMES, STORAGE_KEY_GAME_SHARED, STORAGE_KEY_STORY, STORAGE_KEY_BACKUP, safeStorage, saveBlobChecked, notifyBlobFailure, mensagemImagemSalva, TECHNIQUES, NEXT_GOALS, INP, LBL, MUSCLE_OPTIONS, NAV_GROUPS, activeNavGroup, activeTab, THEME_ICONS, THEME_IDS_LIST, THEME_ICON_IMGS, THEME_CARD_BGS, TAILWIND_SPACING_PX, imgSizeAttrs, themeIconImg, rankEmblemSrc, rankEmblemImg, _cardImgCache, getCardImg, drawCoverImg, STORY_CARD_STYLES, toLocalISO, getTodayLocalISO, formatDateBR, formatShortBR, updateHeaderDate, escapeHtml, setLogs, setSavedWorkouts, setUserBodyweight, setWeightLog, setHistVolChartInstance, closeElementById, hideElementById, fmtN, alertModal, confirmModal, shakeElement, migrateLog, normalizeSavedWorkouts, parseStoredObject, emptyThemeGameSave, ensureThemeGameSave, restoreActiveThemeGameSave, isoWeekDateRange, seasonsDoTema, deloadWeeksEfetivos, ensureDeloadRestAwards, loadGameProgressFromStorage, loadStoredData, logsForTheme, saveLogsToStorage, saveWorkoutsToStorage, saveSettings, saveGameState, saveStoryState, snapshotStoryBgDataURL, defaultTests, loadWorkoutsFromStorage, saveBodyweight, saveTrainingSettings, toggleDeloadWeek, updateStoryThemeInfo, applyTheme, changeGameTheme, computeThemeXPCtx, computeXPCtx, getGlobalXPTotal, themeRankList, themeConfirmationName, requestGameThemeChange, showThemeGallery, checkRankUp, showRanksModal, renderNavigation, selectNavGroup, switchTab, initStorageMigration, renderStorageStatus, seedInitialMockData, updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, saveEditedLog, deleteLog, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida, startSession, renderSession, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, endSession, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, stopSessionTimer, vibrate, playBeepSound, acquireWakeLock, releaseWakeLock, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, updateExerciseSuggestions, onWbExerciseChange, addExerciseToDraft, removeDraftExercise, moveDraftExercise, applySuggestedOrder, renderWeekGaps, renderDraftList, updateSaveButton, saveWorkout, clearDraft, editWorkout, deleteWorkout, renderSavedWorkouts, getAnimalRankForSession, updateHeaderChrome, updateSummaryMetrics, DEFAULT_BOSS_PORTRAITS, bossPortraitSrc, resolvePortraitSrc, hydratePortraitBlobs, _bossImgCache, getBossImg, renderBossBattleUI, BOSS_LIGHTBOX_ID, bossLightboxIdx, bossStatusLabel, bossStatusClass, bossPortraitDownloadName, openBossLightbox, closeBossLightbox, navBossLightbox, renderBossLightbox, OVERLAY_CLOSE_ORDER, closeTopOverlay, uploadBossPortrait, reservaManifest, reservaBossId, loadReservaManifest, reservaGroups, selectReservaBoss, applyReservaPortrait, resetBossPortraitToDefault, renderReservaStudio, renderMissions, claimMissions, renderSeason, finishSeasonNow, handleBgImageUpload, removeBgImage, wrapCanvasText, canvasMeasure, drawThemedFrame, drawThemedFrameArt, _fontsRedrawScheduled, withWebFonts, generateStoryCard, downloadStoryCard, openBossDefeatCard, generateBossDefeatCard, downloadBossDefeatCard, calculate1RM, renderWarmupCalculator, calculateWarmupFromForm, calculatePlatesFromForm, calculatePlatesQuick, weeklyStreakInfo, BADGE_ART, badgeArtSrc, badgeArtImg, badgeArtFallback, bestWeekWorkouts, renderBadgesAndStreak, initVolumeChart, renderExerciseChart, renderWeeklySetsChart, renderTests, addTestRecord, deleteTestRecord, addCustomTest, deleteTest, parseCSVRows, buildBackupPayload, exportJSONBackup, applyImportedBackup, importJSONBackup, renderBackupReminder, clearAllData, startDateWatcher, refreshAll };
+export { logs, savedWorkouts, draftExercises, editingWorkoutId, activeSession, userBodyweight, customBgImageData, volumeChartInstance, exChartInstance, setsChartInstance, weightLog, histVolChartInstance, settings, deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, portraitObjectURLs, STORY_BG_BLOB_KEY, themeGameSaves, activeGameThemeId, selectedStoryBossId, THEME, BOSSES, ANIMAL_RANKS, lastRankLevel, timer, wakeLock, lastKnownTodayISO, lastBackupAt, setEditorState, STORAGE_KEY_LOGS, STORAGE_KEY_BW, STORAGE_KEY_WORKOUTS, STORAGE_KEY_SEEDED, STORAGE_KEY_SETTINGS, STORAGE_KEY_GAME, STORAGE_KEY_THEME_GAMES, STORAGE_KEY_GAME_SHARED, STORAGE_KEY_STORY, STORAGE_KEY_BACKUP, safeStorage, saveBlobChecked, notifyBlobFailure, mensagemImagemSalva, TECHNIQUES, NEXT_GOALS, INP, LBL, MUSCLE_OPTIONS, NAV_GROUPS, activeNavGroup, activeTab, THEME_ICONS, THEME_IDS_LIST, THEME_ICON_IMGS, THEME_CARD_BGS, TAILWIND_SPACING_PX, imgSizeAttrs, themeIconImg, rankEmblemSrc, rankEmblemImg, _cardImgCache, getCardImg, drawCoverImg, STORY_CARD_STYLES, toLocalISO, getTodayLocalISO, formatDateBR, formatShortBR, updateHeaderDate, escapeHtml, setLogs, setSavedWorkouts, setUserBodyweight, setWeightLog, setHistVolChartInstance, closeElementById, hideElementById, fmtN, alertModal, confirmModal, shakeElement, migrateLog, normalizeSavedWorkouts, parseStoredObject, emptyThemeGameSave, ensureThemeGameSave, restoreActiveThemeGameSave, isoWeekDateRange, seasonsDoTema, deloadWeeksEfetivos, ensureDeloadRestAwards, loadGameProgressFromStorage, loadStoredData, logsForTheme, saveLogsToStorage, saveWorkoutsToStorage, saveSettings, saveGameState, saveStoryState, snapshotStoryBgDataURL, defaultTests, loadWorkoutsFromStorage, saveBodyweight, saveTrainingSettings, toggleDeloadWeek, updateStoryThemeInfo, applyTheme, changeGameTheme, computeThemeXPCtx, computeXPCtx, getGlobalXPTotal, themeRankList, themeConfirmationName, requestGameThemeChange, showThemeGallery, checkRankUp, showRanksModal, renderRunsTab, renderNavigation, selectNavGroup, switchTab, initStorageMigration, renderStorageStatus, seedInitialMockData, updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, saveEditedLog, deleteLog, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida, startSession, renderSession, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, endSession, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, stopSessionTimer, vibrate, playBeepSound, acquireWakeLock, releaseWakeLock, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, updateExerciseSuggestions, onWbExerciseChange, addExerciseToDraft, removeDraftExercise, moveDraftExercise, applySuggestedOrder, renderWeekGaps, renderDraftList, updateSaveButton, saveWorkout, clearDraft, editWorkout, deleteWorkout, renderSavedWorkouts, getAnimalRankForSession, updateHeaderChrome, updateSummaryMetrics, DEFAULT_BOSS_PORTRAITS, bossPortraitSrc, resolvePortraitSrc, hydratePortraitBlobs, _bossImgCache, getBossImg, renderBossBattleUI, BOSS_LIGHTBOX_ID, bossLightboxIdx, bossStatusLabel, bossStatusClass, bossPortraitDownloadName, openBossLightbox, closeBossLightbox, navBossLightbox, renderBossLightbox, OVERLAY_CLOSE_ORDER, closeTopOverlay, uploadBossPortrait, reservaManifest, reservaBossId, loadReservaManifest, reservaGroups, selectReservaBoss, applyReservaPortrait, resetBossPortraitToDefault, renderReservaStudio, renderMissions, claimMissions, renderSeason, finishSeasonNow, handleBgImageUpload, removeBgImage, wrapCanvasText, canvasMeasure, drawThemedFrame, drawThemedFrameArt, _fontsRedrawScheduled, withWebFonts, generateStoryCard, downloadStoryCard, openBossDefeatCard, generateBossDefeatCard, downloadBossDefeatCard, calculate1RM, renderWarmupCalculator, calculateWarmupFromForm, calculatePlatesFromForm, calculatePlatesQuick, weeklyStreakInfo, BADGE_ART, badgeArtSrc, badgeArtImg, badgeArtFallback, bestWeekWorkouts, renderBadgesAndStreak, initVolumeChart, renderExerciseChart, renderWeeklySetsChart, renderTests, addTestRecord, deleteTestRecord, addCustomTest, deleteTest, parseCSVRows, buildBackupPayload, exportJSONBackup, applyImportedBackup, importJSONBackup, renderBackupReminder, clearAllData, startDateWatcher, refreshAll };
