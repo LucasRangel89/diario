@@ -356,6 +356,8 @@ function closeModal() {
 function openCustomExModal(existingId = null) {
     const existing = existingId ? customExercises.find(e => e.id === existingId) : null;
     openModal(existing ? '✏️ Editar exercício' : '➕ Novo exercício', customExerciseFormHTML(existing));
+    const form = document.getElementById('custom-ex-form');
+    if (form && existing && existing.id) form.dataset.editingId = existing.id;
     setTimeout(() => {
         updateCustomExFormHint();
         document.getElementById('custom-ex-form')?.addEventListener('submit', submitCustomExForm);

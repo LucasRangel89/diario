@@ -235,6 +235,7 @@ function renderCatalogResults() {
                 <button type="button" data-ex="${escapeHtml(e.nome)}" data-action="useExerciseInBuilder" data-attr-args="data-ex" class="px-2.5 py-1.5 bg-cyan-700 hover:bg-cyan-600 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">🎯 No treino</button>
                 <button type="button" data-ex="${escapeHtml(e.nome)}" data-action="showExerciseProgress" data-attr-args="data-ex" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors"${uses ? '' : ' disabled'}>📊 Evolução</button>
                 ${uses ? `<button type="button" data-ex="${escapeHtml(e.nome)}" data-action="repeatLastPerformance" data-attr-args="data-ex" class="px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">↻ Repetir última</button>` : ''}
+                ${e.isCustom ? `<button type="button" data-action="openCustomExModal" data-args='[${JSON.stringify(e.id)}]' class="px-2.5 py-1.5 min-h-[44px] bg-berzerker-border hover:bg-gray-700 text-white text-[10px] font-bold uppercase tracking-wide rounded-lg transition-colors">✏️ Editar</button>` : ''}
             </div>
         </div>`;
     }).join('');

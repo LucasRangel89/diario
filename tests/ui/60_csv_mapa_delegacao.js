@@ -81,6 +81,15 @@
         check('a aba Buscar é redesenhada com o exercício novo (renderSearchScreen)', cardNovoEx(), titles().slice(0, 3));
         check('a confirmação de criação aparece para o usuário', document.body.textContent.includes('Exercício criado com sucesso'));
         check('nenhum erro não capturado no fluxo de criação', jsErrors.length === errosAntesCex, novosErrosCex());
+        const cardExPersonalizado = [...document.querySelectorAll('#cat-results > div[data-ex]')].find(c => c.dataset.ex === nomeNovoEx);
+        const btnEditarExPersonalizado = cardExPersonalizado?.querySelector('[data-action="openCustomExModal"]');
+        check('card de exercício personalizado na Busca oferece Editar com alvo de toque de 44 px', !!btnEditarExPersonalizado && btnEditarExPersonalizado.classList.contains('min-h-[44px]'));
+        if (btnEditarExPersonalizado) click(btnEditarExPersonalizado);
+        await esperaFormCex();
+        check('Editar no card abre o formulário existente em modo de edição', !!$('custom-ex-form') && $('custom-ex-form').dataset.editingId === String(ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeNovoEx)}).id`)));
+        $('cex-obs').value = 'observação editada';
+        click($('custom-ex-form').querySelector('button[type="submit"]'));
+        check('criar → editar → salvar atualiza a definição sem duplicar o exercício', ev(`customExercises.filter(e => e.nome === ${JSON.stringify(nomeNovoEx)}).length`) === 1 && ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeNovoEx)}).obs`) === 'observação editada' && !$('custom-ex-overlay'));
         ev(`openExercisePicker('log'); setPickerQuery(${JSON.stringify(nomeNovoEx)});`);
         check('o seletor rápido também oferece o exercício novo', pickerRows().some(r => r.dataset.ex === nomeNovoEx));
         ev('closeExercisePicker()');
