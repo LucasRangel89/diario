@@ -58,6 +58,11 @@ function validarBackupJSON(parsed) {
         if (raw.weight !== undefined && !(Number.isFinite(Number(raw.weight)) && Number(raw.weight) >= 0)) { erros.push(`${pos}: carga inválida`); return; }
         if (raw.reps !== undefined && (!Array.isArray(raw.reps) || !raw.reps.every(r => Number.isFinite(Number(r))))) { erros.push(`${pos}: repetições inválidas`); return; }
         if (raw.sets !== undefined && raw.sets !== null && (!Array.isArray(raw.sets) || !raw.sets.every(s => isObjetoSimples(s) && Number.isFinite(Number(s.weight)) && Number.isFinite(Number(s.reps))))) { erros.push(`${pos}: séries (sets) inválidas`); return; }
+        const runTypes = ['leve', 'longo', 'intervalado', 'ritmo/limiar', 'prova', 'regenerativo', 'outro'];
+        if (raw.runType !== undefined && (typeof raw.runType !== 'string' || !runTypes.includes(raw.runType))) { erros.push(`${pos}: tipo de corrida inválido`); return; }
+        if (raw.rpe !== undefined && (typeof raw.rpe !== 'number' || !Number.isInteger(raw.rpe) || raw.rpe < 1 || raw.rpe > 10)) { erros.push(`${pos}: RPE inválido (esperado inteiro de 1 a 10)`); return; }
+        if (raw.hrAvg !== undefined && (typeof raw.hrAvg !== 'number' || !Number.isFinite(raw.hrAvg) || raw.hrAvg <= 0)) { erros.push(`${pos}: frequência cardíaca média inválida`); return; }
+        if (raw.shoe !== undefined && typeof raw.shoe !== 'string') { erros.push(`${pos}: tênis deve ser texto`); return; }
         logsOk.push(raw);
     });
     if (erros.length) return { ok: false, erros: erros.slice(0, 10) };

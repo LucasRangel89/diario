@@ -442,9 +442,12 @@ function saveEditedRunLog(id) {
         return value ? Number(value) : null;
     };
     const runType = document.getElementById('er-run-type').value;
+    if (runType && !RUN_TYPE_OPTIONS.some(([value]) => value === runType)) { alertModal('Tipo de corrida inválido.'); return; }
     const rpe = readOptionalNumber('er-rpe');
     const hrAvg = readOptionalNumber('er-hr-avg');
     const shoe = document.getElementById('er-shoe').value.trim();
+    if (rpe != null && (!Number.isInteger(rpe) || rpe < 1 || rpe > 10)) { alertModal('O RPE deve ser um número inteiro de 1 a 10.'); return; }
+    if (hrAvg != null && (!Number.isFinite(hrAvg) || hrAvg <= 0)) { alertModal('A frequência cardíaca média deve ser maior que zero.'); return; }
     Object.assign(log, {
         date: document.getElementById('er-date').value || log.date,
         exercise: document.getElementById('er-exercise').value,
@@ -453,7 +456,7 @@ function saveEditedRunLog(id) {
         notes: document.getElementById('er-notes').value.trim(),
         kind: 'corrida', muscle: 'Cardio', type: 'corrida'
     });
-    // D6 é aditivo e opcional. As validações de backup/CSV permanecem em B4.
+    // D6 é aditivo e opcional; os campos permanecem validados no editor, backup e CSV.
     if (runType) log.runType = runType; else delete log.runType;
     if (rpe != null) log.rpe = rpe; else delete log.rpe;
     if (hrAvg != null) log.hrAvg = hrAvg; else delete log.hrAvg;

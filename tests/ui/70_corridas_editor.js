@@ -42,10 +42,14 @@
         $('er-distance').value = '6';
         $('er-duration').value = '00:30:00';
         $('er-run-type').value = 'ritmo/limiar';
-        $('er-rpe').value = '7';
+        $('er-rpe').value = '11';
         $('er-hr-avg').value = '158';
         $('er-shoe').value = 'Tênis Sintético';
         $('er-notes').value = 'editada pela busca';
+        click(document.querySelector('#edit-log-overlay [data-action="saveEditedRunLog"]'));
+        const antesRPEInvalidoB2 = corridaAtualB2();
+        check('RPE fora de 1–10 não salva nem altera o registro', !!$('edit-log-overlay') && antesRPEInvalidoB2.distanceKm === 5 && antesRPEInvalidoB2.durationMin === 25 && document.body.textContent.includes('RPE deve ser um número inteiro'));
+        $('er-rpe').value = '7';
         fire($('er-duration'), 'input');
         check('editor calcula pace enquanto o tempo é digitado (6 km em 30 min = 5:00/km)', $('er-pace').textContent === '5:00/km');
         click(document.querySelector('#edit-log-overlay [data-action="saveEditedRunLog"]'));

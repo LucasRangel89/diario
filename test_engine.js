@@ -135,7 +135,7 @@ globalThis.stripModuleSyntax = stripModuleSyntax;
 const AREAS_DIR = path.join(__dirname, 'tests', 'engine');
 const AREAS = fs.readdirSync(AREAS_DIR).filter(f => /^\d\d_.*\.js$/.test(f)).sort();
 // manifesto explícito: perder/renomear um trecho de teste NÃO pode passar em silêncio
-const ESPERADAS = ['10_volume_rm_xp.js', '20_recuperacao_temas.js', '30_catalogo_busca.js', '40_arte_jogo.js', '50_dados_validacao.js', '55_corridas.js', '60_storage_modulos.js', '70_csv_backup.js', '99_fechamento.js'];
+const ESPERADAS = ['10_volume_rm_xp.js', '20_recuperacao_temas.js', '30_catalogo_busca.js', '40_arte_jogo.js', '50_dados_validacao.js', '55_corridas.js', '60_storage_modulos.js', '70_csv_backup.js', '75_corridas_backup_csv.js', '99_fechamento.js'];
 const faltando = ESPERADAS.filter(f => !AREAS.includes(f));
 const extras = AREAS.filter(f => !ESPERADAS.includes(f));
 if (faltando.length || extras.length) { console.error('\n❌ trechos de teste ausentes ou inesperados em tests/engine:', { faltando, extras }); process.exit(1); }

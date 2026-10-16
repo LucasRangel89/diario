@@ -44,14 +44,14 @@ Versões consultadas em 2026-10-16 via `gh api repos/actions/<ação>/releases/l
 
 | Item | Situação nesta branch | Commit |
 |---|---|---|
-| A1 | Actions atuais e workflows em Node 24; CI remoto pendente | `3990664` |
-| A2 | Editar nos cards personalizados da Busca; fluxo criar → editar → salvar coberto | `8d16a6b` |
-| A3 | Exclusão usa `confirmModal`; Cancelar/Confirmar e ausência de `window.confirm` cobertos | `2337846` |
-| A4 | Falha de localStorage usa aviso persistente com exportação JSON; rearme, dispensar e convivência com aviso de imagem cobertos | `0fe6068` |
-| B0 | Achados e script acima; sem mudança de comportamento | `a85ffc2` |
-| B1 | `js/corridas.js` puro: parse/formatação de tempo, pace, filtro corrida, semanas ISO/mês/ano, recordes e km por tênis; teste de 25 casos sintéticos | `1a217a0` |
-| B2 | Editor específico nos dois pontos de entrada, fórmulas/PR, limpeza de campos de musculação no save, migração e fingerprint corrida; D6 opcional no registro | `83c6b5f` |
-| B4 | Validação D6 em backup JSON v6 e CSV v3 aditivo; leitor v1/v2 compatível; testes sintéticos de round-trip/atomicidade | commit separado |
+| A1 | Actions atuais e workflows em Node 24; CI remoto pendente | `927a9e6` |
+| A2 | Editar nos cards personalizados da Busca; fluxo criar → editar → salvar coberto | `ba0f451` |
+| A3 | Exclusão usa `confirmModal`; Cancelar/Confirmar e ausência de `window.confirm` cobertos | `dca57d0` |
+| A4 | Falha de localStorage usa aviso persistente com exportação JSON; rearme, dispensar e convivência com aviso de imagem cobertos | `cfdcde1` |
+| B0 | Achados e script acima; sem mudança de comportamento | `793acdd` |
+| B1 | `js/corridas.js` puro: parse/formatação de tempo, pace, filtro corrida, semanas ISO/mês/ano, recordes e km por tênis; teste de 25 casos sintéticos | `877e0dd` |
+| B2 | Editor específico nos dois pontos de entrada, fórmulas/PR, limpeza de campos de musculação no save, migração e fingerprint corrida; D6 opcional no registro | `b2f6ff9` |
+| B4 | Validação D6 em backup JSON v6 e CSV v3 aditivo; leitor v1/v2 compatível; testes sintéticos de round-trip/atomicidade | commit desta etapa |
 
 ## B4 — compatibilidade e validação dos campos D6
 
@@ -75,6 +75,17 @@ ignorando D6: reimportar arquivo antigo para log enriquecido conta como igual, n
 - **B4 / editor:** retirei temporariamente a validação de RPE em `js/registro.js` e rodei `node test_ui.js`; falhou a checagem de RPE inválido não salvar/não alterar (o caminho subsequente também acusou overlay ausente e o piso falhou, por cascata). Restaurei; `node test_ui.js` passou com 381 checagens.
 - **B4 / exportação CSV 3:** reverti temporariamente versão, cabeçalho e linha exportada para seis colunas; `node test_engine.js` falhou em quatro checagens (declaração/cabeçalho v3, round-trip D6 e rejeições de RPE/tipo). Restaurei; o teste do motor passou.
 - **B4 / legado CSV 1/2:** alterei temporariamente o leitor para exigir só v3; `node test_engine.js` falhou em cinco checagens de compatibilidade, incluindo fixtures v1 e v2. Restaurei; o teste do motor passou.
+
+### Gates locais após B4
+
+- `npm ci && npm test`: **875 aprovações, 0 falhas** — motor 451, UI 381, módulos 13, SW 30. Pisos atuais: motor 450 e UI 380.
+- `node --check sw.js && npm run check:sw-core`: passou; SW **v45**, 175 arquivos locais no CORE.
+- `npm run check:modules`: passou (grafo de 20 módulos).
+- `npm run check:docs`: passou (60 arquivos documentais/fontes/testes/scripts/workflows).
+- `npm run build:css && git diff --exit-code -- vendor/tailwind.css`: passou; nenhum diff gerado em `vendor/tailwind.css`.
+- `node scripts/check-sw-version.js origin/main`: passou, v39 → v45, 7 arquivos JS/ativos no diff.
+- `npm ci` reportou 7 vulnerabilidades já presentes no lockfile (2 moderadas, 5 altas); dependências não foram atualizadas.
+- **CI remoto e navegador real não foram executados/validados nesta continuação.** Nenhum PR foi aberto ou mesclado; PWA/offline/celular não são declarados como validados.
 
 ### Reverts controlados A1–B2
 

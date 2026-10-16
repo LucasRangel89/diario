@@ -358,10 +358,11 @@ function drawVolumeChartMini() {
 // Informativas (não reimportadas): aba Catálogo (referência do catálogo + personalizados).
 // Campos com ; " ou quebra de linha são sempre entre aspas (csvField); aspas internas são dobradas.
 // ============================================================
-const CSV_FORMATO_VERSAO = 2;
+const CSV_FORMATO_VERSAO = 3;
 const CSV_LOG_COLS_V1 = ['Data', 'Sessão', 'Exercício', 'Carga registrada (kg)', 'S1', 'S2', 'S3', 'S4', 'S5', 'RIR', 'Conferir?', 'Observações', 'Unidade', 'Fator', 'Lados', 'Carga efetiva (kg)', 'Total reps (ou segundos)', 'Volume (kg)', 'Melhor série', 'Menor série', '1RM Epley (kg)', 'Métrica de progresso'];
 const CSV_LOG_COLS = [...CSV_LOG_COLS_V1, 'ID do registro', 'Tipo de exercício', 'Grupo do registro', 'Técnica', 'Meta da próxima sessão', 'Séries (JSON)', 'PR (informativo)'];
-const CSV_CARDIO_COLS = ['Data', 'Modalidade', 'Distância (km)', 'Duração (min)', 'Observações', 'ID do registro'];
+const CSV_CARDIO_COLS = ['Data', 'Modalidade', 'Distância (km)', 'Duração (min)', 'Observações', 'ID do registro', 'Tipo de corrida', 'RPE', 'FC média (bpm)', 'Tênis'];
+const CSV_RUN_TYPES = ['leve', 'longo', 'intervalado', 'ritmo/limiar', 'prova', 'regenerativo', 'outro'];
 const CSV_PESO_COLS = ['Data', 'Peso (kg)', 'Observação'];
 
 // Serialização de um campo: aspas quando há ; " ou quebra de linha; aspas internas dobradas.
@@ -426,7 +427,7 @@ function csvLogRow(l) {
     ];
 }
 function csvCardioRow(l) {
-    return [histDataBR(l.date), l.exercise || '', csvNum(Number(l.distanceKm) || 0), csvNum(Number(l.durationMin) || 0), csvTexto(l.notes), csvLogId(l)];
+    return [histDataBR(l.date), l.exercise || '', csvNum(Number(l.distanceKm) || 0), csvNum(Number(l.durationMin) || 0), csvTexto(l.notes), csvLogId(l), l.runType || '', l.rpe == null ? '' : csvNum(Number(l.rpe)), l.hrAvg == null ? '' : csvNum(Number(l.hrAvg)), l.shoe || ''];
 }
 
 // Impressão digital do conteúdo de um registro, usada para detectar duplicatas/conflitos.
@@ -694,12 +695,26 @@ function analisarLinhasCardio(rows) {
         if (!Number.isFinite(distanceKm)) return erro(`distância inválida "${cel('distância (km)')}"`);
         if (!Number.isFinite(durationMin)) return erro(`duração inválida "${cel('duração (min)')}"`);
         if (distanceKm <= 0 && durationMin <= 0) return erro('informe distância e/ou duração');
-        out.push({
+        const runType = cel('tipo de corrida').trim();
+        if (runType && !CSV_RUN_TYPES.includes(runType)) return erro(`tipo de corrida inválido "${runType}"`);
+        const rpeRaw = cel('rpe').trim();
+        const rpe = rpeRaw ? csvNumeroLido(rpeRaw) : null;
+        if (rpeRaw && (rpe == null || !Number.isInteger(rpe) || rpe < 1 || rpe > 10)) return erro(`RPE inválido "${rpeRaw}"`);
+        const hrRaw = cel('fc média (bpm)').trim();
+        const hrAvg = hrRaw ? csvNumeroLido(hrRaw) : null;
+        if (hrRaw && (hrAvg == null || hrAvg <= 0)) return erro(`FC média inválida "${hrRaw}"`);
+        const shoe = cel('tênis');
+        const log = {
             id: 0, date, kind: 'corrida', muscle: 'Cardio', exercise, distanceKm, durationMin,
             notes: csvTexto(cel('observações')).trim(), technique: 'Convencional',
             isPR: false,   // cardio: PR de distância também é decidido pelo app, não pelo arquivo
             nextGoal: '', type: 'corrida', reps: [], externalId: cel('id do registro').trim() || null
-        });
+        };
+        if (runType) log.runType = runType;
+        if (rpe != null) log.rpe = rpe;
+        if (hrAvg != null) log.hrAvg = hrAvg;
+        if (shoe) log.shoe = shoe;
+        out.push(log);
     });
     return { logs: out, erros };
 }

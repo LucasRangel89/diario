@@ -61,7 +61,8 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
 - **Backup:** aba ⚙️ Config → **Exportar Backup (.json)** — exporta tudo,
   inclusive suas imagens. Se o navegador tem File System Access API, o
   arquivo é salvo com um toque; senão cai no download normal. O app avisa
-  quando o último backup tem mais de 7 dias.
+  quando o último backup tem mais de 7 dias. Falhas de gravação no armazenamento
+  deixam um aviso persistente com ação direta de exportar backup JSON.
 - **Restauração:** **Importar Backup (.json)** na mesma aba restaura tudo
   (restauração de ponta a ponta coberta por teste automatizado).
 - **Migração:** na primeira abertura da versão nova, os dados antigos do
@@ -87,14 +88,18 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
   e penaliza treinos que usam lombar na sugestão automática quando a região está carregada.
   **Estimativa baseada no tempo desde a última sessão e no volume; não substitui orientação profissional.**
 - **Corridas no histórico:** corridas, bike e cardio aparecem na aba Histórico
-  com distância, tempo, pace e XP, com opção de filtrar por grupo "Cardio".
+  com distância, tempo, pace e XP, com opção de filtrar por grupo "Cardio". Corridas podem
+  ser editadas pelo editor próprio a partir da lista do dia ou do histórico da Busca; o editor
+  preserva a identidade/tema do registro e não mistura campos de musculação. O registro
+  também pode guardar, opcionalmente, tipo de corrida, RPE, frequência cardíaca média e tênis;
+  esses dados continuam em `logs` e o CSV formato 3 os transporta (sem alterar o backup JSON 6).
 - **Teclado no celular:** campos de data abrem o seletor nativo no Android
   e inputs de texto focam corretamente para abrir o teclado virtual (fonte 16px no mobile evita zoom).
 - **Cadastro de exercício manual:** botão "➕ Novo exercício" na aba Buscar permite criar
   seus próprios exercícios (nome, grupo, equipamento, tipo, faixa, descanso, sinônimos, tags extras,
   marcação se carrega lombar), salvos em localStorage, aparecendo na busca e no seletor rápido.
-  O formulário tem modo de edição/exclusão (`openCustomExModal(id)`), mas ainda não há botão na
-  interface que o abra.
+  O formulário tem modo de edição/exclusão (`openCustomExModal(id)`); cada card de exercício
+  personalizado na aba Buscar oferece o botão **✏️ Editar** para abrir o mesmo formulário.
 - Novos exercícios: Extensão Lombar (Banco Romano), Cadeira Adutora, Desenvolvimento Arnold,
   Swing de Kettlebell, Caminhada do Fazendeiro, Empurrar Trenó, Superman, Agachamento Sumô, Pullover.
 - **Co-ativação (sinergia):** puxadas, empurradas e compostos podem sinalizar apoio indireto
@@ -170,6 +175,7 @@ npm test             # motor + UI + módulos + Service Worker
 - `js/busca.js` — aba Buscar + seletor rápido
 - `js/custom_exercises.js` — exercícios personalizados (cadastro, índice de busca e a janela "➕ Novo exercício")
 - `js/datas.js` — regra única de data válida (backup, CSV e recuperação)
+- `js/corridas.js` — funções puras de duração, pace, resumos ISO e recordes informativos de corrida (logs recebidos por parâmetro; sem estado/DOM)
 - `js/persistencia.js` — gravação do estado (logs, treinos, ajustes, jogo, Story Card)
 - `js/backup.js` — validação do backup JSON, montagem do pacote e parser de CSV
 - `js/cartoes.js` — Story Card e Card do Chefão (canvas, arte temática e símbolos)

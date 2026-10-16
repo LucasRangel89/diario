@@ -2,6 +2,20 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Não lançado] — manutenção pós-PR #17 (branch `arena/1c7fe137-diario`)
+
+### CI
+- Atualizadas as Actions para as versões estáveis atuais consultadas em `repos/actions/*/releases/latest` em 2026-10-16: checkout v7.0.1, setup-node v7.1.0, upload-artifact v7.0.2, configure-pages v6.0.0, upload-pages-artifact v5.0.0 e deploy-pages v5.0.1. Os workflows usam Node 24 e mantêm `ubuntu-latest` e os nomes dos checks.
+
+### CORRIGIDO
+- **Edição de exercício personalizado alcançável (A2):** medição na base `90805e3` confirmou que a única entrada de UI era “➕ Novo exercício”; nenhum card personalizado reabria o formulário. Os cards da aba Buscar agora têm **✏️ Editar**, com alvo mínimo de 44 px. O teste criar → editar → salvar também revelou que o modo de edição não preenchia `dataset.editingId`, então o submit criava um novo em vez de atualizar; a abertura agora define esse vínculo. Teste UI cobre o fluxo real sem duplicar. `sw.js` sobe para v40.
+- **Exclusão de exercício personalizado sem `confirm()` nativo (A3):** o botão Excluir, alcançado pelo card de A2, agora usa `confirmModal`. Teste real cobre Cancelar (não exclui), Confirmar (remove) e verifica que `window.confirm` nunca é chamado. `sw.js` sobe para v41.
+- **Falha de gravação no localStorage com aviso persistente (A4):** `notifyStorageFailure` reaproveita `showBlobFailureWarning`, com aviso dispensável e botão que exporta o backup JSON real. Continua sendo um aviso por sequência, rearma depois de gravação confirmada e não empilha com o aviso de imagem. Os textos de sucesso dos fluxos não mudaram. Testes sintéticos cobrem o download, sequência/rearme, dispensar e o caminho de imagem I5. `sw.js` sobe para v42.
+- **B0 — defeitos de edição/CSV de corrida medidos na base:** arquivo `docs/RELATORIO_POS_PR17.md` registra os cinco achados com SHA `90805e3`; o script sintético `scripts/repro-b0-corrida.js` reproduz ambos os pontos de entrada, poluição do registro, conflito CSV, selo 1RM indevido, mistura do recorde cardio e ausência de teste de UI.
+- **B1 — módulo puro `js/corridas.js`:** conversão de duração e pace, identificação conservadora de corrida (sem bike/elíptico/remo), resumos por semana ISO/mês/ano e recordes informativos por distância e tênis. Pace médio dos resumos usa duração total ÷ distância total; o rótulo dos recordes deixa claro que é o pace médio da corrida inteira, não tempo oficial. Incluído no entry, CORE do SW, manifestos e fontes dos runners. `sw.js` sobe para v43.
+- **B2 — edição dedicada de corridas:** os botões Editar da lista do dia e do histórico da Busca agora abrem formulário próprio com tempo `h:mm:ss`, pace ao digitar e campos D6; salvar preserva id/tema, recalcula o PR com o mesmo `detectAutoPR`, e remove apenas campos conhecidos de musculação deixados pelo editor antigo. Corridas migram com `type: corrida`; a impressão digital CSV usa só campos de corrida e deixa metadados D6 fora da identidade. Selo de corrida é “🏆 PR de distância”; musculação mantém o selo 1RM. `sw.js` sobe para v44.
+- **B4 — persistência e compatibilidade D6:** validação JSON aceita `runType`, RPE inteiro 1–10, FC média numérica positiva e tênis textual dentro de `logs`, sem alterar o formato de backup 6 nem apertar a validação preexistente de `distanceKm`/`durationMin`; inválidos rejeitam o backup antes de qualquer mudança. Exportação CSV passa para formato 3 com as quatro colunas novas no fim de `Cardio`; leitura continua aceitando formatos 1 e 2, com round-trip e fingerprint compatível para arquivos antigos. `sw.js` sobe para v45.
+
 ## [Não lançado] — manutenção pós-PR #16 (branch `arena/ffba3b1d-diario`)
 
 ### CORRIGIDO
