@@ -303,24 +303,39 @@ function fatigueState(muscle, muscleLogs, weeklySets, nowMs, sinergia) {
     const direto = base.pct === null || base.pct === undefined ? null : base.pct;
     const sin = sinergia || null;
     const rec = Math.min(direto ?? 100, sin ? sin.pct : 100);
-    const fadigaReal = Math.max(2, Math.min(100, Math.round(rec * Math.max(0.6, 1 - excesso * 0.02))));
+    const volText = volumeStatus === 'abaixo' ? `${series}/${min}–${max} séries · abaixo da meta`
+        : volumeStatus === 'acima' ? `${series}/${min}–${max} séries · acima da faixa`
+            : `${series}/${min}–${max} séries · na faixa`;
+    // Ausência de histórico direto e indireto é desconhecimento, não prontidão.
+    // Volume semanal continua visível, mas não deve fabricar um percentual fisiológico.
+    if (direto === null && !sin) {
+        return {
+            muscle: alvo,
+            label: 'SEM DADOS', icon: '❔',
+            badge: 'bg-berzerker-border text-gray-400 border-gray-700',
+            bar: 'bg-gray-600', border: 'border-berzerker-border',
+            pct: null, recuperacaoPct: null,
+            seriesSemana: series, metaMin: min, metaMax: max,
+            volumeStatus, faltam, excesso, volText,
+            semRegistro: true, sinergia: null, sinergiaText: '',
+            info: 'Sem dados para estimar a recuperação', last: '—',
+            hoursNeed: base.hoursNeed
+        };
+    }
+    const prontidaoEstimada = Math.max(2, Math.min(100, Math.round(rec * Math.max(0.6, 1 - excesso * 0.02))));
 
     let st;
-    if (fadigaReal < 33) {
+    if (prontidaoEstimada < 33) {
         st = { label: 'FADIGA ALTA', icon: '🔥', badge: 'bg-red-950 text-red-400 border-red-800', bar: 'bg-red-500', border: 'border-red-600/60 shadow-lg shadow-red-950/40' };
-    } else if (fadigaReal < 100) {
+    } else if (prontidaoEstimada < 100) {
         st = { label: 'EM RECUPERAÇÃO', icon: '⏳', badge: 'bg-amber-950 text-amber-400 border-amber-800', bar: 'bg-amber-500', border: 'border-amber-500/60 shadow-lg shadow-amber-950/40' };
     } else {
         st = { label: 'PRONTO (ESTIMADO)', icon: '✅', badge: 'bg-emerald-950 text-emerald-400 border-emerald-800', bar: 'bg-emerald-500', border: 'border-emerald-500/60 shadow-lg shadow-emerald-950/40' };
     }
-    const volText = volumeStatus === 'abaixo' ? `${series}/${min}–${max} séries · abaixo da meta`
-        : volumeStatus === 'acima' ? `${series}/${min}–${max} séries · acima da faixa`
-            : `${series}/${min}–${max} séries · na faixa`;
-
     return {
         muscle: alvo,
         ...st,
-        pct: fadigaReal,                 // prontidão real (o que a UI mostra)
+        pct: prontidaoEstimada,          // estimativa heurística, não medida fisiológica
         recuperacaoPct: rec,             // só a janela de recuperação
         seriesSemana: series, metaMin: min, metaMax: max,
         volumeStatus, faltam, excesso, volText,
@@ -356,12 +371,15 @@ function suggestNextWorkout(workouts, allLogs, nowMs) {
         groups.forEach(m => {
             const mLogs = (allLogs || []).filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle) === m);
             const st = fatigueState(m, mLogs, weekly[m] || 0, now);
-            score += st.pct + st.faltam * 4 - st.excesso * 3;
+            // Estado desconhecido recebe peso neutro no ranking; ausência de dados
+            // não deve ser interpretada como músculo descansado nem fatigado.
+            score += (st.pct ?? 50) + st.faltam * 4 - st.excesso * 3;
             if (st.faltam > 0) motivos.push(`${m}: faltam ${st.faltam} séries para a meta da semana (fez ${st.seriesSemana})`);
             else if (st.excesso > 0) motivos.push(`${m}: já passou da faixa da semana (${st.seriesSemana} séries)`);
             else motivos.push(`${m}: volume da semana na faixa (${st.seriesSemana} séries)`);
-            if (st.pct >= 100) motivos.push(`${m} está descansado`);
-            else motivos.push(`${m} ainda está ${String(st.label).toLowerCase()} (${st.pct}%)`);
+            if (st.pct === null) motivos.push(`${m}: sem histórico suficiente para estimar recuperação`);
+            else if (st.pct >= 100) motivos.push(`${m} está pronto segundo a estimativa por tempo`);
+            else motivos.push(`${m} ainda está ${String(st.label).toLowerCase()} (${st.pct}%, estimado)`);
         });
         const n = Math.max(1, groups.length);
         score = score / n;
@@ -502,7 +520,7 @@ function regiaoLombarState(allLogs, nowMs) {
     const logs = (allLogs || []).filter(l => l && l.kind !== 'corrida' && nivelCargaLombar(l.exercise) >= 1);
     if (!logs.length) {
         return {
-            label: 'LIVRE',
+            label: 'SEM HISTÓRICO',
             icon: '✅',
             badge: 'bg-emerald-950 text-emerald-400 border-emerald-800',
             bar: 'bg-emerald-500',
@@ -516,7 +534,7 @@ function regiaoLombarState(allLogs, nowMs) {
             cargaTotal: 0,
             nivelPeso: 0,
             nivelMedio: 0,
-            dica: 'Lombar descansada — você pode fazer exercícios que exigem a região hoje.'
+            dica: 'Sem exposição registrada para estimar; isso não confirma recuperação nem segurança individual.'
         };
     }
     // Agrupa por data para achar a última sessão que carregou
@@ -541,29 +559,31 @@ function regiaoLombarState(allLogs, nowMs) {
     // Janela: base + carga calculada por série, com mínimo maior se tem exercício pesado
     const horasNecessarias = LOMBAR_HORAS_BASE + sessao.cargaTotal + (nivelMax >= 3 ? 12 : nivelMax >= 2 ? 6 : 0);
     const horasRestantes = Math.max(0, horasNecessarias - horasPassadas);
-    const pct = Math.max(2, Math.min(100, Math.round(horasPassadas / horasNecessarias * 100)));
+    const pct = horasRestantes > 0
+        ? Math.max(2, Math.min(99, Math.floor(horasPassadas / horasNecessarias * 100)))
+        : 100;
     let label, icon, badge, bar, border, dica;
-    if (pct < 33 || nivelMax === 3) {
-        label = 'MUITO CARREGADA';
+    if (pct < 33) {
+        label = 'EXPOSIÇÃO RECENTE ALTA';
         icon = '⚠️';
         badge = 'bg-red-950 text-red-400 border-red-800';
         bar = 'bg-red-500';
         border = 'border-red-600/60 shadow-lg shadow-red-950/40';
-        dica = 'Hoje: PREFIRA Hack, Extensora, Cadeira Flexora, Puxada na Polia, Supino Máquina. EVITE COMPLETAMENTE Terra, Agachamento Livre, Stiff ou qualquer dobradiça de quadril pesada.';
-    } else if (pct < 100 || nivelMedio >= 1.5) {
-        label = 'EM RECUPERAÇÃO';
+        dica = 'Este painel só estima exposição recente por nome do exercício e tempo. Se houver dor, fadiga percebida ou dúvida, considere ajustar o treino e procure orientação profissional quando necessário; não é uma avaliação de risco individual.';
+    } else if (pct < 100) {
+        label = 'JANELA ESTIMADA ATIVA';
         icon = '⏳';
         badge = 'bg-amber-950 text-amber-400 border-amber-800';
         bar = 'bg-amber-500';
         border = 'border-amber-500/60 shadow-lg shadow-amber-950/40';
-        dica = 'Lombar ainda recuperando: se for fazer exercício que usa a região, priorize CARGA LEVE e técnica PERFEITA, ou opte por máquinas guiadas que apoiam a coluna.';
+        dica = 'A janela de tempo estimada ainda está ativa. Isso não mede recuperação real; ajuste a sessão conforme seu estado, sintomas e orientação profissional.';
     } else {
-        label = 'LIVRE';
+        label = 'SEM ALERTA ESTIMADO';
         icon = '✅';
         badge = 'bg-emerald-950 text-emerald-400 border-emerald-800';
         bar = 'bg-emerald-500';
         border = 'border-emerald-500/60';
-        dica = 'Lombar descansada — você pode fazer exercícios que exigem a região hoje.';
+        dica = 'A janela de tempo estimada foi cumprida; isso não confirma recuperação nem segurança individual para treinar.';
     }
     const dataLegivel = new Date(ultimaData + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     const diasPassados = Math.floor(horasPassadas / 24);

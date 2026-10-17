@@ -38,18 +38,34 @@ check('format halter_par', api.formatLoadText({ type: 'halter_par', weight: 38 }
 check('format PC', api.formatLoadText({ type: 'peso_corporal', weight: 0 }) === 'PC');
 check('format PC do dia (93 kg)', api.formatLoadText({ type: 'peso_corporal', weight: 93 }) === '93 kg (PC)');
 check('1RM Epley 100×5 = 116,7', api.logEst1RM({ type: 'carga_total', weight: 100, reps: [5] }) === 116.7, api.logEst1RM({ type: 'carga_total', weight: 100, reps: [5] }));
+check('séries com cargas diferentes usam o par carga/reps da mesma série', api.logEst1RM({ exercise: 'Supino Reto com Barra', type: 'carga_total', weight: 80, sets: [{ weight: 100, reps: 5 }, { weight: 80, reps: 10 }] }) === 116.7);
+check('série de aquecimento não define e1RM', api.logEst1RM({ type: 'carga_total', weight: 100, sets: [{ weight: 120, reps: 3, isWarmup: true }, { weight: 100, reps: 5 }] }) === 116.7);
 
 console.log('\n== 2b. Regra do 1RM Epley da planilha (só ≤ 12 reps) ==');
 check('epley 40 × (1+12/30) = 56', api.epleySeValido(40, 12) === 56, api.epleySeValido(40, 12));
 check('epley 100 × (1+5/30) = 116,7', api.epleySeValido(100, 5) === 116.7, api.epleySeValido(100, 5));
-check('melhor série 13 > 12 → null (1RM superestimado)', api.epleySeValido(20, 13) === null);
+check('melhor série 13 > 12 → null (fora do intervalo escolhido)', api.epleySeValido(20, 13) === null);
+check('log com mais de 12 reps não gera e1RM no PR', api.logEst1RM({ type: 'carga_total', weight: 20, reps: [13] }) === 0);
 check('logFullMeta: Elev. Lateral best 13 → est1RM null', v2.est1RM === null, v2.est1RM);
 check('logFullMeta: Tríceps best 12 → est1RM 56', v1.est1RM === 56, v1.est1RM);
+const calc1RMNodes = {
+    'calc-1rm-weight': { value: '100' }, 'calc-1rm-reps': { value: '5' },
+    'calc-1rm-result': { textContent: '', innerHTML: '' }, 'calc-1rm-table': { innerHTML: '' }
+};
+const getElementByIdOriginal = document.getElementById;
+document.getElementById = id => calc1RMNodes[id] || null;
+api.calculate1RM();
+check('calculadora usa a mesma estimativa Epley (116,7 kg)', calc1RMNodes['calc-1rm-result'].textContent === '116,7 kg (estimado)');
+calc1RMNodes['calc-1rm-reps'].value = '13';
+api.calculate1RM();
+check('calculadora não extrapola acima de 12 reps', /Fora do intervalo/.test(calc1RMNodes['calc-1rm-result'].textContent) && calc1RMNodes['calc-1rm-table'].innerHTML === '');
+document.getElementById = getElementByIdOriginal;
 
 console.log('\n== 3. Dupla progressão ==');
 const supino = { exercise: 'Supino Reto com Barra', type: 'carga_total', weight: 100, reps: [10, 10, 10, 10] };
 const prog = api.duplaProgressao(supino);
 check('todas no topo (10 = topo 6-10) sugere +2,5', prog && prog.proximaCarga === 102.5, prog);
+check('barra fixa sem carga adicional não sugere incremento em kg', api.duplaProgressao({ exercise: 'Barra Fixa (Pull-up)', type: 'peso_corporal', weight: 90, reps: [8, 8] }) === null);
 check('sem sugestão quando reps abaixo', api.duplaProgressao({ ...supino, reps: [8, 8] }) === null);
 check('halter no topo sugere +2', api.duplaProgressao({ exercise: 'Elevação Lateral c/ Halteres', type: 'halter_par', weight: 10, reps: [20, 20, 20] }).proximaCarga === 12);
 check('sinal ⬆ quando menor série no topo', api.sinalProximaSessao({ exercise: 'Cadeira Extensora', type: 'carga_total', weight: 40, reps: [18, 15, 20] }) === '⬆ Progredir');

@@ -125,9 +125,10 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
   (pegada, braços, ombros, core, abdômen e cadeia posterior). O app aplica fatores parciais só
   como **aviso de recuperação** no mapa; séries equivalentes não entram na meta semanal, no XP
   nem no bônus de fraqueza dos chefões.
-- **Próximo treino recomendado:** sugere o treino salvo cujos grupos estão **mais descansados
-  e mais abaixo da meta semanal**, explicando o raciocínio em português simples ("Por quê: …").
-  Ao terminar a sessão, o app já empurra a sugestão do próximo.
+- **Próximo treino recomendado:** ordena os treinos salvos por heurísticas de janela de recuperação
+  estimada e séries da semana, explicando o raciocínio ("Por quê: …"). Grupos sem histórico direto
+  ou indireto são tratados como **sem dados** (peso neutro no ranking), não como descansados.
+  A sugestão é um apoio revisável, não uma prescrição. Ao terminar a sessão, o app sugere o próximo.
 - **Montador livre:** painel "🎯 Estímulo da semana — o que falta" no criador de treino; você
   escolhe exercícios (com tags/busca), o sistema reordena e avisa o que falta — assistente,
   não robô mandando.

@@ -660,7 +660,7 @@ function renderLogsTable() {
 }
 
 // ============================ RENDER: MAPA DE FADIGA ============================
-// Fase 3: fadiga REAL = recuperação (%) + volume da semana vs a faixa do grupo
+// Estimativa heurística de recuperação + volume semanal; não mede fadiga fisiológica.
 function renderRecoveryMap() {
     const gridEl = document.getElementById('recovery-status-grid');
     if (!gridEl) return;
@@ -687,7 +687,7 @@ function renderRecoveryMap() {
                     <span>Prontidão estimada</span><span class="text-gray-400">${pctText}</span>
                 </div>
                 <div class="w-full h-2 bg-berzerker-border rounded-full overflow-hidden">
-                    <div class="h-full ${st.bar} rounded-full transition-all duration-500" style="width: ${st.pct === null ? 100 : st.pct}%"></div>
+                    <div class="h-full ${st.bar} rounded-full transition-all duration-500" style="width: ${st.pct === null ? 0 : st.pct}%"></div>
                 </div>
             </div>
             <div class="text-xs font-mono leading-snug ${st.volumeStatus === 'abaixo' ? 'text-amber-400/90' : st.volumeStatus === 'acima' ? 'text-orange-400/90' : 'text-emerald-400/90'}">${st.volText}</div>

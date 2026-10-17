@@ -57,7 +57,7 @@ ev(`window.__lombarBackup = logs; logs = [{ id: -7, kind: 'peso', muscle: 'Costa
 const lombarCarregada = $('lombar-alert-panel').textContent;
 check('lombar carregada mostra o painel completo, com o ícone do estado no título',
     lombarCarregada.includes('Prontidão estimada da região') && /Lombar\s*⚠️/.test(lombarCarregada)
-    && lombarCarregada.includes('MUITO CARREGADA') && !lombarCarregada.includes('✅ Lombar sem alerta estimado'),
+    && lombarCarregada.includes('EXPOSIÇÃO RECENTE ALTA') && !lombarCarregada.includes('EVITE COMPLETAMENTE') && !lombarCarregada.includes('✅ Lombar sem alerta estimado'),
     lombarCarregada.slice(0, 140));
 ev('logs = window.__lombarBackup; delete window.__lombarBackup; renderRecoveryMap();');
 check('voltar aos registros reais devolve a linha compacta', $('lombar-alert-panel').textContent.includes('✅ Lombar sem alerta estimado'));
