@@ -123,3 +123,13 @@
     console.log('\n== UI 12. Console limpo ==');
     const graves = jsErrors.filter(m => !/Not implemented|Could not load|serviceWorker|HTMLCanvasElement/i.test(m));
     check('nenhum erro não capturado', graves.length === 0, graves.slice(0, 3));
+
+    console.log('\n== UI Artes. Decoração não substitui títulos/indicadores ==');
+    const artImgs = [...document.querySelectorAll('img[src^="images/artes/"]')];
+    check('quatro artes decorativas com alt vazio, dimensões e fallback delegado', artImgs.length === 4 && artImgs.every(i => i.alt === '' && Number(i.width) > 0 && Number(i.height) > 0 && i.dataset.errorAction === 'hideDecorativeArt'));
+    for (const img of artImgs) {
+        img.dispatchEvent(new window.Event('error', { bubbles: false }));
+        check('falha de arte oculta apenas a imagem: ' + img.getAttribute('src'), img.hidden && img.isConnected);
+        img.hidden = false;
+    }
+    check('indicador real de sessão continua independente das artes', $('session-progress-bar').tagName === 'DIV' && $('session-progress-text').textContent.length > 0);

@@ -1,0 +1,621 @@
+[
+  {
+    "source": "Ícones Pixelados de Equipamentos de Academia.png",
+    "source_sha256": "6f96b8737d2e848c01c4ab173df82d1470a69b0b14ef797e43150b77ab5823c7",
+    "file": "images/artes/icones/equipamentos/barra-anilhas.webp",
+    "crop": [
+      38,
+      138,
+      380,
+      483
+    ],
+    "width": 127,
+    "height": 128,
+    "bytes": 2922,
+    "status": "em uso",
+    "use": "Título da calculadora de anilhas"
+  },
+  {
+    "source": "Ícones Pixelados de Equipamentos de Academia.png",
+    "source_sha256": "6f96b8737d2e848c01c4ab173df82d1470a69b0b14ef797e43150b77ab5823c7",
+    "file": "images/artes/icones/equipamentos/halteres.webp",
+    "crop": [
+      410,
+      138,
+      756,
+      483
+    ],
+    "width": 128,
+    "height": 128,
+    "bytes": 2762,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Pixelados de Equipamentos de Academia.png",
+    "source_sha256": "6f96b8737d2e848c01c4ab173df82d1470a69b0b14ef797e43150b77ab5823c7",
+    "file": "images/artes/icones/equipamentos/kettlebell.webp",
+    "crop": [
+      784,
+      138,
+      1130,
+      483
+    ],
+    "width": 128,
+    "height": 128,
+    "bytes": 2492,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Pixelados de Equipamentos de Academia.png",
+    "source_sha256": "6f96b8737d2e848c01c4ab173df82d1470a69b0b14ef797e43150b77ab5823c7",
+    "file": "images/artes/icones/equipamentos/banco.webp",
+    "crop": [
+      1156,
+      138,
+      1502,
+      483
+    ],
+    "width": 128,
+    "height": 128,
+    "bytes": 2782,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Pixelados de Equipamentos de Academia.png",
+    "source_sha256": "6f96b8737d2e848c01c4ab173df82d1470a69b0b14ef797e43150b77ab5823c7",
+    "file": "images/artes/icones/equipamentos/polia.webp",
+    "crop": [
+      38,
+      520,
+      380,
+      866
+    ],
+    "width": 127,
+    "height": 128,
+    "bytes": 2412,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Pixelados de Equipamentos de Academia.png",
+    "source_sha256": "6f96b8737d2e848c01c4ab173df82d1470a69b0b14ef797e43150b77ab5823c7",
+    "file": "images/artes/icones/equipamentos/esteira.webp",
+    "crop": [
+      410,
+      520,
+      756,
+      866
+    ],
+    "width": 128,
+    "height": 128,
+    "bytes": 3366,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Pixelados de Equipamentos de Academia.png",
+    "source_sha256": "6f96b8737d2e848c01c4ab173df82d1470a69b0b14ef797e43150b77ab5823c7",
+    "file": "images/artes/icones/equipamentos/remo.webp",
+    "crop": [
+      784,
+      520,
+      1130,
+      866
+    ],
+    "width": 128,
+    "height": 128,
+    "bytes": 2808,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Pixelados de Equipamentos de Academia.png",
+    "source_sha256": "6f96b8737d2e848c01c4ab173df82d1470a69b0b14ef797e43150b77ab5823c7",
+    "file": "images/artes/icones/equipamentos/argolas.webp",
+    "crop": [
+      1156,
+      520,
+      1502,
+      866
+    ],
+    "width": 128,
+    "height": 128,
+    "bytes": 3018,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Grade de Músculos em Pixel Art.png",
+    "source_sha256": "6f8f51d9834917123be05cb0dfacdb180504f78bd394d8eb30c5dc2ac49cfdab",
+    "file": "images/artes/icones/anatomia/desenho-01.webp",
+    "crop": [
+      34,
+      119,
+      361,
+      430
+    ],
+    "width": 128,
+    "height": 122,
+    "bytes": 3712,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Grade de Músculos em Pixel Art.png",
+    "source_sha256": "6f8f51d9834917123be05cb0dfacdb180504f78bd394d8eb30c5dc2ac49cfdab",
+    "file": "images/artes/icones/anatomia/desenho-02.webp",
+    "crop": [
+      380,
+      119,
+      707,
+      430
+    ],
+    "width": 128,
+    "height": 122,
+    "bytes": 4102,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Grade de Músculos em Pixel Art.png",
+    "source_sha256": "6f8f51d9834917123be05cb0dfacdb180504f78bd394d8eb30c5dc2ac49cfdab",
+    "file": "images/artes/icones/anatomia/desenho-03.webp",
+    "crop": [
+      727,
+      119,
+      1054,
+      430
+    ],
+    "width": 128,
+    "height": 122,
+    "bytes": 4332,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Grade de Músculos em Pixel Art.png",
+    "source_sha256": "6f8f51d9834917123be05cb0dfacdb180504f78bd394d8eb30c5dc2ac49cfdab",
+    "file": "images/artes/icones/anatomia/desenho-04.webp",
+    "crop": [
+      1073,
+      119,
+      1400,
+      430
+    ],
+    "width": 128,
+    "height": 122,
+    "bytes": 3938,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Grade de Músculos em Pixel Art.png",
+    "source_sha256": "6f8f51d9834917123be05cb0dfacdb180504f78bd394d8eb30c5dc2ac49cfdab",
+    "file": "images/artes/icones/anatomia/desenho-05.webp",
+    "crop": [
+      1420,
+      119,
+      1747,
+      430
+    ],
+    "width": 128,
+    "height": 122,
+    "bytes": 3974,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Grade de Músculos em Pixel Art.png",
+    "source_sha256": "6f8f51d9834917123be05cb0dfacdb180504f78bd394d8eb30c5dc2ac49cfdab",
+    "file": "images/artes/icones/anatomia/desenho-06.webp",
+    "crop": [
+      34,
+      459,
+      361,
+      771
+    ],
+    "width": 128,
+    "height": 122,
+    "bytes": 3420,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Grade de Músculos em Pixel Art.png",
+    "source_sha256": "6f8f51d9834917123be05cb0dfacdb180504f78bd394d8eb30c5dc2ac49cfdab",
+    "file": "images/artes/icones/anatomia/desenho-07.webp",
+    "crop": [
+      380,
+      459,
+      707,
+      771
+    ],
+    "width": 128,
+    "height": 122,
+    "bytes": 2860,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Grade de Músculos em Pixel Art.png",
+    "source_sha256": "6f8f51d9834917123be05cb0dfacdb180504f78bd394d8eb30c5dc2ac49cfdab",
+    "file": "images/artes/icones/anatomia/desenho-08.webp",
+    "crop": [
+      727,
+      459,
+      1054,
+      771
+    ],
+    "width": 128,
+    "height": 122,
+    "bytes": 3578,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Grade de Músculos em Pixel Art.png",
+    "source_sha256": "6f8f51d9834917123be05cb0dfacdb180504f78bd394d8eb30c5dc2ac49cfdab",
+    "file": "images/artes/icones/anatomia/desenho-09.webp",
+    "crop": [
+      1073,
+      459,
+      1400,
+      771
+    ],
+    "width": 128,
+    "height": 122,
+    "bytes": 3374,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Grade de Músculos em Pixel Art.png",
+    "source_sha256": "6f8f51d9834917123be05cb0dfacdb180504f78bd394d8eb30c5dc2ac49cfdab",
+    "file": "images/artes/icones/anatomia/desenho-10.webp",
+    "crop": [
+      1420,
+      459,
+      1747,
+      771
+    ],
+    "width": 128,
+    "height": 122,
+    "bytes": 3394,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Fitness Pixelados em Laranja e Ciano.png",
+    "source_sha256": "342b0b87e60ef5961a4bfff7295c7fdcb0ab5139e159b700097dfad6a5b6574d",
+    "file": "images/artes/icones/sessao/halter.webp",
+    "crop": [
+      82,
+      223,
+      381,
+      410
+    ],
+    "width": 96,
+    "height": 60,
+    "bytes": 1474,
+    "status": "em uso",
+    "use": "Título do treino em andamento"
+  },
+  {
+    "source": "Ícones Fitness Pixelados em Laranja e Ciano.png",
+    "source_sha256": "342b0b87e60ef5961a4bfff7295c7fdcb0ab5139e159b700097dfad6a5b6574d",
+    "file": "images/artes/icones/sessao/simbolo-ciclo-01.webp",
+    "crop": [
+      452,
+      190,
+      726,
+      446
+    ],
+    "width": 96,
+    "height": 90,
+    "bytes": 1942,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Fitness Pixelados em Laranja e Ciano.png",
+    "source_sha256": "342b0b87e60ef5961a4bfff7295c7fdcb0ab5139e159b700097dfad6a5b6574d",
+    "file": "images/artes/icones/sessao/cronometro.webp",
+    "crop": [
+      813,
+      173,
+      1065,
+      453
+    ],
+    "width": 86,
+    "height": 96,
+    "bytes": 2140,
+    "status": "em uso",
+    "use": "Título do descanso da sessão"
+  },
+  {
+    "source": "Ícones Fitness Pixelados em Laranja e Ciano.png",
+    "source_sha256": "342b0b87e60ef5961a4bfff7295c7fdcb0ab5139e159b700097dfad6a5b6574d",
+    "file": "images/artes/icones/sessao/adicionar.webp",
+    "crop": [
+      1193,
+      205,
+      1442,
+      441
+    ],
+    "width": 96,
+    "height": 91,
+    "bytes": 1252,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Fitness Pixelados em Laranja e Ciano.png",
+    "source_sha256": "342b0b87e60ef5961a4bfff7295c7fdcb0ab5139e159b700097dfad6a5b6574d",
+    "file": "images/artes/icones/sessao/check.webp",
+    "crop": [
+      94,
+      574,
+      362,
+      840
+    ],
+    "width": 96,
+    "height": 95,
+    "bytes": 2270,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Fitness Pixelados em Laranja e Ciano.png",
+    "source_sha256": "342b0b87e60ef5961a4bfff7295c7fdcb0ab5139e159b700097dfad6a5b6574d",
+    "file": "images/artes/icones/sessao/simbolo-ciclo-02.webp",
+    "crop": [
+      436,
+      594,
+      737,
+      806
+    ],
+    "width": 96,
+    "height": 68,
+    "bytes": 1590,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Fitness Pixelados em Laranja e Ciano.png",
+    "source_sha256": "342b0b87e60ef5961a4bfff7295c7fdcb0ab5139e159b700097dfad6a5b6574d",
+    "file": "images/artes/icones/sessao/trofeu.webp",
+    "crop": [
+      804,
+      581,
+      1074,
+      838
+    ],
+    "width": 96,
+    "height": 91,
+    "bytes": 2272,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Ícones Fitness Pixelados em Laranja e Ciano.png",
+    "source_sha256": "342b0b87e60ef5961a4bfff7295c7fdcb0ab5139e159b700097dfad6a5b6574d",
+    "file": "images/artes/icones/sessao/alerta.webp",
+    "crop": [
+      1182,
+      581,
+      1451,
+      831
+    ],
+    "width": 96,
+    "height": 89,
+    "bytes": 1706,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-01.webp",
+    "crop": [
+      100,
+      65,
+      320,
+      292
+    ],
+    "width": 155,
+    "height": 160,
+    "bytes": 6330,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-02.webp",
+    "crop": [
+      372,
+      72,
+      590,
+      293
+    ],
+    "width": 158,
+    "height": 160,
+    "bytes": 6444,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-03.webp",
+    "crop": [
+      646,
+      71,
+      869,
+      293
+    ],
+    "width": 160,
+    "height": 159,
+    "bytes": 6562,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-04.webp",
+    "crop": [
+      916,
+      67,
+      1137,
+      298
+    ],
+    "width": 153,
+    "height": 160,
+    "bytes": 6938,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-05.webp",
+    "crop": [
+      94,
+      297,
+      313,
+      511
+    ],
+    "width": 160,
+    "height": 156,
+    "bytes": 6324,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-06.webp",
+    "crop": [
+      372,
+      295,
+      586,
+      512
+    ],
+    "width": 158,
+    "height": 160,
+    "bytes": 6090,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-07.webp",
+    "crop": [
+      647,
+      299,
+      869,
+      510
+    ],
+    "width": 160,
+    "height": 152,
+    "bytes": 5958,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-08.webp",
+    "crop": [
+      927,
+      311,
+      1124,
+      505
+    ],
+    "width": 160,
+    "height": 158,
+    "bytes": 5332,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-09.webp",
+    "crop": [
+      110,
+      521,
+      294,
+      743
+    ],
+    "width": 133,
+    "height": 160,
+    "bytes": 4000,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-10.webp",
+    "crop": [
+      362,
+      539,
+      590,
+      741
+    ],
+    "width": 160,
+    "height": 142,
+    "bytes": 5420,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-11.webp",
+    "crop": [
+      645,
+      522,
+      861,
+      748
+    ],
+    "width": 153,
+    "height": 160,
+    "bytes": 5496,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "Oito_insgnias_para_conquistas_de_treino_em_uma_cartela_42_pr.webp",
+    "source_sha256": "5316824048431b5da62b7b81e299f7869b205f1f8877c52ddb808bf437f91629",
+    "file": "images/artes/insignias/insignia-12.webp",
+    "crop": [
+      905,
+      520,
+      1146,
+      749
+    ],
+    "width": 160,
+    "height": 152,
+    "bytes": 6170,
+    "status": "candidato",
+    "use": "Sem vínculo com UI; preparação para revisão futura"
+  },
+  {
+    "source": "lVHrN00vYebRObERwahc3FuKtjPo_7jmbAmgE94gXu8.webp",
+    "source_sha256": "dc48943f1a07dc8e439756ae52884dff63a995205a083ab84e13df000f78d8b3",
+    "file": "images/artes/cenarios/caderno-barra.webp",
+    "crop": null,
+    "width": 240,
+    "height": 179,
+    "bytes": 4686,
+    "status": "em uso",
+    "use": "Ilustração junto ao título Registro rápido"
+  }
+]

@@ -2,6 +2,14 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Não lançado] — preparação e integração de artes anexadas
+
+- Inventário dos 17 anexos desta sessão em `docs/CATALOGO_ARTES.md`, com conteúdo visual, formato, dimensões, bytes e decisões; manifesto `docs/artes-derivadas.json` registra origens, hashes, caixas de recorte e derivados. Nenhuma imagem externa/gerada nem original PNG grande incluído.
+- Preparados **38 recortes** revisados (8 equipamentos, 10 anatomia, 8 símbolos, **12 insígnias**, apesar do nome da cartela) e 1 miniatura: **39 WebP / 149.642 bytes**. Quatro decorações em uso (Registro rápido, treino, descanso e calculadora de anilhas); 35 recortes candidatos sem associação inventada a músculos/conquistas. Redução proporcional, nearest-neighbor e fundos opacos preservados.
+- Mapas, arena, moldura opaca, texturas sem continuidade comprovada e imagens redundantes ficam documentados como candidatos, sem substituir arte temática, fotos ou indicadores reais. `js/cartoes.js` e todas as regras de XP/PR/progresso, backup e CSV preservados.
+- Fallback delegado oculta somente decoração indisponível, inclusive quando a imagem falha antes do módulo de eventos carregar; textos e controles continuam presentes. Testes UI e gate bloqueante de Chromium cobrem caminhos/dimensões, falhas reais de rede e enquadramento em 360/390/412/430 px.
+- SW inicialmente **v47 → v48** sobre `3f22de7`; após integrar a PR #23 já mesclada em `origin/main` (`0f2cb73`, v49), versão final **v49 → v50**. **0 imagens novas / 0 bytes de imagens no CORE**, que permanece com 285 entradas; +2.747 bytes no shell precacheado. Quatro decorações podem faltar no primeiro uso offline e possuem fallback. Sem dependências de produção novas. Catálogo detalha limites de validação e pendências; sem alegação de aparelho físico/PWA instalada/offline geral validados.
+
 ## [Não lançado] — Treino em Andamento mobile-first + exercício Extra (branch `arena/2822dcb0-diario`)
 
 ### ADICIONADO
