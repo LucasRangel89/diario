@@ -41,10 +41,10 @@ const apoioEquivalenteSeed = { Posterior: '~4,0', Ombros: '~5,6', Bíceps: '~7,5
 const apoiosSeedCorretos = Object.entries(apoioEquivalenteSeed).every(([muscle, esperado]) => {
     const box = recoveryBoxes.find(el => el.querySelector('.font-oswald')?.textContent.trim() === muscle);
     const aviso = box && [...box.querySelectorAll('div')].find(div => div.classList.contains('text-cyan-400/80'));
-    return aviso && aviso.textContent.includes(`${esperado} séries equivalentes`);
+    return aviso && aviso.textContent.includes(`${esperado} séries ponderadas`);
 });
-check('mapa mostra Posterior (não Glúteos), tooltip e equivalentes corretos do seed', !!posteriorBox && !recoveryBoxes.some(box => box.querySelector('.font-oswald')?.textContent.trim() === 'Glúteos') && apoioPosterior && /apoio em .*séries equivalentes/.test(apoioPosterior.textContent) && apoioPosterior.title.includes('Agachamento Hack') && apoioPosterior.title.includes('Leg Press 45°') && apoiosSeedCorretos);
-check('séries equivalentes ficam fora da meta semanal do box Posterior', !!posteriorBox && posteriorBox.textContent.includes(`${seriesDiretasPosterior}/10–20 séries`) && seriesDiretasPosterior === 0 && ev("weeklyGaps(logs, getTodayLocalISO()).find(g => g.muscle === 'Posterior').series === 0"), { seriesDiretasPosterior, text: posteriorBox && posteriorBox.textContent });
+check('mapa mostra Posterior (não Glúteos), tooltip e contribuições estimadas corretas do seed', !!posteriorBox && !recoveryBoxes.some(box => box.querySelector('.font-oswald')?.textContent.trim() === 'Glúteos') && apoioPosterior && /apoio estimado em .*séries ponderadas/.test(apoioPosterior.textContent) && apoioPosterior.title.includes('Agachamento Hack') && apoioPosterior.title.includes('Leg Press 45°') && apoiosSeedCorretos);
+check('contribuição estimada fica fora da meta semanal do box Posterior', !!posteriorBox && posteriorBox.textContent.includes(`${seriesDiretasPosterior}/10–20 séries`) && seriesDiretasPosterior === 0 && ev("weeklyGaps(logs, getTodayLocalISO()).find(g => g.muscle === 'Posterior').series === 0"), { seriesDiretasPosterior, text: posteriorBox && posteriorBox.textContent });
 check('painel do montador: o que falta na semana', $('builder-week-gaps').textContent.includes('Estímulo da semana') && /séries/.test($('builder-week-gaps').textContent), $('builder-week-gaps').textContent.slice(0, 120));
 check('painel anuncia a faixa própria do Antebraço', $('builder-week-gaps').textContent.includes('Antebraço 4–10'), $('builder-week-gaps').textContent.slice(0, 160));
 const boxAntebraco = recoveryBoxes.find(el => el.querySelector('.font-oswald')?.textContent.trim() === 'Antebraço');

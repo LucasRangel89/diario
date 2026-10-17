@@ -42,6 +42,12 @@ legados compatíveis; o atual é o 3.
   cumpre missão semanal — aceitar `PR = Sim` de um arquivo daria XP e gamificação sem
   treino. A coluna é exportada para leitura humana na planilha; versões anteriores do
   app simplesmente ignoram a coluna (a aba `Log` preserva as colunas do formato 2; a versão global atual é 3).
+- **Perfis de exercício (v1):** não há coluna nova. `Grupo do registro` continua sendo
+  o grupo legado do log, e a importação de um exercício conhecido usa o grupo do
+  catálogo (comportamento preexistente). A base `js/perfil_exercicios.js` é somente
+  leitura e não é importada nem exportada; uma exportação futura de perfis exigirá
+  versão nova de formato, mantendo os arquivos 1–3 importáveis. Ver
+  `docs/TAXONOMIA_EXERCICIOS.md`.
 
 ### Colunas da aba `Cardio` (formato 3)
 
@@ -145,6 +151,11 @@ Regras:
   - nome repetido **dentro do arquivo** (sem diferenciar maiúsculas) → vale a primeira ocorrência;
   - tipo de carga desconhecido ou fator/lados/descanso/faixa inválidos → erro (rejeita o backup).
 - Registros históricos de um exercício personalizado **não são apagados** quando a definição é excluída.
+- **Perfis de exercício (v1):** o formato continua **6** e nenhum campo de perfil é
+  gravado em `logs`, `savedWorkouts` ou no topo do arquivo. `logs[].muscle` preserva o
+  grupo legado (com os aliases históricos `Pescoço` → `Ombros` e `Glúteos` →
+  `Posterior` já aplicados na carga). A base descrita em `docs/TAXONOMIA_EXERCICIOS.md`
+  não altera a restauração e não reclassifica dados antigos.
 
 ## 4. Limitações
 

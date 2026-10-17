@@ -8,6 +8,7 @@ import './historico.js';
 import './busca.js';
 import './custom_exercises.js';
 import './datas.js';
+import './perfil_exercicios.js';
 import { formatRunDuration, formatRunPace, isRunLog, paceSecondsPerKm, runModality, runRecords, summarizeRunsByWeek, summarizeRunsByMonth, summarizeRunsByYear } from './corridas.js';
 import { storage } from './storage.js';
 import { DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, FAIXA_SERIES_SEMANAIS, MUSCLE_META, MUSCLE_OPTIONS_FULL, MUSCULOS_MAPA, formatLoadText, formatPlates, formatRepsText, logEst1RM, logVolumeKg, CATALOG_TIPOS, EXERCISE_CATALOG, FAIXA_SERIES_POR_GRUPO, MUSCLE_WEIGHT, catalogInfo, detectAutoPR, duplaProgressao, inferExerciseType, logTstSeconds, normalizeMuscle, sinergiaState } from './catalogo.js';
@@ -1128,7 +1129,7 @@ function renderWeekGaps() {
         <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3 space-y-2">
             <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">🎯 Estímulo da semana — o que falta (${faixas})</div>
             <div class="flex flex-wrap gap-1.5">${chips}</div>
-            <div class="text-[10px] text-gray-500">🤝 = séries equivalentes de apoio indireto (informativo, não abate a meta). O assistente sugere treinos que cobrem os grupos mais abaixo — mas quem manda é você.</div>
+            <div class="text-[10px] text-gray-500">🤝 = contribuição estimada do apoio indireto (séries ponderadas por fator heurístico; informativo, não é série direta e não abate a meta). O assistente sugere treinos que cobrem os grupos mais abaixo — mas quem manda é você.</div>
         </div>`;
 }
 

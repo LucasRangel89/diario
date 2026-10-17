@@ -123,8 +123,8 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
   Swing de Kettlebell, Caminhada do Fazendeiro, Empurrar Trenó, Superman, Agachamento Sumô, Pullover.
 - **Co-ativação (sinergia):** puxadas, empurradas e compostos podem sinalizar apoio indireto
   (pegada, braços, ombros, core, abdômen e cadeia posterior). O app aplica fatores parciais só
-  como **aviso de recuperação** no mapa; séries equivalentes não entram na meta semanal, no XP
-  nem no bônus de fraqueza dos chefões.
+  como **aviso de recuperação** no mapa; a contribuição estimada (séries ponderadas, não séries
+  biológicas equivalentes) não entra na meta semanal, no XP nem no bônus de fraqueza dos chefões.
 - **Próximo treino recomendado:** ordena os treinos salvos por heurísticas de janela de recuperação
   estimada e séries da semana, explicando o raciocínio ("Por quê: …"). Grupos sem histórico direto
   ou indireto são tratados como **sem dados** (peso neutro no ranking), não como descansados.
@@ -132,6 +132,22 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
 - **Montador livre:** painel "🎯 Estímulo da semana — o que falta" no criador de treino; você
   escolhe exercícios (com tags/busca), o sistema reordena e avisa o que falta — assistente,
   não robô mandando.
+
+### 🧬 Taxonomia e perfis de exercício (base v1)
+- Os grupos atuais continuam exatamente os mesmos: **Peito, Costas, Pernas, Posterior, Ombros,
+  Bíceps, Tríceps, Abdômen, Core e Antebraço** no mapa, mais **Cardio** no catálogo. Nenhum
+  registro foi reclassificado e `muscle` continua o campo legado dos logs, do CSV e do JSON.
+- A categoria **Posterior** continua sendo uma convenção de contabilidade que mistura
+  isquiotibiais, glúteos, adutores, abdutores e panturrilhas. Separá-la em grupos-alvo é uma
+  evolução futura que exige revisão profissional, migração reversível e decisão de produto —
+  não uma troca de texto no catálogo.
+- `js/perfil_exercicios.js` prepara a base **versionada** (schema 1): ID estável derivado do nome
+  canônico, estados `nao_revisado`/`revisado`, validação com revisor/data/versão e proibição de
+  "séries equivalentes". **Todos os 72 exercícios seguem `nao_revisado` e sem anatomia**; perfil
+  não revisado não gera músculo, padrão de movimento nem recomendação.
+- Nenhuma meta, XP, chefão, volume, PR, CSV ou backup consulta o perfil nesta etapa. O inventário
+  completo, o mapa de impacto e as pendências estão em
+  [`docs/TAXONOMIA_EXERCICIOS.md`](docs/TAXONOMIA_EXERCICIOS.md).
 
 ### ⚔️ Gamificação
 10 temas — **clássico, Zodíaco, Hércules, Filmes de Ação, Folclore Brasileiro, Mitologia
@@ -210,6 +226,7 @@ npm test             # motor + UI + módulos + Service Worker
 - `js/busca.js` — aba Buscar + seletor rápido
 - `js/custom_exercises.js` — exercícios personalizados (cadastro, índice de busca e a janela "➕ Novo exercício")
 - `js/datas.js` — regra única de data válida (backup, CSV e recuperação)
+- `js/perfil_exercicios.js` — base versionada de perfis de exercício (v1): identidade, estados de revisão e inventário da taxonomia; não é usada por metas, XP ou recomendações
 - `js/corridas.js` — funções puras de duração, pace, classificação Rua/Esteira (inclusive nomes legados), resumos ISO e recordes informativos de corrida/km por tênis (logs por parâmetro; sem estado/DOM)
 - `js/persistencia.js` — gravação do estado (logs, treinos, ajustes, jogo, Story Card)
 - `js/backup.js` — validação do backup JSON, montagem do pacote e parser de CSV

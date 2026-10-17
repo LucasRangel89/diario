@@ -32,6 +32,8 @@ A crítica à categoria ampla `Posterior` é bem fundamentada para contabilidade
 
 Os coeficientes atuais de apoio indireto (`SINERGIA`) devem ser chamados de contribuição estimada, não de “séries biológicas equivalentes”. Regex e fatores fixos são úteis como lembretes simples, mas não sustentam uma medida validada de estímulo.
 
+**Atualização (17/10/2026):** a interface e a documentação passaram a usar “contribuição estimada / séries ponderadas”, sem mudar o cálculo. A base versionada de perfis (`js/perfil_exercicios.js`) e o inventário (`docs/TAXONOMIA_EXERCICIOS.md`) foram adicionados na Etapa 2a abaixo, ainda sem classificar exercícios nem alterar metas, XP, chefões ou registros.
+
 ### Carga registrada, tonelagem e 1RM
 
 A convenção da planilha (anilhas sem barra/carrinho, halter por unidade, fator/lados) é explícita e tem valor para comparar a própria rotina ao longo do tempo. Não é necessário destruir essa compatibilidade. O cuidado é não chamar a tonelagem de trabalho mecânico, tensão ou esforço interno, nem comparar indiscriminadamente máquinas e exercícios.
@@ -67,6 +69,15 @@ A faixa semanal atual é uma meta configurada pelo app, não um mínimo universa
 - [x] Atualização de README, descrição da interface e `docs/RECUPERACAO.md`.
 
 **Critério mantido:** não migrar nem apagar dados históricos nesta etapa. A suíte automatizada completa precisa passar antes de encerrar a etapa.
+
+### Etapa 2a — concluída nesta alteração: base aditiva e inventário
+
+- [x] Schema v1 de perfil (`js/perfil_exercicios.js`), com `nao_revisado`/`revisado`, ID estável derivado do nome canônico e registro vazio de perfis revisados.
+- [x] Gate que impede anatomia em perfil não revisado e rejeita “séries equivalentes” no schema.
+- [x] Registro revisado só é aceito se mantiver ID, nome canônico e **grupo legado** iguais aos do catálogo; divergência cai para `nao_revisado` sem reclassificar nada.
+- [x] Inventário completo da taxonomia atual em `docs/TAXONOMIA_EXERCICIOS.md` (72 exercícios, 11 grupos de catálogo, 12 entradas em `MUSCLE_META`, aliases legados).
+- [x] Testes de regressão/compatibilidade para histórico, metas, chefões, CSV e backup JSON; nenhum dado é migrado ou reescrito.
+- [ ] Substituir a taxonomia legada por grupos-alvo e usar perfis em metas/recomendações (depende de revisão profissional).
 
 ### Etapa 2 — modelo semântico de exercícios e carga
 

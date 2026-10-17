@@ -631,7 +631,8 @@ function sinergiaLogs(muscle, allLogs) {
     return allLogs.filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle) !== alvo && cfg.re.test(l.exercise || ''));
 }
 
-// Apoio indireto informa a recuperação; suas séries equivalentes não entram na meta semanal.
+// Apoio indireto informa a recuperação; sua contribuição estimada (séries ponderadas)
+// não entra na meta semanal e não é uma série biológica equivalente.
 function sinergiaState(muscle, allLogs, nowMs) {
     const alvo = normalizeMuscle(muscle);
     const cfg = SINERGIA[alvo];

@@ -59,9 +59,9 @@ const logsCandidatosAntebraco = [logRemadaSinergia,
 ];
 const logsDeApoioAntebraco = api.sinergiaLogs('Antebraço', logsCandidatosAntebraco);
 const apoioAntebraco = api.sinergiaState('Antebraço', logsCandidatosAntebraco, agoraSinergia);
-check('remada apoia antebraço: 3 séries × 0,5 = 1,5 equivalentes', logsDeApoioAntebraco.length === 1 && logsDeApoioAntebraco[0] === logRemadaSinergia && apoioAntebraco && apoioAntebraco.fator === 0.5 && apoioAntebraco.seriesBrutas === 3 && apoioAntebraco.series === 1.5 && apoioAntebraco.ultimo === 'Remada Baixa na Polia' && apoioAntebraco.ultimoEm === '2026-10-14' && apoioAntebraco.exercicios.includes('Remada Baixa na Polia'), apoioAntebraco);
+check('remada apoia antebraço: 3 séries × 0,5 = 1,5 ponderadas', logsDeApoioAntebraco.length === 1 && logsDeApoioAntebraco[0] === logRemadaSinergia && apoioAntebraco && apoioAntebraco.fator === 0.5 && apoioAntebraco.seriesBrutas === 3 && apoioAntebraco.series === 1.5 && apoioAntebraco.ultimo === 'Remada Baixa na Polia' && apoioAntebraco.ultimoEm === '2026-10-14' && apoioAntebraco.exercicios.includes('Remada Baixa na Polia'), apoioAntebraco);
 const fadigaComApoio = api.fatigueState('Antebraço', [], 0, agoraSinergia, apoioAntebraco);
-check('apoio reduz prontidão (63%), deixa semRegistro falso e formata decimal pt-BR', fadigaComApoio.pct === 63 && fadigaComApoio.semRegistro === false && fadigaComApoio.sinergia === apoioAntebraco && fadigaComApoio.sinergiaText === '🤝 apoio em pegada (~1,5 séries equivalentes)', fadigaComApoio);
+check('apoio reduz prontidão (63%), deixa semRegistro falso e formata decimal pt-BR', fadigaComApoio.pct === 63 && fadigaComApoio.semRegistro === false && fadigaComApoio.sinergia === apoioAntebraco && fadigaComApoio.sinergiaText === '🤝 apoio estimado em pegada (~1,5 séries ponderadas)', fadigaComApoio);
 check('Peito sem regra e sem logs não cria estado de sinergia', api.sinergiaState('Peito', [], agoraSinergia) === null);
 check('grupo com regra, mas sem logs indiretos, também retorna null', api.sinergiaState('Antebraço', [], agoraSinergia) === null);
 const logAgachamentoSinergia = { id: 102, date: '2026-10-14', kind: 'peso', muscle: 'Pernas', exercise: 'Agachamento Livre', reps: [8, 8, 8] };
