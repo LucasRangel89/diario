@@ -185,3 +185,29 @@
     check('propriedades de cálculo preservadas (fator, lados, faixa, descanso, lombar, tags extras)', (() => { const e = norm.lista[0]; return e.cargaLombar === true && e.tagsExtras[0] === 'iniciante' && e.descanso === 90 && e.faixa.join() === '8,12'; })());
     const ok2 = api.normalizarExerciciosPersonalizados([{ nome: 'Afundo Personalizado', tipo: 'par_dois_lados', fator: 2, lados: 2, faixa: [6, 10], descanso: 120 }]);
     check('afundo personalizado mantém fator 2, lados 2, faixa 6–10, descanso 120', ok2.erros.length === 0 && ok2.lista[0].fator === 2 && ok2.lista[0].lados === 2 && ok2.lista[0].faixa.join() === '6,10' && ok2.lista[0].descanso === 120);
+
+    // Identidade versionada nos itens de customExercises (formato 6, campos
+    // opcionais): válidos fazem ida e volta; ausentes são cunhados na importação.
+    const idaVolta = api.normalizarExerciciosPersonalizados([{ nome: 'Remada Z1', idEstavel: 'ex-identidade-z1', versao: 4 }]);
+    check('ida e volta: idEstavel e versao do backup são preservados',
+        idaVolta.erros.length === 0 && idaVolta.lista[0].idEstavel === 'ex-identidade-z1' && idaVolta.lista[0].versao === 4, idaVolta.erros);
+    const backupComIdentidade = api.validarBackupJSON({ version: 6, logs: [], customExercises: [{ nome: 'Remada Z1', idEstavel: 'ex-identidade-z1', versao: 4 }] });
+    check('validarBackupJSON aceita a identidade versionada e a devolve na lista normalizada',
+        backupComIdentidade.ok === true && backupComIdentidade.custom.presente === true
+        && backupComIdentidade.custom.lista[0].idEstavel === 'ex-identidade-z1' && backupComIdentidade.custom.lista[0].versao === 4,
+        backupComIdentidade.erros);
+    const backupSemIdentidade = api.validarBackupJSON({ version: 6, logs: [], customExercises: [{ nome: 'Remada Z2' }] });
+    check('backup antigo (sem idEstavel/versao) continua importável: identidade cunhada na importação',
+        backupSemIdentidade.ok === true && api.idEstavelValido(backupSemIdentidade.custom.lista[0].idEstavel)
+        && backupSemIdentidade.custom.lista[0].versao === 1, backupSemIdentidade.erros);
+    const backupImpostor = api.normalizarExerciciosPersonalizados([{ nome: 'Remada Z3', idEstavel: 'ex-supino-reto-na-maquina' }]);
+    check('idEstavel igual ao de um exercício do catálogo é recunhado (sem impessoação de identidade)',
+        backupImpostor.lista[0].idEstavel !== 'ex-supino-reto-na-maquina' && api.idEstavelValido(backupImpostor.lista[0].idEstavel));
+    const backupDuplicado = api.normalizarExerciciosPersonalizados([
+        { nome: 'Remada Z4', idEstavel: 'ex-z4', versao: 2 },
+        { nome: 'Remada Z5', idEstavel: 'ex-z4', versao: 7 }
+    ]);
+    check('idEstavel repetido no arquivo: a 1ª ocorrência mantém; a seguinte é recunhada (unicidade)',
+        backupDuplicado.lista[0].idEstavel === 'ex-z4' && backupDuplicado.lista[0].versao === 2
+        && backupDuplicado.lista[1].idEstavel !== 'ex-z4' && api.idEstavelValido(backupDuplicado.lista[1].idEstavel)
+        && new Set(backupDuplicado.lista.map(e => e.idEstavel)).size === 2, backupDuplicado.lista);

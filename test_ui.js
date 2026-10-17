@@ -67,7 +67,10 @@ window.fetch = url => {
 const stripModuleSyntax = s => s
     .replace(/^import [^\n]*;\n/gm, '')
     .replace(/^export \{[^\n]*\};?\n/gm, '');
-['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/datas.js', 'js/perfil_exercicios.js', 'js/corridas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/config.js', 'js/boss.js', 'js/registro.js', 'js/app.js']
+// Ordem: perfil_exercicios.js antes de custom_exercises.js — o corpo do
+// segundo injeta a lista de personalizados na base de perfis (mesma
+// dependência que o grafo real resolve via import).
+['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/perfil_exercicios.js', 'js/custom_exercises.js', 'js/datas.js', 'js/corridas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/config.js', 'js/boss.js', 'js/registro.js', 'js/app.js']
     .forEach(f => vm.runInContext(stripModuleSyntax(fs.readFileSync(f, 'utf8')), ctx, { filename: f }));
 
 // ---- Runner por área -------------------------------------------------------

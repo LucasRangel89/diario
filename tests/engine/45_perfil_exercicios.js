@@ -238,3 +238,91 @@ check('MUSCLE_META preserva as 12 entradas e as janelas originais',
     && api.MUSCLE_META.Pernas.recoveryH === 72
     && api.MUSCLE_META.Posterior.recoveryH === 48
     && api.MUSCLE_META.Antebraço.recoveryH === 24);
+
+// ---------- Identidade versionada de exercícios personalizados (decisão #8) ----------
+console.log('\n== 18d. Exercícios personalizados: idEstavel versionado, sem anatomia ==');
+
+// Estado isolado: a suíte continua com a lista que existia antes da seção.
+const customAntes18d = api.getCustomExercises();
+const NOME_CUSTOM = 'Remada X1 de Identidade';
+
+const mintido18d = api.garantirIdentidadeVersionada([{ nome: NOME_CUSTOM, grupo: 'Costas' }]);
+check('personalizado sem ID ganha idEstavel ex-slug e versao 1',
+    mintido18d[0].idEstavel === 'ex-remada-x1-de-identidade'
+    && api.idEstavelValido(mintido18d[0].idEstavel) && mintido18d[0].versao === 1, mintido18d[0]);
+check('recunhagem é determinística (recarregar sem salvar reproduz o mesmo ID)',
+    api.garantirIdentidadeVersionada([{ nome: NOME_CUSTOM, grupo: 'Costas' }])[0].idEstavel === mintido18d[0].idEstavel);
+check('renomear NÃO recunha: o idEstavel sobrevive e a versao não sobe por conta do nome',
+    api.garantirIdentidadeVersionada([{ ...mintido18d[0], nome: 'Outro Nome X1' }])[0].idEstavel === mintido18d[0].idEstavel
+    && api.garantirIdentidadeVersionada([{ ...mintido18d[0], nome: 'Outro Nome X1' }])[0].versao === 1);
+check('idEstavel inválido é substituído por um válido (arquivo corrompido não polui a identidade)',
+    api.idEstavelValido(api.garantirIdentidadeVersionada([{ nome: 'Remada X2', idEstavel: 'Remada X2' }])[0].idEstavel));
+check('personalizado não pode personificar o catálogo: ID reservado é recunhado',
+    api.garantirIdentidadeVersionada([{ nome: 'Qualquer Nome', idEstavel: 'ex-supino-reto-na-maquina' }])[0].idEstavel !== 'ex-supino-reto-na-maquina'
+    && api.idEstavelValido(api.garantirIdentidadeVersionada([{ nome: 'Qualquer Nome', idEstavel: 'ex-supino-reto-na-maquina' }])[0].idEstavel));
+check('nome cujo slug colide com o catálogo ganha sufixo (sem colidir com o ID do catálogo)',
+    api.garantirIdentidadeVersionada([{ nome: 'Supino reto na maquina' }])[0].idEstavel === 'ex-supino-reto-na-maquina-2');
+check('dois personalizados com o mesmo slug recebem IDs distintos',
+    (() => {
+        const dup = api.garantirIdentidadeVersionada([{ nome: 'Remada Y1' }, { nome: 'remada y1!' }]);
+        return dup[0].idEstavel === 'ex-remada-y1' && dup[1].idEstavel === 'ex-remada-y1-2' && new Set(dup.map(e => e.idEstavel)).size === 2;
+    })());
+
+api.setCustomExercisesList([{ nome: NOME_CUSTOM, grupo: 'Costas', idEstavel: 'ex-remada-x1-de-identidade', versao: 2, sinonimos: 'rx1; remada x' }]);
+const perfilCustom18d = api.perfilDoExercicio(NOME_CUSTOM);
+check('perfil de personalizado: fora_do_catalogo com ID persistido, sempre nao_revisado e sem anatomia',
+    perfilCustom18d && perfilCustom18d.origem === 'fora_do_catalogo'
+    && perfilCustom18d.idEstavel === 'ex-remada-x1-de-identidade'
+    && perfilCustom18d.nomeCanonico === NOME_CUSTOM
+    && perfilCustom18d.statusRevisao === 'nao_revisado'
+    && perfilCustom18d.anatomia === null && perfilCustom18d.padraoMovimento === null && perfilCustom18d.revisao === null);
+check('grupo declarado pelo usuário é organizacional, nunca anatomia validada',
+    perfilCustom18d.taxonomiaLegada.grupo === 'Costas' && perfilCustom18d.agrupamentoVisual.grupo === 'Costas'
+    && perfilCustom18d.limitacoes.includes('grupo_declarado_pelo_usuario')
+    && api.contribuicaoAnatomica(NOME_CUSTOM) === null);
+check('idEstavelDoExercicio devolve o ID persistido, não um slug do nome atual',
+    api.idEstavelDoExercicio(NOME_CUSTOM) === 'ex-remada-x1-de-identidade');
+check('aliases do personalizado vêm dos sinônimos declarados (identidade, não anatomia)',
+    api.aliasesDoExercicio(NOME_CUSTOM).join('|') === 'rx1|remada x');
+check('perfil de personalizado passa no validador do schema',
+    api.validarPerfilExercicio(perfilCustom18d).ok === true, perfilCustom18d);
+check('registro revisado para o ID de um personalizado é ignorado (sem revisão profissional nesta etapa)',
+    (() => {
+        const registro = {
+            'ex-remada-x1-de-identidade': {
+                ...perfilCustom18d, statusRevisao: 'revisado',
+                anatomia: { musculosPrimarios: ['x'], musculosSecundarios: [{ musculo: 'y', papel: 'secundario', contribuicao: 'estimada' }] },
+                padraoMovimento: { id: 'puxar-horizontal', rotulo: 'Puxar' },
+                revisao: { por: 'Ninguém', em: '2026-10-17', versao: 1 }
+            }
+        };
+        const p = api.perfilDoExercicio(NOME_CUSTOM, registro);
+        return p.statusRevisao === 'nao_revisado' && p.anatomia === null
+            && p.limitacoes.includes('registro_revisado_invalido');
+    })());
+check('nome fora do catálogo e sem registro continua sem ID (null preservado)',
+    api.perfilDoExercicio('Exercício Inventado XYZ').idEstavel === null
+    && api.idEstavelDoExercicio('Exercício Inventado XYZ') === null);
+
+// Comportamentos legados não mudam: metas leem o muscle do registro; CSV
+// formato 3 não ganha colunas de identidade.
+const logCustom18d = {
+    id: 99002, date: '2026-10-14', kind: 'peso', muscle: 'Costas',
+    exercise: NOME_CUSTOM, type: 'carga_total', weight: 50, reps: [10, 10]
+};
+check('personalizado segue contando pelo muscle legado nas metas semanais (perfil não entra no cálculo)',
+    api.weeklySetsByMuscle([logCustom18d], '2026-10-14').Costas === 2);
+const logsAntes18d = api.logsArr;
+api.setLogs([logCustom18d]);
+const csvCustom18d = api.buildPlanilhaCSV();
+api.setLogs(logsAntes18d);
+const sheetCat18d = csvCustom18d.split(/--- Sheet: Catálogo ---/)[1].split(/--- Sheet:/)[0].trim();
+const linhasCat18d = api.parseCSVRows(sheetCat18d, ';');
+check('CSV formato 3: aba Catálogo mantém as 12 colunas, sem colunas de identidade',
+    linhasCat18d[0].length === 12 && linhasCat18d[0][0] === 'Exercício'
+    && !sheetCat18d.includes('idEstavel') && !sheetCat18d.includes('versao'), linhasCat18d[0]);
+check('CSV inclui a linha do personalizado com o grupo declarado (sem anatomia nova)',
+    linhasCat18d.some(r => r[0] === NOME_CUSTOM && r[1] === 'Costas'));
+
+// Restaura a lista de personalizados ao estado anterior à seção.
+api.setCustomExercisesList(customAntes18d);

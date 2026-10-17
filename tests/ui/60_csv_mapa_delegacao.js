@@ -46,7 +46,9 @@
     const esperaFormCex = () => new Promise(r => setTimeout(r, 80));   // o form liga o submit num setTimeout(50)
     const errosAntesCex = jsErrors.length;
     const novosErrosCex = () => jsErrors.slice(errosAntesCex, errosAntesCex + 2);
-    const nomeNovoEx = 'Remada Sintética de Teste UI';
+    const nomeNovoExInicial = 'Remada Sintética de Teste UI';
+    let nomeNovoEx = nomeNovoExInicial;
+    const nomeRenomeadoCex = 'Remada Sintética Renomeada UI';
     const cardNovoEx = () => cards().some(c => c.dataset.ex === nomeNovoEx);
     const textoDe = id => ($(id) || {}).textContent || '';
     try {
@@ -81,15 +83,25 @@
         check('a aba Buscar é redesenhada com o exercício novo (renderSearchScreen)', cardNovoEx(), titles().slice(0, 3));
         check('a confirmação de criação aparece para o usuário', document.body.textContent.includes('Exercício criado com sucesso'));
         check('nenhum erro não capturado no fluxo de criação', jsErrors.length === errosAntesCex, novosErrosCex());
+        const idEstavelCriadoCex = ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeNovoEx)}).idEstavel`);
+        check('criação cunha idEstavel ex-slug e versao 1 (identidade versionada)',
+            /^ex-[a-z0-9]+(-[a-z0-9]+)*$/.test(idEstavelCriadoCex) && ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeNovoEx)}).versao`) === 1, idEstavelCriadoCex);
         const cardExPersonalizado = [...document.querySelectorAll('#cat-results > div[data-ex]')].find(c => c.dataset.ex === nomeNovoEx);
         const btnEditarExPersonalizado = cardExPersonalizado?.querySelector('[data-action="openCustomExModal"]');
         check('card de exercício personalizado na Busca oferece Editar com alvo de toque de 44 px', !!btnEditarExPersonalizado && btnEditarExPersonalizado.classList.contains('min-h-[44px]'));
         if (btnEditarExPersonalizado) click(btnEditarExPersonalizado);
         await esperaFormCex();
         check('Editar no card abre o formulário existente em modo de edição', !!$('custom-ex-form') && $('custom-ex-form').dataset.editingId === String(ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeNovoEx)}).id`)));
+        check('form de edição mostra a identidade estável (ID e versão, sem anatomia)', textoDe('custom-ex-overlay').includes('Identidade estável') && textoDe('custom-ex-overlay').includes(idEstavelCriadoCex));
         $('cex-obs').value = 'observação editada';
+        $('cex-nome').value = nomeRenomeadoCex;
         click($('custom-ex-form').querySelector('button[type="submit"]'));
-        check('criar → editar → salvar atualiza a definição sem duplicar o exercício', ev(`customExercises.filter(e => e.nome === ${JSON.stringify(nomeNovoEx)}).length`) === 1 && ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeNovoEx)}).obs`) === 'observação editada' && !$('custom-ex-overlay'));
+        check('criar → editar → salvar atualiza a definição sem duplicar o exercício', ev(`customExercises.filter(e => e.nome === ${JSON.stringify(nomeRenomeadoCex)}).length`) === 1 && ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeRenomeadoCex)}).obs`) === 'observação editada' && !$('custom-ex-overlay'));
+        check('renomear preserva o idEstavel e sobe a versao da definição (identidade versionada)',
+            ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeRenomeadoCex)}).idEstavel`) === idEstavelCriadoCex
+            && ev(`customExercises.find(e => e.nome === ${JSON.stringify(nomeRenomeadoCex)}).versao`) === 2
+            && !ev(`customExercises.some(e => e.nome === ${JSON.stringify(nomeNovoExInicial)})`));
+        nomeNovoEx = nomeRenomeadoCex;
         ev(`openExercisePicker('log'); setPickerQuery(${JSON.stringify(nomeNovoEx)});`);
         check('o seletor rápido também oferece o exercício novo', pickerRows().some(r => r.dataset.ex === nomeNovoEx));
         ev('closeExercisePicker()');
