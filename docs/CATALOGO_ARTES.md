@@ -117,3 +117,14 @@ Foram montadas provas 2×2 das duas texturas, reduzidas a 384×384 com nearest e
 - Sandbox sem fontes externas: a interface usa fontes de fallback e alguns emojis legados podem aparecer como glifos ausentes. Nenhuma arte substituta foi gerada. Instalação PWA, desempenho/toque em aparelho físico, Safari/iOS e offline geral **não foram validados**; os testes offline automatizados cobrem apenas os fluxos listados pelo gate existente. Não confundir pré-requisitos de instalação com instalação real.
 - Pendências editoriais: aprovação dos 35 recortes candidatos, revisão anatômica/semântica antes de ligar qualquer desenho a grupos musculares, regras explícitas antes de associar as 12 insígnias a conquistas. Mapas/moldura/texturas e individuais redundantes permanecem apenas no inventário (fontes fora do Git); pedir reenvio se indisponíveis em outra sessão.
 - CI do push e os cinco checks da PR devem ser confirmados na entrega; esta PR não autoriza merge.
+
+## Atualização para merge autorizado — integração com a PR #23
+
+Antes do merge, `origin/main` avançou para `0f2cb73` (PR #23; sessão compacta/Extra, SW v49), provocando conflitos no CHANGELOG, SW e CSS gerado. A branch de artes integrou essa base sem modificar `js/app.js`, `js/registro.js`, `js/sessao.js` ou os testes de sessão aprovados na PR #23. As duas seções do CHANGELOG foram preservadas e o CSS foi regenerado com ambas as apresentações.
+
+- Versão final: **v49 → v50** (v48 era a versão da entrega original das artes).
+- CORE: mesmos 285 caminhos, **5.232.425 → 5.235.172 bytes**, delta inalterado de **+2.747 bytes** do shell; zero imagens novas no precache.
+- Artes inalteradas: 39 arquivos / 149.642 bytes; quatro decorações em uso / 11.222 bytes.
+- Reexecutados `npm ci && npm test`, sintaxe/CORE do SW, módulos, docs, build CSS e artefato do Pages. Comparação da versão do SW contra `origin/main` repetida após o commit de integração.
+- Chromium real local: **56/56 checagens**, incluindo o fluxo compacto/Extra já presente na main e as três checagens de artes. Nenhuma requisição local falhou com rede; permanecem explicitadas as quatro lacunas decorativas de primeiro acesso offline. Limites de aparelho físico/PWA/offline geral permanecem os mesmos.
+- CI do novo push e checks da PR devem estar verdes antes de concluir o merge autorizado. Confirmação registrada na PR, sem dispensar o gate de navegador.

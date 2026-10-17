@@ -278,6 +278,17 @@
                     <div id="main-fields">
                         <!-- preenchido por fieldsHTML('', { quickCapture: true }) no boot -->
                     </div>
+                    <!-- EXTRA NO TREINO EM ANDAMENTO: visível só com sessão ativa -->
+                    <div id="log-session-extra-wrap" class="hidden">
+                        <label for="log-count-in-session" class="flex items-start gap-2.5 cursor-pointer bg-berzerker-dark/60 border border-violet-600/40 rounded-xl px-3 py-2.5 min-h-[44px]">
+                            <input type="checkbox" id="log-count-in-session" class="mt-1 w-4 h-4 rounded text-violet-500 bg-berzerker-dark border-berzerker-border">
+                            <span class="text-xs">
+                                <span class="font-bold text-violet-300 uppercase tracking-wider">➕ Contar no treino em andamento</span>
+                                <span class="block text-gray-400 mt-0.5">acrescenta este registro como item <b class="text-violet-300">Extra</b> concluído na sequência da sessão (sem criar um segundo registro e sem marcar itens planejados).</span>
+                            </span>
+                        </label>
+                        <div id="log-session-match-note" class="hidden mt-1.5 text-xs bg-amber-950/30 border border-amber-600/40 text-amber-300 rounded-lg px-3 py-2 leading-relaxed"></div>
+                    </div>
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                         <p class="text-xs text-gray-400">Registro simples em séries iguais; para ajustar o formato, abra <b>Mais detalhes</b>.</p>
                         <button type="submit" class="w-full sm:w-auto min-h-[44px] px-6 py-2.5 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors shadow-lg shadow-berzerker-600/30">
