@@ -71,8 +71,24 @@
         fn.apply(el, args);
     }
 
+    // Só decoração: o título/controle ao lado permanece íntegro sem imagem.
+    g.registerDiarioAction('hideDecorativeArt', function (img) {
+        if (img) img.hidden = true;
+    });
+
     const hasDOM = (typeof document !== 'undefined' && !!document.addEventListener);
     if (hasDOM) {
+        // Imagens estáticas podem falhar ANTES do módulo/delegação carregar.
+        // Completa o fallback no boot; erros posteriores usam a captura abaixo.
+        const hideFailedArt = () => {
+            if (typeof document.querySelectorAll !== 'function') return;
+            document.querySelectorAll('img[data-error-action="hideDecorativeArt"]').forEach(img => {
+                if (img.complete && !img.naturalWidth) img.hidden = true;
+            });
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hideFailedArt, { once: true });
+        else hideFailedArt();
+
         // clique: qualquer elemento com data-action (botões, cards, tiles)
         document.addEventListener('click', function (evt) {
             const el = evt.target && evt.target.closest ? evt.target.closest('[data-action]') : null;

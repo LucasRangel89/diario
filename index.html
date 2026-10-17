@@ -108,6 +108,11 @@
             background: #3f3f4a;
         }
 
+        /* Artes anexadas são opacas: blocos próprios, nunca overlays de dados. */
+        .art-icon { width: 28px; height: auto; max-height: 32px; object-fit: contain; image-rendering: pixelated; flex-shrink: 0; vertical-align: middle; }
+        .art-notebook { width: 64px; height: auto; object-fit: contain; image-rendering: pixelated; flex-shrink: 0; border-radius: 6px; }
+        .art-icon[hidden], .art-notebook[hidden] { display: none; }
+
         /* Small helper for line clamp */
         .line-clamp-2 {
             display: -webkit-box;
@@ -179,7 +184,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-berzerker-border pb-3">
                     <div>
                         <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2 flex-wrap">
-                            <span class="text-berzerker-500">⚔️</span> Treino em Andamento:
+                            <img src="images/artes/icones/sessao/halter.webp" alt="" width="96" height="60" class="art-icon" decoding="async" data-error-action="hideDecorativeArt"> Treino em Andamento:
                             <span id="session-title" class="text-berzerker-500"></span>
                         </h2>
                         <p class="text-xs text-gray-400">Cargas pré-preenchidas com a sua <b>última performance</b> — ajuste o que realmente fez e toque em ✔ Registrar. O descanso começa sozinho.</p>
@@ -205,7 +210,7 @@
                     <!-- CRONÔMETRO DE DESCANSO -->
                     <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3.5 flex items-center justify-between gap-3">
                         <div>
-                            <span class="text-xs font-bold uppercase text-gray-400 block">⏱️ Descanso</span>
+                            <span class="text-xs font-bold uppercase text-gray-400 block"><img src="images/artes/icones/sessao/cronometro.webp" alt="" width="86" height="96" class="art-icon" decoding="async" data-error-action="hideDecorativeArt"> Descanso</span>
                             <span id="session-timer-display" class="font-oswald text-3xl font-bold text-white leading-none">00:00</span>
                         </div>
                         <div class="flex flex-wrap gap-1 justify-center">
@@ -231,7 +236,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-berzerker-border pb-3">
                     <div>
                         <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                            <span class="text-berzerker-500">⚡</span> Registro rápido
+                            <img src="images/artes/cenarios/caderno-barra.webp" alt="" width="240" height="179" class="art-notebook" decoding="async" data-error-action="hideDecorativeArt"> Registro rápido
                         </h2>
                         <p class="text-xs text-gray-400 mt-0.5">Exercício, carga e reps — os detalhes opcionais ficam logo abaixo.</p>
                     </div>
@@ -953,7 +958,7 @@
                 <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 shadow-xl space-y-4">
                     <div class="border-b border-berzerker-border pb-3">
                         <h2 class="font-oswald text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                            <span class="text-amber-500">🔥</span> Aquecimento & Calculadora de Anilhas
+                            <img src="images/artes/icones/equipamentos/barra-anilhas.webp" alt="" width="127" height="128" class="art-icon" decoding="async" data-error-action="hideDecorativeArt"> Aquecimento & Calculadora de Anilhas
                         </h2>
                         <p class="text-xs text-gray-400">Pirâmide de aquecimento e montagem de anilhas por lado.</p>
                     </div>

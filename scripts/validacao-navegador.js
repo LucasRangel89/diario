@@ -379,6 +379,63 @@ const server = http.createServer((req, res) => {
   const estourou = mobile.filter(m => !m.ok);
   check('nenhuma aba estoura a largura de um celular 412px', estourou.length === 0, JSON.stringify(estourou));
 
+  console.log('\n== NAV 3b-artes. Recortes, caminhos, fallback e mobile ==');
+  await page.reload({ waitUntil: 'networkidle' }); // rede restabelecida após o ensaio offline
+  const artCatalog = JSON.parse(fs.readFileSync(path.join(ROOT_INICIAL, 'docs/artes-derivadas.json'), 'utf8'));
+  const decoded = await page.evaluate(async files => Promise.all(files.map(async src => {
+    const img = new Image(); img.src = src;
+    try { await img.decode(); return { src, w: img.naturalWidth, h: img.naturalHeight }; }
+    catch { return { src, w: 0, h: 0 }; }
+  })), artCatalog.map(a => a.file));
+  check('artes: os 39 WebP do catálogo decodificam com as dimensões documentadas',
+    decoded.length === 39 && decoded.every((a, i) => a.w === artCatalog[i].width && a.h === artCatalog[i].height), JSON.stringify(decoded.filter(a => !a.w)));
+  if (process.env.DIARIO_ART_SCREENSHOTS) await page.waitForTimeout(6000); // deixa o toast de backup terminar antes da prova visual
+  const artMobile = [];
+  for (const width of [360, 390, 412, 430]) {
+    await page.setViewportSize({ width, height: 915 });
+    for (const [aba, grupo] of [['diario', 'treino'], ['calcs', 'voce']]) {
+      await page.click(`#nav-group-${grupo}`);
+      await page.click(`#nav-${aba}`);
+      // Expõe só o painel para inspecionar o título e o descanso sem criar/alterar treino.
+      if (aba === 'diario') await page.evaluate(() => document.getElementById('active-session-card').classList.remove('hidden'));
+      const result = await page.evaluate(() => {
+        const imgs = [...document.querySelectorAll('img[src^="images/artes/"]')].filter(i => i.getBoundingClientRect().width);
+        return { width: innerWidth, scroll: document.documentElement.scrollWidth, imgs: imgs.map(i => {
+          const r = i.getBoundingClientRect();
+          return { src: i.getAttribute('src'), ok: i.complete && i.naturalWidth > 0 && i.alt === '' && r.left >= 0 && r.right <= innerWidth && Math.abs(r.width / r.height - i.naturalWidth / i.naturalHeight) < 0.02 };
+        }) };
+      });
+      artMobile.push({ aba, ...result });
+      if (process.env.DIARIO_ART_SCREENSHOTS) {
+        fs.mkdirSync(process.env.DIARIO_ART_SCREENSHOTS, { recursive: true });
+        await page.screenshot({ path: path.join(process.env.DIARIO_ART_SCREENSHOTS, `${aba}-${width}.png`), fullPage: true });
+      }
+      if (aba === 'diario') await page.evaluate(() => {
+        if (!window.__diarioExports.activeSession) document.getElementById('active-session-card').classList.add('hidden');
+      });
+    }
+  }
+  check('artes: Hoje/sessão/descanso e calculadoras cabem em 360, 390, 412 e 430 px sem distorção',
+    artMobile.every(r => r.scroll <= r.width + 2 && r.imgs.length === (r.aba === 'diario' ? 3 : 1) && r.imgs.every(i => i.ok)), JSON.stringify(artMobile));
+  await page.setViewportSize({ width: 412, height: 915 });
+  // Contexto isolado SEM SW, com falhas deliberadas apenas nas quatro artes usadas.
+  // As falhas injetadas não entram na medição de requisições normais do app.
+  const artFailureContext = await browser.newContext({ viewport: { width: 360, height: 915 }, serviceWorkers: 'block' });
+  const artFailurePage = await artFailureContext.newPage();
+  await artFailurePage.route('**/images/artes/**', route => route.abort('failed'));
+  await artFailurePage.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'load' });
+  await artFailurePage.waitForFunction(() => [...document.querySelectorAll('img[src^="images/artes/"]')].every(i => i.hidden));
+  const fallbackArt = await artFailurePage.evaluate(() => ({
+    total: document.querySelectorAll('img[src^="images/artes/"][hidden]').length,
+    texts: ['Registro rápido', 'Treino em Andamento:', 'Descanso', 'Aquecimento & Calculadora de Anilhas'].every(t => document.body.textContent.includes(t)),
+    form: !!document.getElementById('workout-form'),
+    timer: !!document.getElementById('session-timer-display'),
+    progress: document.getElementById('session-progress-bar').tagName === 'DIV',
+  }));
+  check('artes: falha real de rede oculta só decoração, preserva títulos, formulário, timer e progresso real',
+    fallbackArt.total === 4 && fallbackArt.texts && fallbackArt.form && fallbackArt.timer && fallbackArt.progress, JSON.stringify(fallbackArt));
+  await artFailureContext.close();
+
   console.log('\n== NAV 3c. Pré-requisitos de instalação (PWA) ==');
   fase = 'pwa';
   const pwa = await page.evaluate(async () => {
