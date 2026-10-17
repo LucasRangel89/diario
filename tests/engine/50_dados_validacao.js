@@ -61,8 +61,10 @@ check('PR=Sim no arquivo NÃO promove o registro a PR (isPR continua false nos d
 const xpImportado = api.computeXP('2026-10-02', { logs: lidoPR.logs, bodyweight: 80, deloadWeeks: [], missionsXpTotal: 0, bosses: [] });
 const xpSemPRFalso = api.computeXP('2026-10-02', { logs: lidoPR.logs.map(l => ({ ...l, isPR: false })), bodyweight: 80, deloadWeeks: [], missionsXpTotal: 0, bosses: [] });
 check('XP da importação não muda por causa da coluna PR (nem ganha XP_PR)', xpImportado.xp === xpSemPRFalso.xp && xpImportado.prXP === 0, { xp: xpImportado.xp, prXP: xpImportado.prXP });
-const xpComPRReal = api.computeXP('2026-10-02', { logs: lidoPR.logs.map(l => ({ ...l, isPR: true })), bodyweight: 80, deloadWeeks: [], missionsXpTotal: 0, bosses: [] });
-check('PR de verdade (decidido pelo app) continua somando XP_PR — comportamento preservado', xpComPRReal.prXP === api.XP_PR && xpComPRReal.xp >= xpImportado.xp, { prXP: xpComPRReal.prXP, XP_PR: api.XP_PR });
+const historicoPR = ['2026-09-28', '2026-09-29', '2026-09-30'].map((date, i) => ({ id: `H${i}`, date, kind: 'peso', exercise: 'Supino Reto com Barra', type: 'carga_total', weight: 80, reps: [10], conferir: false, isPR: false }));
+const candidatesPR = [{ ...lidoPR.logs[0], id: 'import-A', isPR: true }, { ...lidoPR.logs[1], id: 'import-B', isPR: true }];
+const xpComPRReal = api.computeXP('2026-10-03', { logs: [...historicoPR, ...candidatesPR], bodyweight: 80, deloadWeeks: [], missionsXpTotal: 0, bosses: [] });
+check('PR histórico só pontua com três sessões prévias e no máximo um crítico na semana', xpComPRReal.prXP === api.XP_PR && xpComPRReal.xp >= xpImportado.xp, { prXP: xpComPRReal.prXP, XP_PR: api.XP_PR });
 // exportar → reimportar: o PR que o app já conhece não se perde e não se inventa
 const logComPR = { id: 4242, date: '2026-10-02', kind: 'peso', muscle: 'Peito', sessao: 'Peito', exercise: 'Supino Reto com Barra', type: 'carga_total', weight: 100, reps: [10, 8, 8], technique: 'Convencional', nextGoal: '', isPR: true, rir: 2, conferir: false, notes: '', xpTheme: 'classico' };
 api.setLogs([logComPR]);

@@ -224,7 +224,6 @@ function fieldsHTML(p, v, opts) {
         <div class="col-span-2"><label class="${LBL}">Sessão (split do dia)</label><input type="text" id="${p}sessao" value="${escapeHtml(v.sessao || '')}" list="sessao-list" placeholder="ex: Peito/Tríceps/Ombro" class="${INP}"></div>
         <label class="flex items-center gap-2 cursor-pointer col-span-2 self-end pb-2"><input type="checkbox" id="${p}conf"${v.conferir ? ' checked' : ''} class="w-4 h-4 rounded text-amber-500 bg-berzerker-dark border-berzerker-border"><span class="text-xs font-bold text-amber-400 uppercase tracking-wider">⚠️ Conferir?</span></label>
         <div class="col-span-2 sm:col-span-4"><label class="${LBL}">Observações</label><textarea id="${p}n" rows="2" placeholder="Ex: ajuste do banco, dor, sensação, regulagem da máquina..." class="${INP}">${escapeHtml(v.notes || '')}</textarea></div>
-        ${o.prOverride ? `<label class="flex items-center gap-2 cursor-pointer col-span-2"><input type="checkbox" id="${p}p"${v.isPR ? ' checked' : ''} class="w-4 h-4 rounded text-emerald-500 bg-berzerker-dark border-berzerker-border"><span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">🏆 PR (auto pelo 1RM — pode forçar)</span></label>` : ''}
     </div>`;
 
     if (o.quickCapture) {
@@ -371,7 +370,7 @@ function handleAddLog(event) {
         xpTheme: activeGameThemeId, ...f
     };
     // PR automático pelo 1RM estimado (ou tempo, em isometria)
-    newLog.isPR = detectAutoPR(newLog, logs, userBodyweight) || f.isPR;
+    newLog.isPR = detectAutoPR(newLog, logs, userBodyweight);
 
     const prog = duplaProgressao(newLog);
     if (prog && !newLog.nextGoal) newLog.nextGoal = '📈 Aumentar Carga';
@@ -571,7 +570,7 @@ function editLog(id) {
         type: l.type, mode: l.sets ? 'sets' : 'simple', sets: l.sets, weight: l.weight,
         repsText: (l.sets ? l.sets.map(s => s.reps) : l.reps || []).join(', '),
         technique: l.technique, nextGoal: l.nextGoal, isPR: l.isPR, notes: l.notes, rir: l.rir
-    }, { prOverride: true })}
+    })}
             <div class="flex gap-3 justify-end mt-4">
                 <button data-action="closeElementById" data-args='["edit-log-overlay"]'  class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Cancelar</button>
                 <button data-action="saveEditedLog" data-args="[${id}]" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">💾 Salvar alterações</button>
@@ -589,12 +588,11 @@ function saveEditedLog(id) {
     if (!exercise) { alertModal('Digite o nome do exercício!'); return; }
     const temReps = f.mode === 'sets' ? f.sets.length > 0 : f.reps.length > 0;
     if (!temReps) { alertModal('Digite ao menos uma repetição válida.'); return; }
-    const isManualPR = f.isPR;
     Object.assign(l, f, {
         exercise, date: document.getElementById('el-d').value || l.date,
         muscle: document.getElementById('el-m').value
     });
-    l.isPR = isManualPR || detectAutoPR(l, logs, userBodyweight);
+    l.isPR = detectAutoPR(l, logs, userBodyweight);
     saveLogsToStorage();
     if (activeSession) activeSession.exercises.forEach(e => {
         if (e.logId === id) Object.assign(e, { exercise: l.exercise, muscle: l.muscle, loggedWeight: l.weight, loggedReps: l.reps, loggedPR: l.isPR });

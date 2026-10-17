@@ -108,8 +108,8 @@
             novaB3.xpTheme === 'classico' && novaB3.runType === 'intervalado' && novaB3.rpe === 7 &&
             novaB3.hrAvg === 160 && novaB3.shoe === 'Tênis Teste' && novaB3.notes === 'corrida sintética' &&
             !('weight' in novaB3) && !('sets' in novaB3));
-        check('XP/dano usam fórmulas existentes e PR global continua comparando com bike',
-            ev(`cardioXP(logs[0])`) === 63 && ev(`logDamageKg(logs[0], userBodyweight)`) === 750 &&
+        check('XP preserva fórmula global e dano de cardio usa conversão própria, comparando PR também com bike',
+            ev(`cardioXP(logs[0])`) === 63 && ev(`logDamageKg(logs[0], userBodyweight)`) === 18 &&
             novaB3.isPR === false && $('runs-results').textContent.includes('Tênis Teste'));
         const backupB3 = await ev('buildBackupPayload().then(p => JSON.stringify(p))');
         const csvB3 = ev('buildPlanilhaCSV()');

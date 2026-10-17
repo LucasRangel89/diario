@@ -75,18 +75,18 @@ check('weeklySetsByMuscle não credita séries de apoio a Core/Posterior', setsD
 const gapsDiretosSinergia = api.weeklyGaps([logDiretoPernas], '2026-10-14');
 check('weeklyGaps mantém zero séries de meta para Core/Posterior apoiados', gapsDiretosSinergia.find(g => g.muscle === 'Core').series === 0 && gapsDiretosSinergia.find(g => g.muscle === 'Posterior').series === 0, gapsDiretosSinergia);
 const xpDiretoSinergia = api.computeXP('2026-10-14', { logs: [logDiretoPernas], bodyweight: BW, deloadWeeks: [], missionsXpTotal: 0, bosses: [{ id: 'xp-check', maxHp: 100000000, weak: 'Posterior' }] });
-check('computeXP conta só o grupo direto (3.000 kg × 0,5 ÷ 100 = 15 XP)', xpDiretoSinergia.training === 15, xpDiretoSinergia);
+check('computeXP conta séries efetivas diretas, sem séries de apoio (3 × 2,5 XP)', xpDiretoSinergia.training === 8, xpDiretoSinergia);
 const chefaoPosterior = { id: 'weak-check', name: 'Teste', maxHp: 100000, weak: 'Posterior' };
-const danoDiretoSinergia = api.logDamageKg(logDiretoPernas, BW, chefaoPosterior);
-const progressoDiretoSinergia = api.computeBossProgress([logDiretoPernas], BW, [chefaoPosterior]);
-check('sinergia não dá bônus ×1,25 de fraqueza no dano do chefão', danoDiretoSinergia === api.logVolumeKg(logDiretoPernas, BW) && progressoDiretoSinergia.totalDamage === danoDiretoSinergia && progressoDiretoSinergia.weakHits === 0, { danoDiretoSinergia, progressoDiretoSinergia });
+const danoDiretoSinergia = api.logDamageKg(logDiretoPernas, BW, chefaoPosterior, 3, 'Peito');
+const progressoDiretoSinergia = api.computeBossProgress([logDiretoPernas], BW, [chefaoPosterior], { version: 2, baselineById: {}, baselineLogIds: [], assignments: {} });
+check('sinergia não credita séries indiretas nem concede a fraqueza semanal', danoDiretoSinergia === 3 && progressoDiretoSinergia.totalDamage === 3 && progressoDiretoSinergia.weakHits === 0, { danoDiretoSinergia, progressoDiretoSinergia });
 
 console.log('\n== 13. Temas (10) ==');
 const themeIds = Object.keys(api.THEMES);
 const expectedThemeIds = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica', 'aneis'];
 check('10 temas carregados', themeIds.length === 10 && expectedThemeIds.every(id => themeIds.includes(id)), themeIds);
 check('curva de patentes preservada', api.XP_MIN.join(',') === '0,150,500,1100,2000,3300,5000,7500,11000,16000', api.XP_MIN);
-const expectedHpCurve = Array.from({ length: 12 }, (_, i) => 25000 + 2000 * i);
+const expectedHpCurve = Array.from({ length: 12 }, (_, i) => api.BOSS_HP_BASE + api.BOSS_HP_STEP * i);
 expectedThemeIds.forEach(id => {
     const t = api.THEMES[id];
     check(`tema ${id}: exatamente 10 patentes + 12 chefões + frame`, t && t.ranks.length === 10 && t.bosses.length === 12 && !!t.frame, t && { ranks: t.ranks.length, bosses: t.bosses.length, frame: t.frame });

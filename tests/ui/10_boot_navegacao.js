@@ -17,7 +17,7 @@ check('data curta e XP atualizados no cabeçalho', /^\d{2}\/\d{2}$/.test($('head
 check('Perfil Global soma o XP dos dez temas', !!$('global-profile-xp') && $('global-profile-xp').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP`);
 navTo('boss');
 check('grupo Jogo preserva Boss e Story Card', !$('tab-content-boss').classList.contains('hidden') && !!$('nav-boss') && !!$('nav-story'));
-check('Boss explica a brecha tática por trás da fraqueza', $('active-boss-card').textContent.includes(ev('computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).current.weakReason')));
+check('Boss mostra a fraqueza semanal dinâmica e o multiplicador dobrado', $('active-boss-card').textContent.includes('Fraqueza da semana') && $('active-boss-card').textContent.includes('×2'));
 navTo('story');
 check('Story Card abre pelo grupo Jogo', !$('tab-content-story').classList.contains('hidden'));
 navTo('stats');
@@ -60,9 +60,9 @@ click($('header-theme-button'));
 ev("showRanksModal('classico');");
 check('modal de patentes mostra os dez emblemas próprios', ($('ranks-overlay')?.querySelectorAll('img')?.length || 0) >= 10 && $('ranks-overlay').innerHTML.includes('images/patentes/classico-10.webp'));
 ev("document.getElementById('ranks-overlay')?.remove();");
-check('botão do tema abre dez cartões com ícone, patente e progresso', !!$('theme-gallery-overlay') && $('theme-gallery-overlay').querySelectorAll('[data-theme-id]').length === 10 && $('theme-gallery-overlay').textContent.includes('Patente atual') && $('theme-gallery-overlay').textContent.includes('chefões'));
+check('botão do tema abre dez cartões com ícone, patente e progresso', !!$('theme-gallery-overlay') && $('theme-gallery-overlay').querySelectorAll('[data-theme-id]').length === 10 && $('theme-gallery-overlay').textContent.includes('Patente global') && $('theme-gallery-overlay').textContent.includes('chefões'));
 const galleryIds = ev('THEME_IDS_LIST');
-const galleryEmblemSrc = id => ev(`rankEmblemSrc('${id}', rankFromXP(computeThemeXPCtx('${id}').xp, themeRankList(THEMES['${id}'])).level)`);
+const galleryEmblemSrc = id => ev(`rankEmblemSrc('${id}', rankFromXP(computeGlobalXPCtx().xp, themeRankList(THEMES['${id}'])).level)`);
 check('galeria de temas mostra emblema de patente em vez de emoji residual',
     galleryIds.every(id => {
         const card = $('theme-gallery-overlay').querySelector(`[data-theme-id="${id}"]`);
@@ -91,7 +91,7 @@ click($('theme-gallery-overlay').querySelector('[data-theme-id="aneis"]'));
 click($('confirm-modal-yes'));
 navTo('boss');
 check('Senhor dos Anéis aplica tema, ícone, arena e jornadas no Boss', ev("THEME.id === 'aneis'") && $('header-theme-icon').querySelector('img').getAttribute('src') === 'images/temas/aneis.webp' && $('arena-title').textContent === 'Jornada até o Monte da Perdição' && $('tab-content-boss').textContent.includes('DESAFIO ATIVO — JORNADA 1/12'), ev('THEME.id'));
-check('Boss do Senhor dos Anéis explica a fraqueza e o porquê', $('active-boss-card').textContent.includes('Goblins de Moria') && $('active-boss-card').textContent.includes('passos ágeis'));
+check('Boss do Senhor dos Anéis mostra fraqueza semanal dinâmica', $('active-boss-card').textContent.includes('Goblins de Moria') && $('active-boss-card').textContent.includes('Fraqueza da semana') && $('active-boss-card').textContent.includes('×2'));
 navTo('story');
 check('Story Card segue o tema Senhor dos Anéis', $('story-theme-name').textContent === 'Senhor dos Anéis' && $('story-theme-icon').querySelector('img').getAttribute('src') === 'images/temas/aneis.webp');
 ev("changeGameTheme('classico');");
@@ -131,7 +131,7 @@ check('clicar no card abre o modal', !!lbOverlay() && lbOverlay().className.incl
 check('arte grande vem do retrato padrão do tema (512×512, pixelado)', !!lbImg() && lbImg().getAttribute('src') === ev(`DEFAULT_BOSS_PORTRAITS['${ev('activeGameThemeId')}:' + '${bossAlvo}']`) && lbImg().getAttribute('style').includes('image-rendering:pixelated'), lbImg() && lbImg().getAttribute('src'));
 check('nome do chefão no cabeçalho do modal', $('boss-lightbox-name').textContent === ev(`BOSSES[5].name`));
 check('status do combate no modal (DERROTADO/EM BATALHA/BLOQUEADO)', /DERROTADO 🏆|EM BATALHA ⚔️|BLOQUEADO 🔒/.test($('boss-lightbox-status').textContent));
-check('modal traz HP máximo, fraqueza, brecha tática e XP de recompensa', lbOverlay().textContent.includes(ev('fmtN(BOSSES[5].maxHp)') + ' HP') && lbOverlay().textContent.includes(ev('BOSSES[5].weak')) && lbOverlay().textContent.includes(ev('BOSSES[5].weakReason')) && lbOverlay().textContent.includes('+' + ev('fmtN(Math.round(BOSSES[5].maxHp / 200))') + ' XP'));
+check('modal traz HP máximo, fraqueza semanal dinâmica, brecha temática e XP de recompensa', lbOverlay().textContent.includes(ev('fmtN(BOSSES[5].maxHp)') + ' HP') && lbOverlay().textContent.includes('Fraqueza semanal ×2') && lbOverlay().textContent.includes(ev('BOSSES[5].weakReason')) && lbOverlay().textContent.includes('+' + ev('fmtN(bossRewardXP(BOSSES[5]))') + ' XP'));
 check('botão de baixar a imagem usa o atributo download', !!lbDownload() && lbDownload().getAttribute('download').endsWith('.webp') && lbDownload().getAttribute('href') === lbImg().getAttribute('src'));
 
 click(btnIn(lbOverlay(), '›') || lbOverlay().querySelector('[aria-label="Próximo chefão"]'));

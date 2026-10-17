@@ -11,7 +11,7 @@ import './datas.js';
 import { formatRunDuration, formatRunPace, isRunLog, paceSecondsPerKm, runModality, runRecords, summarizeRunsByWeek, summarizeRunsByMonth, summarizeRunsByYear } from './corridas.js';
 import { storage } from './storage.js';
 import { DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, FAIXA_SERIES_SEMANAIS, MUSCLE_META, MUSCLE_OPTIONS_FULL, MUSCULOS_MAPA, formatLoadText, formatPlates, formatRepsText, logEst1RM, logVolumeKg, CATALOG_TIPOS, EXERCISE_CATALOG, FAIXA_SERIES_POR_GRUPO, MUSCLE_WEIGHT, catalogInfo, detectAutoPR, duplaProgressao, inferExerciseType, logTstSeconds, normalizeMuscle, sinergiaState } from './catalogo.js';
-import { SEASON_WEEKS, STORAGE_KEY_THEME, THEMES, XP_REST_PER_DAY, completeSeason, computeBossProgress, isoWeekKey, isoWeekRange, missionsState, rankFromXP, seasonState, XP_GROUP_DAY_CAP, XP_MIN, XP_PR, autoDeloadWeekKeys, cardioXP, computeXP, logDamageKg } from './gamificacao.js';
+import { SEASON_WEEKS, STORAGE_KEY_THEME, THEMES, XP_REST_PER_DAY, XP_GROUP_WEEK_CAP, XP_PER_EFFECTIVE_SET, completeSeason, computeBossProgress, isoWeekKey, isoWeekRange, missionsState, rankFromXP, seasonState, XP_MIN, autoDeloadWeekKeys, cardioXP, computeXP, logDamageKg, bossRewardXP } from './gamificacao.js';
 import { renderHistory } from './historico.js';
 import { getCustomExercises, normalizarExerciciosPersonalizados, saveCustomExercises, setCustomExercisesList } from './custom_exercises.js';
 import { renderExerciseTagLine, renderSearchScreen } from './busca.js';
@@ -52,7 +52,7 @@ let deloadWeeks = [];          // ['2026-W41', ...]
 let missionsXpTotal = 0;       // XP já resgatado de missões
 let missionsClaimed = {};      // { '2026-W41': true }
 let tests = [];                // Modo Testes
-let seasons = null;            // temporadas de 12 semanas
+let seasons = null;            // temporadas de 4 semanas
 let bossPortraits = {};        // retratos do tema ativo { bossId: dataURL | 'idb:portrait:...' }
 const portraitObjectURLs = {};  // marcador 'idb:...' → objectURL do Blob no IndexedDB (sessão atual)
 const STORY_BG_BLOB_KEY = 'story-bg'; // chave do Blob do fundo do Story Card no IndexedDB
@@ -354,6 +354,7 @@ function ensureThemeGameSave(themeId) {
         missionsClaimed,
         seasons: raw.seasons && typeof raw.seasons === 'object' ? raw.seasons : null,
         bossPortraits,
+        bossProgress: raw.bossProgress && typeof raw.bossProgress === 'object' && [1, 2].includes(raw.bossProgress.version) ? raw.bossProgress : null,
         deloadRestDays: Array.isArray(raw.deloadRestDays) ? [...new Set(raw.deloadRestDays.filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x)))].sort() : []
     };
     return themeGameSaves[id];
@@ -586,16 +587,49 @@ function computeThemeXPCtx(themeId, upto) {
     const missionXP = t.id === activeGameThemeId ? missionsXpTotal : save.missionsXpTotal;
     return computeXP(upto, {
         logs: gameLogs, bodyweight: userBodyweight, deloadWeeks: deloadWeeksEfetivos(seasonsDoTema(t.id, save)),
-        missionsXpTotal: missionXP, bosses: t.bosses, restDays: save.deloadRestDays
+        missionsXpTotal: missionXP, bosses: t.bosses, restDays: save.deloadRestDays, bossState: save.bossProgress
     });
 }
 
 function computeXPCtx(upto) {
-    return computeThemeXPCtx(activeGameThemeId || THEME?.id || 'classico', upto);
+    return computeGlobalXPCtx(upto);
+}
+
+function computeGlobalXPCtx(upto) {
+    // XP de treino e cardio percorre o histórico completo exatamente uma vez,
+    // sem depender do tema escolhido quando o registro foi criado.
+    const allLogs = logs.filter(log => log && log.date && (!upto || log.date <= upto));
+    const saves = Object.keys(THEMES).map(id => ensureThemeGameSave(id));
+    const allDeloadWeeks = [...new Set([
+        ...deloadWeeks,
+        ...Object.keys(THEMES).flatMap(id => deloadWeeksEfetivos(seasonsDoTema(id, ensureThemeGameSave(id))))
+    ])];
+    const restDays = [...new Set(saves.flatMap(save => save.deloadRestDays || []))];
+    const missionXP = saves.reduce((sum, save) => sum + (Number(save.missionsXpTotal) || 0), 0);
+    const base = computeXP(upto, {
+        logs: allLogs, bodyweight: userBodyweight, deloadWeeks: allDeloadWeeks,
+        missionsXpTotal: missionXP, bosses: [], restDays
+    });
+
+    // Recompensas de chefão permanecem colecionáveis por tema; somamos apenas
+    // o XP de derrotas, nunca voltamos a somar o XP de treino daquele tema.
+    const bossXP = Object.values(THEMES).reduce((sum, theme) => {
+        const themeLogs = allLogs.filter(log => log.xpTheme === theme.id && log.conferir !== true && String(log.conferir).toLowerCase() !== 'sim');
+        const save = ensureThemeGameSave(theme.id);
+        const progress = computeBossProgress(themeLogs, userBodyweight, theme.bosses, save.bossProgress);
+        return sum + (progress.defeatedCount > 0
+            ? theme.bosses.slice(0, progress.defeatedCount).reduce((n, boss) => n + bossRewardXP(boss), 0)
+            : 0);
+    }, 0);
+    const activeTheme = THEMES[activeGameThemeId] || THEME;
+    const activeSave = ensureThemeGameSave(activeTheme.id);
+    const activeProgress = computeBossProgress(allLogs.filter(log => log.xpTheme === activeTheme.id), userBodyweight, activeTheme.bosses, activeSave.bossProgress);
+    const xp = base.xp + bossXP;
+    return { ...base, xp, bossXP, missionXP, prog: activeProgress };
 }
 
 function getGlobalXPTotal() {
-    return Object.keys(THEMES).reduce((sum, themeId) => sum + computeThemeXPCtx(themeId).xp, 0);
+    return computeGlobalXPCtx().xp;
 }
 
 function themeRankList(theme) {
@@ -612,13 +646,13 @@ function requestGameThemeChange(id) {
     if (!nextTheme) return;
     document.getElementById('theme-gallery-overlay')?.remove();
     if (nextTheme.id === THEME?.id) return;
-    confirmModal(`Trocar para ${themeConfirmationName(nextTheme)}? O progresso deste jogo será preservado.`, () => changeGameTheme(nextTheme.id));
+    confirmModal(`Trocar para ${themeConfirmationName(nextTheme)}? Sua patente global será mantida; as coleções e os retratos dos temas também ficam salvos.`, () => changeGameTheme(nextTheme.id));
 }
 
 function showThemeGallery() {
     document.getElementById('theme-gallery-overlay')?.remove();
     const cards = Object.values(THEMES).map(theme => {
-        const data = computeThemeXPCtx(theme.id);
+        const data = computeGlobalXPCtx();
         const ranks = themeRankList(theme);
         const currentRank = rankFromXP(data.xp, ranks);
         const nextRank = ranks[currentRank.level] || null;
@@ -633,7 +667,7 @@ function showThemeGallery() {
                 ${active ? '<span class="shrink-0 rounded-full bg-berzerker-600/25 px-2 py-1 text-[10px] font-bold uppercase text-berzerker-300">Ativo</span>' : ''}
             </div>
             <div class="mt-3 flex items-end justify-between gap-2">
-                <div class="min-w-0"><span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Patente atual</span><span class="block truncate text-xs font-bold text-amber-300">${rankEmblemImg(theme.id, currentRank.level, 'inline-block h-4 w-4 rounded-full align-[-3px] mr-1')} ${escapeHtml(currentRank.name)}</span></div>
+                <div class="min-w-0"><span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Patente global</span><span class="block truncate text-xs font-bold text-amber-300">${rankEmblemImg(theme.id, currentRank.level, 'inline-block h-4 w-4 rounded-full align-[-3px] mr-1')} ${escapeHtml(currentRank.name)}</span></div>
                 <span class="shrink-0 text-[10px] font-mono text-gray-400">Nível ${currentRank.level}/10</span>
             </div>
             <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-berzerker-border"><div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-300" style="width:${progress}%"></div></div>
@@ -647,7 +681,7 @@ function showThemeGallery() {
     overlay.onclick = event => { if (event.target === overlay) overlay.remove(); };
     overlay.innerHTML = `<div class="my-auto max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-berzerker-border bg-berzerker-card p-4 shadow-2xl sm:p-6">
         <div class="mb-4 flex items-center justify-between gap-3">
-            <div><h2 class="font-oswald text-xl font-bold uppercase tracking-wider text-white">🎭 Temas de gamificação</h2><p class="mt-1 text-[11px] text-gray-400">Cada jogo mantém sua patente e seu progresso.</p></div>
+            <div><h2 class="font-oswald text-xl font-bold uppercase tracking-wider text-white">🎭 Temas de gamificação</h2><p class="mt-1 text-[11px] text-gray-400">Sua patente e seu XP são globais; cada tema muda a skin e mantém sua coleção de chefões.</p></div>
             <button type="button" data-action="closeElementById" data-args='["theme-gallery-overlay"]' aria-label="Fechar galeria" class="rounded-lg px-3 py-2 text-gray-400 hover:bg-berzerker-dark hover:text-white">✕</button>
         </div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">${cards}</div>
@@ -673,7 +707,7 @@ function checkRankUp() {
 
 function showRanksModal(themeId) {
     const t = THEMES[themeId] || THEME;
-    const d = computeThemeXPCtx(t.id);
+    const d = computeGlobalXPCtx();
     const rankList = themeRankList(t);
     const curT = rankList.reduce((a, x) => (d.xp >= x.minXp ? x : a), rankList[0]);
     const nxt = rankList[curT.level] || null;
@@ -704,7 +738,7 @@ function showRanksModal(themeId) {
             <div class="text-[10px] text-gray-500 font-mono">Treino ${fmt(d.training)} · Corrida ${fmt(d.cardio)} · PRs ${fmt(d.prXP)} · Descanso ${fmt(d.restXP)} · Chefões ${fmt(d.bossXP)} · Missões ${fmt(d.missionXP)}</div>
         </div>
         <div class="space-y-1.5 max-h-[50vh] overflow-y-auto">${rows}</div>
-        <p class="text-[10px] text-gray-500">1 XP a cada 100 kg movidos (pernas contam 50%, teto de ${XP_GROUP_DAY_CAP} XP/dia/grupo) · PR +${XP_PR} XP · corrida = km×8 + min×0,5 · chefão rende 0,5% do HP · descanso em deload +${XP_REST_PER_DAY} XP/dia.</p>
+        <p class="text-[10px] text-gray-500">XP e patente são globais: o histórico de todos os temas conta uma vez. Treinos rendem ${XP_PER_EFFECTIVE_SET} XP por série efetiva (faixa de reps, RIR ≤ 3 quando informado), com teto provisório de ${XP_GROUP_WEEK_CAP} por grupo/semana; cargas seguem como estatística. Chefões e retratos continuam colecionáveis por tema. Deload rende metade do XP de treino e descanso +${XP_REST_PER_DAY} XP/dia.</p>
     </div>`;
     document.body.appendChild(o);
 }
@@ -2082,6 +2116,7 @@ window.onload = function () {
     changeGameTheme,
     computeThemeXPCtx,
     computeXPCtx,
+    computeGlobalXPCtx,
     getGlobalXPTotal,
     themeRankList,
     themeConfirmationName,
@@ -2246,4 +2281,4 @@ window.onload = function () {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/app.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
-export { logs, savedWorkouts, draftExercises, editingWorkoutId, activeSession, userBodyweight, customBgImageData, volumeChartInstance, exChartInstance, setsChartInstance, weightLog, histVolChartInstance, settings, deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, portraitObjectURLs, STORY_BG_BLOB_KEY, themeGameSaves, activeGameThemeId, selectedStoryBossId, THEME, BOSSES, ANIMAL_RANKS, lastRankLevel, timer, wakeLock, lastKnownTodayISO, lastBackupAt, setEditorState, STORAGE_KEY_LOGS, STORAGE_KEY_BW, STORAGE_KEY_WORKOUTS, STORAGE_KEY_SEEDED, STORAGE_KEY_SETTINGS, STORAGE_KEY_GAME, STORAGE_KEY_THEME_GAMES, STORAGE_KEY_GAME_SHARED, STORAGE_KEY_STORY, STORAGE_KEY_BACKUP, safeStorage, saveBlobChecked, notifyBlobFailure, mensagemImagemSalva, TECHNIQUES, NEXT_GOALS, INP, LBL, MUSCLE_OPTIONS, NAV_GROUPS, activeNavGroup, activeTab, THEME_ICONS, THEME_IDS_LIST, THEME_ICON_IMGS, THEME_CARD_BGS, TAILWIND_SPACING_PX, imgSizeAttrs, themeIconImg, rankEmblemSrc, rankEmblemImg, _cardImgCache, getCardImg, drawCoverImg, STORY_CARD_STYLES, toLocalISO, getTodayLocalISO, formatDateBR, formatShortBR, updateHeaderDate, escapeHtml, setLogs, setSavedWorkouts, setUserBodyweight, setWeightLog, setHistVolChartInstance, closeElementById, hideElementById, fmtN, alertModal, confirmModal, shakeElement, migrateLog, normalizeSavedWorkouts, parseStoredObject, emptyThemeGameSave, ensureThemeGameSave, restoreActiveThemeGameSave, isoWeekDateRange, seasonsDoTema, deloadWeeksEfetivos, ensureDeloadRestAwards, loadGameProgressFromStorage, loadStoredData, logsForTheme, saveLogsToStorage, saveWorkoutsToStorage, saveSettings, saveGameState, saveStoryState, snapshotStoryBgDataURL, defaultTests, loadWorkoutsFromStorage, saveBodyweight, saveTrainingSettings, toggleDeloadWeek, updateStoryThemeInfo, applyTheme, changeGameTheme, computeThemeXPCtx, computeXPCtx, getGlobalXPTotal, themeRankList, themeConfirmationName, requestGameThemeChange, showThemeGallery, checkRankUp, showRanksModal, renderRunsTab, renderNavigation, selectNavGroup, switchTab, initStorageMigration, renderStorageStatus, seedInitialMockData, updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, saveEditedLog, deleteLog, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida, startSession, renderSession, toggleSessionUnit, appendSessionExtra, updateSessionExtraHint, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, endSession, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, stopSessionTimer, vibrate, playBeepSound, acquireWakeLock, releaseWakeLock, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, updateExerciseSuggestions, onWbExerciseChange, addExerciseToDraft, removeDraftExercise, moveDraftExercise, applySuggestedOrder, renderWeekGaps, renderDraftList, updateSaveButton, saveWorkout, clearDraft, editWorkout, deleteWorkout, renderSavedWorkouts, getAnimalRankForSession, updateHeaderChrome, updateSummaryMetrics, DEFAULT_BOSS_PORTRAITS, bossPortraitSrc, resolvePortraitSrc, hydratePortraitBlobs, _bossImgCache, getBossImg, renderBossBattleUI, BOSS_LIGHTBOX_ID, bossLightboxIdx, bossStatusLabel, bossStatusClass, bossPortraitDownloadName, openBossLightbox, closeBossLightbox, navBossLightbox, renderBossLightbox, OVERLAY_CLOSE_ORDER, closeTopOverlay, uploadBossPortrait, reservaManifest, reservaBossId, loadReservaManifest, reservaGroups, selectReservaBoss, applyReservaPortrait, resetBossPortraitToDefault, renderReservaStudio, renderMissions, claimMissions, renderSeason, finishSeasonNow, handleBgImageUpload, removeBgImage, wrapCanvasText, canvasMeasure, drawThemedFrame, drawThemedFrameArt, _fontsRedrawScheduled, withWebFonts, generateStoryCard, downloadStoryCard, openBossDefeatCard, generateBossDefeatCard, downloadBossDefeatCard, calculate1RM, renderWarmupCalculator, calculateWarmupFromForm, calculatePlatesFromForm, calculatePlatesQuick, weeklyStreakInfo, BADGE_ART, badgeArtSrc, badgeArtImg, badgeArtFallback, bestWeekWorkouts, renderBadgesAndStreak, initVolumeChart, renderExerciseChart, renderWeeklySetsChart, renderTests, addTestRecord, deleteTestRecord, addCustomTest, deleteTest, parseCSVRows, buildBackupPayload, exportJSONBackup, applyImportedBackup, importJSONBackup, renderBackupReminder, clearAllData, startDateWatcher, refreshAll };
+export { logs, savedWorkouts, draftExercises, editingWorkoutId, activeSession, userBodyweight, customBgImageData, volumeChartInstance, exChartInstance, setsChartInstance, weightLog, histVolChartInstance, settings, deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, portraitObjectURLs, STORY_BG_BLOB_KEY, themeGameSaves, activeGameThemeId, selectedStoryBossId, THEME, BOSSES, ANIMAL_RANKS, lastRankLevel, timer, wakeLock, lastKnownTodayISO, lastBackupAt, setEditorState, STORAGE_KEY_LOGS, STORAGE_KEY_BW, STORAGE_KEY_WORKOUTS, STORAGE_KEY_SEEDED, STORAGE_KEY_SETTINGS, STORAGE_KEY_GAME, STORAGE_KEY_THEME_GAMES, STORAGE_KEY_GAME_SHARED, STORAGE_KEY_STORY, STORAGE_KEY_BACKUP, safeStorage, saveBlobChecked, notifyBlobFailure, mensagemImagemSalva, TECHNIQUES, NEXT_GOALS, INP, LBL, MUSCLE_OPTIONS, NAV_GROUPS, activeNavGroup, activeTab, THEME_ICONS, THEME_IDS_LIST, THEME_ICON_IMGS, THEME_CARD_BGS, TAILWIND_SPACING_PX, imgSizeAttrs, themeIconImg, rankEmblemSrc, rankEmblemImg, _cardImgCache, getCardImg, drawCoverImg, STORY_CARD_STYLES, toLocalISO, getTodayLocalISO, formatDateBR, formatShortBR, updateHeaderDate, escapeHtml, setLogs, setSavedWorkouts, setUserBodyweight, setWeightLog, setHistVolChartInstance, closeElementById, hideElementById, fmtN, alertModal, confirmModal, shakeElement, migrateLog, normalizeSavedWorkouts, parseStoredObject, emptyThemeGameSave, ensureThemeGameSave, restoreActiveThemeGameSave, isoWeekDateRange, seasonsDoTema, deloadWeeksEfetivos, ensureDeloadRestAwards, loadGameProgressFromStorage, loadStoredData, logsForTheme, saveLogsToStorage, saveWorkoutsToStorage, saveSettings, saveGameState, saveStoryState, snapshotStoryBgDataURL, defaultTests, loadWorkoutsFromStorage, saveBodyweight, saveTrainingSettings, toggleDeloadWeek, updateStoryThemeInfo, applyTheme, changeGameTheme, computeThemeXPCtx, computeXPCtx, computeGlobalXPCtx, getGlobalXPTotal, themeRankList, themeConfirmationName, requestGameThemeChange, showThemeGallery, checkRankUp, showRanksModal, renderRunsTab, renderNavigation, selectNavGroup, switchTab, initStorageMigration, renderStorageStatus, seedInitialMockData, updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, saveEditedLog, deleteLog, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida, startSession, renderSession, toggleSessionUnit, appendSessionExtra, updateSessionExtraHint, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, endSession, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, stopSessionTimer, vibrate, playBeepSound, acquireWakeLock, releaseWakeLock, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, updateExerciseSuggestions, onWbExerciseChange, addExerciseToDraft, removeDraftExercise, moveDraftExercise, applySuggestedOrder, renderWeekGaps, renderDraftList, updateSaveButton, saveWorkout, clearDraft, editWorkout, deleteWorkout, renderSavedWorkouts, getAnimalRankForSession, updateHeaderChrome, updateSummaryMetrics, DEFAULT_BOSS_PORTRAITS, bossPortraitSrc, resolvePortraitSrc, hydratePortraitBlobs, _bossImgCache, getBossImg, renderBossBattleUI, BOSS_LIGHTBOX_ID, bossLightboxIdx, bossStatusLabel, bossStatusClass, bossPortraitDownloadName, openBossLightbox, closeBossLightbox, navBossLightbox, renderBossLightbox, OVERLAY_CLOSE_ORDER, closeTopOverlay, uploadBossPortrait, reservaManifest, reservaBossId, loadReservaManifest, reservaGroups, selectReservaBoss, applyReservaPortrait, resetBossPortraitToDefault, renderReservaStudio, renderMissions, claimMissions, renderSeason, finishSeasonNow, handleBgImageUpload, removeBgImage, wrapCanvasText, canvasMeasure, drawThemedFrame, drawThemedFrameArt, _fontsRedrawScheduled, withWebFonts, generateStoryCard, downloadStoryCard, openBossDefeatCard, generateBossDefeatCard, downloadBossDefeatCard, calculate1RM, renderWarmupCalculator, calculateWarmupFromForm, calculatePlatesFromForm, calculatePlatesQuick, weeklyStreakInfo, BADGE_ART, badgeArtSrc, badgeArtImg, badgeArtFallback, bestWeekWorkouts, renderBadgesAndStreak, initVolumeChart, renderExerciseChart, renderWeeklySetsChart, renderTests, addTestRecord, deleteTestRecord, addCustomTest, deleteTest, parseCSVRows, buildBackupPayload, exportJSONBackup, applyImportedBackup, importJSONBackup, renderBackupReminder, clearAllData, startDateWatcher, refreshAll };
