@@ -61,9 +61,11 @@ real (412×915, touch) ela inicia um treino salvo pelo clique "▶ Iniciar", con
 sequência compacta (só a 1ª unidade aberta, meta/estado, `aria-expanded`/`aria-controls`,
 alvos de 44 px), alterna cartões pelo toque, registra uma unidade pelo ✔ Registrar,
 grava um exercício **Extra** pelo Registro rápido com "Contar no treino em andamento"
-(total+1 e concluídos+1, selo Extra) e mede rolagem horizontal com a sessão aberta.
+(total+1 e concluídos+1, selo Extra) e mede rolagem horizontal com a sessão aberta —
+incluindo a faixa **360/390/412/430 px** (emulada), também sem conteúdo estourando
+os cartões da sessão/registro.
 Execução local exigida com `@sparticuz/chromium` 153.0.8010.0 fora do repositório:
-**52/52**, cache v48. Acompanhe a rodada e a CI do HEAD da PR. A simulação de
+**53/53**, cache v48. Acompanhe a rodada e a CI do HEAD da PR. A simulação de
 atualização v48 → v49 instala, ativa e apaga o cache antigo. Isso segue **sem** declarar
 PWA, offline geral ou uso em celular plenamente validados.
 
@@ -136,9 +138,9 @@ atualização completa instala e ativa.
 
 - [ ] Tela estreita (360–430 px): todas as 10 seções sem rolagem horizontal
       (9 seções percorridas pelo Chrome headless em 412 px; conferir Montador, 360 px,
-      fonte grande do sistema e aparelho físico). **360 px continua PENDENTE nesta
-      entrega** — a sessão compacta foi medida em 412 px (headless); não há medição
-      em 360 px nem uso em celular declarado.
+      fonte grande do sistema e aparelho físico). A faixa 360–430 px ganhou medição
+      **emulada** no gate NAV 2d (inclusive a sessão compacta); **360 px em aparelho
+      físico e uso em celular continuam PENDENTES** — não declarados validados.
 - [ ] Registrar um treino completo com uma mão: seletor de exercício, séries, tags,
       salvar. Esperado: cartão aparece no histórico e sobrevive a recarregar.
 - [ ] Em uma corrida sintética de teste, usar **Editar** tanto na lista do dia quanto no
@@ -163,9 +165,10 @@ atualização completa instala e ativa.
       (o aquecimento da sessão usa a carga do cartão, não o campo global); bi-set abre com os
       dois formulários e registra junto; valores digitados (inclusive série parcial)
       sobrevivem a recolher/reordenar; registro inválido mantém a unidade aberta sem criar
-      log; após registrar, a concluída compacta e a próxima pendente abre. **Não validado
-      nesta entrega em aparelho físico nem em 360 px** — apenas Chrome headless em 412 px
-      (`scripts/validacao-navegador.js`, NAV 2d) e jsdom.
+      log; após registrar, a concluída compacta e a próxima pendente abre. A faixa
+      **360–430 px** foi medida emulada (Chrome headless, `scripts/validacao-navegador.js`,
+      NAV 2d) sem rolagem horizontal; **aparelho físico, teclado do sistema, fonte grande
+      e 360 px real continuam PENDENTES** — não validados nesta entrega.
 - [ ] **Exercício Extra no treino (PENDENTE em aparelho físico):** com a sessão ativa,
       registrar pelo Registro rápido com "Contar no treino em andamento" e conferir no
       aparelho o item Extra concluído, o selo "Extra", o progresso (ex.: 2/4 → 3/5) e que

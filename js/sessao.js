@@ -107,8 +107,8 @@ function renderSession(opts) {
                     ${e.extra ? '<span class="text-xs font-bold px-1.5 py-0.5 bg-violet-950 text-violet-300 border border-violet-600/60 rounded uppercase">Extra</span>' : ''}
                     ${e.loggedPR ? '<span class="text-xs font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-700 rounded">🏆 PR</span>' : ''}
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-emerald-400 font-mono whitespace-nowrap">${lg ? formatLoadText(lg) + ' × ' + formatRepsText(lg) : ''}</span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-bold text-emerald-400 font-mono min-w-0 sm:whitespace-nowrap">${lg ? formatLoadText(lg) + ' × ' + formatRepsText(lg) : ''}</span>
                     <button type="button" data-action="editLog" data-args="[${e.logId}]" class="min-h-[44px] px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold rounded-lg transition-colors">✏️ Editar</button>
                 </div>
             </div>
@@ -157,7 +157,7 @@ function renderSession(opts) {
                         <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase shrink-0">${escapeHtml(ex[k].muscle)}</span>
                         <span class="font-bold text-white text-sm truncate">${escapeHtml(ex[k].exercise)}</span>
                     </span>`).join('');
-        const metas = u.idxs.map(k => `<span class="text-xs text-gray-400 font-mono whitespace-nowrap">🎯 ${ex[k].weight > 0 ? ex[k].weight + ' kg' : '—'} × (${escapeHtml(ex[k].repsText || '—')})</span>`).join('');
+        const metas = u.idxs.map(k => `<span class="text-xs text-gray-400 font-mono min-w-0 sm:whitespace-nowrap">🎯 ${ex[k].weight > 0 ? ex[k].weight + ' kg' : '—'} × (${escapeHtml(ex[k].repsText || '—')})</span>`).join('');
         return `<div class="rounded-xl border ${u.pair ? 'border-cyan-500/60 bg-berzerker-dark' : 'border-berzerker-border bg-berzerker-dark'}" data-unit-uid="${u.uid}">
             <div class="flex items-center gap-1.5 p-2.5">
                 <button type="button" data-action="toggleSessionUnit" data-args='["${u.uid}"]' aria-expanded="${open ? 'true' : 'false'}" aria-controls="sunit-${u.uid}" class="flex-1 min-w-0 flex items-center gap-2 min-h-[44px] text-left rounded-lg px-2 py-1.5 hover:bg-berzerker-border/40">

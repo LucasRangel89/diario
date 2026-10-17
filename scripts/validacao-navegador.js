@@ -407,6 +407,22 @@ const server = http.createServer((req, res) => {
       JSON.stringify({ antesExtraNav, extraNav }));
     check('sessão com o item extra cabe nos 412 px sem rolagem horizontal',
       extraNav.scroll <= extraNav.tela + 2, JSON.stringify(extraNav));
+    // Faixa pedida (360–430 px): sem rolagem horizontal e sem conteúdo
+    // estourando os cartões. Medição EMULADA — aparelho físico continua
+    // pendente em docs/VALIDACAO_MANUAL.md.
+    const largurasNav = [];
+    for (const largura of [360, 390, 412, 430]) {
+      await page.setViewportSize({ width: largura, height: 800 });
+      await page.waitForTimeout(250);
+      largurasNav.push(await page.evaluate((w) => {
+        const estouros = [...document.querySelectorAll('#active-session-card *, #form-card-container *')]
+          .filter(el => el.scrollWidth > el.clientWidth + 2 && getComputedStyle(el).overflowX !== 'hidden' && el.clientWidth > 0).length;
+        return { largura: w, scroll: document.documentElement.scrollWidth, win: window.innerWidth, estouros };
+      }, largura));
+    }
+    check('faixa 360–430 px sem rolagem horizontal nem conteúdo estourando a sessão/registro',
+      largurasNav.every(l => l.scroll <= l.win + 2 && l.estouros === 0), JSON.stringify(largurasNav));
+    await page.setViewportSize({ width: 412, height: 915 });
   } catch (e) {
     check('fluxo de sessão compacta + Extra no Chrome real', false, e.stack || e.message);
   } finally {

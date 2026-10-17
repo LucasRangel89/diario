@@ -386,6 +386,8 @@ check('▲▼, ✔ Registrar e ✏️ Editar têm alvo mínimo de 44 px',
     [...$('session-exercises-list').querySelectorAll('button')]
         .filter(b => /▲|▼|Registrar|Editar/.test(b.textContent))
         .every(b => b.classList.contains('min-h-[44px]')));
+check('todo controle da sequência é elemento nativo de botão (toque e teclado)',
+    [...$('session-exercises-list').querySelectorAll('[data-action]')].every(el => el.tagName === 'BUTTON'));
 ev('activeSession.exercises.forEach(e => { e.done = true; }); renderSession(); endSession();');
 check('sem sessão ativa a opção de extra some e o appendSessionExtra não faz nada',
     $('log-session-extra-wrap').classList.contains('hidden') && ev('appendSessionExtra({ id: 987654321 })') === false);
