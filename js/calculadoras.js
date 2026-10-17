@@ -12,7 +12,7 @@
    ============================================================ */
 
 import { computeBossProgress, isoWeekKey, isoWeekRange, rankFromXP } from './gamificacao.js';
-import { formatPlates, logVolumeKg } from './catalogo.js';
+import { epleySeValido, formatPlates, logVolumeKg } from './catalogo.js';
 import { BADGE_ART, BOSSES, INP, THEME, activeGameThemeId, alertModal, computeThemeXPCtx, deloadWeeks, escapeHtml, formatShortBR, getAnimalRankForSession, getTodayLocalISO, logs, logsForTheme, saveGameState, settings, tests, themeGameSaves, themeRankList, toLocalISO, userBodyweight } from './app.js';
 
 
@@ -23,9 +23,14 @@ function calculate1RM() {
     const r = parseInt(document.getElementById('calc-1rm-reps').value) || 0;
     const resEl = document.getElementById('calc-1rm-result');
     const tableEl = document.getElementById('calc-1rm-table');
-    if (w <= 0 || r <= 0) { resEl.textContent = '0 kg'; tableEl.innerHTML = ''; return; }
-    const epley1RM = Math.round(w * (1 + r / 30));
-    resEl.textContent = `${epley1RM} kg`;
+    const epley1RM = epleySeValido(w, r);
+    if (epley1RM === null) {
+        resEl.textContent = r > 12 ? 'Fora do intervalo de estimativa (1–12 reps)' : 'Informe carga e reps válidas';
+        tableEl.innerHTML = '';
+        return;
+    }
+    const e1RMTexto = epley1RM.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+    resEl.textContent = `${e1RMTexto} kg (estimado)`;
     const percentages = [100, 95, 90, 85, 80, 75, 70, 60];
     tableEl.innerHTML = percentages.map(p => `
         <div class="bg-berzerker-dark p-2 rounded border border-berzerker-border text-center">

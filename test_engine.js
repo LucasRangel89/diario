@@ -63,7 +63,7 @@ const src = ['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao
     .map(p => stripModuleSyntax(fs.readFileSync(p, 'utf8'))).join('\n');
 const api = new Function(src + `
   return {
-    logVolumeKg, logTstSeconds, logEst1RM, logCargaEfetiva, logFullMeta, logBestSet, logWorstSet,
+    logVolumeKg, logTstSeconds, logEst1RM, logCargaEfetiva, logFullMeta, logBestSet, logWorstSet, calculate1RM,
     epleySeValido, sinalProximaSessao, logMeta,
     formatLoadText, formatRepsText, duplaProgressao, detectAutoPR, recoveryState,
     formatPlates, inferExerciseType, catalogInfo, detectAutoPR, qualifyingPRLogs,

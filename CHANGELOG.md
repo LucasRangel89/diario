@@ -2,6 +2,15 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Não lançado] — confiabilidade e linguagem do assistente de treino
+
+- Estado sem histórico agora aparece como **Sem dados**, sem percentual de prontidão fabricado; no ranking, prontidão desconhecida recebe peso neutro e é explicada. Volume semanal permanece separado e visível.
+- Estimativa Epley compartilhada por histórico, PR e calculadora: carga e reps da mesma série, limite explícito de 1–12 reps e sem extrapolação acima desse intervalo. Séries marcadas como aquecimento não definem e1RM.
+- Dupla progressão deixa de sugerir incremento em kg para peso corporal sem carga adicional identificada.
+- Alerta lombar passa a descrever exposição/janela temporal heurística, remove proibição absoluta e mantém rótulo, percentual e flag alinhados. Não representa recuperação ou risco individual.
+- Nova análise crítica e plano incremental em `docs/ANALISE_CRITICA_RELATORIO_CARGAS.md`; explicação atualizada em `docs/RECUPERACAO.md`, README e interface. `sw.js` sobe de **v53 para v54** para renovar o cache offline.
+- Testes do motor, UI, módulos ES e Service Worker passaram; nenhum dado legado foi migrado ou reescrito.
+
 ## [Não lançado] — retratos dos 12 Cavaleiros do Zodíaco
 
 - Atualizados os 12 retratos padrão do tema Zodíaco com as imagens fornecidas, convertidas para WebP e limitadas a 512 px no lado maior, preservando a proporção original.

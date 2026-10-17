@@ -190,12 +190,12 @@ check('corrida não conta série', semSets['Cardio'] === undefined, semSets);
 
 const f1 = api.fatigueState('Pernas', [], 4, Date.now());
 check('4 séries: abaixo da meta, faltam 6', f1.volumeStatus === 'abaixo' && f1.faltam === 6 && f1.excesso === 0, f1);
-check('sem registro: prontidão 100% mas meta em falta', f1.pct === 100 && f1.semRegistro === true, f1);
+check('sem registro: prontidão desconhecida, mas meta semanal permanece visível', f1.pct === null && f1.semRegistro === true && f1.faltam === 6 && f1.label === 'SEM DADOS', f1);
 const f2 = api.fatigueState('Pernas', [], 12, Date.now());
 check('12 séries: na faixa', f2.volumeStatus === 'na-faixa' && f2.faltam === 0 && f2.excesso === 0, f2);
-const f3 = api.fatigueState('Peito', [], 25, Date.now());
+const f3 = api.fatigueState('Peito', [{ date: '2026-10-12', exercise: 'Supino', reps: [8] }], 25, new Date('2026-10-16T12:00:00').getTime());
 check('25 séries: acima da faixa (excesso 5)', f3.volumeStatus === 'acima' && f3.excesso === 5, f3);
-check('volume estourado derruba a prontidão real', f3.pct < f3.recuperacaoPct && f3.pct === 90, f3);
+check('volume excedente ajusta uma estimativa conhecida, não inventa prontidão', f3.pct < f3.recuperacaoPct && f3.pct === 90, f3);
 const hojeLogs = [{ id: 9, kind: 'peso', muscle: 'Peito', date: '2026-10-16', exercise: 'Supino Reto na Máquina', reps: [8, 8, 8, 8] }];
 const f4 = api.fatigueState('Peito', hojeLogs, 15, new Date('2026-10-16T20:00:00').getTime());
 check('treinou hoje: recuperação baixa mesmo com volume na faixa', f4.recuperacaoPct < 33 && f4.label === 'FADIGA ALTA', f4);
@@ -208,7 +208,7 @@ const nowSug = new Date('2026-10-16T12:00:00').getTime();
 const sug = api.suggestNextWorkout([wkA, wkB], fakeLogs, nowSug);
 check('prioriza pernas: descansadas + muito abaixo da meta', sug[0].w.name === 'A — Pernas', sug.map(s => [s.w.name, s.score]));
 check('raciocínio cita a meta da semana', sug[0].motivos.some(m => /faltam \d+ séries/.test(m)), sug[0].motivos);
-check('raciocínio cita o descanso', sug[0].motivos.some(m => /descansado/.test(m)), sug[0].motivos);
+check('raciocínio explica prontidão estimada ou ausência de dados', sug[0].motivos.some(m => /pronto segundo a estimativa|sem histórico suficiente/.test(m)), sug[0].motivos);
 check('peito aparece como alternativa com score menor', sug.length === 2 && sug[1].w.name === 'B — Peito' && sug[1].score < sug[0].score, sug.map(s => s.score));
 check('lista vazia de treinos não quebra', api.suggestNextWorkout([], fakeLogs, nowSug).length === 0);
 

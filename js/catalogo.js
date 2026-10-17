@@ -11,7 +11,7 @@ import { dataDeRegistroValida } from './datas.js';
      Volume (kg)   = Carga efetiva × reps totais × Lados
        Lados = 2 quando as reps são por lado/perna/braço
        Isometria (prancha): unidade "seg", volume 0 — progresso = melhor tempo
-     1RM Epley = Carga efetiva × (1 + melhor série ÷ 30), só com melhor série ≤ 12
+     e1RM Epley = maior estimativa válida por série (1–12 reps; carga e reps do mesmo set)
    ------------------------------------------------------------
    Campos do catálogo:
      fator  · 1 ou 2 (2 = par de halteres ou crossover, dois lados)
@@ -398,7 +398,7 @@ function logFullMeta(log) {
         volume: logVolumeKg(log),
         bestSet: logBestSet(log),
         worstSet: logWorstSet(log),
-        est1RM: m.unidade === 'seg' ? null : epleySeValido(cargaEfetiva, logBestSet(log))
+        est1RM: logEst1RM(log) || null
     };
 }
 
@@ -443,20 +443,34 @@ function logWorstSet(log) {
     return arr.length ? Math.min(...arr) : 0;
 }
 
-// 1RM Epley (usado no PR automático): carga efetiva × (1 + melhor série ÷ 30), reps clampadas em 12
+// Estimativa Epley: só considera séries válidas de até 12 repetições e
+// mantém carga + reps do MESMO set (importante em drop sets).
 function logEst1RM(log) {
     if (!log || log.kind === 'corrida') return 0;
-    const { unidade } = logMeta(log);
+    const { fator, unidade } = logMeta(log);
     if (unidade === 'seg') return 0;
-    const best = logBestSet(log);
-    if (best <= 0) return 0;
-    return Math.round(logCargaEfetiva(log) * (1 + Math.min(best, 12) / 30) * 10) / 10;
+
+    if (Array.isArray(log.sets) && log.sets.length > 0) {
+        const estimates = log.sets
+            .filter(set => set && set.isWarmup !== true)
+            .map(set => {
+                const weight = set.weight == null ? Number(log.weight) || 0 : Number(set.weight) || 0;
+                return epleySeValido(weight * fator, Number(set.reps) || 0);
+            })
+            .filter(value => value !== null);
+        return estimates.length ? Math.max(...estimates) : 0;
+    }
+
+    return epleySeValido(logCargaEfetiva(log), logBestSet(log)) || 0;
 }
 
-// 1RM Epley pela regra da planilha: só calcula com melhor série ≤ 12 (senão null)
-function epleySeValido(cargaEfetiva, melhorSerie) {
-    if (!melhorSerie || melhorSerie > 12) return null;
-    return Math.round(cargaEfetiva * (1 + melhorSerie / 30) * 10) / 10;
+// Única regra Epley usada por histórico, PR automático e exportação.
+// Fora de 1–12 reps não exibimos uma estimativa, em vez de extrapolar/clampá-la.
+function epleySeValido(cargaEfetiva, reps) {
+    const carga = Number(cargaEfetiva);
+    const repeticoes = Number(reps);
+    if (!(carga > 0) || !Number.isFinite(carga) || !(repeticoes >= 1 && repeticoes <= 12)) return null;
+    return Math.round(carga * (1 + repeticoes / 30) * 10) / 10;
 }
 
 // Textos de exibição
@@ -487,6 +501,10 @@ function formatRepsText(log) {
 function duplaProgressao(log) {
     const cat = catalogInfo(log ? log.exercise : '');
     if (!cat || !cat.faixa || log.kind === 'corrida' || logMeta(log).unidade === 'seg') return null;
+    // O campo weight em exercícios de peso corporal representa o peso da pessoa,
+    // não necessariamente carga adicional. Sem um campo explícito de carga extra,
+    // não é seguro convertê-lo em recomendação de incremento em kg.
+    if (log.type === 'peso_corporal' || cat.tipo === 'peso_corporal') return null;
     const topo = cat.faixa[1];
     const menor = logWorstSet(log);
     if (!(menor >= topo) || menor === 0) return null;

@@ -9,7 +9,7 @@ muscular”); este arquivo é a versão completa.
 
 | Bloco | O que é |
 |---|---|
-| **Prontidão estimada (%)** | Combinação da janela de recuperação do grupo (24 h a 72 h, conforme o grupo) com o volume já feito na semana. |
+| **Prontidão estimada (%)** | Heurística que combina a janela de tempo desde o registro (24 h a 72 h, conforme o grupo), volume semanal excedente e, quando aplicável, apoio indireto. Sem histórico direto ou indireto, o estado é **Sem dados** e não há percentual. |
 | **Barra de séries da semana** | Séries registradas na semana × faixa-alvo do grupo (10–20 séries; Antebraço 4–10). Rótulos: `abaixo da meta`, `na faixa`, `acima da faixa`. |
 | **Apoio indireto (🤝)** | Grupos que trabalham de forma indireta (ex.: puxadas para Antebraço/Bíceps, empurradas para Tríceps/Ombros, agachamentos para Posterior). Entra na prontidão com fator 0,3–0,5 e **não** conta para a meta semanal. |
 | **Painel da Lombar** | Estimativa separada, a partir do tempo desde a última sessão que carrega a região e do volume dela. |
@@ -22,8 +22,12 @@ muscular”); este arquivo é a versão completa.
 2. **Volume da semana.** Acima da faixa-alvo, cada série excedente reduz a
    prontidão em 2 pontos percentuais (piso de 60 % da recuperação).
 3. **Apoio indireto.** Quando há estímulo indireto, vale o menor valor entre o
-   direto e o indireto ponderado pelo fator do grupo.
-4. Rótulos: `FADIGA ALTA` (< 33 %), `EM RECUPERAÇÃO` (< 100 %), `PRONTO (ESTIMADO)`.
+   direto e o indireto ponderado pelo fator do grupo. Se não houver nenhum dos
+   dois, o estado é `SEM DADOS`; o desconhecido não vira 100 % e recebe peso neutro
+   no ranking de treinos.
+4. Rótulos com dados: `FADIGA ALTA` (< 33 %), `EM RECUPERAÇÃO` (< 100 %),
+   `PRONTO (ESTIMADO)`. `PRONTO (ESTIMADO)` é somente uma saída heurística do
+   cálculo temporal, não confirmação de recuperação fisiológica.
 
 ## 3. Decisões explícitas (e por quê)
 
@@ -41,6 +45,10 @@ muscular”); este arquivo é a versão completa.
 - **100 % não é garantia.** Os percentuais são heurísticas de planejamento, calculadas
   só com o que foi registrado no app: não medem fadiga fisiológica, sono, alimentação,
   dor ou lesão, e não substituem orientação profissional.
+- **Sem histórico não é recuperação.** Quando não há registro direto ou apoio
+  indireto, o mapa exibe `SEM DADOS` e deixa a barra sem preenchimento. O ranking do
+  próximo treino usa peso neutro para esse grupo e explica a falta de dados; a meta
+  semanal continua visível, mas não é usada para inventar um estado de recuperação.
 - **Não há integração com sensores nem wearables.** Tudo é derivado dos registros
   locais (o app é 100 % offline, sem conta e sem servidor).
 
