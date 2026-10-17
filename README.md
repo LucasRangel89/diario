@@ -148,17 +148,19 @@ representativo. A migração mantém por ID derrotas e HP relativo antigos; regi
 formam a linha de base e apenas novos registros usam a regra convertida. Um chefão marcado como Mestre
 (archetype `Ms`) bloqueia dano se algum grupo não cumprir o mínimo semanal, sem cura retroativa (regra confirmada).
 
-#### 🎨 Arte própria (protótipo, arte de IA em pixel art retrô)
+#### 🎨 Artes da gamificação (pixel art retrô + retratos temáticos)
 
 | Pasta | Conteúdo | Uso |
 |---|---|---|
-| `images/bosses/` | 120 retratos (22 KB cada) | arena, grade de chefões e Card do Chefão |
+| `images/bosses/` | 120 retratos WebP; Zodíaco usa as imagens fornecidas dos 12 Cavaleiros | arena, grade de chefões e Card do Chefão |
 | `images/patentes/` | 100 emblemas (`tema-01…10`) | modal de patentes, header e cards |
 | `images/temas/` | 10 selos | galeria de temas e selo do Story Card |
 | `images/cards/` | 10 fundos | plano de fundo dos dois cards gerados em canvas |
 | `images/bosses/reserva/` | 35 variações | banco para trocar qualquer retrato sem gerar arte nova |
 
-Upload por chefão tem prioridade sobre a arte padrão, e o `DEFAULT_BOSS_PORTRAITS` aceita
+Os retratos do Zodíaco preservam a proporção das imagens fornecidas e são exibidos sem o
+filtro pixelado; os outros temas mantêm o estilo de pixel art. Upload por chefão tem prioridade
+sobre a arte padrão, e o `DEFAULT_BOSS_PORTRAITS` aceita
 qualquer caminho — inclusive os arquivos de `reserva/`.
 
 ---

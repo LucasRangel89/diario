@@ -33,7 +33,7 @@ function activeBossProgress() {
 
 // Retratos padrão dos chefões (arte original embutida no app).
 // O upload do usuário (bossPortraits) tem prioridade sobre estes.
-// Os 120 chefões têm retrato em pixel art retrô (grade 160, paleta de 64 cores) em WebP lossless.
+// Os temas de pixel art mantêm a interpolação pixelada; Zodíaco usa as imagens dos 12 Cavaleiros.
 // Reservas/variações ficam em images/bosses/reserva/ e podem ser ligadas trocando o caminho aqui.
 const DEFAULT_BOSS_PORTRAITS = {
     // classico
@@ -173,6 +173,11 @@ function bossPortraitSrc(bossId) {
     return DEFAULT_BOSS_PORTRAITS[(THEME ? THEME.id : 'classico') + ':' + bossId] || null;
 }
 
+function bossPortraitImageStyle() {
+    // Os novos retratos do Zodíaco são arte do anime, não pixel art.
+    return THEME && THEME.id === 'zodiaco' ? '' : 'image-rendering:pixelated';
+}
+
 // Marcador 'idb:portrait:<tema>:<chefe>' → objectURL do Blob carregado nesta sessão.
 // Enquanto o Blob não carregar, devolve null (arte padrão aparece e a UI re-renderiza).
 function resolvePortraitSrc(bossId) {
@@ -246,13 +251,14 @@ function renderBossBattleUI() {
 
     const currentBoss = prog.current;
     const portrait = bossPortraitSrc(currentBoss.id);
+    const portraitImageStyle = bossPortraitImageStyle();
     const activeCard = document.getElementById('active-boss-card');
     if (activeCard) {
         activeCard.innerHTML = `
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div class="flex items-start gap-3 sm:gap-4 min-w-0">
                     <button type="button" data-action="openBossLightbox" data-args='["${currentBoss.id}"]' title="Ampliar retrato de ${escapeHtml(currentBoss.name)}" aria-label="Ampliar retrato de ${escapeHtml(currentBoss.name)}" class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 p-1 bg-berzerker-border/50 rounded-2xl border border-berzerker-border overflow-hidden flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500">
-                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl shrink-0" style="image-rendering:pixelated" alt="retrato de ${escapeHtml(currentBoss.name)}">` : `<span class="text-5xl sm:text-6xl leading-none">${currentBoss.icon}</span>`}
+                        ${portrait ? `<img src="${portrait}" class="w-full h-full object-cover rounded-xl shrink-0" style="${portraitImageStyle}" alt="retrato de ${escapeHtml(currentBoss.name)}">` : `<span class="text-5xl sm:text-6xl leading-none">${currentBoss.icon}</span>`}
                     </button>
                     <div class="min-w-0 flex-1">
                         <span class="flex flex-wrap items-center gap-x-1.5 whitespace-nowrap text-xs font-bold text-red-400 uppercase tracking-wider">${THEME.bossLabel} <span aria-hidden="true">—</span> ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
@@ -293,7 +299,7 @@ function renderBossBattleUI() {
             return `
                 <div role="button" tabindex="0" data-boss-id="${escapeHtml(b.id)}" data-action="openBossLightbox" data-args='["${b.id}"]' title="Ampliar retrato de ${escapeHtml(b.name)}" class="p-4 rounded-xl border cursor-pointer transition-colors hover:border-berzerker-500 focus:outline-none focus:ring-2 focus:ring-berzerker-500 ${defeated ? 'bg-emerald-950/20 border-emerald-500/50' : (idx === prog.currentIdx ? 'bg-berzerker-dark border-red-500' : 'bg-berzerker-dark/40 border-berzerker-border opacity-50')} space-y-2">
                     <div class="flex items-center justify-between gap-2">
-                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" width="40" height="40" style="width:40px;height:40px;image-rendering:pixelated" loading="lazy" decoding="async" class="w-10 h-10 shrink-0 rounded-lg object-cover border border-berzerker-border">` : `<span class="text-2xl shrink-0 leading-none">${b.icon}</span>`}
+                        ${thumb ? `<img src="${thumb}" alt="${escapeHtml(b.name)}" width="40" height="40" style="width:40px;height:40px;${portraitImageStyle}" loading="lazy" decoding="async" class="w-10 h-10 shrink-0 rounded-lg object-cover border border-berzerker-border">` : `<span class="text-2xl shrink-0 leading-none">${b.icon}</span>`}
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded leading-tight ${defeated ? 'bg-emerald-500 text-black' : 'bg-berzerker-border text-gray-400'} uppercase">
                             ${defeated ? 'DERROTADO 🏆' : (idx === prog.currentIdx ? 'EM BATALHA ⚔️' : 'BLOQUEADO 🔒')}
                         </span>
@@ -309,8 +315,9 @@ function renderBossBattleUI() {
 }
 
 // ============================ LIGHTBOX DOS CHEFÕES ============================
-// Os retratos já são 512×512 e já estão no cache offline: clicar em qualquer card
-// da grade (ou no retrato do chefão ativo) abre a arte grande com os dados do
+// As artes padrão já estão no cache offline; os retratos do Zodíaco preservam a
+// proporção original (até 512 px no lado maior). Clicar em qualquer card da grade
+// (ou no retrato do chefão ativo) abre a arte grande com os dados do
 // combate. Navegação por setas (botão ou teclado), ESC fecha, clique no fundo fecha.
 const BOSS_LIGHTBOX_ID = 'boss-lightbox-overlay';
 
@@ -364,6 +371,7 @@ function renderBossLightbox() {
     if (!b) return;
     const prog = activeBossProgress();
     const src = bossPortraitSrc(b.id);
+    const portraitImageStyle = bossPortraitImageStyle();
     const xpReward = bossRewardXP(b);
     const activeWeakness = weaknessGroupForWeek(logsForTheme(activeGameThemeId), getTodayLocalISO(), effectiveSetAllocations(logsForTheme(activeGameThemeId)));
 
@@ -391,7 +399,7 @@ function renderBossLightbox() {
                 <button type="button" data-action="navBossLightbox" data-args="[-1]" aria-label="Chefão anterior" title="Anterior (←)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">‹</button>
                 <div class="w-56 h-56 sm:w-72 sm:h-72 rounded-2xl border border-berzerker-border bg-black/60 overflow-hidden flex items-center justify-center">
                     ${src
-                        ? `<img id="boss-lightbox-img" src="${escapeHtml(src)}" alt="Retrato de ${escapeHtml(b.name)}" class="w-full h-full object-contain" style="image-rendering:pixelated">`
+                        ? `<img id="boss-lightbox-img" src="${escapeHtml(src)}" alt="Retrato de ${escapeHtml(b.name)}" class="w-full h-full object-contain" style="${portraitImageStyle}">`
                         : `<span id="boss-lightbox-icon" class="text-8xl">${b.icon || '👹'}</span>`}
                 </div>
                 <button type="button" data-action="navBossLightbox" data-args="[1]" aria-label="Próximo chefão" title="Próximo (→)" class="shrink-0 w-10 h-16 sm:w-12 sm:h-24 rounded-xl border border-berzerker-border bg-berzerker-dark text-2xl text-gray-300 hover:text-white hover:border-berzerker-500 transition-colors">›</button>
@@ -543,7 +551,7 @@ function renderReservaStudio() {
 
     let html = padrao ? `
         <button type="button" data-action="resetBossPortraitToDefault" title="Retrato padrão do tema" class="${tileCls(!atual)}">
-            <img src="${padrao}" alt="retrato padrão" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="image-rendering:pixelated">
+            <img src="${padrao}" alt="retrato padrão" loading="lazy" decoding="async" class="w-full aspect-square object-cover rounded-lg border border-berzerker-border" style="${bossPortraitImageStyle()}">
             <span class="block text-[10px] font-bold uppercase tracking-wide leading-tight mt-1 ${!atual ? 'text-berzerker-300' : 'text-gray-500'}">Padrão</span>
         </button>` : '';
 
