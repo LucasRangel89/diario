@@ -27,6 +27,57 @@
     check('treinos salvos restaurados idênticos', ev('JSON.stringify(savedWorkouts.map(w => w.id || w.name))') === treinosAntes);
     check('estado do jogo restaurado (saves por tema recriados)', ev("Object.keys(themeGameSaves).length") === Object.keys(payload.themeGameSaves || {}).length);
 
+    console.log('\n== UI 12b1. Meta configurável, persistência e backup v6 ==');
+    ev('renderRecoveryMap()');
+    check('editor junto ao mapa lista os 10 grupos e explica meta configurável',
+        $('weekly-range-fields').querySelectorAll('input').length === 20
+        && $('weekly-range-details').textContent.includes('não é mínimo universal'));
+    const beforeRanges = ev('JSON.stringify(logs.map(l => [l.id, l.muscle]))');
+    check('dados legados sem campo mantêm 10–20 e Antebraço 4–10',
+        ev('faixaSeriesDoGrupo("Peito", settings.weeklySeriesRanges).min') === 10
+        && ev('faixaSeriesDoGrupo("Antebraço", settings.weeklySeriesRanges).max') === 10);
+    $('weekly-min-0').value = '0'; $('weekly-max-0').value = '8';
+    $('weekly-min-9').value = '2'; $('weekly-max-9').value = '6';
+    click(document.querySelector('#weekly-range-details button[data-action="saveWeeklySeriesRanges"]'));
+    check('salvar via delegação persiste dois grupos nas settings locais',
+        ev('settings.weeklySeriesRanges.Peito.min') === 0
+        && JSON.parse(window.localStorage.getItem('berzerker_settings_v1')).weeklySeriesRanges['Antebraço'].max === 6);
+    ev('delete settings.weeklySeriesRanges; loadStoredData();');
+    check('recarregar settings do armazenamento local preserva faixas',
+        ev('settings.weeklySeriesRanges.Peito.max') === 8
+        && ev('settings.weeklySeriesRanges.Antebraço.min') === 2);
+    ev('renderRecoveryMap()');
+    check('mapa reflete metas editadas sem alterar muscle gravado',
+        $('recovery-status-grid').textContent.includes('/0–8 séries')
+        && $('recovery-status-grid').textContent.includes('/2–6 séries')
+        && ev('JSON.stringify(logs.map(l => [l.id, l.muscle]))') === beforeRanges);
+    const backupFaixa = await ev('buildBackupPayload().then(p => JSON.stringify(p))');
+    check('backup v6 exporta campo opcional nas settings',
+        JSON.parse(backupFaixa).version === 6 && JSON.parse(backupFaixa).settings.weeklySeriesRanges.Peito.max === 8);
+    ev('settings = { weeklyGoal: 3 };');
+    check('backup com faixa restaura ida e volta',
+        await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(backupFaixa)}))`) === true
+        && ev('settings.weeklySeriesRanges.Peito.min') === 0
+        && ev('settings.weeklySeriesRanges.Antebraço.max') === 6);
+    const arquivoAntigo = JSON.parse(backupFaixa);
+    delete arquivoAntigo.settings.weeklySeriesRanges;
+    check('backup v6 antigo sem o campo volta aos defaults (não retém ajuste anterior)',
+        await ev(`applyImportedBackup(${JSON.stringify(arquivoAntigo)})`) === true
+        && ev('settings.weeklySeriesRanges === undefined')
+        && ev('faixaSeriesDoGrupo("Peito", settings.weeklySeriesRanges).min') === 10
+        && ev('faixaSeriesDoGrupo("Antebraço", settings.weeklySeriesRanges).min') === 4);
+    arquivoAntigo.settings.weeklySeriesRanges = { Peito: { min: 20, max: 10 }, Costas: { min: 1, max: 9 } };
+    check('backup com faixa inválida usa default somente no grupo inválido',
+        await ev(`applyImportedBackup(${JSON.stringify(arquivoAntigo)})`) === true
+        && ev('faixaSeriesDoGrupo("Peito", settings.weeklySeriesRanges).min') === 10
+        && ev('faixaSeriesDoGrupo("Costas", settings.weeklySeriesRanges).max') === 9);
+    $('weekly-min-1').value = '-1'; $('weekly-max-1').value = '500';
+    click(document.querySelector('#weekly-range-details button[data-action="saveWeeklySeriesRanges"]'));
+    check('entrada inválida na UI volta ao default sem travar',
+        ev('faixaSeriesDoGrupo("Costas", settings.weeklySeriesRanges).min') === 10);
+    await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(payloadStr)}))`);
+    check('estado anterior restaurado para as suítes seguintes', ev('JSON.stringify(settings)') === settingsAntes);
+
     // ============================ BACKUP COMPLETO (REGRESSÃO) ============================
     console.log('\n== UI 12c. Backup completo: treinos, exercícios personalizados, histórico e estado ==');
     const esperar = ms => new Promise(r => setTimeout(r, ms));

@@ -122,7 +122,7 @@ function renderSession(opts) {
     const pendingBodyHTML = (e, i) => {
         const d = e.draft || { weight: e.weight, repsText: e.repsText, type: e.type, technique: e.technique, nextGoal: '', isPR: false, notes: '' };
         const catInfo = catalogInfo(e.exercise);
-        const fat = fatigueState(e.muscle, logs.filter(l => l.kind !== 'corrida' && l.muscle === e.muscle), weekly[e.muscle] || 0, nowMs);
+        const fat = fatigueState(e.muscle, logs.filter(l => l.kind !== 'corrida' && l.muscle === e.muscle), weekly[e.muscle] || 0, nowMs, null, settings.weeklySeriesRanges);
         const tipoInfo = CATALOG_TIPOS[d.type || e.type || 'carga_total'];
         return `
             ${e.orderReason ? `<div class="text-xs text-gray-400 leading-relaxed"><span class="text-berzerker-500 font-bold">📌 Por que nesta posição:</span> ${escapeHtml(e.orderReason)}</div>` : ''}
@@ -203,7 +203,7 @@ function renderSession(opts) {
     const banner = document.getElementById('session-next-hint');
     if (banner) {
         if (total > 0 && doneCount === total) {
-            const scored = suggestNextWorkout(savedWorkouts, logs, Date.now());
+            const scored = suggestNextWorkout(savedWorkouts, logs, Date.now(), settings.weeklySeriesRanges);
             const top = scored[0];
             banner.classList.remove('hidden');
             banner.innerHTML = top

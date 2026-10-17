@@ -11,7 +11,7 @@ import './datas.js';
 import './perfil_exercicios.js';
 import { formatRunDuration, formatRunPace, isRunLog, paceSecondsPerKm, runModality, runRecords, summarizeRunsByWeek, summarizeRunsByMonth, summarizeRunsByYear } from './corridas.js';
 import { storage } from './storage.js';
-import { DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, FAIXA_SERIES_SEMANAIS, MUSCLE_META, MUSCLE_OPTIONS_FULL, MUSCULOS_MAPA, formatLoadText, formatPlates, formatRepsText, logEst1RM, logVolumeKg, CATALOG_TIPOS, EXERCISE_CATALOG, FAIXA_SERIES_POR_GRUPO, MUSCLE_WEIGHT, catalogInfo, detectAutoPR, duplaProgressao, inferExerciseType, logTstSeconds, normalizeMuscle, sinergiaState } from './catalogo.js';
+import { DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, FAIXA_SERIES_SEMANAIS, MUSCLE_META, MUSCLE_OPTIONS_FULL, MUSCULOS_MAPA, formatLoadText, formatPlates, formatRepsText, logEst1RM, logVolumeKg, CATALOG_TIPOS, EXERCISE_CATALOG, FAIXA_SERIES_POR_GRUPO, MUSCLE_WEIGHT, catalogInfo, detectAutoPR, duplaProgressao, inferExerciseType, logTstSeconds, normalizeMuscle, sinergiaState, faixaSeriesDoGrupo, normalizarFaixasSeries } from './catalogo.js';
 import { SEASON_WEEKS, STORAGE_KEY_THEME, THEMES, XP_REST_PER_DAY, XP_GROUP_WEEK_CAP, XP_PER_EFFECTIVE_SET, completeSeason, computeBossProgress, isoWeekKey, isoWeekRange, missionsState, rankFromXP, seasonState, XP_MIN, autoDeloadWeekKeys, cardioXP, computeXP, logDamageKg, bossRewardXP } from './gamificacao.js';
 import { renderHistory } from './historico.js';
 import { getCustomExercises, normalizarExerciciosPersonalizados, saveCustomExercises, setCustomExercisesList } from './custom_exercises.js';
@@ -464,7 +464,11 @@ function loadStoredData() {
     }
     try {
         const s = JSON.parse(safeStorage.get(STORAGE_KEY_SETTINGS));
-        if (s && typeof s === 'object') settings = { ...settings, ...s };
+        if (s && typeof s === 'object' && !Array.isArray(s)) {
+            settings = { ...settings, ...s };
+            if (Object.hasOwn(s, 'weeklySeriesRanges')) settings.weeklySeriesRanges = normalizarFaixasSeries(s.weeklySeriesRanges);
+            else delete settings.weeklySeriesRanges;
+        }
     } catch (e) { /* defaults */ }
 
     loadGameProgressFromStorage();
@@ -533,6 +537,29 @@ function saveTrainingSettings() {
     saveSettings();
     refreshAll();
     alertModal('⚙️ Configurações de treino salvas!');
+}
+
+function saveWeeklySeriesRanges() {
+    const raw = {};
+    let invalidos = 0;
+    MUSCULOS_MAPA.forEach((m, i) => {
+        const min = document.getElementById(`weekly-min-${i}`)?.value;
+        const max = document.getElementById(`weekly-max-${i}`)?.value;
+        if (min === '' || max === '') return; // padrão para campo vazio
+        raw[m] = { min: Number(min), max: Number(max) };
+    });
+    const valid = normalizarFaixasSeries(raw);
+    invalidos = Object.keys(raw).length - Object.keys(valid).length;
+    // Guardar só desvios do padrão; volta ao default sem campo no JSON.
+    Object.keys(valid).forEach(m => {
+        const def = faixaSeriesDoGrupo(m);
+        if (valid[m].min === def.min && valid[m].max === def.max) delete valid[m];
+    });
+    if (Object.keys(valid).length) settings.weeklySeriesRanges = valid;
+    else delete settings.weeklySeriesRanges;
+    saveSettings();
+    refreshAll();
+    alertModal(invalidos ? `${invalidos} faixa(s) inválida(s) voltaram ao padrão; demais faixas salvas.` : 'Faixas semanais salvas.');
 }
 
 function toggleDeloadWeek() {
@@ -931,7 +958,7 @@ function startSession(workoutId) {
     document.getElementById('filter-date').value = todayStr;
 
     // Fase 2: ordem sugerida aplicada automaticamente (com o "porquê" de cada posição)
-    const ordered = orderWorkoutExercises(w.exercises || [], { logs, nowMs: Date.now() });
+    const ordered = orderWorkoutExercises(w.exercises || [], { logs, nowMs: Date.now(), weeklySeriesRanges: settings.weeklySeriesRanges });
     activeSession = {
         workoutId: w.id,
         name: w.name,
@@ -1096,7 +1123,7 @@ function moveDraftExercise(i, dir) {
 // Fase 2 no montador: reordena o rascunho pelas regras (você continua livre p/ trocar)
 function applySuggestedOrder() {
     if (draftExercises.length < 2) { alertModal('Adicione pelo menos 2 exercícios para o assistente ordenar.'); return; }
-    const ordered = orderWorkoutExercises(draftExercises, { logs, nowMs: Date.now() });
+    const ordered = orderWorkoutExercises(draftExercises, { logs, nowMs: Date.now(), weeklySeriesRanges: settings.weeklySeriesRanges });
     draftExercises = ordered.map(e => ({ ...e }));
     renderDraftList();
     alertModal('✨ Ordem sugerida aplicada! Cada exercício mostra o porquê — use ▲▼ para mudar quando quiser.');
@@ -1106,9 +1133,11 @@ function applySuggestedOrder() {
 function renderWeekGaps() {
     const el = document.getElementById('builder-week-gaps');
     if (!el) return;
-    const gaps = weeklyGaps(logs, getTodayLocalISO());
-    const faixas = `${FAIXA_SERIES_SEMANAIS.min}–${FAIXA_SERIES_SEMANAIS.max} séries por grupo`
-        + Object.entries(FAIXA_SERIES_POR_GRUPO).map(([m, f]) => ` · ${m} ${f.min}–${f.max}`).join('');
+    const gaps = weeklyGaps(logs, getTodayLocalISO(), settings.weeklySeriesRanges);
+    const custom = settings.weeklySeriesRanges && Object.keys(settings.weeklySeriesRanges).length;
+    const faixas = (custom ? 'metas por grupo (padrão 10–20)' : `${FAIXA_SERIES_SEMANAIS.min}–${FAIXA_SERIES_SEMANAIS.max} séries por grupo`)
+        + MUSCULOS_MAPA.filter(m => FAIXA_SERIES_POR_GRUPO[m] || settings.weeklySeriesRanges?.[m])
+            .map(m => { const f = faixaSeriesDoGrupo(m, settings.weeklySeriesRanges); return ` · ${m} ${f.min}–${f.max}`; }).join('');
     if (gaps.length === 0) {
         el.innerHTML = `<div class="text-[11px] text-emerald-400/90 bg-emerald-950/20 border border-emerald-700/40 rounded-lg p-2.5">✅ Todos os grupos musculares estão dentro (ou acima) da própria faixa da semana (${faixas}). Bom trabalho!</div>`;
         return;
@@ -1694,7 +1723,12 @@ async function applyImportedBackup(parsed) {
         logs = v.dados.logs;
         if (v.dados.hasSavedWorkouts) { savedWorkouts = v.dados.savedWorkouts; normalizeSavedWorkouts(); }
         if (parsed.userBodyweight) userBodyweight = Number(parsed.userBodyweight);
-        if (isObjetoSimples(parsed.settings)) settings = { ...settings, ...parsed.settings };
+        if (isObjetoSimples(parsed.settings)) {
+            settings = { ...settings, ...parsed.settings };
+            // Ausência em backup antigo = defaults, não os overrides do aparelho anterior.
+            if (Object.hasOwn(parsed.settings, 'weeklySeriesRanges')) settings.weeklySeriesRanges = normalizarFaixasSeries(parsed.settings.weeklySeriesRanges);
+            else delete settings.weeklySeriesRanges;
+        } else delete settings.weeklySeriesRanges;
 
         const importedSaves = isObjetoSimples(parsed.themeGameSaves) ? parsed.themeGameSaves : null;
         themeGameSaves = {};
@@ -2111,6 +2145,7 @@ window.onload = function () {
     loadWorkoutsFromStorage,
     saveBodyweight,
     saveTrainingSettings,
+    saveWeeklySeriesRanges,
     toggleDeloadWeek,
     updateStoryThemeInfo,
     applyTheme,
@@ -2282,4 +2317,4 @@ window.onload = function () {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/app.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
-export { logs, savedWorkouts, draftExercises, editingWorkoutId, activeSession, userBodyweight, customBgImageData, volumeChartInstance, exChartInstance, setsChartInstance, weightLog, histVolChartInstance, settings, deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, portraitObjectURLs, STORY_BG_BLOB_KEY, themeGameSaves, activeGameThemeId, selectedStoryBossId, THEME, BOSSES, ANIMAL_RANKS, lastRankLevel, timer, wakeLock, lastKnownTodayISO, lastBackupAt, setEditorState, STORAGE_KEY_LOGS, STORAGE_KEY_BW, STORAGE_KEY_WORKOUTS, STORAGE_KEY_SEEDED, STORAGE_KEY_SETTINGS, STORAGE_KEY_GAME, STORAGE_KEY_THEME_GAMES, STORAGE_KEY_GAME_SHARED, STORAGE_KEY_STORY, STORAGE_KEY_BACKUP, safeStorage, saveBlobChecked, notifyBlobFailure, mensagemImagemSalva, TECHNIQUES, NEXT_GOALS, INP, LBL, MUSCLE_OPTIONS, NAV_GROUPS, activeNavGroup, activeTab, THEME_ICONS, THEME_IDS_LIST, THEME_ICON_IMGS, THEME_CARD_BGS, TAILWIND_SPACING_PX, imgSizeAttrs, themeIconImg, rankEmblemSrc, rankEmblemImg, _cardImgCache, getCardImg, drawCoverImg, STORY_CARD_STYLES, toLocalISO, getTodayLocalISO, formatDateBR, formatShortBR, updateHeaderDate, escapeHtml, setLogs, setSavedWorkouts, setUserBodyweight, setWeightLog, setHistVolChartInstance, closeElementById, hideElementById, fmtN, alertModal, confirmModal, shakeElement, migrateLog, normalizeSavedWorkouts, parseStoredObject, emptyThemeGameSave, ensureThemeGameSave, restoreActiveThemeGameSave, isoWeekDateRange, seasonsDoTema, deloadWeeksEfetivos, ensureDeloadRestAwards, loadGameProgressFromStorage, loadStoredData, logsForTheme, saveLogsToStorage, saveWorkoutsToStorage, saveSettings, saveGameState, saveStoryState, snapshotStoryBgDataURL, defaultTests, loadWorkoutsFromStorage, saveBodyweight, saveTrainingSettings, toggleDeloadWeek, updateStoryThemeInfo, applyTheme, changeGameTheme, computeThemeXPCtx, computeXPCtx, computeGlobalXPCtx, getGlobalXPTotal, themeRankList, themeConfirmationName, requestGameThemeChange, showThemeGallery, checkRankUp, showRanksModal, renderRunsTab, renderNavigation, selectNavGroup, switchTab, initStorageMigration, renderStorageStatus, seedInitialMockData, updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, saveEditedLog, deleteLog, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida, startSession, renderSession, toggleSessionUnit, appendSessionExtra, updateSessionExtraHint, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, endSession, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, stopSessionTimer, vibrate, playBeepSound, acquireWakeLock, releaseWakeLock, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, updateExerciseSuggestions, onWbExerciseChange, addExerciseToDraft, removeDraftExercise, moveDraftExercise, applySuggestedOrder, renderWeekGaps, renderDraftList, updateSaveButton, saveWorkout, clearDraft, editWorkout, deleteWorkout, renderSavedWorkouts, getAnimalRankForSession, updateHeaderChrome, updateSummaryMetrics, DEFAULT_BOSS_PORTRAITS, bossPortraitSrc, resolvePortraitSrc, hydratePortraitBlobs, _bossImgCache, getBossImg, renderBossBattleUI, BOSS_LIGHTBOX_ID, bossLightboxIdx, bossStatusLabel, bossStatusClass, bossPortraitDownloadName, openBossLightbox, closeBossLightbox, navBossLightbox, renderBossLightbox, OVERLAY_CLOSE_ORDER, closeTopOverlay, uploadBossPortrait, reservaManifest, reservaBossId, loadReservaManifest, reservaGroups, selectReservaBoss, applyReservaPortrait, resetBossPortraitToDefault, renderReservaStudio, renderMissions, claimMissions, renderSeason, finishSeasonNow, handleBgImageUpload, removeBgImage, wrapCanvasText, canvasMeasure, drawThemedFrame, drawThemedFrameArt, _fontsRedrawScheduled, withWebFonts, generateStoryCard, downloadStoryCard, openBossDefeatCard, generateBossDefeatCard, downloadBossDefeatCard, calculate1RM, renderWarmupCalculator, calculateWarmupFromForm, calculatePlatesFromForm, calculatePlatesQuick, weeklyStreakInfo, BADGE_ART, badgeArtSrc, badgeArtImg, badgeArtFallback, bestWeekWorkouts, renderBadgesAndStreak, initVolumeChart, renderExerciseChart, renderWeeklySetsChart, renderTests, addTestRecord, deleteTestRecord, addCustomTest, deleteTest, parseCSVRows, buildBackupPayload, exportJSONBackup, applyImportedBackup, importJSONBackup, renderBackupReminder, clearAllData, startDateWatcher, refreshAll };
+export { logs, savedWorkouts, draftExercises, editingWorkoutId, activeSession, userBodyweight, customBgImageData, volumeChartInstance, exChartInstance, setsChartInstance, weightLog, histVolChartInstance, settings, deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, portraitObjectURLs, STORY_BG_BLOB_KEY, themeGameSaves, activeGameThemeId, selectedStoryBossId, THEME, BOSSES, ANIMAL_RANKS, lastRankLevel, timer, wakeLock, lastKnownTodayISO, lastBackupAt, setEditorState, STORAGE_KEY_LOGS, STORAGE_KEY_BW, STORAGE_KEY_WORKOUTS, STORAGE_KEY_SEEDED, STORAGE_KEY_SETTINGS, STORAGE_KEY_GAME, STORAGE_KEY_THEME_GAMES, STORAGE_KEY_GAME_SHARED, STORAGE_KEY_STORY, STORAGE_KEY_BACKUP, safeStorage, saveBlobChecked, notifyBlobFailure, mensagemImagemSalva, TECHNIQUES, NEXT_GOALS, INP, LBL, MUSCLE_OPTIONS, NAV_GROUPS, activeNavGroup, activeTab, THEME_ICONS, THEME_IDS_LIST, THEME_ICON_IMGS, THEME_CARD_BGS, TAILWIND_SPACING_PX, imgSizeAttrs, themeIconImg, rankEmblemSrc, rankEmblemImg, _cardImgCache, getCardImg, drawCoverImg, STORY_CARD_STYLES, toLocalISO, getTodayLocalISO, formatDateBR, formatShortBR, updateHeaderDate, escapeHtml, setLogs, setSavedWorkouts, setUserBodyweight, setWeightLog, setHistVolChartInstance, closeElementById, hideElementById, fmtN, alertModal, confirmModal, shakeElement, migrateLog, normalizeSavedWorkouts, parseStoredObject, emptyThemeGameSave, ensureThemeGameSave, restoreActiveThemeGameSave, isoWeekDateRange, seasonsDoTema, deloadWeeksEfetivos, ensureDeloadRestAwards, loadGameProgressFromStorage, loadStoredData, logsForTheme, saveLogsToStorage, saveWorkoutsToStorage, saveSettings, saveGameState, saveStoryState, snapshotStoryBgDataURL, defaultTests, loadWorkoutsFromStorage, saveBodyweight, saveTrainingSettings, saveWeeklySeriesRanges, toggleDeloadWeek, updateStoryThemeInfo, applyTheme, changeGameTheme, computeThemeXPCtx, computeXPCtx, computeGlobalXPCtx, getGlobalXPTotal, themeRankList, themeConfirmationName, requestGameThemeChange, showThemeGallery, checkRankUp, showRanksModal, renderRunsTab, renderNavigation, selectNavGroup, switchTab, initStorageMigration, renderStorageStatus, seedInitialMockData, updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, saveEditedLog, deleteLog, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida, startSession, renderSession, toggleSessionUnit, appendSessionExtra, updateSessionExtraHint, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, endSession, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, stopSessionTimer, vibrate, playBeepSound, acquireWakeLock, releaseWakeLock, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, updateExerciseSuggestions, onWbExerciseChange, addExerciseToDraft, removeDraftExercise, moveDraftExercise, applySuggestedOrder, renderWeekGaps, renderDraftList, updateSaveButton, saveWorkout, clearDraft, editWorkout, deleteWorkout, renderSavedWorkouts, getAnimalRankForSession, updateHeaderChrome, updateSummaryMetrics, DEFAULT_BOSS_PORTRAITS, bossPortraitSrc, resolvePortraitSrc, hydratePortraitBlobs, _bossImgCache, getBossImg, renderBossBattleUI, BOSS_LIGHTBOX_ID, bossLightboxIdx, bossStatusLabel, bossStatusClass, bossPortraitDownloadName, openBossLightbox, closeBossLightbox, navBossLightbox, renderBossLightbox, OVERLAY_CLOSE_ORDER, closeTopOverlay, uploadBossPortrait, reservaManifest, reservaBossId, loadReservaManifest, reservaGroups, selectReservaBoss, applyReservaPortrait, resetBossPortraitToDefault, renderReservaStudio, renderMissions, claimMissions, renderSeason, finishSeasonNow, handleBgImageUpload, removeBgImage, wrapCanvasText, canvasMeasure, drawThemedFrame, drawThemedFrameArt, _fontsRedrawScheduled, withWebFonts, generateStoryCard, downloadStoryCard, openBossDefeatCard, generateBossDefeatCard, downloadBossDefeatCard, calculate1RM, renderWarmupCalculator, calculateWarmupFromForm, calculatePlatesFromForm, calculatePlatesQuick, weeklyStreakInfo, BADGE_ART, badgeArtSrc, badgeArtImg, badgeArtFallback, bestWeekWorkouts, renderBadgesAndStreak, initVolumeChart, renderExerciseChart, renderWeeklySetsChart, renderTests, addTestRecord, deleteTestRecord, addCustomTest, deleteTest, parseCSVRows, buildBackupPayload, exportJSONBackup, applyImportedBackup, importJSONBackup, renderBackupReminder, clearAllData, startDateWatcher, refreshAll };

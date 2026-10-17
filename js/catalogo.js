@@ -314,16 +314,32 @@ const MUSCLE_WEIGHT = { 'Pernas': 0.5, 'Posterior': 0.5 };
 // ---------- Séries semanais por grupo (faixa-alvo) ----------
 const FAIXA_SERIES_SEMANAIS = { min: 10, max: 20 };
 
-// Exceções por grupo: músculo pequeno não precisa (nem aguenta) o volume de um
-// grupo grande. O antebraço ainda trabalha como apoio de toda puxada e pegada,
-// então cobrar 10 séries diretas dele é cobrar volume que não existe.
+// Exceção histórica configurada pelo app para Antebraço: 4–10 séries diretas.
+// É meta de contagem, não prescrição nem limite fisiológico.
 const FAIXA_SERIES_POR_GRUPO = {
     'Antebraço': { min: 4, max: 10 }
 };
 
 // Faixa-alvo do grupo (canônico): exceção quando existe, padrão 10–20.
-function faixaSeriesDoGrupo(muscle) {
-    return FAIXA_SERIES_POR_GRUPO[normalizeMuscle(muscle)] || FAIXA_SERIES_SEMANAIS;
+// Apenas grupos do mapa; inteiros de 0 a 100, com min estritamente menor.
+// Dados persistidos/importados inválidos nunca alteram a faixa padrão.
+function faixaSeriesValida(f) {
+    return f !== null && typeof f === 'object' && !Array.isArray(f)
+        && Number.isInteger(f.min) && Number.isInteger(f.max)
+        && f.min >= 0 && f.min < f.max && f.max <= 100;
+}
+function normalizarFaixasSeries(raw) {
+    const out = {};
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+    MUSCULOS_MAPA.forEach(m => {
+        if (Object.hasOwn(raw, m) && faixaSeriesValida(raw[m])) out[m] = { min: raw[m].min, max: raw[m].max };
+    });
+    return out;
+}
+function faixaSeriesDoGrupo(muscle, ranges) {
+    const m = normalizeMuscle(muscle);
+    const custom = ranges && MUSCULOS_MAPA.includes(m) && Object.hasOwn(ranges, m) ? ranges[m] : null;
+    return faixaSeriesValida(custom) ? custom : (FAIXA_SERIES_POR_GRUPO[m] || FAIXA_SERIES_SEMANAIS);
 }
 
 // ---------- Objeto único de constantes de recuperação (configurável) ----------
@@ -1063,6 +1079,7 @@ function matchesQuery(text, q) {
     FAIXA_SERIES_SEMANAIS,
     FAIXA_SERIES_POR_GRUPO,
     faixaSeriesDoGrupo,
+    normalizarFaixasSeries,
     RECOVERY_CONSTANTS,
     RECOVERY_CONFIG,
     PLATES,
@@ -1127,4 +1144,4 @@ function matchesQuery(text, q) {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/catalogo.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
-export { TYPE_META, CATALOG_TIPOS, EXERCISE_CATALOG_FULL, CATALOG_ALIASES, CATALOG_BY_NAME, CATALOG_ALIAS_BY_NORM, catalogPrefixMatch, catalogInfo, EXERCISE_CATALOG, MUSCLE_META, MUSCULOS_MAPA, MUSCLE_OPTIONS_FULL, LEGACY_MUSCLE_ALIASES, MUSCLE_CANONICAL, normalizeMuscle, MUSCLE_WEIGHT, FAIXA_SERIES_SEMANAIS, FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, RECOVERY_CONSTANTS, RECOVERY_CONFIG, PLATES, DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, inferExerciseType, logMeta, logCargaEfetiva, logFullMeta, logVolumeKg, logTstSeconds, logBestSet, logWorstSet, logEst1RM, epleySeValido, formatLoadText, formatRepsText, duplaProgressao, sinalProximaSessao, detectAutoPR, qualifyingPRLogs, recoveryState, SINERGIA, sinergiaLogs, sinergiaState, formatPlates, TAG_CATEGORIAS, TAG_DEFS, EQUIP_KIND, KIND_TAGS, KIND_FROM_NAME, P_EMPURRAR, P_PUXAR, P_AGACHAR, P_DOBRADICA, P_CORE, P_COMPOSTO, P_UNI, P_POSTERIOR, P_ANTERIOR, P_AVANCADO, P_BASICO, TAG_OVERRIDES, SINONIMOS, normalizeText, CATALOG_BY_SEARCH, TAG_IDS, customExercisesRef, setCustomExercisesRef, allExercisesList, TAG_BY_CATEGORY, deriveTags, exerciseTags, catalogFacets, searchCatalog, matchesTags, matchesQuery };
+export { TYPE_META, CATALOG_TIPOS, EXERCISE_CATALOG_FULL, CATALOG_ALIASES, CATALOG_BY_NAME, CATALOG_ALIAS_BY_NORM, catalogPrefixMatch, catalogInfo, EXERCISE_CATALOG, MUSCLE_META, MUSCULOS_MAPA, MUSCLE_OPTIONS_FULL, LEGACY_MUSCLE_ALIASES, MUSCLE_CANONICAL, normalizeMuscle, MUSCLE_WEIGHT, FAIXA_SERIES_SEMANAIS, FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, normalizarFaixasSeries, RECOVERY_CONSTANTS, RECOVERY_CONFIG, PLATES, DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, inferExerciseType, logMeta, logCargaEfetiva, logFullMeta, logVolumeKg, logTstSeconds, logBestSet, logWorstSet, logEst1RM, epleySeValido, formatLoadText, formatRepsText, duplaProgressao, sinalProximaSessao, detectAutoPR, qualifyingPRLogs, recoveryState, SINERGIA, sinergiaLogs, sinergiaState, formatPlates, TAG_CATEGORIAS, TAG_DEFS, EQUIP_KIND, KIND_TAGS, KIND_FROM_NAME, P_EMPURRAR, P_PUXAR, P_AGACHAR, P_DOBRADICA, P_CORE, P_COMPOSTO, P_UNI, P_POSTERIOR, P_ANTERIOR, P_AVANCADO, P_BASICO, TAG_OVERRIDES, SINONIMOS, normalizeText, CATALOG_BY_SEARCH, TAG_IDS, customExercisesRef, setCustomExercisesRef, allExercisesList, TAG_BY_CATEGORY, deriveTags, exerciseTags, catalogFacets, searchCatalog, matchesTags, matchesQuery };

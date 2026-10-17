@@ -2,6 +2,11 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Não lançado] — faixa semanal editável por grupo
+
+- Metas pessoais de séries registradas por grupo editáveis ao lado do mapa. Defaults preservados: 10–20 nos nove grupos restantes e 4–10 em Antebraço; rótulos “abaixo da meta / na faixa / acima da faixa” continuam iguais sem configuração. Campo opcional `settings.weeklySeriesRanges` no armazenamento e backup JSON formato 6; faixa inválida cai no padrão do grupo; backup antigo sem campo restaura os padrões.
+- Contagem legada (`muscle`), CSV 3, XP, chefões, histórico e 1RM inalterados; a faixa alimenta só a meta configurável do mapa, montador e assistente. Service Worker v57.
+
 ## [Não lançado] — decisões de produto da taxonomia (17/10/2026; somente docs)
 
 - Decisões #1, #5 e #9 registradas em `docs/TAXONOMIA_EXERCICIOS.md` (§6) e na análise crítica: `muscle` é **permanente** como grupo gravado (registros, histórico, CSV 3, backup JSON 6, metas), sem alterar as regras atuais de XP/chefões nem reclassificar registros; apoio indireto segue como aviso de **contribuição estimada / séries ponderadas** (fator 0,3–0,5), nunca “série equivalente”, fora de metas, XP e chefões; exportação de perfis/anatomia fica **fora por enquanto**.
