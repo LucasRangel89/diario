@@ -118,12 +118,13 @@ function renderSetRows(prefix) {
     if (!container) return;
     const rows = setEditorState[prefix] || [];
     container.innerHTML = rows.map((s, i) => `
-        <div class="flex items-center gap-1.5">
+        <div class="flex flex-wrap items-center gap-1.5">
             <span class="text-[10px] font-bold text-gray-500 w-6">S${i + 1}</span>
-            <input type="number" step="0.5" min="0" value="${s.weight ?? ''}" placeholder="kg" data-setw="${prefix}${i}" class="${INP} !py-1.5 !text-xs flex-1">
-            <input type="number" min="0" value="${s.reps ?? ''}" placeholder="reps" data-setr="${prefix}${i}" class="${INP} !py-1.5 !text-xs flex-1">
-            <input type="number" min="0" max="10" value="${s.rir ?? ''}" placeholder="RIR" data-seti="${prefix}${i}" class="${INP} !py-1.5 !text-xs w-16">
+            <input type="number" step="0.5" min="0" value="${s.weight ?? ''}" aria-label="Carga da série ${i + 1}" placeholder="kg" data-setw="${prefix}${i}" class="${INP} !py-1.5 !text-xs flex-1 min-w-0">
+            <input type="number" min="0" value="${s.reps ?? ''}" aria-label="Repetições da série ${i + 1}" placeholder="reps" data-setr="${prefix}${i}" class="${INP} !py-1.5 !text-xs flex-1 min-w-0">
+            <input type="number" min="0" max="10" value="${s.rir ?? ''}" aria-label="RIR da série ${i + 1} (opcional)" placeholder="RIR" data-seti="${prefix}${i}" class="${INP} !py-1.5 !text-xs w-16">
             <button type="button" data-action="removeSetRow" data-args='["${prefix}",${i}]' aria-label="Remover série" class="p-1.5 text-gray-500 hover:text-red-400 text-xs">✕</button>
+            ${/^s\d+-$/.test(prefix) ? `<button type="button" data-action="completeSessionSet" data-args='["${prefix}",${i}]' class="w-full min-h-[44px] text-xs font-bold text-cyan-300 border border-berzerker-border rounded-lg">${s.completed ? '✓ Série concluída' : '✓ Concluir série e descansar'}</button><button type="button" data-action="completeSessionSet" data-args='["${prefix}",${i},false]' class="w-full min-h-[44px] text-xs text-gray-400">Concluir sem descanso (drop-set)</button>` : ''}
         </div>`).join('');
 }
 
@@ -142,6 +143,7 @@ function readSetRowsRaw(prefix) {
         return {
             weight: w ? (w.value === '' ? null : parseFloat(w.value) || 0) : (s.weight || 0),
             reps: r ? (r.value === '' ? null : parseInt(r.value) || 0) : (s.reps || 0),
+            completed: !!s.completed,
             rir: ri && ri.value !== '' ? parseInt(ri.value) : null
         };
     });
@@ -227,19 +229,17 @@ function fieldsHTML(p, v, opts) {
     </div>`;
 
     if (o.quickCapture) {
-        return `${simpleHTML}
+        return `${typeModeHTML}${simpleHTML}${setsHTML}
         <details id="${p}advanced-details" class="border border-berzerker-border rounded-xl bg-berzerker-dark/50"${v.mode === 'sets' ? ' open' : ''}>
             <summary class="cursor-pointer select-none px-3 py-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center justify-between gap-3">
                 <span>Mais detalhes</span>
-                <span class="text-xs text-gray-400 normal-case tracking-normal">séries individuais, técnica, observações e ferramentas</span>
+                <span class="text-xs text-gray-400 normal-case tracking-normal">técnica, observações e ferramentas</span>
             </summary>
             <div class="border-t border-berzerker-border p-3 space-y-3">
-                ${typeModeHTML}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div id="${p}type-hint" class="text-xs text-amber-400/90 font-mono bg-amber-950/20 border border-amber-700/30 rounded-lg px-3 py-2">${escapeHtml((o.hints && o.hints.type) || '')}</div>
                     <div id="${p}faixa-hint" class="text-xs text-cyan-300/90 font-mono bg-cyan-950/20 border border-cyan-700/30 rounded-lg px-3 py-2">${escapeHtml((o.hints && o.hints.faixa) || '')}</div>
                 </div>
-                ${setsHTML}
                 ${extraHTML}
                 <div id="${p}warmup-quick-box" class="hidden bg-berzerker-dark/80 border border-amber-500/30 rounded-xl p-3 text-xs space-y-1">
                     <div class="font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">

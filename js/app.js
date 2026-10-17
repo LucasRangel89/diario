@@ -481,7 +481,7 @@ function loadStoredData() {
                     if (!blob) return;
                     const url = URL.createObjectURL(blob);
                     const img = new Image();
-                    img.onload = () => { customBgImageData = img; generateStoryCard(); };
+                    img.onload = () => { img.storyDate = st.bgDate || null; customBgImageData = img; generateStoryCard(); };
                     img.src = url;
                 }).catch(() => {});
             } else if (st.bgImageData) {
@@ -489,6 +489,7 @@ function loadStoredData() {
                 const dataURL = st.bgImageData;
                 const img = new Image();
                 img.onload = () => {
+                    img.storyDate = st.bgDate || null;
                     customBgImageData = img;
                     generateStoryCard();
                     (async () => {
@@ -1456,6 +1457,8 @@ function finishSeasonNow() {
 async function handleBgImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
+    const photoDate = document.getElementById('filter-date').value || getTodayLocalISO();
+    event.target.value = ''; // permite selecionar novamente o mesmo arquivo
     // Caminho novo: Blob comprimido (máx. 1080 px, WebP) no IndexedDB; o
     // localStorage guarda só a flag `bgBlob`. Reserva: dataURL legado.
     try {
@@ -1465,7 +1468,7 @@ async function handleBgImageUpload(event) {
             if (ok) {
                 const url = URL.createObjectURL(blob);
                 const img = new Image();
-                img.onload = () => { customBgImageData = img; saveStoryState(); generateStoryCard(); };
+                img.onload = () => { img.storyDate = photoDate; customBgImageData = img; saveStoryState(); generateStoryCard(); };
                 img.src = url;
                 return;
             }
@@ -1475,6 +1478,7 @@ async function handleBgImageUpload(event) {
     reader.onload = function (e) {
         const img = new Image();
         img.onload = function () {
+            img.storyDate = photoDate;
             customBgImageData = img;
             // Reserva (dataURL no localStorage): só anuncia sucesso se confirmada.
             const salvoNoLegado = saveStoryState();
@@ -1778,7 +1782,13 @@ async function applyImportedBackup(parsed) {
                 }
                 if (parsed.storyBgImageData) {
                     const blob = await window.storage.dataURLToBlob(parsed.storyBgImageData);
-                    if (blob && !(await saveBlobChecked(STORY_BG_BLOB_KEY, blob, { silencioso: true }))) imagensNaoSalvas++;
+                    if (blob && await saveBlobChecked(STORY_BG_BLOB_KEY, blob, { silencioso: true })) {
+                        safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({ bgBlob: '1', bgDate: isoDataValida(parsed.storyBgDate) ? parsed.storyBgDate : null, bgImageData: null }));
+                        const img = new Image();
+                        img.storyDate = isoDataValida(parsed.storyBgDate) ? parsed.storyBgDate : null;
+                        img.onload = () => { customBgImageData = img; generateStoryCard(); };
+                        img.src = URL.createObjectURL(blob);
+                    } else if (blob) imagensNaoSalvas++;
                 }
             }
         } catch (e) { /* segue sem imagens */ }

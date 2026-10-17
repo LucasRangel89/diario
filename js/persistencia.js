@@ -53,7 +53,8 @@ function saveStoryState() {
     // `bgImageData` só fica preenchido em fallback legado (IndexedDB indisponível).
     return safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({
         bgBlob: customBgImageData ? '1' : null,
-        bgImageData: null
+        bgDate: customBgImageData?.storyDate || null,
+        bgImageData: customBgImageData?.src?.startsWith('data:') ? customBgImageData.src : null
     }));
 }
 function defaultTests() {

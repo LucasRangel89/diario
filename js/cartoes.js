@@ -347,7 +347,12 @@ function generateStoryCard() {
     const palette = storyStyle.palette;
     const fonts = storyStyle.fonts;
 
-    if (customBgImageData) {
+    const hasDayPhoto = customBgImageData && customBgImageData.storyDate === targetDate;
+    const photoHint = document.getElementById('story-photo-hint');
+    if (photoHint) photoHint.textContent = hasDayPhoto
+        ? 'Foto deste treino. Editar os exercícios não altera a foto.'
+        : 'Adicione uma foto deste treino. A foto anterior é preservada até ser substituída.';
+    if (hasDayPhoto) {
         ctx.drawImage(customBgImageData, 0, 0, 1080, 1920);
         const opacity = parseFloat(document.getElementById('bg-overlay-opacity').value) || 0.6;
         ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;

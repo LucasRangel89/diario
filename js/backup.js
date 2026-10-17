@@ -13,7 +13,7 @@
 
 import { getCustomExercises, normalizarExerciciosPersonalizados } from './custom_exercises.js';
 import { isoDataValida } from './datas.js';
-import { activeGameThemeId, bossPortraits, deloadWeeks, logs, migrateLog, missionsClaimed, missionsXpTotal, saveGameState, savedWorkouts, seasons, settings, snapshotStoryBgDataURL, tests, themeGameSaves, userBodyweight, weightLog } from './app.js';
+import { activeGameThemeId, customBgImageData, bossPortraits, deloadWeeks, logs, migrateLog, missionsClaimed, missionsXpTotal, saveGameState, savedWorkouts, seasons, settings, snapshotStoryBgDataURL, tests, themeGameSaves, userBodyweight, weightLog } from './app.js';
 
 function parseCSVRows(text, sep) {
     const rows = [];
@@ -145,6 +145,7 @@ async function buildBackupPayload() {
         sharedGameState: { deloadWeeks, tests, weightLog },
         portraitImages,
         storyBgImageData: snapshotStoryBgDataURL(),
+        storyBgDate: customBgImageData?.storyDate || null,
         // Campos legados para que versões antigas ainda consigam importar o backup.
         deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, weightLog,
         bgImageData: snapshotStoryBgDataURL(),
