@@ -304,11 +304,11 @@ api.ensureDeloadRestAwards();
 check('deload automático da 4ª semana também atribui os dias de descanso',
     api.themeSaves.classico.deloadRestDays.join() === diasEsperados.join(), api.themeSaves.classico.deloadRestDays);
 
-const logSemana4 = { id: 2, date: deslocaDia(hojeSeason, -1), kind: 'peso', muscle: 'Peito', exercise: 'Supino Reto na Máquina', type: 'carga_total', weight: 100, reps: [10] };
+const logSemana4 = { id: 2, date: deslocaDia(hojeSeason, -1), kind: 'peso', muscle: 'Peito', exercise: 'Supino Reto na Máquina', type: 'carga_total', weight: 100, reps: [10, 10, 10, 10] };
 const semanaDoLog = api.isoWeekKey(logSemana4.date);
 const xpDeload = api.computeXP(hojeSeason, { logs: [logSemana4], bodyweight: 80, deloadWeeks: [semanaDoLog], missionsXpTotal: 0, bosses: [], restDays: [] }).training;
 const xpNormal = api.computeXP(hojeSeason, { logs: [logSemana4], bodyweight: 80, deloadWeeks: [], missionsXpTotal: 0, bosses: [], restDays: [] }).training;
-check('semana de deload rende metade do XP de volume', xpDeload === 5 && xpNormal === 10, { xpDeload, xpNormal });
+check('semana de deload rende metade do XP de séries efetivas', xpDeload === 5 && xpNormal === 10, { xpDeload, xpNormal });
 const xpDescanso = api.computeXP(hojeSeason, { logs: [], bodyweight: 80, deloadWeeks: [semanaDoLog], missionsXpTotal: 0, bosses: [], restDays: [deslocaDia(hojeSeason, -1)] }).restXP;
 check('dia de descanso na semana de deload rende +25 XP', xpDescanso === api.XP_REST_PER_DAY && xpDescanso === 25, xpDescanso);
 api.setSeasons(null);
@@ -332,7 +332,7 @@ check('título das missões usa o nome novo do tema',
     api.missionsState([], folclore, '2026-10-14').missions.map(m => m.title));
 check('os 12 chefões continuam com fraqueza e brecha tática', folclore.bosses.every(b => !!b.weak && !!b.weakReason && b.maxHp > 0));
 check('curva de HP e IDs dos chefões do folclore intactos',
-    folclore.bosses.map(b => b.maxHp).join() === Array.from({ length: 12 }, (_, i) => 25000 + 2000 * i).join()
+    folclore.bosses.map(b => b.maxHp).join() === Array.from({ length: 12 }, (_, i) => 100 + 18 * i).join()
     && folclore.bosses.map(b => b.id).join() === Array.from({ length: 12 }, (_, i) => `b${i}`).join());
 
 

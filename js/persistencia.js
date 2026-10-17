@@ -12,19 +12,25 @@
    (só chama a API do storage e mexe nos objetos que recebe).
    ============================================================ */
 
-import { THEMES, autoDeloadWeekKeys } from './gamificacao.js';
+import { THEMES, autoDeloadWeekKeys, computeBossProgress } from './gamificacao.js';
 import { catalogInfo, inferExerciseType, normalizeMuscle } from './catalogo.js';
 import { STORAGE_KEY_GAME_SHARED, STORAGE_KEY_LOGS, STORAGE_KEY_SETTINGS, STORAGE_KEY_STORY, STORAGE_KEY_THEME_GAMES, STORAGE_KEY_WORKOUTS, activeGameThemeId, bossPortraits, checkRankUp, customBgImageData, deloadWeeks, ensureDeloadRestAwards, ensureThemeGameSave, logs, missionsClaimed, missionsXpTotal, safeStorage, savedWorkouts, seasons, settings, tests, themeGameSaves, toLocalISO, userBodyweight, weightLog } from './app.js';
 
 function logsForTheme(themeId = activeGameThemeId) {
-    return logs.filter(log => log && log.xpTheme === themeId);
+    return logs.filter(log => log && log.xpTheme === themeId && log.conferir !== true && String(log.conferir).toLowerCase() !== 'sim');
 }
 function saveLogsToStorage() {
     logs.forEach(log => {
         if (!THEMES[log.xpTheme]) log.xpTheme = activeGameThemeId;
     });
     const ok = safeStorage.set(STORAGE_KEY_LOGS, JSON.stringify(logs));
-    if (ensureDeloadRestAwards()) saveGameState();
+    const save = ensureThemeGameSave(activeGameThemeId);
+    const theme = THEMES[activeGameThemeId] || THEMES.classico;
+    const combat = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, theme.bosses, save.bossProgress);
+    const combatChanged = JSON.stringify(save.bossProgress) !== JSON.stringify(combat.combatState);
+    if (combatChanged) save.bossProgress = combat.combatState;
+    const deloadChanged = ensureDeloadRestAwards();
+    if (combatChanged || deloadChanged) saveGameState();
     checkRankUp();
     return ok;
 }
@@ -59,7 +65,7 @@ function defaultTests() {
     ];
 }
 function emptyThemeGameSave() {
-    return { missionsXpTotal: 0, missionsClaimed: {}, seasons: null, bossPortraits: {}, deloadRestDays: [] };
+    return { missionsXpTotal: 0, missionsClaimed: {}, seasons: null, bossPortraits: {}, deloadRestDays: [], bossProgress: null };
 }
 function parseStoredObject(key) {
     try {

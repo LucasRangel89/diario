@@ -32,7 +32,7 @@
         fire($('er-distance'), 'input');
         click(document.querySelector('#edit-log-overlay [data-action="saveEditedRunLog"]'));
         const depoisDistanciaB2 = corridaAtualB2();
-        check('mudar distância recalcula XP e dano pelas fórmulas atuais (6 km + 25 min = 61 XP, 725 dano)', ev(`cardioXP(logs.find(l => l.id === ${corridaBaseB2.id}))`) === 61 && ev(`logDamageKg(logs.find(l => l.id === ${corridaBaseB2.id}), userBodyweight)`) === 725);
+        check('mudar distância recalcula XP e dano pelas fórmulas atuais (6 km + 25 min = 61 XP, 17 dano)', ev(`cardioXP(logs.find(l => l.id === ${corridaBaseB2.id}))`) === 61 && ev(`logDamageKg(logs.find(l => l.id === ${corridaBaseB2.id}), userBodyweight)`) === 17);
         check('salvar corrida mantém id, kind, muscle, type e xpTheme e nunca grava campos de musculação', depoisDistanciaB2.id === corridaBaseB2.id && depoisDistanciaB2.kind === 'corrida' && depoisDistanciaB2.muscle === 'Cardio' && depoisDistanciaB2.type === 'corrida' && depoisDistanciaB2.xpTheme === 'zodiaco' && camposMusculacaoB2.every(k => !(k in depoisDistanciaB2)));
 
         // A segunda entrada é o card de histórico da busca. O tempo muda sem abrir o editor de musculação.
@@ -54,7 +54,7 @@
         check('editor calcula pace enquanto o tempo é digitado (6 km em 30 min = 5:00/km)', $('er-pace').textContent === '5:00/km');
         click(document.querySelector('#edit-log-overlay [data-action="saveEditedRunLog"]'));
         const depoisTempoB2 = corridaAtualB2();
-        check('mudar tempo recalcula XP e dano (6 km + 30 min = 63 XP, 750 dano)', ev(`cardioXP(logs.find(l => l.id === ${corridaBaseB2.id}))`) === 63 && ev(`logDamageKg(logs.find(l => l.id === ${corridaBaseB2.id}), userBodyweight)`) === 750);
+        check('mudar tempo recalcula XP e dano (6 km + 30 min = 63 XP, 18 dano)', ev(`cardioXP(logs.find(l => l.id === ${corridaBaseB2.id}))`) === 63 && ev(`logDamageKg(logs.find(l => l.id === ${corridaBaseB2.id}), userBodyweight)`) === 18);
         check('salvar pela Busca persiste observações e campos D6 opcionais no próprio log', depoisTempoB2.notes === 'editada pela busca' && depoisTempoB2.runType === 'ritmo/limiar' && depoisTempoB2.rpe === 7 && depoisTempoB2.hrAvg === 158 && depoisTempoB2.shoe === 'Tênis Sintético');
         check('nenhum campo de musculação fica no registro editado pela Busca', camposMusculacaoB2.every(k => !(k in depoisTempoB2)));
 

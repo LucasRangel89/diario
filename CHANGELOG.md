@@ -6,7 +6,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 - Atualizados os 12 retratos padrão do tema Zodíaco com as imagens fornecidas, convertidas para WebP e limitadas a 512 px no lado maior, preservando a proporção original.
 - Retratos de anime aparecem sem interpolação pixelada; o Card do Chefão mantém o enquadramento circular sem deformar as imagens. Os demais temas preservam o estilo pixel art.
-- Testes UI cobrem o mapeamento dos 12 arquivos, a renderização suave e a proporção no canvas. `sw.js` sobe de **v50 para v51** para renovar o cache offline dos ativos.
+- Testes UI cobrem o mapeamento dos 12 arquivos, a renderização suave e a proporção no canvas. `sw.js` sobe de **v52 para v53** para renovar o cache offline dos ativos.
 
 ## [Não lançado] — preparação e integração de artes anexadas
 

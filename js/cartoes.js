@@ -13,7 +13,7 @@
 
 import { computeBossProgress, rankFromXP } from './gamificacao.js';
 import { formatLoadText, formatRepsText } from './catalogo.js';
-import { BOSSES, STORY_CARD_STYLES, TAILWIND_SPACING_PX, THEME, THEME_CARD_BGS, THEME_ICONS, THEME_ICON_IMGS, _cardImgCache, activeGameThemeId, bossPortraitSrc, computeXPCtx, customBgImageData, fmtN, getAnimalRankForSession, getBossImg, getTodayLocalISO, logsForTheme, userBodyweight } from './app.js';
+import { BOSSES, STORY_CARD_STYLES, TAILWIND_SPACING_PX, THEME, THEME_CARD_BGS, THEME_ICONS, THEME_ICON_IMGS, _cardImgCache, activeGameThemeId, bossPortraitSrc, computeXPCtx, customBgImageData, fmtN, getAnimalRankForSession, getBossImg, getTodayLocalISO, logsForTheme, themeGameSaves, userBodyweight } from './app.js';
 // O Story Card e o Card do Chefão escrevem em Oswald/Teko/Inter. Se o webfont
 // ainda está baixando, o primeiro traço sai com a fonte de fallback do sistema.
 // document.fonts.ready resolve UMA vez quando o loading termina, então agendar
@@ -539,7 +539,7 @@ function generateBossDefeatCard() {
     withWebFonts(generateBossDefeatCard);
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
+    const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES, themeGameSaves[activeGameThemeId]?.bossProgress);
     const boss = prog.defeatedCount > 0 ? BOSSES[Math.min(prog.defeatedCount, BOSSES.length) - 1] : prog.current;
     const derrotado = prog.defeatedCount > 0;
     const portrait = bossPortraitSrc(boss.id);

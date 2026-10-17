@@ -501,25 +501,55 @@ function sinalProximaSessao(log) {
 }
 
 // ---------- PR automático ----------
+function prExerciseKey(log) {
+    if (log?.kind === 'corrida') return 'cardio-distance';
+    const cat = catalogInfo(log?.exercise);
+    return normalizeText(cat ? cat.nome : (log?.exercise || ''));
+}
+function logNeedsConfirmation(log) {
+    return log?.conferir === true || String(log?.conferir).toLowerCase() === 'sim';
+}
+function prWeekStart(dateStr) {
+    const d = new Date(`${dateStr}T12:00:00`);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 function detectAutoPR(newLog, allLogs, bodyweight) {
-    if (!newLog) return false;
+    if (!newLog || !newLog.date || logNeedsConfirmation(newLog)) return false;
+    const key = prExerciseKey(newLog);
+    const week = prWeekStart(newLog.date);
+    const anteriores = (allLogs || []).filter(l => l && l.id !== newLog.id && l.date < newLog.date && !logNeedsConfirmation(l) && prExerciseKey(l) === key);
+    const sessoesAnteriores = new Set(anteriores.map(l => l.date).filter(Boolean));
+    if (sessoesAnteriores.size < 3) return false;
+    if (anteriores.some(l => l.isPR && prWeekStart(l.date) === week)) return false;
+
     if (newLog.kind === 'corrida') {
         const dist = Number(newLog.distanceKm) || 0;
-        const anteriores = allLogs.filter(l => l.kind === 'corrida' && l.id !== newLog.id && (Number(l.distanceKm) || 0) > 0);
         const bestDist = anteriores.reduce((a, l) => Math.max(a, Number(l.distanceKm) || 0), 0);
         return dist > 0 && dist > bestDist;
     }
     if (logMeta(newLog).unidade === 'seg') {
         const tst = logTstSeconds(newLog);
-        const anteriores = allLogs.filter(l => l.exercise === newLog.exercise && l.id !== newLog.id && logMeta(l).unidade === 'seg');
         const best = anteriores.reduce((a, l) => Math.max(a, logTstSeconds(l)), 0);
         return tst > 0 && tst > best;
     }
     const est = logEst1RM(newLog);
     if (est <= 0) return false;
-    const anteriores = allLogs.filter(l => l.kind === 'peso' && l.exercise === newLog.exercise && l.id !== newLog.id && logMeta(l).unidade !== 'seg');
     const best = anteriores.reduce((a, l) => Math.max(a, logEst1RM(l)), 0);
     return est > best + 0.4;
+}
+function qualifyingPRLogs(allLogs, bodyweight) {
+    const history = [];
+    const qualified = new Set();
+    (allLogs || []).filter(l => l && l.date).sort((a, b) => a.date.localeCompare(b.date) || String(a.id).localeCompare(String(b.id)))
+        .forEach(log => {
+            if (log.isPR && !logNeedsConfirmation(log)) {
+                const prior = history.map(item => ({ ...item, isPR: qualified.has(item) }));
+                if (detectAutoPR(log, prior, bodyweight)) qualified.add(log);
+            }
+            history.push(log);
+        });
+    return qualified;
 }
 
 // ---------- Recuperação muscular ----------
@@ -1034,6 +1064,7 @@ function matchesQuery(text, q) {
     duplaProgressao,
     sinalProximaSessao,
     detectAutoPR,
+    qualifyingPRLogs,
     recoveryState,
     SINERGIA,
     sinergiaLogs,
@@ -1077,4 +1108,4 @@ function matchesQuery(text, q) {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/catalogo.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
-export { TYPE_META, CATALOG_TIPOS, EXERCISE_CATALOG_FULL, CATALOG_ALIASES, CATALOG_BY_NAME, CATALOG_ALIAS_BY_NORM, catalogPrefixMatch, catalogInfo, EXERCISE_CATALOG, MUSCLE_META, MUSCULOS_MAPA, MUSCLE_OPTIONS_FULL, LEGACY_MUSCLE_ALIASES, MUSCLE_CANONICAL, normalizeMuscle, MUSCLE_WEIGHT, FAIXA_SERIES_SEMANAIS, FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, RECOVERY_CONSTANTS, RECOVERY_CONFIG, PLATES, DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, inferExerciseType, logMeta, logCargaEfetiva, logFullMeta, logVolumeKg, logTstSeconds, logBestSet, logWorstSet, logEst1RM, epleySeValido, formatLoadText, formatRepsText, duplaProgressao, sinalProximaSessao, detectAutoPR, recoveryState, SINERGIA, sinergiaLogs, sinergiaState, formatPlates, TAG_CATEGORIAS, TAG_DEFS, EQUIP_KIND, KIND_TAGS, KIND_FROM_NAME, P_EMPURRAR, P_PUXAR, P_AGACHAR, P_DOBRADICA, P_CORE, P_COMPOSTO, P_UNI, P_POSTERIOR, P_ANTERIOR, P_AVANCADO, P_BASICO, TAG_OVERRIDES, SINONIMOS, normalizeText, CATALOG_BY_SEARCH, TAG_IDS, customExercisesRef, setCustomExercisesRef, allExercisesList, TAG_BY_CATEGORY, deriveTags, exerciseTags, catalogFacets, searchCatalog, matchesTags, matchesQuery };
+export { TYPE_META, CATALOG_TIPOS, EXERCISE_CATALOG_FULL, CATALOG_ALIASES, CATALOG_BY_NAME, CATALOG_ALIAS_BY_NORM, catalogPrefixMatch, catalogInfo, EXERCISE_CATALOG, MUSCLE_META, MUSCULOS_MAPA, MUSCLE_OPTIONS_FULL, LEGACY_MUSCLE_ALIASES, MUSCLE_CANONICAL, normalizeMuscle, MUSCLE_WEIGHT, FAIXA_SERIES_SEMANAIS, FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, RECOVERY_CONSTANTS, RECOVERY_CONFIG, PLATES, DEFAULT_BAR_WEIGHT, DEFAULT_SLED_WEIGHT, inferExerciseType, logMeta, logCargaEfetiva, logFullMeta, logVolumeKg, logTstSeconds, logBestSet, logWorstSet, logEst1RM, epleySeValido, formatLoadText, formatRepsText, duplaProgressao, sinalProximaSessao, detectAutoPR, qualifyingPRLogs, recoveryState, SINERGIA, sinergiaLogs, sinergiaState, formatPlates, TAG_CATEGORIAS, TAG_DEFS, EQUIP_KIND, KIND_TAGS, KIND_FROM_NAME, P_EMPURRAR, P_PUXAR, P_AGACHAR, P_DOBRADICA, P_CORE, P_COMPOSTO, P_UNI, P_POSTERIOR, P_ANTERIOR, P_AVANCADO, P_BASICO, TAG_OVERRIDES, SINONIMOS, normalizeText, CATALOG_BY_SEARCH, TAG_IDS, customExercisesRef, setCustomExercisesRef, allExercisesList, TAG_BY_CATEGORY, deriveTags, exerciseTags, catalogFacets, searchCatalog, matchesTags, matchesQuery };

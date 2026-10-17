@@ -74,7 +74,7 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
   principal, via `js/storage.js`) com espelho no `localStorage` durante a
   transição. Nada sai do navegador: sem servidor, sem conta, sem nuvem.
 - **Chaves de dados** (`berzerker_*`): `logs` (treinos), `saved_workouts`
-  (treinos salvos), `game_saves` (progresso por tema, inclui retratos),
+  (treinos salvos), `game_saves` (coleções e dados de temporada por tema; XP e patente globais),
   `game_shared` (deload, testes, peso), `story` (Story Card), `settings`,
   `user_bodyweight`, `custom_exercises`, `game_theme`, `last_backup_at`.
   Retratos de chefões e foto de fundo do Story Card são guardados como
@@ -134,9 +134,19 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
 
 ### ⚔️ Gamificação
 10 temas — **clássico, Zodíaco, Hércules, Filmes de Ação, Folclore Brasileiro, Mitologia
-Nórdica, Roma Antiga, RPG de Mesa, Galáctica, Senhor dos Anéis** — cada um com 10 patentes e
-12 chefões. XP, missões semanais, temporadas de 12 semanas, deload e Story Card com moldura
-temática.
+Nórdica, Roma Antiga, RPG de Mesa, Galáctica, Senhor dos Anéis** — com 10 patentes visuais e
+12 chefões por tema. A patente e o XP são globais; cada tema mantém sua coleção de chefões e
+retratos. Treino rende 2,5 XP por série efetiva (reps dentro da faixa; RIR ≤ 3 quando informado),
+com teto provisório de 20 séries por grupo/semana; kg seguem como estatística. Registros pendentes
+em `Conferir?` não pontuam; PR só qualifica após três sessões anteriores do exercício e no máximo
+um crítico por exercício/semana. Há missões semanais, temporadas de 4 semanas (com deload na quarta)
+e Story Card com moldura temática. O dano novo usa séries efetivas (1 por série válida, teto compartilhado
+de 20 por grupo/semana), com fraqueza dinâmica ×2 no grupo de menor volume da semana anterior e PR ×2.
+O HP provisório cresce de 100 a 298; o arquivo de exemplo disponível tem somente duas linhas de treino,
+insuficientes para ajuste empírico, então essa escala deve ser recalibrada quando houver CSV histórico
+representativo. A migração mantém por ID derrotas e HP relativo antigos; registros anteriores à migração
+formam a linha de base e apenas novos registros usam a regra convertida. Um chefão marcado como Mestre
+(archetype `Ms`) bloqueia dano se algum grupo não cumprir o mínimo semanal, sem cura retroativa (regra confirmada).
 
 #### 🎨 Artes da gamificação (pixel art retrô + retratos temáticos)
 

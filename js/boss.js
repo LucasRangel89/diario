@@ -14,12 +14,23 @@
    importado.
    ============================================================ */
 
-import { THEMES, computeBossProgress, logDamageKg } from './gamificacao.js';
+import { THEMES, bossRewardXP, computeBossProgress, effectiveSetAllocations, logDamageKg, weaknessGroupForWeek } from './gamificacao.js';
+import { qualifyingPRLogs } from './catalogo.js';
 import { logsForTheme, saveGameState } from './persistencia.js';
 import { getAnimalRankForSession } from './sessao.js';
-import { BOSSES, THEME, activeGameThemeId, alertModal, bossPortraits, escapeHtml, fmtN, getTodayLocalISO, mensagemImagemSalva, portraitObjectURLs, saveBlobChecked, userBodyweight } from './app.js';
+import { BOSSES, THEME, activeGameThemeId, alertModal, bossPortraits, ensureThemeGameSave, escapeHtml, fmtN, getTodayLocalISO, mensagemImagemSalva, portraitObjectURLs, saveBlobChecked, userBodyweight } from './app.js';
 
 // ============================ BOSS BATTLE ============================
+function activeBossProgress() {
+    const save = ensureThemeGameSave(activeGameThemeId);
+    const progress = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES, save.bossProgress);
+    if (JSON.stringify(save.bossProgress) !== JSON.stringify(progress.combatState)) {
+        save.bossProgress = progress.combatState;
+        saveGameState();
+    }
+    return progress;
+}
+
 // Retratos padrão dos chefões (arte original embutida no app).
 // O upload do usuário (bossPortraits) tem prioridade sobre estes.
 // Os temas de pixel art mantêm a interpolação pixelada; Zodíaco usa as imagens dos 12 Cavaleiros.
@@ -226,10 +237,14 @@ function getBossImg(src) {
 }
 
 function renderBossBattleUI() {
-    const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
+    const prog = activeBossProgress();
     const filterDate = document.getElementById('filter-date').value || getTodayLocalISO();
     const rank = getAnimalRankForSession(filterDate);
-    const todayDmg = Math.round(rank.dayLogs.filter(l => l.xpTheme === activeGameThemeId).reduce((a, l) => a + logDamageKg(l, userBodyweight, prog.current), 0));
+    const gameLogs = logsForTheme(activeGameThemeId);
+    const qualifiedPRs = qualifyingPRLogs(gameLogs, userBodyweight);
+    const effectiveCredits = effectiveSetAllocations(gameLogs);
+    const activeWeakness = weaknessGroupForWeek(gameLogs, filterDate, effectiveCredits);
+    const todayDmg = Math.round(rank.dayLogs.filter(l => l.xpTheme === activeGameThemeId).reduce((a, l) => a + logDamageKg({ ...l, isPR: qualifiedPRs.has(l) }, userBodyweight, prog.current, effectiveCredits.get(l) || 0, activeWeakness), 0));
 
     document.getElementById('boss-today-dmg-display').textContent = `${todayDmg.toLocaleString()} DMG`;
     document.getElementById('stat-boss-dmg').textContent = `${todayDmg.toLocaleString()} DMG`;
@@ -249,9 +264,9 @@ function renderBossBattleUI() {
                         <span class="flex flex-wrap items-center gap-x-1.5 whitespace-nowrap text-xs font-bold text-red-400 uppercase tracking-wider">${THEME.bossLabel} <span aria-hidden="true">—</span> ${THEME.stageWord} ${prog.currentIdx + 1}/${BOSSES.length}</span>
                         <h3 class="font-oswald text-2xl sm:text-3xl font-bold text-white uppercase leading-tight break-words">${escapeHtml(currentBoss.name)}</h3>
                         <p class="text-[11px] leading-snug text-gray-400 mt-0.5 break-words">${escapeHtml(currentBoss.desc)}</p>
-                        <p class="text-[11px] leading-snug text-purple-200/80 mt-1 break-words"><strong>Brecha tática:</strong> ${escapeHtml(currentBoss.weakReason || 'Ataque temático.')}</p>
+                        <p class="text-[11px] leading-snug text-purple-200/80 mt-1 break-words"><strong>Brecha tática semanal:</strong> ${escapeHtml(activeWeakness)} recebe dano ×2 pelo grupo menos estimulado na semana anterior.</p>
                         <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1.5">
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700 uppercase leading-tight break-words">💢 Fraqueza: ${escapeHtml(currentBoss.weak || '—')} ×1,25</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700 uppercase leading-tight break-words">💢 Fraqueza da semana: ${escapeHtml(activeWeakness)} ×2</span>
                             <label class="text-[10px] font-bold px-2 py-0.5 rounded bg-berzerker-border text-gray-300 cursor-pointer hover:bg-gray-700">🖼️ Retrato
                                 <input type="file" accept="image/*" class="hidden" data-change-action="uploadBossPortrait" data-args='["$event","${currentBoss.id}"]'>
                             </label>
@@ -278,7 +293,6 @@ function renderBossBattleUI() {
 
     const grid = document.getElementById('bosses-grid');
     if (grid) {
-        let checkKg = prog.totalDamage;
         grid.innerHTML = BOSSES.map((b, idx) => {
             const defeated = idx < prog.defeatedCount;
             const thumb = bossPortraitSrc(b.id);
@@ -291,9 +305,9 @@ function renderBossBattleUI() {
                         </span>
                     </div>
                     <h4 class="font-oswald font-bold text-white text-base sm:text-lg leading-tight break-words">${escapeHtml(b.name)}</h4>
-                    <span class="text-[11px] font-mono text-purple-300 block leading-snug break-words">💢 fraco a ${escapeHtml(b.weak || '—')}</span>
+                    <span class="text-[11px] font-mono text-purple-300 block leading-snug break-words">💢 fraqueza semanal dinâmica ×2</span>
                     <span class="text-[11px] leading-snug text-gray-500 block break-words">${escapeHtml(b.weakReason || 'Ataque temático.')}</span>
-                    <span class="text-xs font-mono text-gray-400 block">${fmtN(b.maxHp)} HP · ${defeated ? '✔' : '🎁'} +${Math.round(b.maxHp / 200)} XP</span>
+                    <span class="text-xs font-mono text-gray-400 block">${fmtN(b.maxHp)} HP · ${defeated ? '✔' : '🎁'} +${bossRewardXP(b)} XP</span>
                 </div>`;
         }).join('');
     }
@@ -355,10 +369,11 @@ function renderBossLightbox() {
     bossLightboxIdx = idx;
     const b = BOSSES[idx];
     if (!b) return;
-    const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
+    const prog = activeBossProgress();
     const src = bossPortraitSrc(b.id);
     const portraitImageStyle = bossPortraitImageStyle();
-    const xpReward = Math.round(b.maxHp / 200);
+    const xpReward = bossRewardXP(b);
+    const activeWeakness = weaknessGroupForWeek(logsForTheme(activeGameThemeId), getTodayLocalISO(), effectiveSetAllocations(logsForTheme(activeGameThemeId)));
 
     document.getElementById(BOSS_LIGHTBOX_ID)?.remove();
     const overlay = document.createElement('div');
@@ -395,8 +410,8 @@ function renderBossLightbox() {
                     <span class="block font-oswald text-lg font-bold text-red-400">${fmtN(b.maxHp)} HP</span>
                 </div>
                 <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
-                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">💢 Fraqueza ×1,25</span>
-                    <span class="block font-oswald text-lg font-bold text-purple-300">${escapeHtml(b.weak || '—')}</span>
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">💢 Fraqueza semanal ×2</span>
+                    <span class="block font-oswald text-lg font-bold text-purple-300">${escapeHtml(activeWeakness)}</span>
                 </div>
                 <div class="bg-berzerker-dark border border-berzerker-border rounded-xl px-2 py-2.5">
                     <span class="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Recompensa</span>
@@ -524,7 +539,7 @@ function renderReservaStudio() {
         loadReservaManifest().then(m => { renderReservaStudio._carregando = false; if (m) renderReservaStudio(); });
     }
     if (!reservaBossId || !BOSSES.some(b => b.id === reservaBossId)) {
-        const prog = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES);
+        const prog = activeBossProgress();
         reservaBossId = (prog.current && prog.current.id) || BOSSES[0].id;
     }
     sel.innerHTML = BOSSES.map(b =>
