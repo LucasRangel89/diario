@@ -70,6 +70,37 @@
     check('card continua com título, HP e patente', textosCard.some(t => /CHEFÃO DERROTADO|EM BATALHA/.test(t)) && textosCard.some(t => /HP · fraco a/.test(t)) && textosCard.some(t => /Nível/.test(t)), textosCard.slice(0, 4));
     ev("document.getElementById('boss-card-overlay')?.remove()");
 
+    // Retratos verticais do Zodíaco devem manter proporção no card em canvas.
+    ev("changeGameTheme('zodiaco');");
+    window.__zodPortraitMock = { complete: true, naturalWidth: 330, naturalHeight: 512 };
+    const zodPortraitSrc = ev('bossPortraitSrc(BOSSES[0].id)');
+    ev(`_bossImgCache[${JSON.stringify(zodPortraitSrc)}] = window.__zodPortraitMock;`);
+    ev('openBossDefeatCard()');
+    const canvasZodCard = $('boss-card-canvas');
+    const chamadasCardZod = [];
+    const ctxZodCard = {
+        canvas: canvasZodCard,
+        save() { }, restore() { }, fillText() { },
+        drawImage: (...args) => chamadasCardZod.push(['drawImage', ...args]),
+        measureText: t => ({ width: String(t).length * 12 })
+    };
+    canvasZodCard.getContext = () => new Proxy(ctxZodCard, {
+        get: (t, k) => (k in t ? t[k] : noopChain()),
+        set: (t, k, v) => {
+            if (k === 'imageSmoothingEnabled') chamadasCardZod.push(['smoothing', v]);
+            t[k] = v;
+            return true;
+        }
+    });
+    ev('generateBossDefeatCard()');
+    const chamadaRetratoZod = chamadasCardZod.find(c => c[0] === 'drawImage' && c[1] === window.__zodPortraitMock);
+    check('Card do Zodíaco suaviza e preserva proporção do retrato no recorte circular',
+        !!chamadaRetratoZod && chamadasCardZod.some(c => c[0] === 'smoothing' && c[1] === true)
+            && Math.abs(chamadaRetratoZod[4] / chamadaRetratoZod[5] - 330 / 512) < 1e-6,
+        chamadaRetratoZod && chamadaRetratoZod.slice(2));
+    ev(`delete _bossImgCache[${JSON.stringify(zodPortraitSrc)}]; delete window.__zodPortraitMock; document.getElementById('boss-card-overlay')?.remove(); changeGameTheme('classico');`);
+    navTo('boss');
+
     // ============================ GRADES NO CELULAR ============================
     console.log('\n== UI 12e. Grades estáveis e legíveis no celular ==');
     // R2: o card do chefão é desenhado em js/app.js + js/cartoes.js e, desde a rodada 2,

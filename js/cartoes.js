@@ -573,8 +573,17 @@ function generateBossDefeatCard() {
     ctx.closePath();
     ctx.clip();
     if (portraitImg && portraitImg.complete && portraitImg.naturalWidth > 0) {
-        ctx.imageSmoothingEnabled = false; // mantém os pixels da arte retrô nítidos
-        ctx.drawImage(portraitImg, 350, 230, 380, 380);
+        if (THEME && THEME.id === 'zodiaco') {
+            // Retratos em proporção variável: preencher o círculo sem deformar e suavizar.
+            ctx.imageSmoothingEnabled = true;
+            const escala = Math.max(380 / portraitImg.naturalWidth, 380 / portraitImg.naturalHeight);
+            const largura = portraitImg.naturalWidth * escala;
+            const altura = portraitImg.naturalHeight * escala;
+            ctx.drawImage(portraitImg, 540 - largura / 2, 420 - altura / 2, largura, altura);
+        } else {
+            ctx.imageSmoothingEnabled = false; // mantém os pixels da arte retrô nítidos
+            ctx.drawImage(portraitImg, 350, 230, 380, 380);
+        }
     } else {
         ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(350, 230, 380, 380);
         ctx.font = '180px Inter, sans-serif';

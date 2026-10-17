@@ -128,7 +128,7 @@ check('retrato do chefão ativo (w-20) também é clicável e aponta para o boss
 const bossAlvo = ev('BOSSES[5].id');
 click(lbCard(bossAlvo));
 check('clicar no card abre o modal', !!lbOverlay() && lbOverlay().className.includes('z-[60]') && lbOverlay().className.includes('bg-black/80') && lbOverlay().className.includes('backdrop-blur-sm'));
-check('arte grande vem do retrato padrão do tema (512×512, pixelado)', !!lbImg() && lbImg().getAttribute('src') === ev(`DEFAULT_BOSS_PORTRAITS['${ev('activeGameThemeId')}:' + '${bossAlvo}']`) && lbImg().getAttribute('style').includes('image-rendering:pixelated'), lbImg() && lbImg().getAttribute('src'));
+check('arte grande vem do retrato padrão; a pixel art clássica mantém interpolação pixelada', !!lbImg() && lbImg().getAttribute('src') === ev(`DEFAULT_BOSS_PORTRAITS['${ev('activeGameThemeId')}:' + '${bossAlvo}']`) && lbImg().getAttribute('style').includes('image-rendering:pixelated'), lbImg() && lbImg().getAttribute('src'));
 check('nome do chefão no cabeçalho do modal', $('boss-lightbox-name').textContent === ev(`BOSSES[5].name`));
 check('status do combate no modal (DERROTADO/EM BATALHA/BLOQUEADO)', /DERROTADO 🏆|EM BATALHA ⚔️|BLOQUEADO 🔒/.test($('boss-lightbox-status').textContent));
 check('modal traz HP máximo, fraqueza, brecha tática e XP de recompensa', lbOverlay().textContent.includes(ev('fmtN(BOSSES[5].maxHp)') + ' HP') && lbOverlay().textContent.includes(ev('BOSSES[5].weak')) && lbOverlay().textContent.includes(ev('BOSSES[5].weakReason')) && lbOverlay().textContent.includes('+' + ev('fmtN(Math.round(BOSSES[5].maxHp / 200))') + ' XP'));
@@ -157,6 +157,28 @@ check('retrato do card ativo abre o modal já no boss em batalha', !!lbOverlay()
 btnIn(lbOverlay(), '✕').click();
 check('botão ✕ fecha o lightbox', !lbOverlay());
 check('lightbox fecha sem deixar rastro no DOM', !document.body.querySelector('#boss-lightbox-overlay'));
+
+const retratosZodiaco = [
+    'mu-de-aries.webp', 'aldebaran-de-touro.webp', 'saga-de-gemeos.webp',
+    'mascara-da-morte-de-cancer.webp', 'aiolia-de-leao.webp', 'shaka-de-virgem.webp',
+    'dohko-de-libra.webp', 'milo-de-escorpiao.webp', 'aiolos-de-sagitario.webp',
+    'shura-de-capricornio.webp', 'camus-de-aquario.webp', 'grande-mestre.webp'
+].map(nome => `images/bosses/${nome}`);
+check('tema Zodíaco aponta os 12 Bosses para as imagens anexadas',
+    retratosZodiaco.every((src, i) => ev(`DEFAULT_BOSS_PORTRAITS['zodiaco:b${i}']`) === src), retratosZodiaco);
+ev("changeGameTheme('zodiaco');");
+navTo('boss');
+const retratosZodNaGrade = [...$('bosses-grid').querySelectorAll('img')];
+check('retratos do Zodíaco aparecem sem interpolação pixelada na grade',
+    retratosZodNaGrade.length === 12 && retratosZodNaGrade.every(img => !img.getAttribute('style').includes('pixelated')));
+const retratoZodAtivo = $('active-boss-card').querySelector('img');
+check('retrato ativo do Zodíaco também é exibido sem pixelização', !!retratoZodAtivo && !retratoZodAtivo.getAttribute('style').includes('pixelated'));
+ev("openBossLightbox(BOSSES[0].id);");
+check('lightbox do Zodíaco mantém a imagem sem pixelização', !!lbImg() && !lbImg().getAttribute('style').includes('pixelated'));
+const retratoZodPadrao = document.querySelector('#reserva-grid [data-action="resetBossPortraitToDefault"] img');
+check('tile padrão do Estúdio mantém o retrato do Zodíaco sem pixelização', !!retratoZodPadrao && !retratoZodPadrao.getAttribute('style').includes('pixelated'));
+ev("closeBossLightbox(); changeGameTheme('classico');");
+navTo('boss');
 
 // ============================ ESC + WEBFONTS ============================
 console.log('\n== UI 1c. ESC fecha todos os overlays + webfonts antes do canvas ==');
