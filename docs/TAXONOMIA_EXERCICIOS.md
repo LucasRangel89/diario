@@ -115,16 +115,22 @@ Garantias:
 3. **CSV não ganha colunas.** O formato continua 3, com as 22 colunas v1 + as
    colunas do formato 2; `Grupo do registro` continua sendo o grupo legado.
    Arquivos antigos continuam importáveis.
-4. **JSON não ganha campos.** O backup continua formato 6; `logs[].muscle` é
-   preservado. Não há exportação de perfis.
+4. **JSON não ganha campos de perfil.** O backup continua formato 6;
+   `logs[].muscle` é preservado e não há exportação de perfis. (Atualização
+   17/10/2026 — seção 3.3: itens de `customExercises` ganharam os campos
+   **opcionais de identidade** `idEstavel` e `versao`; arquivos antigos
+   continuam importáveis e a identidade é cunhada na importação.)
 5. **Metas, XP e chefões não mudam.** Nenhuma função de cálculo importa o
    módulo de perfis.
 6. **Perfil não revisado não tem anatomia.** `perfilDoExercicio()` devolve
    `anatomia: null`, `padraoMovimento: null` e `revisao: null` para todos os 72
    exercícios. `contribuicaoAnatomica()` devolve `null`. Nome fora do catálogo
-   também gera um perfil válido, porém **sem ID, grupo ou anatomia**
-   (`origem: 'fora_do_catalogo'`, `idEstavel: null`); sem ID, ele não pode
-   entrar em `PERFIS_REVISADOS` e nunca vira classificação.
+   também gera um perfil válido: **sem ID, grupo ou anatomia** quando é um nome
+   solto (`origem: 'fora_do_catalogo'`, `idEstavel: null`), e — atualização da
+   seção 3.3 — com `idEstavel` persistido quando é um exercício personalizado
+   registrado (anatomia e revisão continuam `null` nos dois casos). Sem ID, o
+   perfil não pode entrar em `PERFIS_REVISADOS` e nunca vira classificação;
+   com ID de personalizado, o registro revisado também não é aceito (3.3).
 7. **Perfil revisado é opt-in e auditável.** O registro
    `PERFIS_REVISADOS` está vazio na v1. Uma entrada precisa declarar revisor,
    data ISO, versão, músculos primários, secundários com
@@ -150,16 +156,64 @@ Garantias:
 
 - `PERFIL_SCHEMA_VERSION` / `PERFIL_STATUS` / `PERFIL_ORIGEM`: versão e estados.
 - `idEstavelDoExercicio(nome)`: ID `ex-slug` derivado do nome canônico;
-  aliases resolvem para o mesmo ID.
-- `aliasesDoExercicio(nome)`: apelidos do catálogo (identidade, não anatomia).
+  aliases resolvem para o mesmo ID. Para exercício personalizado registrado,
+  devolve o `idEstavel` **persistido** (seção 3.3); para nome solto, `null`.
+- `aliasesDoExercicio(nome)`: apelidos do catálogo (identidade, não anatomia);
+  para personalizado, os sinônimos declarados pelo usuário.
 - `perfilDoExercicio(nome)`: perfil não revisado por padrão; aceita um registro
-  injetado apenas para testes/migrações explícitas.
+  injetado apenas para testes/migrações explícitas. Resolve personalizado
+  registrado antes do catálogo (seção 3.3).
 - `contribuicaoAnatomica(nome)`: `null` até existir perfil revisado.
 - `validarPerfilExercicio` / `validarRegistroPerfis`: gates do schema.
   `idEstavel` é obrigatório no formato `ex-slug` para perfil de catálogo; para
   perfil fora do catálogo só `null` ou um `ex-slug` são aceitos.
 - `inventarioTaxonomia()`: inventário somente leitura usado nesta documentação
   e em `tests/engine/45_perfil_exercicios.js`.
+- (17/10/2026) `idEstavelDeNomePersonalizado` / `idEstavelValido` /
+  `idsEstaveisDoCatalogo` / `perfilDePersonalizado` /
+  `setExerciciosPersonalizadosRef`: identidade versionada de personalizados
+  (seção 3.3). A lista de personalizados entra por injeção de referência
+  (mesmo padrão de `setCustomExercisesRef`), sem ciclo de import.
+
+### 3.3 Identidade versionada de exercícios personalizados (17/10/2026)
+
+Exercício personalizado é definido pelo **usuário** e nunca passou por revisão
+profissional. A identidade dele foi versionada (decisão #8) sem abrir porta
+para anatomia inventada:
+
+- **`idEstavel` (`ex-slug`) cunhado uma única vez** (na criação, ou na
+  importação/carga de arquivo antigo) e **preservado em renomes e edições**:
+  o nome é rótulo, a identidade é o ID. A cunhagem é determinística (mesma
+  lista → mesmos IDs; recarregar sem salvar não recunha).
+- **IDs do catálogo são reservados**: um personalizado não pode cunhar nem
+  preservar (vindo de arquivo) um ID igual ao de um dos 72 exercícios — a
+  chave de `PERFIS_REVISADOS` é o ID e identidade trocada seria impessoação.
+  Colisão entre personalizados segue "a 1ª ocorrência mantém".
+- **`versao` (inteiro ≥ 1)** versiona a **definição** do exercício: começa em 1
+  e sobe a cada edição. É metadado de identidade, não revisão anatômica.
+- **Perfil sempre `nao_revisado`.** `perfilDoExercicio()` devolve
+  `origem: 'fora_do_catalogo'` com o ID persistido, os sinônimos como aliases e
+  o grupo declarado pelo usuário apenas como agrupamento organizacional
+  (limitações `grupo_declarado_pelo_usuario` e, quando aplicável,
+  `sem_id_estavel`). `anatomia`, `padraoMovimento` e `revisao` ficam `null`;
+  `contribuicaoAnatomica()` devolve `null`.
+- **Revisão de personalizado continua bloqueada.** Se `PERFIS_REVISADOS` (ou um
+  registro injetado) tiver uma entrada para o ID de um personalizado, ela é
+  ignorada e o perfil mantém `registro_revisado_invalido` — a decisão de como
+  revisar personalizados (quem revisa, com qual fluxo de opt-in) continua
+  pendente. O grupo do usuário **nunca** é lido como anatomia validada.
+- **Formatos preservados.** Os campos vivem nos itens de `customExercises` do
+  backup JSON (formato **6**, campos opcionais: antigos importam e recebem
+  identidade cunhada; leitores antigos preservam campos desconhecidos) e no
+  `localStorage` do módulo. O CSV formato 3 **não** ganha colunas; a aba
+  Catálogo continua com as 12 colunas de sempre.
+- **Registros não são tocados.** `logs[].exercise` continua sendo o nome
+  gravado; renomear o personalizado não reescreve registros antigos nem muda
+  metas, XP, chefões ou histórico (`muscle` segue autoritativo).
+
+Garantido por `garantirIdentidadeVersionada` (`js/custom_exercises.js`) e testes
+em `tests/engine/45_perfil_exercicios.js` (18d), `tests/engine/70_csv_backup.js`
+e `tests/ui/60_csv_mapa_delegacao.js`.
 
 ## 4. O que esta etapa não faz
 
@@ -170,7 +224,9 @@ Garantias:
 - Não transforma o fator de apoio indireto em série equivalente.
 - Não usa perfil em recomendação, ranking, XP, chefão, PR, 1RM ou volume.
 - Não define modalidade de progressão, unidade de incremento ou carga externa.
-- Não cria perfil para exercício personalizado do usuário.
+- Não cria perfil **anatômico** para exercício personalizado do usuário. (A
+  identidade versionada — `idEstavel`/`versao`, sem anatomia — foi acrescentada
+  em 17/10/2026 e está descrita na seção 3.3.)
 - Não exporta perfil em CSV nem em JSON.
 
 ## 5. Mudanças futuras que exigem revisão profissional
@@ -210,6 +266,12 @@ Garantias:
    separar `loadEntered` de estimativa externa sem alterar o valor digitado.
 8. **Exercícios personalizados.** Quem revisa, como versionar e como evitar que
    um grupo declarado pelo usuário seja lido como anatomia validada.
+   **Atualização (17/10/2026):** a versionamento de identidade está resolvido
+   (seção 3.3: `idEstavel` estável em renomes + `versao` da definição, com o
+   grupo do usuário restrito a agrupamento organizacional). Seguem pendentes:
+   **quem** revisa personalizados e **qual fluxo de opt-in** permitiria, um dia,
+   anatomia revisada para um exercício do usuário — até lá, o perfil fica
+   sempre `nao_revisado` e revisões para o ID são ignoradas.
 9. **Exportação.** Perfil em colunas novas do CSV, aba separada ou campo do
    JSON? Qual versão de formato e como manter arquivos antigos importáveis.
 10. **Governança da revisão.** Quem assina, com quais fontes, por quanto tempo a
@@ -230,6 +292,8 @@ Garantias:
 
 - Runtime: `js/catalogo.js` (catálogo, grupos, recuperação, `SINERGIA`).
 - Base de perfis: `js/perfil_exercicios.js`.
+- Exercícios personalizados e identidade versionada: `js/custom_exercises.js`
+  (`garantirIdentidadeVersionada`) e `js/perfil_exercicios.js` (seção 3.3).
 - Registro/migração de log: `js/persistencia.js` (`migrateLog`,
   `normalizeSavedWorkouts`).
 - Metas/recuperação: `js/assistente.js`.

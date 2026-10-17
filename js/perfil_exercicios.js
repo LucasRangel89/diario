@@ -24,6 +24,11 @@ import { isoDataValida } from './datas.js';
    O grupo legado nunca é alterado por um perfil: se um registro
    revisado divergir do catálogo, ele é ignorado e o perfil volta a
    `nao_revisado` com a limitação `registro_revisado_invalido`.
+
+   Exercícios personalizados também têm identidade versionada aqui
+   (decisão pendente #8): `idEstavel` cunhado na criação e preservado
+   em renomes, `versao` da definição, grupo do usuário só como
+   agrupamento organizacional e perfil sempre `nao_revisado`.
    ============================================================ */
 
 const PERFIL_SCHEMA_VERSION = 1;
@@ -84,20 +89,86 @@ function camposProibidosPresentes(obj) {
     return PERFIL_CAMPOS_PROIBIDOS.filter(k => Object.prototype.hasOwnProperty.call(obj, k));
 }
 
+// ---------- Exercícios personalizados (registro por injeção) ----------
+// Este módulo NÃO importa js/custom_exercises.js (que importa este arquivo).
+// Assim como js/catalogo.js faz com setCustomExercisesRef, a lista de
+// exercícios personalizados chega por injeção de referência. A identidade de
+// um personalizado é o `idEstavel` cunhado na criação e PRESERVADO em renomes
+// e edições (decisão pendente #8 de docs/TAXONOMIA_EXERCICIOS.md): o nome
+// atual é rótulo; a identidade é o ID. Nada disso é anatomia — o perfil de
+// personalizado continua sempre `nao_revisado`.
+let exerciciosPersonalizadosRef = () => [];
+function setExerciciosPersonalizadosRef(fn) {
+    exerciciosPersonalizadosRef = typeof fn === 'function' ? fn : () => [];
+}
+function exercicioPersonalizadoPorNome(nome) {
+    const n = String(nome || '').trim().toLowerCase();
+    if (!n) return null;
+    let lista;
+    try {
+        lista = exerciciosPersonalizadosRef();
+    } catch (e) {
+        return null;
+    }
+    if (!Array.isArray(lista)) return null;
+    return lista.find(e => e && typeof e === 'object' && typeof e.nome === 'string' && e.nome.trim().toLowerCase() === n) || null;
+}
+
 // ID estável derivado do NOME CANÔNICO do catálogo (nunca do nome digitado).
 // É identidade, não classificação: um alias ("stiff") resolve para o mesmo ID.
 // Renomear um exercício do catálogo exigirá manter o ID antigo como alias em
 // uma migração explícita (decisão pendente documentada).
-function idEstavelDoExercicio(nome) {
-    const cat = catalogInfo(nome);
-    if (!cat) return null;
+function idEstavelDeCatalogo(cat) {
+    if (!cat || typeof cat.nome !== 'string') return null;
     const slug = normalizeText(cat.nome).replace(/\s+/g, '-');
     return slug ? `ex-${slug}` : null;
 }
 
+function idEstavelDoExercicio(nome) {
+    const bruto = typeof nome === 'string' ? nome.trim() : '';
+    if (!bruto) return null;
+    // Personalizado registrado: o ID é o persistido (sobrevive a renomes),
+    // nunca um slug derivado do nome atual.
+    const custom = exercicioPersonalizadoPorNome(bruto);
+    if (custom) return idEstavelValido(custom.idEstavel) ? custom.idEstavel : null;
+    const cat = catalogInfo(bruto);
+    // catalogInfo também enxerga personalizados (injetados no índice do
+    // catálogo por js/custom_exercises.js); esses não têm identidade de catálogo.
+    if (!cat || cat.isCustom) return null;
+    return idEstavelDeCatalogo(cat);
+}
+
+// IDs reservados do catálogo: um personalizado nunca pode cunhar (nem preservar,
+// vindo de arquivo) um ID igual ao de um exercício do catálogo — a chave de
+// PERFIS_REVISADOS é o ID e identidade trocada seria impessoação.
+function idsEstaveisDoCatalogo() {
+    return EXERCISE_CATALOG_FULL.map(e => idEstavelDeCatalogo(e)).filter(Boolean);
+}
+
+// Cunha um ID estável novo para exercício personalizado. Determinístico: mesmo
+// nome e mesmos IDs ocupados → mesmo resultado. `ocupados` são IDs já usados
+// por outros personalizados; os IDs do catálogo entram sempre na reserva.
+function idEstavelDeNomePersonalizado(nome, ocupados = new Set()) {
+    const reservados = new Set(idsEstaveisDoCatalogo());
+    if (ocupados && typeof ocupados[Symbol.iterator] === 'function') {
+        for (const id of ocupados) if (idEstavelValido(id)) reservados.add(id);
+    }
+    const slug = normalizeText(nome).replace(/\s+/g, '-') || 'personalizado';
+    let candidato = `ex-${slug}`;
+    let sufixo = 2;
+    while (reservados.has(candidato)) candidato = `ex-${slug}-${sufixo++}`;
+    return candidato;
+}
+
 function aliasesDoExercicio(nome) {
-    const cat = catalogInfo(nome);
-    if (!cat) return [];
+    const bruto = typeof nome === 'string' ? nome.trim() : '';
+    if (!bruto) return [];
+    const custom = exercicioPersonalizadoPorNome(bruto);
+    if (custom) {
+        return String(custom.sinonimos || '').split(/[,;]/).map(s => s.trim()).filter(Boolean);
+    }
+    const cat = catalogInfo(bruto);
+    if (!cat || cat.isCustom) return [];
     return [...(ALIASES_POR_CANONICO[cat.nome] || [])];
 }
 
@@ -115,10 +186,11 @@ function validarPerfilExercicio(perfil) {
     if (perfil.schemaVersion !== PERFIL_SCHEMA_VERSION) {
         erros.push(`schemaVersion deve ser ${PERFIL_SCHEMA_VERSION}`);
     }
-    // Perfil fora do catálogo não tem identidade estável: `idEstavel` é null e,
-    // por isso, ele nunca entra no registro revisado (a chave do registro é o
-    // ID). Se exercícios personalizados ganharem ID persistente no futuro, o
-    // schema já aceita um `ex-...` nessa origem.
+    // Perfil fora do catálogo sem ID estável (nome solto, não registrado) tem
+    // `idEstavel` null e nunca entra no registro revisado (a chave do registro
+    // é o ID). Exercício PERSONALIZADO registrado carrega um `ex-...` persistido
+    // (cunhado na criação e preservado em renomes — identidade versionada);
+    // sem ID, ele também não entra em PERFIS_REVISADOS.
     const idValido = perfil.origem === PERFIL_ORIGEM.FORA_DO_CATALOGO
         ? (perfil.idEstavel === null || idEstavelValido(perfil.idEstavel))
         : idEstavelValido(perfil.idEstavel);
@@ -270,6 +342,40 @@ function perfilForaDoCatalogo(nomeBruto) {
     };
 }
 
+// Perfil de exercício PERSONALIZADO: identidade versionada, sem anatomia.
+// A identidade é o `idEstavel` persistido do registro (sobrevive a renomes);
+// `versao` do registro versiona a definição, não a classificação. O grupo
+// declarado pelo usuário é organizacional (taxonomiaLegada/agrupamentoVisual)
+// e NUNCA vira anatomia validada: o perfil permanece `nao_revisado` e qualquer
+// entrada de perfil revisado para o mesmo ID é ignorada (decisão pendente #8:
+// "manter nao_revisado" até existir fluxo de revisão/opt-in).
+function perfilDePersonalizado(entry, registro = PERFIS_REVISADOS) {
+    const nome = entry && typeof entry.nome === 'string' ? entry.nome.trim() : '';
+    if (!nome) return null;
+    const id = entry && idEstavelValido(entry.idEstavel) ? entry.idEstavel : null;
+    const grupo = entry && textoPreenchido(entry.grupo) ? entry.grupo : null;
+    const limitacoes = ['perfil_nao_revisado', 'sem_anatomia_validada', 'fora_do_catalogo'];
+    if (grupo) limitacoes.push('grupo_declarado_pelo_usuario');
+    if (!id) limitacoes.push('sem_id_estavel');
+    else if (registro && Object.prototype.hasOwnProperty.call(registro, id)) {
+        limitacoes.push('registro_revisado_invalido');
+    }
+    return {
+        schemaVersion: PERFIL_SCHEMA_VERSION,
+        idEstavel: id,
+        nomeCanonico: nome,
+        aliases: String(entry.sinonimos || '').split(/[,;]/).map(s => s.trim()).filter(Boolean),
+        origem: PERFIL_ORIGEM.FORA_DO_CATALOGO,
+        statusRevisao: PERFIL_STATUS.NAO_REVISADO,
+        taxonomiaLegada: { grupo },
+        agrupamentoVisual: { grupo },
+        anatomia: null,
+        padraoMovimento: null,
+        revisao: null,
+        limitacoes
+    };
+}
+
 function copiarAnatomia(anatomia) {
     if (!ehObjetoSimples(anatomia)) return null;
     return {
@@ -287,8 +393,14 @@ function perfilDoExercicio(nome, registro = PERFIS_REVISADOS) {
     const bruto = typeof nome === 'string' ? nome.trim() : '';
     if (!bruto) return null;
 
+    // Personalizado registrado vem ANTES do catálogo: o índice do catálogo
+    // também recebe os personalizados (js/custom_exercises.js), e a identidade
+    // certa é a persistida, não um slug derivado do nome atual.
+    const custom = exercicioPersonalizadoPorNome(bruto);
+    if (custom) return perfilDePersonalizado(custom, registro);
+
     const cat = catalogInfo(bruto);
-    if (!cat) return perfilForaDoCatalogo(bruto);
+    if (!cat || cat.isCustom) return perfilForaDoCatalogo(bruto);
 
     const base = perfilNaoRevisadoDeCatalogo(cat);
     const id = base.idEstavel;
@@ -398,8 +510,15 @@ function inventarioTaxonomia() {
         PERFIS_REVISADOS,
         PERFIL_REGISTRO,
         idEstavelDoExercicio,
+        idEstavelDeCatalogo,
+        idEstavelDeNomePersonalizado,
+        idEstavelValido,
+        idsEstaveisDoCatalogo,
         aliasesDoExercicio,
+        setExerciciosPersonalizadosRef,
+        exercicioPersonalizadoPorNome,
         perfilDoExercicio,
+        perfilDePersonalizado,
         contribuicaoAnatomica,
         validarPerfilExercicio,
         validarRegistroPerfis,
@@ -414,4 +533,4 @@ function inventarioTaxonomia() {
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/perfil_exercicios.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
 
-export { PERFIL_SCHEMA_VERSION, PERFIL_STATUS, PERFIL_ORIGEM, PERFIS_REVISADOS, PERFIL_REGISTRO, idEstavelDoExercicio, aliasesDoExercicio, perfilDoExercicio, contribuicaoAnatomica, validarPerfilExercicio, validarRegistroPerfis, inventarioTaxonomia };
+export { PERFIL_SCHEMA_VERSION, PERFIL_STATUS, PERFIL_ORIGEM, PERFIS_REVISADOS, PERFIL_REGISTRO, idEstavelDoExercicio, idEstavelDeCatalogo, idEstavelDeNomePersonalizado, idEstavelValido, idsEstaveisDoCatalogo, aliasesDoExercicio, setExerciciosPersonalizadosRef, exercicioPersonalizadoPorNome, perfilDoExercicio, perfilDePersonalizado, contribuicaoAnatomica, validarPerfilExercicio, validarRegistroPerfis, inventarioTaxonomia };

@@ -1,4 +1,5 @@
 import { CATALOG_ALIASES, CATALOG_BY_NAME, CATALOG_BY_SEARCH, CATALOG_TIPOS, EXERCISE_CATALOG_FULL, MUSCLE_OPTIONS_FULL, SINONIMOS, TAG_DEFS, TAG_IDS, catalogInfo, deriveTags, normalizeText, setCustomExercisesRef } from './catalogo.js';
+import { idEstavelDeNomePersonalizado, idEstavelValido, idsEstaveisDoCatalogo, setExerciciosPersonalizadosRef } from './perfil_exercicios.js';
 import { exercicioCarregaLombar } from './assistente.js';
 import { alertModal, confirmModal, escapeHtml, refreshAll, safeStorage, updateExerciseSuggestions } from './app.js';
 import { renderSearchScreen } from './busca.js';
@@ -20,12 +21,14 @@ function loadCustomExercises() {
     } catch (e) {
         customExercises = [];
     }
-    // Garante campos padrão
-    customExercises = customExercises.map(e => ({
+    // Garante campos padrão e identidade versionada (idEstavel/versao). Registros
+    // legados sem identidade recebem uma cunhada determinística; nenhuma outra
+    // mudança acontece e nada é reclassificado.
+    customExercises = garantirIdentidadeVersionada(customExercises.map(e => ({
         tipo: 'carga_total', fator: 1, lados: 1, unidade: 'reps',
         faixa: [8, 12], descanso: 90, obs: '', sinonimos: '', tagsExtras: [],
         ...e
-    }));
+    })));
     rebuildCustomCatalog();
     return customExercises;
 }
@@ -36,12 +39,42 @@ function saveCustomExercises() {
     refreshAll && refreshAll();
 }
 
+// Identidade versionada dos exercícios personalizados (governança de
+// identidade; NADA de anatomia — ver decisão #8 de docs/TAXONOMIA_EXERCICIOS.md).
+// Cada registro carrega:
+//   - `idEstavel` (ex-slug): cunhado uma única vez e PRESERVADO em renomes e
+//     edições — o nome é rótulo, a identidade é o ID. IDs do catálogo são
+//     reservados: personalizado não pode "personificar" exercício do catálogo;
+//   - `versao` (inteiro >= 1): começa em 1 e sobe a cada edição registrada.
+// Determinístico: a mesma lista produz sempre os mesmos IDs (recarregar sem
+// salvar não recunha). Campos ausentes/inválidos são preenchidos; nada mais muda.
+function garantirIdentidadeVersionada(lista) {
+    const ocupados = new Set(idsEstaveisDoCatalogo());
+    return (Array.isArray(lista) ? lista : []).map(e => {
+        if (!e || typeof e !== 'object' || Array.isArray(e)) return e;
+        const out = { ...e };
+        const idAtual = typeof out.idEstavel === 'string' ? out.idEstavel : null;
+        if (idAtual && idEstavelValido(idAtual) && !ocupados.has(idAtual)) {
+            ocupados.add(idAtual);
+        } else {
+            out.idEstavel = idEstavelDeNomePersonalizado(out.nome, ocupados);
+            ocupados.add(out.idEstavel);
+        }
+        if (!(Number.isInteger(out.versao) && out.versao >= 1)) out.versao = 1;
+        return out;
+    });
+}
+
 // Normalização de uma lista vinda de backup JSON. Regras determinísticas e documentadas:
 //  - item que não é objeto ou não tem nome → erro (o backup inteiro é rejeitado);
 //  - nome igual a exercício do CATÁLOGO PRINCIPAL → não importado e reportado como conflito
 //    (o catálogo nunca é alterado; registros antigos com esse nome continuam usando o catálogo);
 //  - nome repetido dentro do próprio arquivo (sem diferenciar maiúsculas) → vale a primeira ocorrência;
-//  - tipo de carga desconhecido ou números inválidos → erro (afetariam os cálculos).
+//  - tipo de carga desconhecido ou números inválidos → erro (afetariam os cálculos);
+//  - `idEstavel`/`versao` válidos e únicos são preservados (identidade faz ida e
+//    volta no backup); ausentes, inválidos ou em conflito são recunhados/ajustados
+//    por garantirIdentidadeVersionada. Arquivos antigos sem esses campos continuam
+//    importáveis — a identidade é cunhada na importação, uma única vez.
 // Pura: não altera o estado atual.
 function normalizarExerciciosPersonalizados(lista) {
     const erros = [], conflitos = [], out = [];
@@ -82,16 +115,16 @@ function normalizarExerciciosPersonalizados(lista) {
             isCustom: true
         });
     });
-    return { lista: out, erros, conflitos };
+    return { lista: garantirIdentidadeVersionada(out), erros, conflitos };
 }
 
 // Substitui a lista inteira (restauração de backup) sem duplicar nada e reconstrói os índices.
 function setCustomExercisesList(lista) {
-    customExercises = (Array.isArray(lista) ? lista : []).map(e => ({
+    customExercises = garantirIdentidadeVersionada((Array.isArray(lista) ? lista : []).map(e => ({
         tipo: 'carga_total', fator: 1, lados: 1, unidade: 'reps',
         faixa: [8, 12], descanso: 90, obs: '', sinonimos: '', tagsExtras: [],
         ...e
-    }));
+    })));
     rebuildCustomCatalog();
     return customExercises;
 }
@@ -189,6 +222,9 @@ function addCustomExercise(data) {
     }
     const novo = {
         id: 'custom_' + Date.now(),
+        // Identidade versionada: cunhada UMA vez e preservada em renomes/edições.
+        idEstavel: idEstavelDeNomePersonalizado(data.nome, new Set(customExercises.map(e => e.idEstavel).filter(idEstavelValido))),
+        versao: 1,
         nome: data.nome.trim(),
         grupo: data.grupo || 'Geral',
         equipamento: data.equipamento || '',
@@ -212,7 +248,20 @@ function addCustomExercise(data) {
 function updateCustomExercise(id, data) {
     const idx = customExercises.findIndex(e => e.id === id);
     if (idx < 0) return false;
-    customExercises[idx] = { ...customExercises[idx], ...data, nome: data.nome.trim(), isCustom: true };
+    const anterior = customExercises[idx];
+    // A identidade (idEstavel) é preservada mesmo quando o exercício é
+    // renomeado; cada edição sobe a `versao` do registro (versão da definição).
+    const ocupados = new Set(customExercises.map(e => e.idEstavel).filter(v => idEstavelValido(v) && v !== anterior.idEstavel));
+    const idEstavel = idEstavelValido(anterior.idEstavel)
+        ? anterior.idEstavel
+        : idEstavelDeNomePersonalizado(anterior.nome, ocupados);
+    customExercises[idx] = {
+        ...anterior, ...data,
+        nome: data.nome.trim(),
+        idEstavel,
+        versao: (Number.isInteger(anterior.versao) && anterior.versao >= 1 ? anterior.versao : 1) + 1,
+        isCustom: true
+    };
     saveCustomExercises();
     return true;
 }
@@ -240,6 +289,7 @@ function customExerciseFormHTML(existing = null) {
         <div>
             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Nome do exercício *</label>
             <input type="text" id="cex-nome" required value="${escapeHtml(e.nome)}" placeholder="Ex: Puxada com triângulo" class="w-full bg-berzerker-dark border border-berzerker-border rounded-lg px-2.5 py-2 text-white">
+            ${existing ? `<p class="text-[10px] text-gray-500 mt-1">Identidade estável: ${escapeHtml(existing.idEstavel || 'será cunhada ao salvar')} · v${Number.isInteger(existing.versao) && existing.versao >= 1 ? existing.versao : 1} — o ID não muda ao renomear; o grupo escolhido é organizacional, não uma classificação anatômica.</p>` : ''}
         </div>
         <div class="grid grid-cols-2 gap-3">
             <div>
@@ -419,6 +469,9 @@ function submitDeleteCustomEx(id) {
 // ============================================================
 // Ensina o catálogo a enxergar os exercícios customizados (sem ciclo de import)
 setCustomExercisesRef(() => customExercises);
+// Ensina a base de perfis a resolver a identidade versionada dos personalizados
+// (idEstavel persistido; perfil continua sempre `nao_revisado`).
+setExerciciosPersonalizadosRef(() => customExercises);
 
 (function (g) {
     const exports_ = {
@@ -429,6 +482,7 @@ setCustomExercisesRef(() => customExercises);
     getCustomExercises,
     setCustomExercisesList,
     normalizarExerciciosPersonalizados,
+    garantirIdentidadeVersionada,
     customBySearch,
     customByName,
     rebuildCustomCatalog,
@@ -454,4 +508,4 @@ setCustomExercisesRef(() => customExercises);
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/custom_exercises.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
-export { STORAGE_KEY_CUSTOM_EX, customExercises, loadCustomExercises, saveCustomExercises, getCustomExercises, setCustomExercisesList, normalizarExerciciosPersonalizados, customBySearch, customByName, rebuildCustomCatalog, rebuildFullSearchIndex, allExercisesList, catalogInfoCustom, exercicioCarregaLombarCustom, addCustomExercise, updateCustomExercise, deleteCustomExercise, customExerciseFormHTML, updateCustomExFormHint, openCustomExModal, closeCustomExModal, submitCustomExForm, submitDeleteCustomEx };
+export { STORAGE_KEY_CUSTOM_EX, customExercises, loadCustomExercises, saveCustomExercises, getCustomExercises, setCustomExercisesList, normalizarExerciciosPersonalizados, garantirIdentidadeVersionada, customBySearch, customByName, rebuildCustomCatalog, rebuildFullSearchIndex, allExercisesList, catalogInfoCustom, exercicioCarregaLombarCustom, addCustomExercise, updateCustomExercise, deleteCustomExercise, customExerciseFormHTML, updateCustomExFormHint, openCustomExModal, closeCustomExModal, submitCustomExForm, submitDeleteCustomEx };

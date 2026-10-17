@@ -59,7 +59,11 @@ global.indexedDB = makeFakeIDB();
 const stripModuleSyntax = s => s
     .replace(/^import [^\n]*;\n/gm, '')
     .replace(/^export \{[^\n]*\};?\n/gm, '');
-const src = ['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/custom_exercises.js', 'js/datas.js', 'js/perfil_exercicios.js', 'js/corridas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/config.js', 'js/boss.js', 'js/registro.js', 'js/app.js']
+// Ordem de concatenação: o corpo de custom_exercises.js injeta a lista de
+// personalizados na base de perfis (setExerciciosPersonalizadosRef), então
+// perfil_exercicios.js precisa ser avaliado antes (mesma dependência que o
+// grafo real de ES modules resolve via import).
+const src = ['js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js', 'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js', 'js/perfil_exercicios.js', 'js/custom_exercises.js', 'js/datas.js', 'js/corridas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/config.js', 'js/boss.js', 'js/registro.js', 'js/app.js']
     .map(p => stripModuleSyntax(fs.readFileSync(p, 'utf8'))).join('\n');
 const api = new Function(src + `
   return {
@@ -81,6 +85,8 @@ const api = new Function(src + `
     PERFIL_SCHEMA_VERSION, PERFIL_STATUS, PERFIL_ORIGEM, PERFIS_REVISADOS, PERFIL_REGISTRO,
     idEstavelDoExercicio, aliasesDoExercicio, perfilDoExercicio, contribuicaoAnatomica,
     validarPerfilExercicio, validarRegistroPerfis, inventarioTaxonomia,
+    perfilDePersonalizado, idEstavelDeNomePersonalizado, idEstavelValido, idsEstaveisDoCatalogo,
+    garantirIdentidadeVersionada,
     normalizeSavedWorkouts, suggestSessaoFor, CATALOG_ALIASES,
     FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, seriesIndiretasSemana, wrapCanvasText,
     SEASON_WEEKS, autoDeloadWeekKeys, XP_REST_PER_DAY, ensureDeloadRestAwards, getTodayLocalISO,

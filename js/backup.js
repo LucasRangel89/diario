@@ -40,6 +40,11 @@ function parseCSVRows(text, sep) {
 // campos AUSENTES mantêm o valor atual (savedWorkouts, settings, customExercises) ou
 // recebem o padrão do formato antigo (deloadWeeks, tests, weightLog). Campos PRESENTES
 // e com tipo errado fazem o backup inteiro ser rejeitado, sem alterar nada.
+// Itens de customExercises podem carregar os campos OPCIONAIS de identidade
+// versionada `idEstavel` (ex-slug, preservado em renomes) e `versao` (inteiro
+// >= 1): válidos fazem ida e volta; ausentes/inválidos são cunhados/ajustados
+// na importação (js/custom_exercises.js, garantirIdentidadeVersionada). O
+// formato continua 6 — não há coluna nova de perfil nem exportação de anatomia.
 // A regra de data válida vive em js/datas.js (módulo único, compartilhado com o
 // catálogo e o CSV): antes havia uma cópia aqui e outra em js/catalogo.js.
 function isObjetoSimples(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
