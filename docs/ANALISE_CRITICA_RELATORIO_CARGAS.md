@@ -34,6 +34,21 @@ Os coeficientes atuais de apoio indireto (`SINERGIA`) devem ser chamados de cont
 
 **Atualização (17/10/2026):** a interface e a documentação passaram a usar “contribuição estimada / séries ponderadas”, sem mudar o cálculo. A base versionada de perfis (`js/perfil_exercicios.js`) e o inventário (`docs/TAXONOMIA_EXERCICIOS.md`) foram adicionados na Etapa 2a abaixo, ainda sem classificar exercícios nem alterar metas, XP, chefões ou registros.
 
+**Decisões de produto confirmadas (17/10/2026; taxonomia §6, #1, #5 e #9):**
+`muscle` é **permanente**, não vira legado; continua autoritativo como grupo
+registrado no histórico, CSV formato 3, backup JSON formato 6 e metas, sem
+alterar as regras atuais de XP/chefões (que consultam primeiro o catálogo,
+conforme o mapa de impacto da taxonomia) ou reclassificar registros. O apoio
+indireto permanece apenas aviso heurístico de **contribuição estimada / séries
+ponderadas** (fator 0,3–0,5), nunca “série equivalente”: não entra em metas,
+XP ou chefões nem infere anatomia de exercício não revisado. A exportação de
+perfis/anatomia fica **fora por enquanto**: CSV 3 e JSON 6 não recebem campos
+de perfil; a única exceção já existente são os campos opcionais de identidade
+`idEstavel`/`versao` nos itens de `customExercises` do backup (não são
+anatomia). Uma eventual integração de perfis a recomendações ou contabilidade
+continua dependendo de decisão de produto, migração explícita e revisão
+profissional nos casos anatômicos (taxonomia §5).
+
 ### Carga registrada, tonelagem e 1RM
 
 A convenção da planilha (anilhas sem barra/carrinho, halter por unidade, fator/lados) é explícita e tem valor para comparar a própria rotina ao longo do tempo. Não é necessário destruir essa compatibilidade. O cuidado é não chamar a tonelagem de trabalho mecânico, tensão ou esforço interno, nem comparar indiscriminadamente máquinas e exercícios.
@@ -85,7 +100,7 @@ A faixa semanal atual é uma meta configurada pelo app, não um mínimo universa
 2. Revisar músculos primários/secundários e padrões com profissional; perfil não revisado não gera contribuição anatômica presumida.
 3. Formalizar modalidades de progressão e unidade do incremento (por halter, por lado, total, pino, assistência, variante, reps ou tempo).
 4. Separar `loadEntered` de estimativa de carga externa quando barra, carrinho ou máquina forem identificáveis.
-5. Preservar grupo/carga legado no registro e CSV; migrar explicitamente e validar exportação/importação de ida e volta.
+5. Preservar `muscle` permanentemente e a carga legada no registro e CSV; qualquer visão derivada requer migração explícita e testes de ida e volta dos formatos existentes. Não exportar perfis/anatomia sem nova decisão de produto.
 
 **Gate:** migração reversível/explicada, perfis revisados e ausência de alteração silenciosa do histórico, XP ou PRs.
 
