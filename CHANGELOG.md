@@ -2,6 +2,11 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Não lançado] — decisões de produto da taxonomia (17/10/2026; somente docs)
+
+- Decisões #1, #5 e #9 registradas em `docs/TAXONOMIA_EXERCICIOS.md` (§6) e na análise crítica: `muscle` é **permanente** como grupo gravado (registros, histórico, CSV 3, backup JSON 6, metas), sem alterar as regras atuais de XP/chefões nem reclassificar registros; apoio indireto segue como aviso de **contribuição estimada / séries ponderadas** (fator 0,3–0,5), nunca “série equivalente”, fora de metas, XP e chefões; exportação de perfis/anatomia fica **fora por enquanto**.
+- Formatos inalterados: CSV 3 e backup JSON 6 não recebem campos de perfil/anatomia. Única exceção já existente: `idEstavel`/`versao` opcionais nos itens de `customExercises` do backup (identidade, não anatomia). Nenhum código, dado legado, cálculo ou teste foi alterado; novas inferências anatômicas continuam condicionadas à revisão profissional (§5 da taxonomia).
+
 ## [Não lançado] — identidade versionada de exercícios personalizados (idEstavel)
 
 - Exercícios personalizados ganham **identidade versionada** (`js/custom_exercises.js` e `js/perfil_exercicios.js`, decisão #8 da taxonomia): `idEstavel` (`ex-slug`) cunhado **uma única vez** na criação e preservado em renomes e edições (o nome é rótulo; a identidade é o ID) e `versao` (inteiro ≥ 1) que sobe a cada edição. Registros legados sem identidade recebem cunhagem determinística ao carregar/importar (recarregar não recunha). IDs dos 72 exercícios do catálogo são **reservados** — personalizado não pode "personificar" exercício do catálogo — e IDs repetidos no arquivo seguem a regra existente "a 1ª ocorrência mantém" (a seguinte é recunhada). Nada disso é anatomia.

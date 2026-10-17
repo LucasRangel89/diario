@@ -243,38 +243,53 @@ e `tests/ui/60_csv_mapa_delegacao.js`.
 | Renomear exercício do catálogo / manter ID antigo | Não é clínico | É governança de identidade e compatibilidade. | Alias/migração explícita e teste de round-trip. |
 | Acrescentar campos ao CSV/JSON | Não é clínico | É compatibilidade de formato. | Nova versão de formato, leitura dos arquivos antigos e round-trip. |
 
-## 6. Decisões pendentes
+## 6. Decisões de produto (decididas e pendentes)
 
-1. **`muscle` é permanente ou vira legado?** Manter o campo para sempre é a
-   opção mais segura; introduzir `perfilId`/grupos-alvo exigirá decidir se o
-   registro grava os dois e qual deles manda em cada cálculo.
-2. **Separar só no cálculo ou também na UI?** Criar grupos visuais novos muda
+1. **DECIDIDA em 17/10/2026 — `muscle` é PERMANENTE.** Não vira campo
+   legado: permanece autoritativo como grupo gravado nos registros, no CSV
+   formato 3, no backup JSON formato 6, nas metas semanais e no histórico,
+   preservando a contabilidade existente de XP e chefões. As regras atuais
+   que consultam primeiro o grupo do catálogo para XP/chefões (seção 2)
+   continuam intactas; esta decisão não as substitui nem reclassifica logs.
+   Uma eventual visão anatômica derivada não substitui `muscle` nem reescreve
+   registros antigos.
+2. **PENDENTE — Separar só no cálculo ou também na UI?** Criar grupos visuais novos muda
    filtros, metas e a forma como o usuário lê o histórico; pode ser pior para
    quem já usa `Posterior` há meses.
-3. **O que fazer com registros antigos?** Manter o grupo gravado para sempre,
-   oferecer uma visão derivada por versão de mapeamento, ou migrar só com
-   consentimento. Reescrita silenciosa está descartada.
-4. **Vocabulário anatômico.** Definir IDs/rótulos de músculos, o que é
+3. **PENDENTE — O que fazer com registros antigos em uma eventual visão derivada?**
+   Definir se e como oferecer mapeamento versionado com consentimento,
+   preservando sempre o `muscle` original (decisão #1). Reescrita silenciosa
+   está descartada.
+4. **PENDENTE — Vocabulário anatômico.** Definir IDs/rótulos de músculos, o que é
    primário/secundário/estabilizador e como variantes de execução entram no
    perfil. A base aceita texto, mas não define uma taxonomia anatômica própria.
-5. **Contribuição secundária.** Manter como aviso heurístico, esconder ou
-   remover? Se mantida, nunca exibir como “séries equivalentes”.
-6. **Progressão.** Definir modalidades (carga externa, peso corporal, assistência,
+5. **DECIDIDA em 17/10/2026 — apoio indireto permanece aviso heurístico.**
+   Exibir como “contribuição estimada / séries ponderadas” (fator fixo
+   0,3–0,5), **nunca** como “série equivalente” ou medida validada de
+   estímulo. Não conta em metas semanais, XP nem chefões; não serve para
+   inferir anatomia de exercício não revisado. Alterar fatores ou transformar
+   isso em estímulo exige revisão profissional (seção 5).
+6. **PENDENTE — Progressão.** Definir modalidades (carga externa, peso corporal, assistência,
    variante, reps, tempo) e unidade do incremento (por haltere, por lado, total,
    pino). A base v1 não tem esses campos.
-7. **Carga externa.** Quando barra/carrinho/máquina forem identificáveis,
+7. **PENDENTE — Carga externa.** Quando barra/carrinho/máquina forem identificáveis,
    separar `loadEntered` de estimativa externa sem alterar o valor digitado.
-8. **Exercícios personalizados.** Quem revisa, como versionar e como evitar que
+8. **PENDENTE — Exercícios personalizados.** Quem revisa, como versionar e como evitar que
    um grupo declarado pelo usuário seja lido como anatomia validada.
-   **Atualização (17/10/2026):** a versionamento de identidade está resolvido
+   **Atualização (17/10/2026):** o versionamento de identidade está resolvido
    (seção 3.3: `idEstavel` estável em renomes + `versao` da definição, com o
    grupo do usuário restrito a agrupamento organizacional). Seguem pendentes:
    **quem** revisa personalizados e **qual fluxo de opt-in** permitiria, um dia,
    anatomia revisada para um exercício do usuário — até lá, o perfil fica
    sempre `nao_revisado` e revisões para o ID são ignoradas.
-9. **Exportação.** Perfil em colunas novas do CSV, aba separada ou campo do
-   JSON? Qual versão de formato e como manter arquivos antigos importáveis.
-10. **Governança da revisão.** Quem assina, com quais fontes, por quanto tempo a
+9. **DECIDIDA em 17/10/2026 — exportação de perfil fica FORA por enquanto.**
+   CSV formato 3 e backup JSON formato 6 não ganham campos/colunas de
+   perfil ou anatomia. **Única exceção já existente:** itens de
+   `customExercises` no backup podem conter `idEstavel`/`versao` opcionais
+   de identidade (seção 3.3), não de anatomia. Arquivos antigos continuam
+   importáveis; exportar perfis no futuro exige nova decisão de produto e
+   compatibilidade de formato, sem perder `muscle`.
+10. **PENDENTE — Governança da revisão.** Quem assina, com quais fontes, por quanto tempo a
     revisão vale e como registrar uma revisão substituída.
 
 ## 7. Critérios de aceitação para a próxima etapa
