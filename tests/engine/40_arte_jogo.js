@@ -173,6 +173,44 @@ check('faixaSeriesDoGrupo devolve a exceção e o padrão 10–20',
     && api.faixaSeriesDoGrupo('antebraco') === api.FAIXA_SERIES_POR_GRUPO['Antebraço']
     && api.faixaSeriesDoGrupo('Peito') === api.FAIXA_SERIES_SEMANAIS
     && api.faixaSeriesDoGrupo('') === api.FAIXA_SERIES_SEMANAIS);
+
+console.log('\n== 28a. Faixas configuráveis sem alterar registros ou jogo ==');
+const faixaCustom = { Peito: { min: 0, max: 8 }, 'Antebraço': { min: 2, max: 6 } };
+check('defaults idênticos nos dez grupos sem configuração (incluindo aliases)',
+    api.MUSCULOS_MAPA.every(m => api.faixaSeriesDoGrupo(m).min === (m === 'Antebraço' ? 4 : 10)
+        && api.faixaSeriesDoGrupo(m).max === (m === 'Antebraço' ? 10 : 20))
+    && api.faixaSeriesDoGrupo('antebraco').min === 4);
+check('faixas personalizadas só mudam os grupos escolhidos',
+    api.faixaSeriesDoGrupo('Peito', faixaCustom).min === 0
+    && api.faixaSeriesDoGrupo('Antebraço', faixaCustom).max === 6
+    && api.faixaSeriesDoGrupo('Costas', faixaCustom).max === 20);
+check('volume legado mantém as três classificações sem override',
+    [3, 12, 21].map(n => api.fatigueState('Peito', [], n, Date.now()).volumeStatus).join() === 'abaixo,na-faixa,acima');
+check('volume com meta personalizada muda status e excedente, não séries registradas',
+    [0, 5, 9].map(n => api.fatigueState('Peito', [], n, Date.now(), null, faixaCustom).volumeStatus).join() === 'na-faixa,na-faixa,acima'
+    && api.fatigueState('Peito', [], 9, Date.now(), null, faixaCustom).excesso === 1);
+const faixasRuins = { Peito: { min: 8, max: 8 }, Costas: { min: -1, max: 20 },
+    Core: { min: '2', max: 15 }, Pernas: { min: 0, max: 101 }, Ombros: { min: 1.5, max: 12 },
+    Cardio: { min: 1, max: 5 }, Antebraço: { min: 2, max: 7 } };
+check('inválidos, desconhecidos e valores fora do teto retornam ao default sem crash',
+    Object.keys(api.normalizarFaixasSeries(faixasRuins)).join() === 'Antebraço'
+    && ['Peito', 'Costas', 'Core', 'Pernas', 'Ombros'].every(m => api.faixaSeriesDoGrupo(m, faixasRuins).min === 10)
+    && api.faixaSeriesDoGrupo('Antebraço', faixasRuins).min === 2
+    && api.faixaSeriesDoGrupo('Cardio', faixasRuins).min === 10);
+const logFaixa = { id: 987654, date: '2026-10-05', muscle: 'Peito', exercise: 'Supino Reto com Barra', type: 'carga_total', weight: 100, reps: [5, 5, 5] };
+const logsFaixa = [logFaixa];
+const jogoAntes = JSON.stringify([
+    api.logEst1RM(logFaixa), api.computeXP('2026-10-06', { logs: logsFaixa, bodyweight: 80, bosses: [], restDays: [] }),
+    api.computeBossProgress(logsFaixa, 80, [], {}), api.allGroupsMetForWeek(logsFaixa, '2026-10-05', new Map([[logFaixa, 3]]))
+]);
+api.weeklyGaps(logsFaixa, '2026-10-05', faixaCustom);
+api.fatigueState('Peito', logsFaixa, 3, Date.now(), null, faixaCustom);
+check('configurar faixa não reclassifica logs nem altera XP, chefões, 1RM ou regra legada do Mestre',
+    jogoAntes === JSON.stringify([
+        api.logEst1RM(logFaixa), api.computeXP('2026-10-06', { logs: logsFaixa, bodyweight: 80, bosses: [], restDays: [] }),
+        api.computeBossProgress(logsFaixa, 80, [], {}), api.allGroupsMetForWeek(logsFaixa, '2026-10-05', new Map([[logFaixa, 3]]))
+    ]) && logFaixa.muscle === 'Peito');
+
 const fAntebraco = api.fatigueState('Antebraço', [], 6, Date.now());
 check('fatigueState cobra a faixa do grupo: 6 séries de antebraço estão na faixa',
     fAntebraco.volumeStatus === 'na-faixa' && fAntebraco.faltam === 0 && fAntebraco.excesso === 0

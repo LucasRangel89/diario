@@ -122,7 +122,7 @@ function orderWorkoutExercises(list, options = {}) {
         const m = normalizeMuscle(muscle || 'Geral');
         if (!muscleStateCache.has(m)) {
             const muscleLogs = allLogs.filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle || 'Geral') === m);
-            const state = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs);
+            const state = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs, null, opts.weeklySeriesRanges);
             // Mesma lógica da recomendação: prontidão + séries que faltam − excesso.
             state.orderScore = state.pct + state.faltam * 4 - state.excesso * 3;
             muscleStateCache.set(m, state);
@@ -290,12 +290,12 @@ function weeklySetsByMuscle(allLogs, refDateISO) {
 /* Fadiga REAL = recuperação (%) temperada pelo volume da semana.
    Volume acima da faixa (10–20 séries) pesa na recuperação:
    cada série acima do máximo tira 2% da prontidão (mínimo 60% da recuperação). */
-function fatigueState(muscle, muscleLogs, weeklySets, nowMs, sinergia) {
+function fatigueState(muscle, muscleLogs, weeklySets, nowMs, sinergia, ranges) {
     const alvo = normalizeMuscle(muscle);
     const base = recoveryState(alvo, muscleLogs, nowMs);
     const series = Number(weeklySets) || 0;
     // A meta é do GRUPO: antebraço tem faixa própria, o resto fica em 10–20.
-    const faixa = faixaSeriesDoGrupo(alvo);
+    const faixa = faixaSeriesDoGrupo(alvo, ranges);
     const min = faixa.min, max = faixa.max;
     const volumeStatus = series < min ? 'abaixo' : (series > max ? 'acima' : 'na-faixa');
     const faltam = Math.max(0, min - series);
@@ -357,7 +357,7 @@ function diasDesdeUltimoTreino(allLogs, nowMs) {
 /* Sugestão do PRÓXIMO TREINO: prioriza grupos mais descansados e mais abaixo
    da meta semanal de séries. Devolve todos os treinos pontuados + motivos
    em português simples (o melhor primeiro). */
-function suggestNextWorkout(workouts, allLogs, nowMs) {
+function suggestNextWorkout(workouts, allLogs, nowMs, ranges) {
     const now = (nowMs != null) ? nowMs : Date.now();
     const weekly = weeklySetsByMuscle(allLogs, assistenteTodayISO(now));
     const dias = diasDesdeUltimoTreino(allLogs, now);
@@ -370,7 +370,7 @@ function suggestNextWorkout(workouts, allLogs, nowMs) {
         const motivos = [];
         groups.forEach(m => {
             const mLogs = (allLogs || []).filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle) === m);
-            const st = fatigueState(m, mLogs, weekly[m] || 0, now);
+            const st = fatigueState(m, mLogs, weekly[m] || 0, now, null, ranges);
             // Estado desconhecido recebe peso neutro no ranking; ausência de dados
             // não deve ser interpretada como músculo descansado nem fatigado.
             score += (st.pct ?? 50) + st.faltam * 4 - st.excesso * 3;
@@ -414,14 +414,14 @@ function seriesIndiretasSemana(muscle, logsSemana) {
 
 // O que falta para o "estímulo total" da semana (usado no montador).
 // Cada grupo é cobrado pela PRÓPRIA faixa e traz o apoio indireto visível.
-function weeklyGaps(allLogs, refDateISO) {
+function weeklyGaps(allLogs, refDateISO, ranges) {
     const ref = refDateISO || assistenteTodayISO();
     const weekly = weeklySetsByMuscle(allLogs, ref);
     const [ws, we] = isoWeekRange(ref);
     const logsSemana = (Array.isArray(allLogs) ? allLogs : [])
         .filter(l => l && l.kind !== 'corrida' && l.date >= ws && l.date <= we);
     return MUSCULOS_MAPA.map(m => {
-        const faixa = faixaSeriesDoGrupo(m);
+        const faixa = faixaSeriesDoGrupo(m, ranges);
         const series = weekly[m] || 0;
         const faltam = Math.max(0, faixa.min - series);
         const excesso = Math.max(0, series - faixa.max);

@@ -10,7 +10,7 @@ muscular”); este arquivo é a versão completa.
 | Bloco | O que é |
 |---|---|
 | **Prontidão estimada (%)** | Heurística que combina a janela de tempo desde o registro (24 h a 72 h, conforme o grupo), volume semanal excedente e, quando aplicável, apoio indireto. Sem histórico direto ou indireto, o estado é **Sem dados** e não há percentual. |
-| **Barra de séries da semana** | Séries registradas na semana × faixa-alvo do grupo (10–20 séries; Antebraço 4–10). Rótulos: `abaixo da meta`, `na faixa`, `acima da faixa`. |
+| **Barra de séries da semana** | Séries registradas na semana × faixa-alvo do grupo (padrão 10–20 séries; Antebraço 4–10, editável por grupo). Rótulos: `abaixo da meta`, `na faixa`, `acima da faixa`. |
 | **Apoio indireto (🤝)** | Grupos que trabalham de forma indireta (ex.: puxadas para Antebraço/Bíceps, empurradas para Tríceps/Ombros, agachamentos para Posterior). Entra na prontidão com fator 0,3–0,5 e **não** conta para a meta semanal. O número exibido é uma **contribuição estimada** (séries ponderadas), não uma série biológica equivalente. |
 | **Painel da Lombar** | Estimativa separada, a partir do tempo desde a última sessão que carrega a região e do volume dela. |
 
@@ -19,7 +19,7 @@ muscular”); este arquivo é a versão completa.
 1. **Janela de recuperação do grupo.** `percentual = tempo desde o último treino ÷
    (horas do grupo + 2 h por série acima de 8 na sessão)`, limitado a 2 %–100 %.
    As horas por grupo estão em `MUSCLE_META` (`js/catalogo.js`).
-2. **Volume da semana.** Acima da faixa-alvo, cada série excedente reduz a
+2. **Volume da semana.** A faixa é meta configurada pelo app/usuário por grupo (sem configuração: 10–20; Antebraço 4–10), não mínimo universal nem prescrição. Acima da faixa-alvo, cada série excedente reduz a
    prontidão em 2 pontos percentuais (piso de 60 % da recuperação).
 3. **Apoio indireto.** Quando há estímulo indireto, vale o menor valor entre o
    direto e o indireto ponderado pelo fator do grupo. Se não houver nenhum dos
@@ -69,3 +69,15 @@ muscular”); este arquivo é a versão completa.
 - Taxonomia vigente, perfis versionados e limites: `js/perfil_exercicios.js` e
   `docs/TAXONOMIA_EXERCICIOS.md`. Na v1 todos os perfis estão `nao_revisado` e não
   alteram nenhum cálculo acima.
+
+## 5. Meta configurável de séries
+
+No mapa da aba Hoje, abra “Faixas de séries da semana” para editar mínimo e
+máximo de cada grupo. Valores inteiros `0 ≤ min < max ≤ 100`; deixar um campo
+em branco, usar um par inválido ou remover a configuração restaura o padrão
+daquele grupo. A configuração fica apenas em `settings.weeklySeriesRanges`
+(no armazenamento local e, opcionalmente, no `settings` do backup JSON v6).
+Backup sem o campo assume os padrões, inclusive ao restaurar sobre uma
+configuração anterior. CSV 3 e registros `muscle` não mudam. A configuração
+afeta as indicações de faixa do mapa, montador e assistente, **não** a contagem
+de séries, o apoio indireto, XP, chefões ou 1RM.

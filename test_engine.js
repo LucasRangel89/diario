@@ -88,7 +88,7 @@ const api = new Function(src + `
     perfilDePersonalizado, idEstavelDeNomePersonalizado, idEstavelValido, idsEstaveisDoCatalogo,
     garantirIdentidadeVersionada,
     normalizeSavedWorkouts, suggestSessaoFor, CATALOG_ALIASES,
-    FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, seriesIndiretasSemana, wrapCanvasText,
+    FAIXA_SERIES_POR_GRUPO, faixaSeriesDoGrupo, normalizarFaixasSeries, seriesIndiretasSemana, wrapCanvasText,
     SEASON_WEEKS, autoDeloadWeekKeys, XP_REST_PER_DAY, ensureDeloadRestAwards, getTodayLocalISO,
     lerPlanilhaCSV, planejarImportacaoLogs, csvLogFingerprint, csvField, csvLogId, analisarLinhasLog,
     validarBackupJSON, normalizarExerciciosPersonalizados, setCustomExercisesList, getCustomExercises,

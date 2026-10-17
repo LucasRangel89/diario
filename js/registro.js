@@ -13,7 +13,7 @@
    importado.
    ============================================================ */
 
-import { CATALOG_TIPOS, MUSCULOS_MAPA, catalogInfo, detectAutoPR, duplaProgressao, formatLoadText, formatRepsText, inferExerciseType, logTstSeconds, logVolumeKg, normalizeMuscle, sinergiaState } from './catalogo.js';
+import { CATALOG_TIPOS, MUSCULOS_MAPA, catalogInfo, detectAutoPR, duplaProgressao, formatLoadText, formatRepsText, inferExerciseType, logTstSeconds, logVolumeKg, normalizeMuscle, sinergiaState, faixaSeriesDoGrupo } from './catalogo.js';
 import { cardioXP } from './gamificacao.js';
 import { formatRunDuration, formatRunPace, isRunLog, paceSecondsPerKm, parseRunDuration, runModality } from './corridas.js';
 import { isoDataValida } from './datas.js';
@@ -23,7 +23,7 @@ import { generateStoryCard } from './cartoes.js';
 import { saveLogsToStorage } from './persistencia.js';
 import { appendSessionExtra, renderSession, spawnDamageFloat, updateSessionExtraHint } from './sessao.js';
 import { renderBossBattleUI } from './boss.js';
-import { INP, LBL, MUSCLE_OPTIONS, NEXT_GOALS, TECHNIQUES, activeGameThemeId, activeSession, activeTab, alertModal, escapeHtml, fmtN, formatShortBR, getTodayLocalISO, logs, refreshAll, savedWorkouts, setEditorState, shakeElement, updateSummaryMetrics, userBodyweight } from './app.js';
+import { INP, LBL, MUSCLE_OPTIONS, NEXT_GOALS, TECHNIQUES, activeGameThemeId, activeSession, activeTab, alertModal, escapeHtml, fmtN, formatShortBR, getTodayLocalISO, logs, refreshAll, savedWorkouts, settings, setEditorState, shakeElement, updateSummaryMetrics, userBodyweight } from './app.js';
 
 // ============================ FORMULÁRIO DE REGISTRO ============================
 function updateTypeHint() {
@@ -667,10 +667,17 @@ function renderRecoveryMap() {
     const nowMs = new Date().getTime();
     const weekly = weeklySetsByMuscle(logs, getTodayLocalISO());
 
+    const fields = document.getElementById('weekly-range-fields');
+    if (fields) fields.innerHTML = MUSCULOS_MAPA.map((m, i) => {
+        const f = faixaSeriesDoGrupo(m, settings.weeklySeriesRanges);
+        return `<div class="bg-berzerker-dark rounded-lg p-2"><span class="block text-white mb-1">${m}</span>
+            <label for="weekly-min-${i}">De</label> <input id="weekly-min-${i}" type="number" min="0" max="99" step="1" value="${f.min}" class="w-16 bg-berzerker-border text-white rounded p-1">
+            <label for="weekly-max-${i}">até</label> <input id="weekly-max-${i}" type="number" min="1" max="100" step="1" value="${f.max}" class="w-16 bg-berzerker-border text-white rounded p-1"></div>`;
+    }).join('');
     gridEl.innerHTML = MUSCULOS_MAPA.map(m => {
         const muscleLogs = logs.filter(l => l && l.kind !== 'corrida' && normalizeMuscle(l.muscle) === m);
         const sin = sinergiaState(m, logs, nowMs);
-        const st = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs, sin);
+        const st = fatigueState(m, muscleLogs, weekly[m] || 0, nowMs, sin, settings.weeklySeriesRanges);
         const pctText = st.pct === null ? '—' : `${st.pct}%`;
         return `
         <div data-action="prefillMuscleFromMap" data-args='["${m}"]' title="Registrar exercício de ${m}" class="cursor-pointer bg-berzerker-dark border ${st.border} rounded-xl p-3.5 space-y-2.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
@@ -749,7 +756,7 @@ function renderDaySuggestion() {
         el.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><p class="text-xs text-gray-400">Monte um treino no <b>Montador</b> para receber a sugestão do dia.</p><button type="button" data-action="switchTab" data-args='["montador"]' class="px-3 py-2 bg-berzerker-600/20 border border-berzerker-500/40 text-berzerker-500 text-xs font-bold uppercase rounded-lg hover:bg-berzerker-600/40">🎯 Abrir Montador</button></div>`;
         return;
     }
-    const scored = suggestNextWorkout(savedWorkouts, logs, Date.now());
+    const scored = suggestNextWorkout(savedWorkouts, logs, Date.now(), settings.weeklySeriesRanges);
     const top = scored[0];
     const alternates = scored.slice(1, 3);
     el.innerHTML = `

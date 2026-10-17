@@ -326,6 +326,12 @@
                     </div>
                 </div>
 
+                <details id="weekly-range-details" class="mb-3 text-xs text-gray-400">
+                    <summary class="cursor-pointer">Faixas de séries da semana · meta configurável pelo app/usuário (editar)</summary>
+                    <p class="mt-2">Meta pessoal de contagem de séries registradas por grupo; não é mínimo universal nem orientação de treino. Deixe em branco para usar o padrão. Máximo permitido: 100.</p>
+                    <div id="weekly-range-fields" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-2"></div>
+                    <button type="button" data-action="saveWeeklySeriesRanges" class="mt-3 px-3 py-2 bg-berzerker-border rounded-lg text-white">Salvar faixas</button>
+                </details>
                 <div id="recovery-status-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
                 <p class="text-xs text-gray-400 mt-2">Prontidão estimada: estimativa baseada em tempo desde o último treino e volume semanal; não mede fadiga. Não substitui orientação profissional.</p>
                 <div id="lombar-alert-panel" class="mt-3"></div>
