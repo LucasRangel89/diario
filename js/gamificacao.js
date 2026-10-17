@@ -1,19 +1,22 @@
-import { MUSCLE_WEIGHT, logTstSeconds, logVolumeKg } from './catalogo.js';
+import { MUSCULOS_MAPA, catalogInfo, faixaSeriesDoGrupo, normalizeMuscle, logVolumeKg, qualifyingPRLogs } from './catalogo.js';
 import { ANIMAL_RANKS, logs, toLocalISO } from './app.js';
 /* ============================================================
    GAMIFICAÇÃO — patentes, chefões, XP, missões e temporadas
    ============================================================ */
 
-// Patente = XP ACUMULADO. XP vem de volume ajustado (com teto diário por
-// grupo), PRs, corridas, chefões, missões semanais e descanso (deload).
+// Patente = XP GLOBAL ACUMULADO. XP de treino vem de séries efetivas com teto
+// semanal por grupo; kg seguem como estatística. PRs, corridas, chefões, missões
+// e descanso (deload) continuam como fontes separadas de XP.
 const XP_MIN = [0, 150, 500, 1100, 2000, 3300, 5000, 7500, 11000, 16000];
-const XP_GROUP_DAY_CAP = 60;        // teto de XP de volume por grupo muscular por dia
+const XP_GROUP_DAY_CAP = 60;        // compatibilidade com backups/consumidores antigos
+const XP_GROUP_WEEK_CAP = 20;        // teto semanal provisório de séries efetivas por grupo
+const XP_PER_EFFECTIVE_SET = 2.5;    // calibração inicial; revisável com histórico adicional
 const XP_PR = 50;                   // XP por PR automático
 const XP_REST_PER_DAY = 25;         // XP de descanso em semana de deload (dias sem treino)
 const MISSION_XP = { treinos: 120, biset: 80, pr: 100, corrida: 80, fraco: 90 };
 
-const BOSS_HP_BASE = 25000;
-const BOSS_HP_STEP = 2000;
+const BOSS_HP_BASE = 100;          // aproximadamente 1 semana no volume observado (≈90 séries)
+const BOSS_HP_STEP = 18;            // chefão 12 ≈ 3 semanas de dano efetivo
 
 // HP e IDs são determinísticos para manter a mesma curva nos dez jogos.
 // O clássico usa boss1…boss12 para preservar os retratos originais boss1…boss4.
@@ -283,34 +286,79 @@ function isoWeekRange(dateStr) {
 }
 
 // ============================================================
-// DANO AO CHEFÃO — 1 kg = 1 DMG, fraqueza ×1,25, PR = crítico ×2
+// DANO AO CHEFÃO — séries efetivas, fraqueza semanal ×2 e PR crítico ×2
 // ============================================================
-function logDamageKg(log, bodyweight, boss) {
+function legacyLogDamageKg(log, bodyweight, boss) {
+    if (!log) return 0;
+    let dmg = log.kind === 'corrida'
+        ? (Number(log.distanceKm) || 0) * 100 + (Number(log.durationMin) || 0) * 5
+        : logVolumeKg(log, bodyweight);
+    if (boss && boss.weak && log.muscle === boss.weak) dmg *= 1.25;
+    if (log.isPR) dmg *= 2;
+    return dmg;
+}
+
+function bossRewardXP(boss) {
+    const stage = Math.max(0, Math.round(((Number(boss?.maxHp) || BOSS_HP_BASE) - BOSS_HP_BASE) / BOSS_HP_STEP));
+    // Mantém a recompensa histórica aproximada (125–235 XP) apesar da nova escala de HP.
+    return Math.max(1, 125 + stage * 10);
+}
+
+function logDamageKg(log, bodyweight, boss, effectiveSets, weakGroup) {
     if (!log) return 0;
     let dmg;
     if (log.kind === 'corrida') {
-        dmg = (Number(log.distanceKm) || 0) * 100 + (Number(log.durationMin) || 0) * 5;
+        // Conversão conservadora: cardio permanece em pontos próprios, sem kg de treino.
+        dmg = (Number(log.distanceKm) || 0) * 2 + (Number(log.durationMin) || 0) / 5;
+        if (boss?.archetype === 'Vl') dmg *= 1.5;
     } else {
-        dmg = logVolumeKg(log, bodyweight);
+        const count = Number.isFinite(effectiveSets) ? effectiveSets : (effectiveSetAllocations([log]).get(log) || 0);
+        dmg = count;
+        const group = normalizeMuscle(catalogInfo(log.exercise)?.grupo || log.muscle || 'Geral');
+        if (weakGroup && group === weakGroup) dmg *= 2;
     }
-    if (boss && boss.weak && log.muscle === boss.weak) dmg *= 1.25;
-    if (log.isPR) dmg *= 2; // golpe crítico no PR
+    if (log.isPR) dmg *= 2;
     return dmg;
+}
+
+function weaknessGroupForWeek(allLogs, date, credits) {
+    const start = new Date(`${weekStartISO(date)}T12:00:00`);
+    start.setDate(start.getDate() - 7);
+    const previousWeek = isoWeekKey(toLocalISO(start));
+    const totals = new Map(MUSCULOS_MAPA.map(group => [group, 0]));
+    (allLogs || []).forEach(log => {
+        if (!log || log.date == null || isoWeekKey(log.date) !== previousWeek) return;
+        const group = normalizeMuscle(catalogInfo(log.exercise)?.grupo || log.muscle || 'Geral');
+        if (totals.has(group)) totals.set(group, totals.get(group) + (credits.get(log) || 0));
+    });
+    return MUSCULOS_MAPA.reduce((weakest, group) => totals.get(group) < totals.get(weakest) ? group : weakest, MUSCULOS_MAPA[0]);
+}
+
+function allGroupsMetForWeek(allLogs, date, credits) {
+    const week = isoWeekKey(date);
+    const totals = new Map(MUSCULOS_MAPA.map(group => [group, 0]));
+    (allLogs || []).forEach(log => {
+        if (!log || log.date == null || isoWeekKey(log.date) !== week) return;
+        const group = normalizeMuscle(catalogInfo(log.exercise)?.grupo || log.muscle || 'Geral');
+        if (totals.has(group)) totals.set(group, totals.get(group) + (credits.get(log) || 0));
+    });
+    return MUSCULOS_MAPA.every(group => totals.get(group) >= Number(faixaSeriesDoGrupo(group)?.min || 0));
 }
 
 // Percorre os logs em ordem cronológica consumindo o HP de cada estágio.
 // Retorna o estado determinístico da progressão dos chefões.
-function computeBossProgress(allLogs, bodyweight, bosses) {
+function computeBossProgressLegacy(allLogs, bodyweight, bosses) {
     const lista = bosses && bosses.length ? bosses : BOSSES_CLASSIC;
-    const crono = [...allLogs].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.id - b.id)));
+    const crono = [...allLogs].filter(l => l && l.conferir !== true && String(l.conferir).toLowerCase() !== 'sim').sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.id - b.id)));
     let idx = 0, dealt = 0, totalDamage = 0, critCount = 0, weakHits = 0;
     const defeatedAt = {};
 
     crono.forEach(l => {
         const boss = lista[Math.min(idx, lista.length - 1)];
-        let dmg = logDamageKg(l, bodyweight, boss);
+        const critical = !!l.isPR;
+        let dmg = legacyLogDamageKg({ ...l, isPR: critical }, bodyweight, boss);
         totalDamage += dmg;
-        if (l.isPR) critCount++;
+        if (critical) critCount++;
         if (boss && boss.weak && l.muscle === boss.weak && dmg > 0) weakHits++;
         while (dmg > 0.0001 && idx < lista.length) {
             const need = lista[idx].maxHp - dealt;
@@ -337,12 +385,162 @@ function computeBossProgress(allLogs, bodyweight, bosses) {
         hpPercent: current.maxHp > 0 ? Math.min(100, Math.max(0, currentHp / current.maxHp * 100)) : 0,
         totalDamage: Math.round(totalDamage),
         defeatedCount: Object.keys(defeatedAt).length,
-        defeatedAt, allDefeated, critCount, weakHits
+        defeatedAt, allDefeated, critCount, weakHits,
+        damageById: Object.fromEntries(lista.map((boss, i) => [boss.id, defeatedAt[boss.id] ? boss.maxHp : (i === currentIdx ? Math.max(0, boss.maxHp - currentHp) : 0)]))
+    };
+}
+
+function computeBossProgressV1(crono, bodyweight, bosses, savedState) {
+    const baselineIds = new Set((savedState.baselineLogIds || []).map(String));
+    const qualifyingPRs = qualifyingPRLogs(crono, bodyweight);
+    const damageById = Object.fromEntries(bosses.map((boss, index) => {
+        const legacyMaxHp = 25000 + 2000 * index;
+        const saved = savedState.baselineById[boss.id];
+        return [boss.id, saved ? Math.min(legacyMaxHp, Math.max(0, Number(saved.ratio) || 0) * legacyMaxHp) : 0];
+    }));
+    const defeatedAt = Object.fromEntries(bosses.filter(boss => savedState.baselineById[boss.id]?.defeatedAt)
+        .map(boss => [boss.id, savedState.baselineById[boss.id].defeatedAt]));
+    let totalDamage = Number(savedState.baselineTotalDamage) || 0;
+    let critCount = Number(savedState.baselineCritCount) || 0;
+    let weakHits = Number(savedState.baselineWeakHits) || 0;
+    crono.filter(log => !baselineIds.has(String(log.id))).forEach(log => {
+        const isPR = qualifyingPRs.has(log);
+        let damage = legacyLogDamageKg({ ...log, isPR }, bodyweight);
+        if (isPR) critCount++;
+        const targets = Array.isArray(savedState.assignments?.[String(log.id)]) ? [...savedState.assignments[String(log.id)]] : [];
+        let targetIndex = 0;
+        let boss = targets.length ? bosses.find(item => item.id === targets[0]) : null;
+        if (!boss) {
+            const available = bosses.findIndex(item => damageById[item.id] < item.maxHp);
+            boss = bosses[available < 0 ? bosses.length - 1 : available];
+            if (boss) targets.push(boss.id);
+        }
+        if (boss?.weak && log.muscle === boss.weak) damage *= 1.25;
+        totalDamage += damage;
+        while (damage > 0.0001 && boss) {
+            const applied = Math.min(damage, Math.max(0, boss.maxHp - (damageById[boss.id] || 0)));
+            if (applied > 0) {
+                damageById[boss.id] = (damageById[boss.id] || 0) + applied;
+                if (boss.weak && log.muscle === boss.weak) weakHits++;
+                if (damageById[boss.id] >= boss.maxHp) defeatedAt[boss.id] = defeatedAt[boss.id] || log.date;
+                damage -= applied;
+            }
+            if (damage > 0.0001) {
+                targetIndex++;
+                boss = bosses.find(item => item.id === targets[targetIndex]);
+                if (!boss) {
+                    const next = bosses.findIndex(item => damageById[item.id] < item.maxHp);
+                    boss = bosses[next < 0 ? bosses.length - 1 : next];
+                    if (boss) targets.push(boss.id);
+                }
+            }
+        }
+    });
+    return { damageById, defeatedAt, totalDamage, critCount, weakHits };
+}
+
+function computeBossProgress(allLogs, bodyweight, bosses, savedState = null) {
+    const lista = bosses && bosses.length ? bosses : BOSSES_CLASSIC;
+    const crono = [...(allLogs || [])].filter(l => l && l.conferir !== true && String(l.conferir).toLowerCase() !== 'sim')
+        .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : String(a.id).localeCompare(String(b.id))));
+    const logKey = log => String(log.id ?? `${log.date}|${log.exercise}|${JSON.stringify(log.sets || log.reps || [])}|${crono.indexOf(log)}`);
+    const stateIsValid = savedState && savedState.version === 2 && savedState.baselineById && typeof savedState.baselineById === 'object';
+    if (!stateIsValid) {
+        const legacyLista = lista.map((boss, index) => ({ ...boss, maxHp: 25000 + 2000 * index }));
+        const legacy = savedState?.version === 1 && savedState.baselineById
+            ? computeBossProgressV1(crono, bodyweight, legacyLista, savedState)
+            : computeBossProgressLegacy(crono, bodyweight, legacyLista);
+        const baselineById = Object.fromEntries(lista.map((boss, index) => [boss.id, {
+            ratio: legacyLista[index].maxHp > 0 ? Math.min(1, (legacy.damageById[boss.id] || 0) / legacyLista[index].maxHp) : 0,
+            defeatedAt: legacy.defeatedAt[boss.id] || null
+        }]));
+        const combatState = {
+            version: 2,
+            baselineById,
+            baselineLogIds: crono.map(logKey),
+            baselineTotalDamage: 0, // unidades antigas de kg não são somáveis às séries efetivas
+            baselineCritCount: legacy.critCount,
+            baselineWeakHits: 0, // fraqueza fixa antiga não corresponde à dinâmica semanal
+            assignments: {}
+        };
+        return computeBossProgress(crono, bodyweight, lista, combatState);
+    }
+
+    const combatState = {
+        ...savedState,
+        baselineById: { ...savedState.baselineById },
+        baselineLogIds: [...new Set((savedState.baselineLogIds || []).map(String))],
+        assignments: { ...(savedState.assignments || {}) }
+    };
+    const baselineIds = new Set(combatState.baselineLogIds);
+    const qualifyingPRs = qualifyingPRLogs(crono, bodyweight);
+    const effectiveCredits = effectiveSetAllocations(crono);
+    const damageById = Object.fromEntries(lista.map(boss => {
+        const saved = combatState.baselineById[boss.id];
+        return [boss.id, saved ? Math.min(boss.maxHp, Math.max(0, Number(saved.ratio) || 0) * boss.maxHp) : 0];
+    }));
+    const defeatedAt = Object.fromEntries(lista.filter(boss => combatState.baselineById[boss.id]?.defeatedAt).map(boss => [boss.id, combatState.baselineById[boss.id].defeatedAt]));
+    let totalDamage = Number(combatState.baselineTotalDamage) || 0;
+    let critCount = Number(combatState.baselineCritCount) || 0;
+    let weakHits = Number(combatState.baselineWeakHits) || 0;
+
+    crono.filter(log => !baselineIds.has(logKey(log))).forEach(log => {
+        const key = logKey(log);
+        const isPR = qualifyingPRs.has(log);
+        const weekWeakness = weaknessGroupForWeek(crono, log.date, effectiveCredits);
+        const group = normalizeMuscle(catalogInfo(log.exercise)?.grupo || log.muscle || 'Geral');
+        const bossBefore = lista.find(boss => (damageById[boss.id] || 0) < boss.maxHp) || lista[lista.length - 1];
+        const masterBlocked = bossBefore?.archetype === 'Ms' && !allGroupsMetForWeek(crono, log.date, effectiveCredits);
+        let damage = masterBlocked ? 0 : logDamageKg({ ...log, isPR }, bodyweight, bossBefore, effectiveCredits.get(log) || 0, weekWeakness);
+        if (isPR) critCount++;
+        const targets = (Array.isArray(combatState.assignments[key]) ? [...combatState.assignments[key]] : [])
+            .filter(id => lista.some(boss => boss.id === id));
+        let targetPos = 0;
+        let firstTarget = targets.length ? lista.find(b => b.id === targets[0]) : null;
+        if (!firstTarget) {
+            const firstAvailable = lista.findIndex(boss => (damageById[boss.id] || 0) < boss.maxHp);
+            firstTarget = lista[firstAvailable < 0 ? lista.length - 1 : firstAvailable];
+            if (firstTarget && !targets.includes(firstTarget.id)) targets.push(firstTarget.id);
+        }
+        totalDamage += damage;
+
+        while (damage > 0.0001) {
+            let boss = targets[targetPos] ? lista.find(b => b.id === targets[targetPos]) : null;
+            if (!boss) {
+                const lastId = targets[targets.length - 1];
+                const lastIdx = lista.findIndex(b => b.id === lastId);
+                const nextIdx = lastId ? lastIdx + 1 : lista.findIndex(b => (damageById[b.id] || 0) < b.maxHp);
+                boss = lista[Math.max(0, nextIdx)];
+                if (!boss) break;
+                targets.push(boss.id);
+            }
+            const applied = Math.min(damage, Math.max(0, boss.maxHp - (damageById[boss.id] || 0)));
+            if (applied > 0) {
+                damageById[boss.id] = (damageById[boss.id] || 0) + applied;
+                if (weekWeakness && group === weekWeakness) weakHits++;
+                if (damageById[boss.id] >= boss.maxHp) defeatedAt[boss.id] = defeatedAt[boss.id] || log.date;
+                damage -= applied;
+            }
+            if (damage > 0.0001) targetPos++;
+        }
+        combatState.assignments[key] = damage > 0 ? targets : [];
+    });
+
+    const allDefeated = lista.every(boss => (damageById[boss.id] || 0) >= boss.maxHp);
+    const currentIdx = allDefeated ? lista.length - 1 : Math.max(0, lista.findIndex(boss => (damageById[boss.id] || 0) < boss.maxHp));
+    const current = lista[currentIdx];
+    const currentHp = current ? Math.max(0, current.maxHp - (damageById[current.id] || 0)) : 0;
+    const defeatedCount = lista.filter(boss => (damageById[boss.id] || 0) >= boss.maxHp).length;
+    return {
+        current, currentIdx, currentHp,
+        hpPercent: current?.maxHp > 0 ? Math.min(100, Math.max(0, currentHp / current.maxHp * 100)) : 0,
+        totalDamage: Math.round(totalDamage), defeatedCount, defeatedAt, allDefeated,
+        critCount, weakHits, damageById, combatState
     };
 }
 
 // ============================================================
-// XP — com teto diário por grupo, deload e missões
+// XP — séries efetivas com teto semanal, deload e missões
 // ============================================================
 function isDeloadWeek(dateStr, deloadWeeks) {
     return Array.isArray(deloadWeeks) && deloadWeeks.includes(isoWeekKey(dateStr));
@@ -354,50 +552,75 @@ function cardioXP(log) {
     return Math.round(km * 8 + min * 0.5);
 }
 
+function effectiveSetAllocations(allLogs, cutoff = '9999-12-31', weeklyCap = XP_GROUP_WEEK_CAP) {
+    const credits = new Map();
+    const usedByWeekGroup = new Map();
+    const ordered = (allLogs || []).map((log, index) => ({ log, index }))
+        .filter(({ log }) => log && log.date && log.date <= cutoff && log.kind !== 'corrida')
+        .sort((a, b) => a.log.date.localeCompare(b.log.date) || String(a.log.id ?? a.index).localeCompare(String(b.log.id ?? b.index)) || a.index - b.index);
+
+    ordered.forEach(({ log }) => {
+        if (log.conferir === true || String(log.conferir).toLowerCase() === 'sim') return;
+        const exercise = catalogInfo(log.exercise);
+        const muscle = normalizeMuscle(exercise?.grupo || log.muscle || 'Geral');
+        if (!MUSCULOS_MAPA.includes(muscle)) return;
+        const faixa = exercise?.faixa;
+        if (!Array.isArray(faixa) || faixa.length < 2) return;
+        const sets = Array.isArray(log.sets) && log.sets.length
+            ? log.sets
+            : (Array.isArray(log.reps) ? log.reps.map(reps => ({ reps })) : []);
+        const week = isoWeekKey(log.date);
+        const key = `${week}|${muscle}`;
+        let used = usedByWeekGroup.get(key) || 0;
+        let credit = 0;
+        sets.forEach(set => {
+            const reps = Number(typeof set === 'object' ? set.reps : set);
+            const rirRaw = typeof set === 'object' && set.rir != null && set.rir !== '' ? set.rir : log.rir;
+            const rirKnown = rirRaw != null && rirRaw !== '' && Number.isFinite(Number(rirRaw));
+            if (!Number.isFinite(reps) || reps < Number(faixa[0]) || reps > Number(faixa[1])) return;
+            if (rirKnown && Number(rirRaw) > 3) return;
+            if (used >= weeklyCap) return;
+            used++;
+            credit++;
+        });
+        usedByWeekGroup.set(key, used);
+        if (credit) credits.set(log, credit);
+    });
+    return credits;
+}
+
 function computeXP(upto, ctx) {
     const c = ctx || {};
     const allLogs = (c.logs || []);
     const bodyweight = c.bodyweight || 0;
     const deloadWeeks = c.deloadWeeks || [];
     const missionsXpTotal = c.missionsXpTotal || 0;
-    const bosses = c.bosses || BOSSES_CLASSIC;
+    const bosses = Object.prototype.hasOwnProperty.call(c, 'bosses')
+        ? (Array.isArray(c.bosses) ? c.bosses : [])
+        : BOSSES_CLASSIC;
     const explicitRestDays = Array.isArray(c.restDays) ? c.restDays : null;
     const cutoff = upto || '9999-12-31';
 
     let training = 0, cardio = 0, prXP = 0, restXP = 0;
-    const byDayGroup = {};
     const daysWithTraining = new Set();
 
     const activityLogs = Array.isArray(c.activityLogs) ? c.activityLogs : allLogs;
     activityLogs.forEach(l => {
         if (l && l.date && l.date <= cutoff) daysWithTraining.add(l.date);
     });
+    const effectiveSets = effectiveSetAllocations(allLogs, cutoff);
+    const qualifyingPRs = qualifyingPRLogs(allLogs.filter(l => l && l.date <= cutoff), bodyweight);
     allLogs.forEach(l => {
         if (!l || l.date > cutoff) return;
+        const aguardandoConferencia = l.conferir === true || String(l.conferir).toLowerCase() === 'sim';
+        if (aguardandoConferencia) return;
         if (l.kind === 'corrida') {
             cardio += cardioXP(l);
             return;
         }
-        if (l.isPR) prXP += XP_PR;
-        const v = logVolumeKg(l, bodyweight);
-        if (l.type === 'isometria') {
-            // XP por tempo sob tensão: 1 XP a cada 20 s (com teto diário)
-            const xpRaw = logTstSeconds(l) / 20;
-            const key = l.date + '|' + l.muscle;
-            const used = byDayGroup[key] || 0;
-            const grant = Math.min(xpRaw, Math.max(0, XP_GROUP_DAY_CAP - used));
-            byDayGroup[key] = used + grant;
-            training += grant * (isDeloadWeek(l.date, deloadWeeks) ? 0.5 : 1);
-            return;
-        }
-        const adj = v * (MUSCLE_WEIGHT[l.muscle] ?? 1);
-        let xp = adj / 100;
-        if (isDeloadWeek(l.date, deloadWeeks)) xp *= 0.5; // deload: volume rende menos XP
-        const key = l.date + '|' + l.muscle;
-        const used = byDayGroup[key] || 0;
-        const grant = Math.min(xp, Math.max(0, XP_GROUP_DAY_CAP - used));
-        byDayGroup[key] = used + grant;
-        training += grant;
+        if (qualifyingPRs.has(l)) prXP += XP_PR;
+        const count = effectiveSets.get(l) || 0;
+        if (count > 0) training += count * XP_PER_EFFECTIVE_SET * (isDeloadWeek(l.date, deloadWeeks) ? 0.5 : 1);
     });
 
     // XP de descanso: saves por tema podem fornecer os dias já atribuídos a cada jogo.
@@ -426,9 +649,11 @@ function computeXP(upto, ctx) {
         });
     }
 
-    const prog = computeBossProgress(allLogs.filter(l => l.date <= cutoff), bodyweight, bosses);
+    const prog = bosses.length
+        ? computeBossProgress(allLogs.filter(l => l && l.date <= cutoff && l.conferir !== true && String(l.conferir).toLowerCase() !== 'sim'), bodyweight, bosses, c.bossState || null)
+        : { current: null, currentIdx: 0, currentHp: 0, hpPercent: 0, totalDamage: 0, defeatedCount: 0, defeatedAt: {}, allDefeated: false, critCount: 0, weakHits: 0 };
     const bossXP = prog.defeatedCount > 0
-        ? Math.round(bosses.slice(0, prog.defeatedCount).reduce((a, b) => a + b.maxHp / 200, 0))
+        ? bosses.slice(0, prog.defeatedCount).reduce((a, b) => a + bossRewardXP(b), 0)
         : 0;
 
     const xp = Math.round(training + cardio + prXP + restXP + bossXP + missionsXpTotal);
@@ -532,6 +757,9 @@ function completeSeason(seasons, todayISO, xpNow) {
     const exports_ = {
         XP_MIN,
     XP_GROUP_DAY_CAP,
+    XP_GROUP_WEEK_CAP,
+    XP_PER_EFFECTIVE_SET,
+    effectiveSetAllocations,
     XP_PR,
     XP_REST_PER_DAY,
     MISSION_XP,
@@ -546,6 +774,9 @@ function completeSeason(seasons, todayISO, xpNow) {
     weekStartISO,
     isoWeekRange,
     logDamageKg,
+    bossRewardXP,
+    weaknessGroupForWeek,
+    allGroupsMetForWeek,
     computeBossProgress,
     isDeloadWeek,
     cardioXP,
@@ -566,4 +797,4 @@ function completeSeason(seasons, todayISO, xpNow) {
     g.registerDiarioActions(actionFns);
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/gamificacao.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
-export { XP_MIN, XP_GROUP_DAY_CAP, XP_PR, XP_REST_PER_DAY, MISSION_XP, BOSS_HP_BASE, BOSS_HP_STEP, mkBosses, RANKS_CLASSIC, BOSSES_CLASSIC, STORAGE_KEY_THEME, THEMES, isoWeekKey, weekStartISO, isoWeekRange, logDamageKg, computeBossProgress, isDeloadWeek, cardioXP, computeXP, rankFromXP, missionDefs, missionsState, SEASON_WEEKS, autoDeloadWeekKeys, seasonState, completeSeason };
+export { XP_MIN, XP_GROUP_DAY_CAP, XP_GROUP_WEEK_CAP, XP_PER_EFFECTIVE_SET, effectiveSetAllocations, XP_PR, XP_REST_PER_DAY, MISSION_XP, BOSS_HP_BASE, BOSS_HP_STEP, mkBosses, RANKS_CLASSIC, BOSSES_CLASSIC, STORAGE_KEY_THEME, THEMES, isoWeekKey, weekStartISO, isoWeekRange, logDamageKg, bossRewardXP, weaknessGroupForWeek, allGroupsMetForWeek, computeBossProgress, isDeloadWeek, cardioXP, computeXP, rankFromXP, missionDefs, missionsState, SEASON_WEEKS, autoDeloadWeekKeys, seasonState, completeSeason };

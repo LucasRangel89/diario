@@ -13,7 +13,7 @@
 
 import { computeBossProgress, isoWeekKey, isoWeekRange, rankFromXP } from './gamificacao.js';
 import { formatPlates, logVolumeKg } from './catalogo.js';
-import { BADGE_ART, BOSSES, INP, THEME, activeGameThemeId, alertModal, computeThemeXPCtx, deloadWeeks, escapeHtml, formatShortBR, getAnimalRankForSession, getTodayLocalISO, logs, logsForTheme, saveGameState, settings, tests, themeRankList, toLocalISO, userBodyweight } from './app.js';
+import { BADGE_ART, BOSSES, INP, THEME, activeGameThemeId, alertModal, computeThemeXPCtx, deloadWeeks, escapeHtml, formatShortBR, getAnimalRankForSession, getTodayLocalISO, logs, logsForTheme, saveGameState, settings, tests, themeGameSaves, themeRankList, toLocalISO, userBodyweight } from './app.js';
 
 
 
@@ -155,7 +155,7 @@ function renderBadgesAndStreak() {
     const totalTonEl = document.getElementById('stat-total-tonnage');
     if (totalTonEl) totalTonEl.textContent = `${totalTon.toFixed(1)} TON`;
 
-    const defeatedCount = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES).defeatedCount;
+    const defeatedCount = computeBossProgress(logsForTheme(activeGameThemeId), userBodyweight, BOSSES, themeGameSaves[activeGameThemeId]?.bossProgress).defeatedCount;
     const rankTema = rankFromXP(computeThemeXPCtx(activeGameThemeId).xp, themeRankList(THEME));
     const badges = [
         { slug: 'primeiro-sangue', title: 'Primeiro Sangue', desc: '1º Exercício Registrado', unlocked: logs.length > 0, icon: '⚔️' },

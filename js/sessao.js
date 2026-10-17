@@ -289,7 +289,7 @@ function registerSessionUnit(idxs, isPair) {
             xpTheme: activeGameThemeId, ...f, ...(isPair ? { biset: true } : {})
         };
         if (!newLog.sessao) newLog.sessao = activeSession.name;
-        newLog.isPR = detectAutoPR(newLog, logs, userBodyweight) || f.isPR;
+        newLog.isPR = detectAutoPR(newLog, logs, userBodyweight);
         const prog = duplaProgressao(newLog);
         if (prog && !newLog.nextGoal) newLog.nextGoal = '📈 Aumentar Carga';
         logs.unshift(newLog);
