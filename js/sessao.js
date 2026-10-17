@@ -14,7 +14,7 @@ import { CATALOG_TIPOS, MUSCLE_WEIGHT, catalogInfo, detectAutoPR, duplaProgressa
 import { bisetBlockRanges, exercicioCarregaLombar, fatigueState, regiaoLombarState, suggestNextWorkout, weeklySetsByMuscle } from './assistente.js';
 import { rankFromXP } from './gamificacao.js';
 import { saveLogsToStorage } from './persistencia.js';
-import { activeGameThemeId, activeSession, alertModal, computeXPCtx, draftExercises, escapeHtml, fieldsHTML, fmtN, getTodayLocalISO, initSetEditor, lastPerformanceHTML, logs, newLogId, readFields, refreshAll, renderDraftList, savedWorkouts, settings, shakeElement, snapshotDrafts, stopSessionTimer, timer, userBodyweight } from './app.js';
+import { activeGameThemeId, activeSession, alertModal, computeXPCtx, draftExercises, escapeHtml, fieldsHTML, fmtN, getTodayLocalISO, initSetEditor, lastPerformanceHTML, logs, newLogId, readFields, refreshAll, renderDraftList, savedWorkouts, settings, setEditorState, shakeElement, snapshotDrafts, stopSessionTimer, timer, userBodyweight } from './app.js';
 
 // ============================ UNIDADES DA SESSÃO ============================
 // Unidade = exercício único ou par de bi-set. Cada exercício ganha um uid
@@ -312,7 +312,10 @@ function registerSessionUnit(idxs, isPair) {
     const muscle = items[0].item.muscle;
     const cat = catalogInfo(items[0].item.exercise);
     const rest = cat && cat.descanso ? cat.descanso : settings.restDefault;
-    if (!isPair || items.length > 1) addSessionTimer(rest);
+    if (!isPair || items.length > 1) {
+        stopSessionTimer(); // novo descanso, não soma ao restante da última série
+        addSessionTimer(rest);
+    }
     if (anyPR) { shakeElement(document.getElementById('active-session-card')); spawnDamageFloat(totalDmg, true); }
     else spawnDamageFloat(totalDmg, false);
 }
@@ -366,6 +369,38 @@ function updateSessionExtraHint() {
 }
 
 
+// Concluir uma série preserva o rascunho; só Registrar conclui o exercício.
+function completeSessionSet(prefix, rowIndex, rest = true) {
+    const match = /^s(\d+)-$/.exec(prefix);
+    const index = match ? Number(match[1]) : -1;
+    const item = activeSession?.exercises[index];
+    if (!item || item.done) return;
+    snapshotDrafts();
+    setEditorState[prefix] = item.draft?.sets || [];
+    const row = setEditorState[prefix]?.[rowIndex];
+    if (!row || row.completed) return;
+    if (!(row.reps > 0) || !Number.isFinite(row.reps) || row.weight < 0 || !Number.isFinite(row.weight)) {
+        alertModal('Preencha carga e repetições válidas antes de concluir a série.');
+        return;
+    }
+    row.completed = true;
+    if (item.draft?.sets?.[rowIndex]) item.draft.sets[rowIndex].completed = true;
+    const button = document.querySelector(`[data-action="completeSessionSet"][data-args='${JSON.stringify([prefix, rowIndex])}']`);
+    if (button) button.textContent = '✓ Série concluída';
+    if (!rest) return;
+    // Em bi-set, só inicia depois de ambos os exercícios da rodada.
+    const unit = sessionUnits(activeSession.exercises).find(u => u.idxs.includes(index));
+    if (unit?.pair && !unit.idxs.every(k => activeSession.exercises[k].done || setEditorState[`s${k}-`]?.[rowIndex]?.completed)) return;
+    stopSessionTimer();
+    const cat = catalogInfo(item.exercise);
+    addSessionTimer(cat?.descanso || settings.restDefault);
+}
+
+function openRestControls() {
+    const controls = document.getElementById('session-rest-controls');
+    controls?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+}
+
 // ============================ CRONÔMETRO POR HORÁRIO DE TÉRMINO ============================
 function timerRemainingMs() {
     if (timer.running && timer.endsAt) return Math.max(0, timer.endsAt - Date.now());
@@ -378,6 +413,11 @@ function updateSessionTimerDisplay() {
     const s = (totalS % 60).toString().padStart(2, '0');
     const el = document.getElementById('session-timer-display');
     if (el) el.textContent = `${m}:${s}`;
+    const compact = document.getElementById('session-rest-compact');
+    if (compact) {
+        compact.hidden = !activeSession || ms <= 0;
+        compact.textContent = `⏱ ${m}:${s}${timer.running ? '' : ' · pausado'} · controles`;
+    }
 }
 function addSessionTimer(sec) {
     const addMs = sec * 1000;
@@ -519,6 +559,8 @@ function getAnimalRankForSession(targetDate) {
         showWarmupFor,
         showPlatesFor,
         registerSessionUnit,
+        completeSessionSet,
+        openRestControls,
         timerRemainingMs,
         updateSessionTimerDisplay,
         addSessionTimer,

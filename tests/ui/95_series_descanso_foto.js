@@ -1,0 +1,31 @@
+console.log('\n== Séries durante o treino e foto por data ==');
+{
+    ev(`window.__seriesBackup = { activeSession, logs, customBgImageData, date: document.getElementById('filter-date').value };
+        activeSession = { name: 'Teste', date: getTodayLocalISO(), exercises: [{ exercise: 'Supino Reto na Máquina', muscle: 'Peito', type: 'carga_total', weight: 40, repsText: '10, 10', draft: { mode: 'sets', weight: 40, sets: [{ weight: 20, reps: 0, rir: null }] } }] };
+        renderSession();`);
+    check('modo série a série visível fora dos detalhes', !$('s0-mode').closest('details') && !$('s0-sets').closest('details'));
+    document.querySelector('[data-setr="s0-0"]').value = '12';
+    document.querySelector('[data-seti="s0-0"]').value = '2';
+    const countBefore = ev('logs.length');
+    ev(`completeSessionSet('s0-', 0)`);
+    check('concluir série lê reps digitadas e mantém exercício pendente', ev('activeSession.exercises[0].draft.sets[0].reps') === 12 && !ev('activeSession.exercises[0].done'));
+    check('conclusão da série não gera log/recompensa', ev('logs.length') === countBefore);
+    check('descanso começa e indicador compacto aparece', ev('timer.running') && !$('session-rest-compact').hidden);
+    const firstDeadline = ev('timer.endsAt');
+    ev(`completeSessionSet('s0-', 0)`);
+    check('duplo toque não reinicia nem duplica descanso', ev('timer.endsAt') === firstDeadline);
+    ev(`toggleSessionTimer()`);
+    check('indicador permanece disponível ao pausar', !$('session-rest-compact').hidden);
+    ev(`addSetRow('s0-')`);
+    check('nova série preserva RIR e não herda conclusão', ev("setEditorState['s0-'][1].rir") === 2 && !ev("setEditorState['s0-'][1].completed"));
+    ev(`stopSessionTimer(); completeSessionSet('s0-', 1, false)`);
+    check('drop-set pode concluir sem iniciar descanso', !ev('timer.running'));
+    ev(`renderSession()`);
+    check('redesenho preserva as séries e conclusão', ev('activeSession.exercises[0].draft.sets.length') === 2 && ev("setEditorState['s0-'][0].completed"));
+    ev(`customBgImageData = new Image(); customBgImageData.storyDate = '2026-10-15'; document.getElementById('filter-date').value = '2026-10-16'; generateStoryCard();`);
+    check('outra data convida nova foto sem excluir a anterior', $('story-photo-hint').textContent.includes('Adicione') && ev("customBgImageData.storyDate") === '2026-10-15');
+    ev(`document.getElementById('filter-date').value = '2026-10-15'; generateStoryCard(); saveStoryState();`);
+    check('voltar à data restaura uso da foto', $('story-photo-hint').textContent.includes('Foto deste treino'));
+    check('data da foto é persistida', ev("JSON.parse(safeStorage.get(STORAGE_KEY_STORY)).bgDate") === '2026-10-15');
+    ev(`stopSessionTimer(); activeSession = window.__seriesBackup.activeSession; logs = window.__seriesBackup.logs; customBgImageData = window.__seriesBackup.customBgImageData; document.getElementById('filter-date').value = window.__seriesBackup.date; saveStoryState(); renderSession(); generateStoryCard(); delete window.__seriesBackup;`);
+}

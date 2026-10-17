@@ -207,8 +207,9 @@
                         <div id="session-volume-text" class="text-xs text-gray-400 font-mono mt-1.5">0 kg movidos na sessão</div>
                     </div>
 
+                    <button id="session-rest-compact" hidden data-action="openRestControls" style="position:fixed;right:12px;top:12px;z-index:45;padding:10px 14px;border-radius:24px;background:#164e63;color:white;border:1px solid #22d3ee;font-size:12px;min-height:44px" aria-label="Abrir controles de descanso"></button>
                     <!-- CRONÔMETRO DE DESCANSO -->
-                    <div class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3.5 flex items-center justify-between gap-3">
+                    <div id="session-rest-controls" class="bg-berzerker-dark border border-berzerker-border rounded-xl p-3.5 flex items-center justify-between gap-3">
                         <div>
                             <span class="text-xs font-bold uppercase text-gray-400 block"><img src="images/artes/icones/sessao/cronometro.webp" alt="" width="86" height="96" class="art-icon" decoding="async" data-error-action="hideDecorativeArt"> Descanso</span>
                             <span id="session-timer-display" class="font-oswald text-3xl font-bold text-white leading-none">00:00</span>
@@ -800,6 +801,7 @@
                         <div class="space-y-2">
                             <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider">Foto de Fundo Personalizada (Opcional)</label>
                             <input type="file" id="bg-image-input" accept="image/*" data-change-action="handleBgImageUpload" data-args='["$event"]' class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-berzerker-border file:text-white hover:file:bg-berzerker-600 transition-colors">
+<p id="story-photo-hint" class="text-xs text-gray-400">Adicione uma foto deste treino.</p>
 
                             <div class="flex items-center gap-4 pt-1">
                                 <label for="bg-overlay-opacity" class="text-xs text-gray-400 uppercase font-bold">Escurecimento Foto:</label>
