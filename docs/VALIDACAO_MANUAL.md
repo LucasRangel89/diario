@@ -28,6 +28,7 @@ aprovadas** (antes eram 30; a versão do cache é lida do `sw.js`):
 | Dados | histórico do seed presente, `buildPlanilhaCSV()` com as linhas do seed |
 | Storage | `storage.set/get` (IndexedDB + espelho no localStorage) e `saveBlob/getBlob` reais |
 | ➕ Novo exercício | o botão da aba Buscar abre o formulário sem erro, cabe nos 412 px e o ESC fecha |
+| Treino em Andamento (NAV 2d) | sessão compacta (1 unidade aberta, accordion pelo toque), ✔ Registrar real, exercício Extra pelo Registro rápido com progresso +1/+1 e sem estouro horizontal em 412 px |
 | Offline | Service Worker instalado, cache `berzerker-<VERSION>` com > 100 arquivos, **app abre offline** com catálogo e histórico; nenhum arquivo do CORE falha offline |
 | Viewport de 412 px (headless) | as 8 telas percorridas na época não estouraram a largura; isso não valida toque/teclado de um celular |
 | Instalação | manifest linkado e servido (`display: standalone`, ícones 192/512), `apple-touch-icon`, `theme-color`, SW controlando a página |
@@ -54,6 +55,19 @@ respondendo **offline** por `caches.match`; a atualização simulada v47 → v48
 ativa e apaga o cache antigo. Execução local exigida com `@sparticuz/chromium`
 153.0.8010.0 fora do repositório: **46/46**. Isso **não** declara PWA, offline geral
 ou uso em celular plenamente validados: são testes headless com viewport emulado.
+
+**Sessão compacta + Extra (cache v49):** o gate ganhou a seção **NAV 2d** — no Chrome
+real (412×915, touch) ela inicia um treino salvo pelo clique "▶ Iniciar", confere a
+sequência compacta (só a 1ª unidade aberta, meta/estado, `aria-expanded`/`aria-controls`,
+alvos de 44 px), alterna cartões pelo toque, registra uma unidade pelo ✔ Registrar,
+grava um exercício **Extra** pelo Registro rápido com "Contar no treino em andamento"
+(total+1 e concluídos+1, selo Extra) e mede rolagem horizontal com a sessão aberta —
+incluindo a faixa **360/390/412/430 px** (emulada), também sem conteúdo estourando
+os cartões da sessão/registro.
+Execução local exigida com `@sparticuz/chromium` 153.0.8010.0 fora do repositório:
+**53/53**, cache v49. Acompanhe a rodada e a CI do HEAD da PR. A simulação de
+atualização v49 → v50 instala, ativa e apaga o cache antigo. Isso segue **sem** declarar
+PWA, offline geral ou uso em celular plenamente validados.
 
 Reproduzir:
 
@@ -107,7 +121,7 @@ Pré-requisito: servir por **https** ou `localhost` (o app só registra o SW em 
 
 ## 3. Atualização de versão (cache novo) — manual
 
-Automatizado já foi: instalar `VERSION`+1 por cima da versão atual (v48 sobre v47 na execução
+Automatizado já foi: instalar `VERSION`+1 por cima da versão atual (v49 sobre v48 na execução
 da B5) e ver o cache antigo ser apagado. No `test_sw.js` (SW 3b), uma falha simulada numa
 imagem de patente reprova a instalação, preserva a versão anterior e, removida a falha, a
 atualização completa instala e ativa.
@@ -124,7 +138,9 @@ atualização completa instala e ativa.
 
 - [ ] Tela estreita (360–430 px): todas as 10 seções sem rolagem horizontal
       (9 seções percorridas pelo Chrome headless em 412 px; conferir Montador, 360 px,
-      fonte grande do sistema e aparelho físico).
+      fonte grande do sistema e aparelho físico). A faixa 360–430 px ganhou medição
+      **emulada** no gate NAV 2d (inclusive a sessão compacta); **360 px em aparelho
+      físico e uso em celular continuam PENDENTES** — não declarados validados.
 - [ ] Registrar um treino completo com uma mão: seletor de exercício, séries, tags,
       salvar. Esperado: cartão aparece no histórico e sobrevive a recarregar.
 - [ ] Em uma corrida sintética de teste, usar **Editar** tanto na lista do dia quanto no
@@ -141,6 +157,24 @@ atualização completa instala e ativa.
       modalidade, cancelar/confirmar exclusão e conferir que o Histórico acompanha a mudança.
       Totais e recordes informativos não devem mudar ao aplicar filtro só à lista. Um recorde
       exibido não é um PR do jogo (a regra global de cardio continua incluindo outras modalidades).
+- [ ] **Treino em Andamento — sessão compacta (PENDENTE em aparelho físico e em 360 px):**
+      iniciar um treino e conferir no aparelho: cartões compactos com número, grupo/nome,
+      meta e estado; só a primeira unidade pendente abre; tocar em outra recolhe a anterior
+      (estado anunciado); carga, reps e ✔ Registrar fáceis na unidade aberta; "Mais detalhes"
+      guarda tipo/modo, séries individuais, RIR, técnica, observações, aquecimento e anilhas
+      (o aquecimento da sessão usa a carga do cartão, não o campo global); bi-set abre com os
+      dois formulários e registra junto; valores digitados (inclusive série parcial)
+      sobrevivem a recolher/reordenar; registro inválido mantém a unidade aberta sem criar
+      log; após registrar, a concluída compacta e a próxima pendente abre. A faixa
+      **360–430 px** foi medida emulada (Chrome headless, `scripts/validacao-navegador.js`,
+      NAV 2d) sem rolagem horizontal; **aparelho físico, teclado do sistema, fonte grande
+      e 360 px real continuam PENDENTES** — não validados nesta entrega.
+- [ ] **Exercício Extra no treino (PENDENTE em aparelho físico):** com a sessão ativa,
+      registrar pelo Registro rápido com "Contar no treino em andamento" e conferir no
+      aparelho o item Extra concluído, o selo "Extra", o progresso (ex.: 2/4 → 3/5) e que
+      nome igual ao item planejado **não** conclui o planejado (aviso e escolha entre Extra
+      distinto ou só histórico); editar/excluir o log do Extra corrige a sessão. **Não
+      validado nesta entrega em aparelho físico.**
 - [ ] Cronômetro de descanso: som/vibração (Android) e o número regressivo correto
       com a tela bloqueada/bloqueando durante o descanso.
 - [ ] Rotação de tela e modo escuro do sistema não quebram layout.

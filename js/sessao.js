@@ -10,24 +10,69 @@
    o estado (startSession/endSession) continua no app.
    ============================================================ */
 
-import { MUSCLE_WEIGHT, catalogInfo, detectAutoPR, duplaProgressao, formatLoadText, formatPlates, formatRepsText, logVolumeKg, normalizeMuscle } from './catalogo.js';
+import { CATALOG_TIPOS, MUSCLE_WEIGHT, catalogInfo, detectAutoPR, duplaProgressao, formatLoadText, formatPlates, formatRepsText, logVolumeKg, normalizeMuscle } from './catalogo.js';
 import { bisetBlockRanges, exercicioCarregaLombar, fatigueState, regiaoLombarState, suggestNextWorkout, weeklySetsByMuscle } from './assistente.js';
 import { rankFromXP } from './gamificacao.js';
 import { saveLogsToStorage } from './persistencia.js';
 import { activeGameThemeId, activeSession, alertModal, computeXPCtx, draftExercises, escapeHtml, fieldsHTML, fmtN, getTodayLocalISO, initSetEditor, lastPerformanceHTML, logs, newLogId, readFields, refreshAll, renderDraftList, savedWorkouts, settings, shakeElement, snapshotDrafts, stopSessionTimer, timer, userBodyweight } from './app.js';
 
-function renderSession() {
+// ============================ UNIDADES DA SESSÃO ============================
+// Unidade = exercício único ou par de bi-set. Cada exercício ganha um uid
+// estável no primeiro render: o estado de expansão é guardado por unidade
+// (e não por índice), então reordenar não troca qual cartão está aberto.
+// Recolher/abrir NÃO redesenha o DOM — os campos continuam montados porque
+// readFields()/snapshotDrafts() dependem deles (inclusive uma série parcial).
+let _sessionUidSeq = 0;
+function ensureSessionUids(ex) {
+    (ex || []).forEach(e => { if (!e.uid) e.uid = 'su' + (++_sessionUidSeq); });
+}
+function sessionUnits(ex) {
+    ensureSessionUids(ex);
+    const units = [];
+    for (let i = 0; i < ex.length; i++) {
+        const pair = !!(ex[i + 1] && ex[i + 1].biset);
+        const idxs = pair ? [i, i + 1] : [i];
+        if (pair) i++;
+        units.push({ uid: ex[idxs[0]].uid, idxs, pair, pending: idxs.filter(k => !ex[k].done) });
+    }
+    return units;
+}
+function applySessionUnitExpansion() {
+    const listEl = document.getElementById('session-exercises-list');
+    if (!listEl || !activeSession) return;
+    listEl.querySelectorAll('[data-unit-uid]').forEach(card => {
+        const open = card.getAttribute('data-unit-uid') === activeSession.openUid;
+        const body = card.querySelector('[data-unit-body]');
+        const btn = card.querySelector('[data-action="toggleSessionUnit"]');
+        if (body) body.classList.toggle('hidden', !open);
+        if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+}
+function toggleSessionUnit(uid) {
+    if (!activeSession) return;
+    // Só alterna classes/aria: nada de recriar o DOM a cada toque.
+    activeSession.openUid = activeSession.openUid === uid ? null : uid;
+    applySessionUnitExpansion();
+}
+
+// opts.skipSnapshot: usado quando os índices do DOM não correspondem mais à
+// ordem de activeSession.exercises (reordenação) — o rascunho já foi capturado
+// com o mapeamento correto antes da troca e um re-snapshot aqui embaralharia
+// os drafts entre exercícios.
+function renderSession(opts) {
     if (!activeSession) return;
 
     document.getElementById('session-title').textContent = activeSession.name;
 
-    const total = activeSession.exercises.length;
-    const doneCount = activeSession.exercises.filter(e => e.done).length;
+    const ex = activeSession.exercises;
+    ensureSessionUids(ex);
+    const total = ex.length;
+    const doneCount = ex.filter(e => e.done).length;
     document.getElementById('session-progress-text').textContent = `${doneCount} / ${total} exercícios`;
     document.getElementById('session-progress-bar').style.width = total > 0 ? `${(doneCount / total) * 100}%` : '0%';
 
     let sessionVol = 0;
-    activeSession.exercises.forEach(e => {
+    ex.forEach(e => {
         if (e.done && e.logId) {
             const lg = logs.find(x => x.id === e.logId);
             if (lg) sessionVol += logVolumeKg(lg, userBodyweight);
@@ -35,58 +80,103 @@ function renderSession() {
     });
     document.getElementById('session-volume-text').textContent = `${fmtN(Math.round(sessionVol))} kg movidos na sessão`;
 
-    snapshotDrafts();
+    if (!(opts && opts.skipSnapshot)) snapshotDrafts();
     const listEl = document.getElementById('session-exercises-list');
-    const ex = activeSession.exercises;
     const nowMs = Date.now();
     const weekly = weeklySetsByMuscle(logs, getTodayLocalISO());
+    const lombarEstado = regiaoLombarState(logs, nowMs);
 
-    const itemHTML = (e, i) => {
-        if (e.done) {
-            const lg = logs.find(x => x.id === e.logId);
-            return `<div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div class="flex items-center gap-2 flex-wrap min-w-0">
-                        <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-emerald-600 text-white">✔</span>
-                        <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
-                        <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
-                        ${e.loggedPR ? '<span class="text-xs font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-700 rounded">🏆 PR</span>' : ''}
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-emerald-400 font-mono whitespace-nowrap">${lg ? formatLoadText(lg) + ' × ' + formatRepsText(lg) : ''}</span>
-                        <button data-action="editLog" data-args="[${e.logId}]" class="px-2 py-1 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold rounded-lg transition-colors">✏️ Editar</button>
-                    </div>
+    const units = sessionUnits(ex);
+    // Expansão por unidade: undefined = 1º render (abre a primeira pendente);
+    // depois preserva a escolha do usuário (inclusive "tudo recolhido") e só
+    // remonta se a unidade aberta saiu da sequência.
+    const abertas = units.filter(u => u.pending.length);
+    const uidValido = activeSession.openUid != null && abertas.some(u => u.uid === activeSession.openUid);
+    if (activeSession.openUid === undefined || (activeSession.openUid != null && !uidValido)) {
+        activeSession.openUid = abertas.length ? abertas[0].uid : null;
+    }
+
+    // Linha compacta de exercício concluído (mantém ✏️ Editar; Extra ganha selo)
+    const doneRowHTML = (e) => {
+        const lg = logs.find(x => x.id === e.logId);
+        return `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-2 flex-wrap min-w-0">
+                    <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-emerald-600 text-white">✔</span>
+                    <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
+                    <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
+                    ${e.extra ? '<span class="text-xs font-bold px-1.5 py-0.5 bg-violet-950 text-violet-300 border border-violet-600/60 rounded uppercase">Extra</span>' : ''}
+                    ${e.loggedPR ? '<span class="text-xs font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-700 rounded">🏆 PR</span>' : ''}
                 </div>
-                ${lg && lg.notes ? `<p class="text-xs text-gray-400 mt-1.5 italic">📝 ${escapeHtml(lg.notes)}</p>` : ''}
-            </div>`;
-        }
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-bold text-emerald-400 font-mono min-w-0 sm:whitespace-nowrap">${lg ? formatLoadText(lg) + ' × ' + formatRepsText(lg) : ''}</span>
+                    <button type="button" data-action="editLog" data-args="[${e.logId}]" class="min-h-[44px] px-2.5 py-1.5 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold rounded-lg transition-colors">✏️ Editar</button>
+                </div>
+            </div>
+            ${lg && lg.notes ? `<p class="text-xs text-gray-400 mt-1.5 italic">📝 ${escapeHtml(lg.notes)}</p>` : ''}`;
+    };
+
+    // Corpo da unidade pendente: alertas + campos (carga/reps à vista; o resto
+    // em "Mais detalhes", sem perder tipo/modo, séries, RIR, técnica, obs,
+    // aquecimento e anilhas — estes últimos com handlers da sessão, que leem
+    // s${i}-w e não o campo global w do Registro rápido).
+    const pendingBodyHTML = (e, i) => {
         const d = e.draft || { weight: e.weight, repsText: e.repsText, type: e.type, technique: e.technique, nextGoal: '', isPR: false, notes: '' };
         const catInfo = catalogInfo(e.exercise);
         const fat = fatigueState(e.muscle, logs.filter(l => l.kind !== 'corrida' && l.muscle === e.muscle), weekly[e.muscle] || 0, nowMs);
-        return `<div>
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="flex items-center gap-2 flex-wrap min-w-0">
-                    <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-berzerker-border text-gray-300">${i + 1}</span>
-                    <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
-                    <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <button type="button" data-action="moveSessionUnit" data-args="[${i},-1]" title="Subir na ordem" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▲</button>
-                    <button type="button" data-action="moveSessionUnit" data-args="[${i},1]" title="Descer na ordem" aria-label="Descer na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▼</button>
-                    <span class="text-xs text-gray-400 font-mono whitespace-nowrap">🎯 Meta: ${e.weight > 0 ? e.weight + ' kg' : '—'} × (${escapeHtml(e.repsText || '—')})</span>
-                </div>
-            </div>
+        const tipoInfo = CATALOG_TIPOS[d.type || e.type || 'carga_total'];
+        return `
             ${e.orderReason ? `<div class="text-xs text-gray-400 leading-relaxed"><span class="text-berzerker-500 font-bold">📌 Por que nesta posição:</span> ${escapeHtml(e.orderReason)}</div>` : ''}
             ${fat.pct !== null && fat.pct < 100 ? `<div class="text-xs text-amber-400/90 font-mono">⏳ ${escapeHtml(e.muscle)} ainda em recuperação estimada (${fat.pct}%) — considere uma carga mais leve</div>` : ''}
             ${exercicioCarregaLombar(e.exercise) && lombarEstado.carregada ? `<div class="text-xs text-red-400/90 font-mono">⚠️ Este exercício exige a lombar — ainda carregada (${lombarEstado.horasRestantes}h restantes): priorize técnica perfeita e carga mais leve</div>` : ''}
             ${catInfo && catInfo.descanso ? `<div class="text-xs text-gray-400 font-mono">⏱ Descanso do catálogo: ${catInfo.descanso}s · faixa ${catInfo.faixa[0]}–${catInfo.faixa[1]}${catInfo.tipo === 'isometria' ? ' s' : ' reps'}</div>` : ''}
             ${lastPerformanceHTML(e.exercise)}
-            <div class="flex gap-2 flex-wrap mt-1.5">
-                <button type="button" data-action="showWarmupFor" data-args="[${i}]" class="px-2 py-1 text-xs font-bold bg-amber-900/30 border border-amber-500/30 text-amber-300 rounded-md hover:bg-amber-900/50">🔥 Aquecimento</button>
-                <button type="button" data-action="showPlatesFor" data-args="[${i}]" class="px-2 py-1 text-xs font-bold bg-berzerker-border text-gray-200 rounded-md hover:bg-gray-700">⚙️ Anilhas</button>
+            ${fieldsHTML(`s${i}-`, d, {
+            quickCapture: true,
+            warmupTools: { warmupAction: 'showWarmupFor', warmupArgs: [i], platesAction: 'showPlatesFor', platesArgs: [i] },
+            hints: {
+                type: tipoInfo ? tipoInfo.hint : '',
+                faixa: catInfo && catInfo.faixa && catInfo.faixa[1] > 0
+                    ? `Faixa do exercício: ${catInfo.faixa[0]}–${catInfo.faixa[1]} ${catInfo.tipo === 'isometria' ? 's' : 'reps'} · descanso ${catInfo.descanso}s`
+                    : 'Exercício fora do catálogo — dupla progressão indisponível.'
+            }
+        })}`;
+    };
+
+    const unitHTML = (u) => {
+        const open = activeSession.openUid === u.uid;
+        const temPendente = u.pending.length > 0;
+        if (!temPendente) {
+            // concluída → cartão compacto, sem formulário
+            return `<div class="rounded-xl border border-emerald-600/50 bg-emerald-950/10 p-3 space-y-1.5">
+                ${u.pair ? '<div class="text-xs font-bold text-cyan-400 uppercase tracking-wider">🔗 BI-SET</div>' : ''}
+                ${u.idxs.map(k => doneRowHTML(ex[k])).join('<div class="border-t border-dashed border-berzerker-border"></div>')}
+            </div>`;
+        }
+        const numero = u.pair ? u.idxs.map(k => k + 1).join('+') : String(u.idxs[0] + 1);
+        const titulos = u.idxs.map(k => `<span class="flex items-center gap-2 min-w-0">
+                        <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase shrink-0">${escapeHtml(ex[k].muscle)}</span>
+                        <span class="font-bold text-white text-sm truncate">${escapeHtml(ex[k].exercise)}</span>
+                    </span>`).join('');
+        const metas = u.idxs.map(k => `<span class="text-xs text-gray-400 font-mono min-w-0 sm:whitespace-nowrap">🎯 ${ex[k].weight > 0 ? ex[k].weight + ' kg' : '—'} × (${escapeHtml(ex[k].repsText || '—')})</span>`).join('');
+        return `<div class="rounded-xl border ${u.pair ? 'border-cyan-500/60 bg-berzerker-dark' : 'border-berzerker-border bg-berzerker-dark'}" data-unit-uid="${u.uid}">
+            <div class="flex items-center gap-1.5 p-2.5">
+                <button type="button" data-action="toggleSessionUnit" data-args='["${u.uid}"]' aria-expanded="${open ? 'true' : 'false'}" aria-controls="sunit-${u.uid}" class="flex-1 min-w-0 flex items-center gap-2 min-h-[44px] text-left rounded-lg px-2 py-1.5 hover:bg-berzerker-border/40">
+                    <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-berzerker-border text-gray-300">${numero}</span>
+                    <span class="flex flex-col sm:flex-row sm:items-center gap-x-2 gap-y-0.5 min-w-0 flex-1">
+                        ${titulos}
+                        <span class="flex flex-wrap items-center gap-x-2 gap-y-0.5">${metas}
+                            <span class="text-xs font-bold text-amber-300 whitespace-nowrap">⏳ Pendente</span>
+                        </span>
+                    </span>
+                </button>
+                <button type="button" data-action="moveSessionUnit" data-args="[${u.idxs[0]},-1]" title="Subir na ordem" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▲</button>
+                <button type="button" data-action="moveSessionUnit" data-args="[${u.idxs[0]},1]" title="Descer na ordem" aria-label="Descer exercício na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▼</button>
             </div>
-            <div id="s${i}-quickbox" class="hidden mt-1.5 text-xs font-mono bg-berzerker-dark/80 border border-amber-500/20 rounded-lg p-2"></div>
-            ${fieldsHTML(`s${i}-`, d)}
+            <div id="sunit-${u.uid}" data-unit-body class="px-2.5 pb-3 space-y-3${open ? '' : ' hidden'}">
+                ${u.pair ? '<div class="text-xs font-bold text-cyan-400 uppercase tracking-wider">🔗 BI-SET — os dois juntos; o descanso começa depois do par</div>' : ''}
+                ${u.idxs.map(k => ex[k].done ? doneRowHTML(ex[k]) : pendingBodyHTML(ex[k], k)).join('<div class="border-t border-dashed border-berzerker-border"></div>')}
+                <div class="flex justify-end"><button type="button" data-action="registerSessionUnit" data-args="[[${u.pending.join(',')}],${u.pair}]" class="min-h-[44px] px-4 py-2.5 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">✔ Registrar${u.pending.length > 1 ? ' Bi-set' : ''}</button></div>
+            </div>
         </div>`;
     };
 
@@ -95,22 +185,11 @@ function renderSession() {
         html += `<div class="text-xs text-gray-400 bg-berzerker-dark border border-berzerker-border rounded-lg px-3 py-2">✨ <b class="text-white">Ordem sugerida aplicada</b> — cada exercício mostra o porquê da posição. Use ▲▼ para trocar quando quiser (o bi-set anda junto).</div>`;
     }
     // Aviso de lombar carregada no topo da sessão
-    const lombarEstado = regiaoLombarState(logs, nowMs);
     const temExercicioLombar = ex.some(e => !e.done && exercicioCarregaLombar(e.exercise));
     if (lombarEstado.carregada && temExercicioLombar) {
         html += `<div class="text-xs bg-red-950/40 border border-red-600/50 rounded-lg px-3 py-2 text-red-300">⚠️ <b>Sua lombar ainda está ${lombarEstado.label.toLowerCase()} (${lombarEstado.pct}% de prontidão estimada, ${lombarEstado.horasRestantes}h restantes).</b> ${escapeHtml(lombarEstado.dica)}</div>`;
     }
-    for (let i = 0; i < ex.length; i++) {
-        const pair = !!(ex[i + 1] && ex[i + 1].biset);
-        const idxs = pair ? [i, i + 1] : [i];
-        if (pair) i++;
-        const pending = idxs.filter(k => !ex[k].done);
-        html += `<div class="rounded-xl border ${pending.length ? (pair ? 'border-cyan-500/60 bg-berzerker-dark' : 'border-berzerker-border bg-berzerker-dark') : 'border-emerald-600/50 bg-emerald-950/10'} p-4 space-y-3">
-            ${pair ? '<div class="text-xs font-bold text-cyan-400 uppercase tracking-wider">🔗 BI-SET — os dois juntos; o descanso começa depois do par</div>' : ''}
-            ${idxs.map(k => itemHTML(ex[k], k)).join('<div class="border-t border-dashed border-berzerker-border"></div>')}
-            ${pending.length ? `<div class="flex justify-end"><button data-action="registerSessionUnit" data-args="[[${pending.join(',')}],${pair}]" class="px-4 py-2 bg-berzerker-600 hover:bg-berzerker-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">✔ Registrar${pending.length > 1 ? ' Bi-set' : ''}</button></div>` : ''}
-        </div>`;
-    }
+    html += units.map(unitHTML).join('');
     listEl.innerHTML = html;
 
     // Reanexa editores série a série
@@ -142,6 +221,9 @@ function renderSession() {
             banner.innerHTML = '';
         }
     }
+
+    // Opção "Contar no treino em andamento" do Registro rápido acompanha a sessão
+    updateSessionExtraHint();
 }
 
 
@@ -156,34 +238,44 @@ function moveSessionUnit(i, dir) {
     if (bi < 0 || j < 0 || j >= ranges.length) return;
     const tmp = ranges[bi]; ranges[bi] = ranges[j]; ranges[j] = tmp;
     activeSession.exercises = ranges.flat().map(k => ex[k]);
-    renderSession();
+    // openUid anda com o objeto (uid estável): a unidade aberta continua a mesma.
+    // skipSnapshot: os drafts já foram capturados com os índices corretos.
+    renderSession({ skipSnapshot: true });
 }
 function showWarmupFor(i) {
     const e = activeSession.exercises[i];
     const w = parseFloat(document.getElementById(`s${i}-w`)?.value) || e.weight || 0;
-    const box = document.getElementById(`s${i}-quickbox`);
-    if (!box) return;
-    if (w <= 0) { box.classList.remove('hidden'); box.innerHTML = 'Informe uma carga para ver o aquecimento.'; return; }
+    const box = document.getElementById(`s${i}-warmup-quick-box`);
+    const content = document.getElementById(`s${i}-warmup-quick-content`);
+    if (!box || !content) return;
     box.classList.remove('hidden');
-    box.innerHTML = `🔥 <b>Aquecimento para ${w} kg:</b><br>• 50% (${Math.round(w * 0.5)} kg) × 10<br>• 70% (${Math.round(w * 0.7)} kg) × 6<br>• 85% (${Math.round(w * 0.85)} kg) × 3<br>• 100% (${w} kg) × trabalho`;
+    if (w <= 0) { content.innerHTML = 'Informe uma carga para ver o aquecimento.'; return; }
+    content.innerHTML = `🔥 <b>Aquecimento para ${w} kg:</b><br>• 50% (${Math.round(w * 0.5)} kg) × 10<br>• 70% (${Math.round(w * 0.7)} kg) × 6<br>• 85% (${Math.round(w * 0.85)} kg) × 3<br>• 100% (${w} kg) × trabalho`;
 }
 function showPlatesFor(i) {
     const e = activeSession.exercises[i];
     const w = parseFloat(document.getElementById(`s${i}-w`)?.value) || e.weight || 0;
-    const box = document.getElementById(`s${i}-quickbox`);
-    if (!box) return;
+    const box = document.getElementById(`s${i}-warmup-quick-box`);
+    const content = document.getElementById(`s${i}-warmup-quick-content`);
+    if (!box || !content) return;
     const cat = catalogInfo(e.exercise);
     const ehMaquina = cat && /leg press|hack|smith/i.test(e.exercise);
     const base = ehMaquina ? settings.sledWeight : settings.barWeight;
     box.classList.remove('hidden');
-    box.innerHTML = `⚙️ <b>${w} kg</b> = ${formatPlates(w, base)}${ehMaquina ? ' (carrinho)' : ''}`;
+    content.innerHTML += (content.innerHTML ? '<br>' : '') + `⚙️ <b>${w} kg</b> = ${formatPlates(w, base)}${ehMaquina ? ' (carrinho)' : ''}`;
 }
 function registerSessionUnit(idxs, isPair) {
     if (!activeSession) return;
     const date = document.getElementById('log-date').value || getTodayLocalISO();
     const items = idxs.map(i => ({ item: activeSession.exercises[i], f: readFields(`s${i}-`) }));
     const bad = items.find(x => x.f.mode === 'sets' ? x.f.sets.length === 0 : x.f.reps.length === 0);
-    if (bad) { alertModal(`Digite ao menos uma repetição válida em "${bad.item.exercise}".`); return; }
+    if (bad) {
+        alertModal(`Digite ao menos uma repetição válida em \"${bad.item.exercise}\".`);
+        // Erro: mantém/abre a unidade afetada — sem log, sem progresso e sem descanso.
+        const alvo = sessionUnits(activeSession.exercises).find(u => u.idxs.some(k => idxs.includes(k)));
+        if (alvo) { activeSession.openUid = alvo.uid; applySessionUnitExpansion(); }
+        return;
+    }
 
     let anyPR = false;
     let totalDmg = 0;
@@ -208,6 +300,12 @@ function registerSessionUnit(idxs, isPair) {
     saveLogsToStorage();
     document.getElementById('filter-date').value = date;
     refreshAll();
+    // Registro válido: a unidade concluída fica compacta e a próxima pendente abre.
+    const unidades = sessionUnits(activeSession.exercises);
+    const depois = Math.max.apply(null, idxs);
+    const proxima = unidades.find(u => u.pending.length && Math.min.apply(null, u.idxs) > depois)
+        || unidades.find(u => u.pending.length);
+    activeSession.openUid = proxima ? proxima.uid : null;
     renderSession();
 
     // Descanso automático: no bi-set só depois do par; caso contrário, ao registrar a série
@@ -217,6 +315,54 @@ function registerSessionUnit(idxs, isPair) {
     if (!isPair || items.length > 1) addSessionTimer(rest);
     if (anyPR) { shakeElement(document.getElementById('active-session-card')); spawnDamageFloat(totalDmg, true); }
     else spawnDamageFloat(totalDmg, false);
+}
+
+
+// ==================== EXERCÍCIO EXTRA NO TREINO EM ANDAMENTO ====================
+// Enquanto há sessão ativa, o Registro rápido pode contar o registro como item
+// EXTRA concluído da sequência. O log é o mesmo do histórico (nunca um segundo
+// log); o vínculo é pelo id do log recém-criado — nunca por nome — e o mesmo
+// logId não é anexado duas vezes. Não toca em treinos salvos nem em backup.
+function appendSessionExtra(log) {
+    if (!activeSession || !log || log.id == null) return false;
+    if (activeSession.exercises.some(e => e.logId === log.id)) return false;
+    activeSession.exercises.push({
+        muscle: log.muscle, exercise: log.exercise, type: log.type || 'carga_total',
+        weight: log.weight || 0,
+        repsText: log.repsText || (Array.isArray(log.reps) ? log.reps.join(', ') : ''),
+        technique: log.technique || 'Convencional',
+        biset: false, extra: true, done: true, logId: log.id, draft: null,
+        loggedWeight: log.weight || 0, loggedReps: log.reps || null, loggedPR: !!log.isPR,
+        orderReason: ''
+    });
+    return true;
+}
+
+// Opção "Contar no treino em andamento" do Registro rápido: visível só com
+// sessão ativa. O aviso explica quando o nome bate com um item planejado
+// pendente — a correspondência por nome nunca marca o item planejado.
+function updateSessionExtraHint() {
+    const wrap = document.getElementById('log-session-extra-wrap');
+    const note = document.getElementById('log-session-match-note');
+    if (!wrap) return;
+    if (!activeSession) {
+        wrap.classList.add('hidden');
+        if (note) { note.classList.add('hidden'); note.textContent = ''; }
+        return;
+    }
+    wrap.classList.remove('hidden');
+    if (!note) return;
+    const exName = String(document.getElementById('log-exercise')?.value || '').trim();
+    const nome = exName.toLowerCase();
+    const pendenteIgual = !!nome && activeSession.exercises.some(e =>
+        !e.done && !e.extra && String(e.exercise || '').trim().toLowerCase() === nome);
+    if (pendenteIgual) {
+        note.classList.remove('hidden');
+        note.textContent = `⚠️ \"${exName}\" já está pendente no treino em andamento. Este registro NÃO conclui o item planejado (use o ✔ Registrar do cartão dele para isso). Escolha: mantenha \"Contar no treino em andamento\" marcado para incluir um item Extra distinto, ou desmarque para deixar o registro só no histórico.`;
+    } else {
+        note.classList.add('hidden');
+        note.textContent = '';
+    }
 }
 
 
@@ -366,6 +512,9 @@ function getAnimalRankForSession(targetDate) {
 (function (g) {
     const exports_ = {
         renderSession,
+        toggleSessionUnit,
+        appendSessionExtra,
+        updateSessionExtraHint,
         moveSessionUnit,
         showWarmupFor,
         showPlatesFor,
@@ -392,4 +541,4 @@ function getAnimalRankForSession(targetDate) {
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/sessao.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
 
-export { renderSession, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, vibrate, playBeepSound, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, getAnimalRankForSession };
+export { renderSession, toggleSessionUnit, appendSessionExtra, updateSessionExtraHint, moveSessionUnit, showWarmupFor, showPlatesFor, registerSessionUnit, timerRemainingMs, updateSessionTimerDisplay, addSessionTimer, toggleSessionTimer, tickSessionTimer, vibrate, playBeepSound, spawnDamageFloat, normalizeBisets, pairLink, toggleDraftBiset, getAnimalRankForSession };

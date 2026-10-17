@@ -21,7 +21,7 @@ import { fatigueState, regiaoLombarState, suggestNextWorkout, weeklySetsByMuscle
 import { renderExerciseTagLine } from './busca.js';
 import { generateStoryCard } from './cartoes.js';
 import { saveLogsToStorage } from './persistencia.js';
-import { renderSession, spawnDamageFloat } from './sessao.js';
+import { appendSessionExtra, renderSession, spawnDamageFloat, updateSessionExtraHint } from './sessao.js';
 import { renderBossBattleUI } from './boss.js';
 import { INP, LBL, MUSCLE_OPTIONS, NEXT_GOALS, TECHNIQUES, activeGameThemeId, activeSession, activeTab, alertModal, escapeHtml, fmtN, formatShortBR, getTodayLocalISO, logs, refreshAll, savedWorkouts, setEditorState, shakeElement, updateSummaryMetrics, userBodyweight } from './app.js';
 
@@ -98,6 +98,7 @@ function onLogExerciseChange() {
     }
     if (typeof renderExerciseTagLine === 'function') renderExerciseTagLine('log-tags-line', exName || '');
     onTypeChange('');
+    updateSessionExtraHint();
 }
 
 function toggleSetMode(prefix) {
@@ -126,21 +127,42 @@ function renderSetRows(prefix) {
         </div>`).join('');
 }
 
-function readSetRows(prefix) {
+// Leitura crua das linhas do editor série a série: inclui a série ainda
+// incompleta (ex.: só a carga digitada). Usada pelo snapshotDrafts para o
+// rascunho sobreviver a recolher/reordenar/redesenhar sem perder o que foi
+// digitado; o registro (readFields) continua filtrando séries sem reps.
+function readSetRowsRaw(prefix) {
     const rows = setEditorState[prefix] || [];
     return rows.map((s, i) => {
         const w = document.querySelector(`[data-setw="${prefix}${i}"]`);
         const r = document.querySelector(`[data-setr="${prefix}${i}"]`);
         const ri = document.querySelector(`[data-seti="${prefix}${i}"]`);
+        // campo vazio vira null (e não 0): a série parcial continua parcial no
+        // redesenho — value="${... ?? ''}" devolve vazio em vez de "0"
         return {
-            weight: w ? (parseFloat(w.value) || 0) : (s.weight || 0),
-            reps: r ? (parseInt(r.value) || 0) : (s.reps || 0),
+            weight: w ? (w.value === '' ? null : parseFloat(w.value) || 0) : (s.weight || 0),
+            reps: r ? (r.value === '' ? null : parseInt(r.value) || 0) : (s.reps || 0),
             rir: ri && ri.value !== '' ? parseInt(ri.value) : null
         };
-    }).filter(s => s.reps > 0);
+    });
+}
+
+function readSetRows(prefix) {
+    // caminho do registro: só a série com reps válida entra no log (0/'' fora)
+    return readSetRowsRaw(prefix)
+        .map(s => ({ weight: s.weight || 0, reps: s.reps || 0, rir: s.rir ?? null }))
+        .filter(s => s.reps > 0);
+}
+
+// Sincroniza o estado do editor com o que está digitado no DOM antes de
+// redesenhar as linhas: adicionar/remover série não pode apagar digitação.
+function syncSetRowsFromDOM(prefix) {
+    const rows = readSetRowsRaw(prefix);
+    if (rows.length) setEditorState[prefix] = rows;
 }
 
 function addSetRow(prefix) {
+    syncSetRowsFromDOM(prefix);
     setEditorState[prefix] = setEditorState[prefix] || [];
     const last = setEditorState[prefix][setEditorState[prefix].length - 1];
     setEditorState[prefix].push({ weight: last ? last.weight : 0, reps: last ? last.reps : 0, rir: last ? last.rir : null });
@@ -148,6 +170,7 @@ function addSetRow(prefix) {
 }
 
 function removeSetRow(prefix, i) {
+    syncSetRowsFromDOM(prefix);
     if (setEditorState[prefix]) setEditorState[prefix].splice(i, 1);
     renderSetRows(prefix);
 }
@@ -214,8 +237,8 @@ function fieldsHTML(p, v, opts) {
             <div class="border-t border-berzerker-border p-3 space-y-3">
                 ${typeModeHTML}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div id="${p}type-hint" class="text-xs text-amber-400/90 font-mono bg-amber-950/20 border border-amber-700/30 rounded-lg px-3 py-2"></div>
-                    <div id="${p}faixa-hint" class="text-xs text-cyan-300/90 font-mono bg-cyan-950/20 border border-cyan-700/30 rounded-lg px-3 py-2"></div>
+                    <div id="${p}type-hint" class="text-xs text-amber-400/90 font-mono bg-amber-950/20 border border-amber-700/30 rounded-lg px-3 py-2">${escapeHtml((o.hints && o.hints.type) || '')}</div>
+                    <div id="${p}faixa-hint" class="text-xs text-cyan-300/90 font-mono bg-cyan-950/20 border border-cyan-700/30 rounded-lg px-3 py-2">${escapeHtml((o.hints && o.hints.faixa) || '')}</div>
                 </div>
                 ${setsHTML}
                 ${extraHTML}
@@ -227,8 +250,8 @@ function fieldsHTML(p, v, opts) {
                     <div id="${p}warmup-quick-content" class="font-mono text-gray-300"></div>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" data-action="calculateWarmupFromForm" class="px-3 py-2 bg-amber-900/30 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase rounded-lg hover:bg-amber-900/50">🔥 Aquecimento</button>
-                    <button type="button" data-action="calculatePlatesQuick" class="px-3 py-2 bg-berzerker-border text-gray-200 text-xs font-bold uppercase rounded-lg hover:bg-gray-700">⚙️ Anilhas</button>
+                    <button type="button" data-action="${o.warmupTools ? o.warmupTools.warmupAction : 'calculateWarmupFromForm'}"${o.warmupTools && o.warmupTools.warmupArgs ? ` data-args='${JSON.stringify(o.warmupTools.warmupArgs)}'` : ''} class="px-3 py-2 bg-amber-900/30 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase rounded-lg hover:bg-amber-900/50">🔥 Aquecimento</button>
+                    <button type="button" data-action="${o.warmupTools ? o.warmupTools.platesAction : 'calculatePlatesQuick'}"${o.warmupTools && o.warmupTools.platesArgs ? ` data-args='${JSON.stringify(o.warmupTools.platesArgs)}'` : ''} class="px-3 py-2 bg-berzerker-border text-gray-200 text-xs font-bold uppercase rounded-lg hover:bg-gray-700">⚙️ Anilhas</button>
                 </div>
                 <p class="text-xs text-gray-400">🏆 O PR é detectado sozinho pelo 1RM estimado (ou tempo, em isometria) — sem checkbox. 💡 Quando todas as séries baterem o topo da faixa, o app sugere subir a carga.</p>
             </div>
@@ -273,7 +296,9 @@ function snapshotDrafts() {
             weight: w ? (parseFloat(w.value) || 0) : 0,
             repsText: g('r') ? g('r').value : '',
             mode: modeSel ? modeSel.value : 'simple',
-            sets: (modeSel && modeSel.value === 'sets') ? readSetRows(`s${i}-`) : null,
+            // leitura crua: uma série parcialmente preenchida (ex.: só a carga)
+            // também vira rascunho e sobrevive a recolher/reordenar/redesenhar
+            sets: (modeSel && modeSel.value === 'sets') ? readSetRowsRaw(`s${i}-`) : null,
             type: g('type') ? g('type').value : e.type,
             technique: g('t').value, nextGoal: g('g').value,
             isPR: g('p') ? g('p').checked : false,
@@ -364,10 +389,34 @@ function handleAddLog(event) {
     document.getElementById('filter-date').value = date;
 
     refreshAll();
+
+    // Objetivo 2 — Extra no treino em andamento: só com a opção explícita
+    // marcada. Nunca marca o item planejado correspondente (a semelhança de
+    // nome não vira vínculo): o mesmo registro pode contar como Extra distinto
+    // ou ficar apenas no histórico — e nunca cria um segundo log.
+    const opcaoExtra = document.getElementById('log-count-in-session');
+    const contaExtra = !!(activeSession && opcaoExtra && opcaoExtra.checked);
+    const nomeNormalizado = String(exercise || '').trim().toLowerCase();
+    const pendenteIgual = !!(activeSession && activeSession.exercises.some(e =>
+        !e.done && !e.extra && String(e.exercise || '').trim().toLowerCase() === nomeNormalizado));
+    let extraAnexado = false;
+    if (contaExtra) {
+        extraAnexado = appendSessionExtra(newLog);
+        if (extraAnexado) renderSession();
+    }
+    updateSessionExtraHint();
+
     const vol = logVolumeKg(newLog, userBodyweight);
     let msg = `✅ "${exercise}" registrado! ${f.type === 'isometria' ? logTstSeconds(newLog) + ' s de tensão' : Math.round(vol).toLocaleString('pt-BR') + ' kg de volume'}`;
     if (newLog.isPR) msg += ` · 🏆 PR automático!`;
     if (prog) msg += ` · 💡 Dupla progressão: ${prog.proximaCarga} kg na próxima`;
+    if (extraAnexado && activeSession) {
+        const done = activeSession.exercises.filter(e => e.done).length;
+        msg += ` · ➕ Contado no treino em andamento (${done}/${activeSession.exercises.length})`;
+        if (pendenteIgual) msg += ` — item Extra distinto; o exercício planejado continua pendente (conclua pelo ✔ Registrar do cartão dele)`;
+    } else if (pendenteIgual) {
+        msg += ` · ℹ️ Este nome está pendente no treino em andamento: o registro ficou só no histórico e não altera o progresso do treino`;
+    }
     alertModal(msg);
     if (newLog.isPR) { shakeElement(document.getElementById('form-card-container')); spawnDamageFloat(vol * 2, true); }
 }
@@ -755,6 +804,7 @@ function registerCorrida(event) {
         toggleSetMode,
         renderSetRows,
         readSetRows,
+        readSetRowsRaw,
         addSetRow,
         removeSetRow,
         initSetEditor,
@@ -789,4 +839,4 @@ function registerCorrida(event) {
     g.__diarioExportFiles = Object.assign(g.__diarioExportFiles || {}, { "js/registro.js": Object.keys(exports_).length });
 })(typeof window !== 'undefined' ? window : globalThis);
 
-export { updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, openNewRunLog, saveEditedLog, saveEditedRunLog, updateRunEditPace, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida };
+export { updateTypeHint, onTypeChange, flashAutofill, suggestSessaoFor, onLogExerciseChange, toggleSetMode, renderSetRows, readSetRows, readSetRowsRaw, addSetRow, removeSetRow, initSetEditor, fieldsHTML, readFields, snapshotDrafts, findLastPerformance, lastPerformanceHTML, repeatLastPerformance, handleAddLog, _lastLogId, newLogId, editLog, openNewRunLog, saveEditedLog, saveEditedRunLog, updateRunEditPace, handleFilterDateChange, getFilteredLogs, renderLogsTable, renderRecoveryMap, prefillMuscleFromMap, renderDaySuggestion, registerCorrida };
