@@ -56,7 +56,7 @@ ativa e apaga o cache antigo. Execução local exigida com `@sparticuz/chromium`
 153.0.8010.0 fora do repositório: **46/46**. Isso **não** declara PWA, offline geral
 ou uso em celular plenamente validados: são testes headless com viewport emulado.
 
-**Sessão compacta + Extra (cache v48):** o gate ganhou a seção **NAV 2d** — no Chrome
+**Sessão compacta + Extra (cache v49):** o gate ganhou a seção **NAV 2d** — no Chrome
 real (412×915, touch) ela inicia um treino salvo pelo clique "▶ Iniciar", confere a
 sequência compacta (só a 1ª unidade aberta, meta/estado, `aria-expanded`/`aria-controls`,
 alvos de 44 px), alterna cartões pelo toque, registra uma unidade pelo ✔ Registrar,
@@ -65,8 +65,8 @@ grava um exercício **Extra** pelo Registro rápido com "Contar no treino em and
 incluindo a faixa **360/390/412/430 px** (emulada), também sem conteúdo estourando
 os cartões da sessão/registro.
 Execução local exigida com `@sparticuz/chromium` 153.0.8010.0 fora do repositório:
-**53/53**, cache v48. Acompanhe a rodada e a CI do HEAD da PR. A simulação de
-atualização v48 → v49 instala, ativa e apaga o cache antigo. Isso segue **sem** declarar
+**53/53**, cache v49. Acompanhe a rodada e a CI do HEAD da PR. A simulação de
+atualização v49 → v50 instala, ativa e apaga o cache antigo. Isso segue **sem** declarar
 PWA, offline geral ou uso em celular plenamente validados.
 
 Reproduzir:
@@ -121,7 +121,7 @@ Pré-requisito: servir por **https** ou `localhost` (o app só registra o SW em 
 
 ## 3. Atualização de versão (cache novo) — manual
 
-Automatizado já foi: instalar `VERSION`+1 por cima da versão atual (v48 sobre v47 na execução
+Automatizado já foi: instalar `VERSION`+1 por cima da versão atual (v49 sobre v48 na execução
 da B5) e ver o cache antigo ser apagado. No `test_sw.js` (SW 3b), uma falha simulada numa
 imagem de patente reprova a instalação, preserva a versão anterior e, removida a falha, a
 atualização completa instala e ativa.
