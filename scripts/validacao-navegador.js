@@ -37,7 +37,9 @@
    offline, IndexedDB, download real do backup, layout em 412 px,
    pré-requisitos de instalação, atualização de versão do cache
    (VERSION atual → VERSION+1, lida do sw.js), a janela "➕ Novo exercício",
-   a aba Corridas D2/D3 e o aviso persistente de imagem não confirmada.
+   a aba Corridas D2/D3, a sessão compacta do Treino em Andamento (com o
+   exercício Extra do Registro rápido) e o aviso persistente de imagem não
+   confirmada.
    ============================================================ */
 'use strict';
 const http = require('http');
@@ -321,6 +323,106 @@ const server = http.createServer((req, res) => {
       ex.saveLogsToStorage();
       ex.refreshAll();
     }, logsAntesB3);
+  }
+
+  console.log('\n== NAV 2d. Treino em Andamento: sessão compacta + Extra em 412 px ==');
+  fase = 'sessao';
+  const logsAntesSessaoNav = await page.evaluate(async () => JSON.stringify((await window.__diarioExports.buildBackupPayload()).logs));
+  try {
+    await page.click('#nav-group-treino').catch(() => {});
+    await page.click('#nav-montador').catch(() => {});
+    await page.waitForTimeout(300);
+    // inicia um treino salvo pelo clique real "▶ Iniciar"
+    await page.click('#saved-workouts-list [data-action="startSession"]');
+    await page.waitForTimeout(500);
+    const sessaoNav1 = await page.evaluate(() => {
+      const lista = document.getElementById('session-exercises-list');
+      const headers = [...lista.querySelectorAll('[data-action="toggleSessionUnit"]')];
+      const abertos = headers.filter(b => b.getAttribute('aria-expanded') === 'true');
+      const wrap = document.getElementById('log-session-extra-wrap');
+      return {
+        visivel: !document.getElementById('active-session-card').classList.contains('hidden'),
+        progresso: document.getElementById('session-progress-text').textContent,
+        headers: headers.length,
+        umAberto: abertos.length === 1 && headers[0].getAttribute('aria-expanded') === 'true',
+        metaEstado: /🎯/.test(lista.textContent) && /Pendente/.test(lista.textContent),
+        aria: headers.length > 0 && headers.every(b => b.hasAttribute('aria-expanded') && b.hasAttribute('aria-controls') && b.classList.contains('min-h-[44px]')),
+        wrapExtra: !!wrap && !wrap.classList.contains('hidden') && /Contar no treino em andamento/.test(wrap.textContent),
+        scroll: document.documentElement.scrollWidth, tela: window.innerWidth
+      };
+    });
+    check('Chrome: sessão compacta abre com só a 1ª unidade aberta, meta/estado e opção Extra',
+      sessaoNav1.visivel && sessaoNav1.headers >= 2 && sessaoNav1.umAberto && sessaoNav1.metaEstado && sessaoNav1.aria && sessaoNav1.wrapExtra,
+      JSON.stringify(sessaoNav1).slice(0, 300));
+    check('sessão em andamento cabe nos 412 px sem rolagem horizontal',
+      sessaoNav1.scroll <= sessaoNav1.tela + 2, JSON.stringify(sessaoNav1));
+    const alternouNav = await page.evaluate(() => {
+      const headers = [...document.querySelectorAll('#session-exercises-list [data-action="toggleSessionUnit"]')];
+      if (headers.length < 2) return null;
+      headers[1].click();
+      const corpo1 = document.getElementById(headers[1].getAttribute('aria-controls'));
+      return {
+        a0: headers[0].getAttribute('aria-expanded'),
+        a1: headers[1].getAttribute('aria-expanded'),
+        corpo: !!corpo1 && !corpo1.classList.contains('hidden')
+      };
+    });
+    check('toque real em outro cartão recolhe o anterior (accordion, estado anunciado)',
+      alternouNav && alternouNav.a0 === 'false' && alternouNav.a1 === 'true' && alternouNav.corpo, JSON.stringify(alternouNav));
+    const progNav = () => page.evaluate(() => {
+      const m = /(\d+)\s*\/\s*(\d+)/.exec(document.getElementById('session-progress-text').textContent) || [];
+      return { done: Number(m[1]), total: Number(m[2]) };
+    });
+    const antesRegNav = await progNav();
+    await page.evaluate(() => {
+      const headers = [...document.querySelectorAll('#session-exercises-list [data-action="toggleSessionUnit"]')];
+      if (headers[0].getAttribute('aria-expanded') !== 'true') headers[0].click();
+    });
+    await page.waitForTimeout(150);
+    await page.click('#session-exercises-list [data-action="registerSessionUnit"]');
+    await page.waitForTimeout(400);
+    const regNav = await progNav();
+    check('✔ Registrar real conclui a unidade, avança o progresso e marca ✏️ Editar',
+      regNav.done === antesRegNav.done + 1 && regNav.total === antesRegNav.total &&
+      (await page.locator('#session-exercises-list [data-action="editLog"]').count()) > 0,
+      JSON.stringify({ antesRegNav, regNav }));
+    // Extra: Registro rápido com "Contar no treino em andamento" marcado
+    const antesExtraNav = await progNav();
+    await page.fill('#log-exercise', 'Puxada Frontal');
+    await page.fill('#w', '50');
+    await page.fill('#r', '10, 10');
+    await page.check('#log-count-in-session');
+    await page.click('#workout-form button[type="submit"]');
+    await page.waitForTimeout(500);
+    const extraNav = await page.evaluate(() => {
+      const m = /(\d+)\s*\/\s*(\d+)/.exec(document.getElementById('session-progress-text').textContent) || [];
+      return {
+        done: Number(m[1]), total: Number(m[2]),
+        seloExtra: /Extra/.test(document.getElementById('session-exercises-list').textContent),
+        scroll: document.documentElement.scrollWidth, tela: window.innerWidth
+      };
+    });
+    check('extra conta UMA vez no progresso (total+1 e concluídos+1) com o selo "Extra"',
+      extraNav.done === antesExtraNav.done + 1 && extraNav.total === antesExtraNav.total + 1 && extraNav.seloExtra,
+      JSON.stringify({ antesExtraNav, extraNav }));
+    check('sessão com o item extra cabe nos 412 px sem rolagem horizontal',
+      extraNav.scroll <= extraNav.tela + 2, JSON.stringify(extraNav));
+  } catch (e) {
+    check('fluxo de sessão compacta + Extra no Chrome real', false, e.stack || e.message);
+  } finally {
+    // Devolve o seed e encerra a sessão para os checks seguintes (SW/backup).
+    await page.evaluate(original => {
+      const ex = window.__diarioExports;
+      ex.setLogs(JSON.parse(original));
+      ex.saveLogsToStorage();
+      ex.endSession();
+      const yes = document.getElementById('confirm-modal-yes');
+      if (yes) yes.click();
+      const wrap = document.getElementById('log-session-extra-wrap');
+      if (wrap) wrap.classList.add('hidden');
+      ex.refreshAll();
+    }, logsAntesSessaoNav);
+    await page.waitForTimeout(200);
   }
 
   console.log('\n== NAV 3. Service Worker + offline ==');

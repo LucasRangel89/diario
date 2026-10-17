@@ -15,6 +15,14 @@ com espelho no `localStorage`, e continuam funcionando **offline na academia**.
 ### ⚡ Hoje e Montador
 A tela **Hoje** abre no registro rápido (data, grupo, exercício, carga e reps). Em **Mais detalhes** continuam disponíveis o registro série a série, tipo de carga, RIR, técnica, meta do próximo treino, sessão, conferência, observações e as ferramentas de aquecimento/anilhas. O registro de cardio fica recolhido até ser necessário; o **Montador** tem tela própria para criar e gerenciar treinos.
 
+O **Treino em Andamento** (▶ Iniciar) mostra cada exercício como cartão compacto com número,
+grupo/nome, meta e estado — só a unidade pendente atual abre (abrir outra recolhe a anterior);
+na unidade aberta ficam carga, reps e ✔ Registrar, e "Mais detalhes" guarda o resto (inclusive
+aquecimento/anilhas calculados pela carga do cartão). Bi-set abre como um bloco com os dois
+formulários e registro conjunto. Com a sessão ativa, o Registro rápido ganha **➕ Contar no
+treino em andamento**: o registro entra na sequência como item **Extra** concluído (mesmo log
+do histórico, sem marcar itens planejados — nome igual pede escolha explícita).
+
 ### 📜 Histórico no formato da planilha
 Abas **Log · Progresso · Semana a semana · Peso corporal**, com as colunas exatas da
 planilha (Data, Sessão, Exercício, Carga registrada, S1–S5, RIR, Conferir?, Unidade,
