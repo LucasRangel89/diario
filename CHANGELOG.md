@@ -2,6 +2,15 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Não lançado] — base versionada de perfis e inventário da taxonomia
+
+- Nova base **aditiva** em `js/perfil_exercicios.js` (schema v1): ID estável derivado do nome canônico, aliases do catálogo e estados `nao_revisado`/`revisado`. O registro de perfis revisados nasce **vazio**: nenhum exercício foi classificado anatomicamente por nome, tag ou regex.
+- O schema exige revisor, data ISO, versão, músculos primários, secundários com `papel: secundario`/`contribuicao: estimada` e padrão de movimento para um perfil revisado. Perfil não revisado não pode carregar anatomia; campos de "séries equivalentes" são rejeitados. Um registro revisado que tente mudar o grupo legado do catálogo é ignorado (`registro_revisado_invalido`) e não reclassifica nada.
+- Inventário completo em `docs/TAXONOMIA_EXERCICIOS.md`: 72 exercícios, 11 grupos de catálogo (10 no mapa + Cardio), 12 entradas em `MUSCLE_META` (inclui Geral), aliases legados `Pescoço → Ombros` e `Glúteos → Posterior`, fontes divergentes de grupo e mapa de impacto em histórico, metas, XP, chefões, CSV e JSON. O CSV de referência da raiz (64 linhas) e o catálogo de runtime (72) foram documentados sem alteração.
+- **Nenhuma mudança de comportamento:** `muscle`, registros, CSV formato 3, backup JSON formato 6, metas, XP, chefões, PR/1RM, volume e recomendações continuam iguais. Testes novos comparam grupo legado, séries semanais, dano de chefão, CSV round-trip, JSON e `migrateLog` (incluindo Panturrilha em Posterior).
+- Apoio indireto deixa de ser chamado de "séries equivalentes" na interface, README e testes; passa a "contribuição estimada / séries ponderadas", sem alterar o cálculo de 0,3–0,5. `docs/RECUPERACAO.md` e a análise crítica registram a mudança.
+- `sw.js` sobe de **v54 para v55** (novo módulo no CORE). Testes do motor, UI, módulos ES, Service Worker, ponteiros de docs e build do CSS executados; nenhum dado legado é migrado ou reescrito.
+
 ## [Não lançado] — confiabilidade e linguagem do assistente de treino
 
 - Estado sem histórico agora aparece como **Sem dados**, sem percentual de prontidão fabricado; no ranking, prontidão desconhecida recebe peso neutro e é explicada. Volume semanal permanece separado e visível.

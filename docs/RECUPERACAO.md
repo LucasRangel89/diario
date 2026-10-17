@@ -11,7 +11,7 @@ muscular”); este arquivo é a versão completa.
 |---|---|
 | **Prontidão estimada (%)** | Heurística que combina a janela de tempo desde o registro (24 h a 72 h, conforme o grupo), volume semanal excedente e, quando aplicável, apoio indireto. Sem histórico direto ou indireto, o estado é **Sem dados** e não há percentual. |
 | **Barra de séries da semana** | Séries registradas na semana × faixa-alvo do grupo (10–20 séries; Antebraço 4–10). Rótulos: `abaixo da meta`, `na faixa`, `acima da faixa`. |
-| **Apoio indireto (🤝)** | Grupos que trabalham de forma indireta (ex.: puxadas para Antebraço/Bíceps, empurradas para Tríceps/Ombros, agachamentos para Posterior). Entra na prontidão com fator 0,3–0,5 e **não** conta para a meta semanal. |
+| **Apoio indireto (🤝)** | Grupos que trabalham de forma indireta (ex.: puxadas para Antebraço/Bíceps, empurradas para Tríceps/Ombros, agachamentos para Posterior). Entra na prontidão com fator 0,3–0,5 e **não** conta para a meta semanal. O número exibido é uma **contribuição estimada** (séries ponderadas), não uma série biológica equivalente. |
 | **Painel da Lombar** | Estimativa separada, a partir do tempo desde a última sessão que carrega a região e do volume dela. |
 
 ## 2. Como o percentual é calculado
@@ -24,7 +24,9 @@ muscular”); este arquivo é a versão completa.
 3. **Apoio indireto.** Quando há estímulo indireto, vale o menor valor entre o
    direto e o indireto ponderado pelo fator do grupo. Se não houver nenhum dos
    dois, o estado é `SEM DADOS`; o desconhecido não vira 100 % e recebe peso neutro
-   no ranking de treinos.
+   no ranking de treinos. O fator é uma heurística de produto: as "séries
+   ponderadas" exibidas não são séries biológicas equivalentes nem uma medida de
+   estímulo validada.
 4. Rótulos com dados: `FADIGA ALTA` (< 33 %), `EM RECUPERAÇÃO` (< 100 %),
    `PRONTO (ESTIMADO)`. `PRONTO (ESTIMADO)` é somente uma saída heurística do
    cálculo temporal, não confirmação de recuperação fisiológica.
@@ -49,6 +51,10 @@ muscular”); este arquivo é a versão completa.
   indireto, o mapa exibe `SEM DADOS` e deixa a barra sem preenchimento. O ranking do
   próximo treino usa peso neutro para esse grupo e explica a falta de dados; a meta
   semanal continua visível, mas não é usada para inventar um estado de recuperação.
+- **Apoio indireto não é série equivalente.** O fator fixo da tabela `SINERGIA`
+  (0,3–0,5) só pondera o aviso de recuperação. Ele não entra na meta semanal, no XP
+  nem no dano de chefão e não deve ser lido como "séries que valem o mesmo que uma
+  série direta".
 - **Não há integração com sensores nem wearables.** Tudo é derivado dos registros
   locais (o app é 100 % offline, sem conta e sem servidor).
 
@@ -59,4 +65,7 @@ muscular”); este arquivo é a versão completa.
 - Prontidão + volume + apoio indireto: `fatigueState`, `sinergiaState`,
   `weeklySetsByMuscle`, `faixaSeriesDoGrupo` (`js/catalogo.js` e `js/assistente.js`).
 - Painel da lombar: `regiaoLombarState` (`js/assistente.js`).
-- Renderização: `renderRecoveryMap` (`js/app.js`).
+- Renderização: `renderRecoveryMap` (`js/registro.js`).
+- Taxonomia vigente, perfis versionados e limites: `js/perfil_exercicios.js` e
+  `docs/TAXONOMIA_EXERCICIOS.md`. Na v1 todos os perfis estão `nao_revisado` e não
+  alteram nenhum cálculo acima.

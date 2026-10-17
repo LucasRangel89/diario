@@ -24,7 +24,7 @@ if (!process.execArgv.some(a => a.includes('experimental-vm-modules'))) {
 const FILES = [
     'js/actions.js', 'js/storage.js', 'js/catalogo.js', 'js/gamificacao.js',
     'js/assistente.js', 'js/planilha_data.js', 'js/historico.js', 'js/busca.js',
-    'js/custom_exercises.js', 'js/datas.js', 'js/corridas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/config.js', 'js/boss.js', 'js/registro.js', 'js/app.js'
+    'js/custom_exercises.js', 'js/datas.js', 'js/perfil_exercicios.js', 'js/corridas.js', 'js/cartoes.js', 'js/calculadoras.js', 'js/backup.js', 'js/persistencia.js', 'js/sessao.js', 'js/config.js', 'js/boss.js', 'js/registro.js', 'js/app.js'
 ];
 const ROOT = path.resolve(__dirname, '..');
 
@@ -117,6 +117,7 @@ function resolveFile(specifier, referrer) {
     // 3) sanidade: símbolos-chave nos namespaces
     const app = modules.get('js/app.js').namespace;
     const catalogo = modules.get('js/catalogo.js').namespace;
+    const perfis = modules.get('js/perfil_exercicios.js').namespace;
     const storageNs = modules.get('js/storage.js').namespace;
     const checagens = [
         ['app.renderSession', typeof app.renderSession === 'function'],
@@ -124,6 +125,8 @@ function resolveFile(specifier, referrer) {
         ['app.setLogs', typeof app.setLogs === 'function'],
         ['catalogo.catalogInfo', typeof catalogo.catalogInfo === 'function'],
         ['catalogo.allExercisesList', typeof catalogo.allExercisesList === 'function'],
+        ['perfil.perfilDoExercicio', typeof perfis.perfilDoExercicio === 'function'],
+        ['perfil.inventarioTaxonomia', typeof perfis.inventarioTaxonomia === 'function'],
         ['storage.storage.migrate', storageNs && typeof storageNs.storage.migrate === 'function']
     ];
     const faltando = checagens.filter(([, ok]) => !ok).map(([n]) => n);

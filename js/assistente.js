@@ -341,7 +341,7 @@ function fatigueState(muscle, muscleLogs, weeklySets, nowMs, sinergia) {
         volumeStatus, faltam, excesso, volText,
         semRegistro: direto === null && !sin,
         sinergia: sin,
-        sinergiaText: sin ? `🤝 apoio em ${sin.de} (~${Number(sin.series).toFixed(1).replace('.', ',')} séries equivalentes)` : '',
+        sinergiaText: sin ? `🤝 apoio estimado em ${sin.de} (~${Number(sin.series).toFixed(1).replace('.', ',')} séries ponderadas)` : '',
         info: base.info, last: base.last, hoursNeed: base.hoursNeed
     };
 }
@@ -398,9 +398,10 @@ function suggestNextWorkout(workouts, allLogs, nowMs) {
     return scored;
 }
 
-// Séries equivalentes de apoio indireto na SEMANA: Σ séries dos sinergiaLogs ×
-// fator do grupo. É só informação — não soma em `series` nem abate `faltam`,
-// porque a meta é de estímulo direto (o apoio já aparece na recuperação).
+// Contribuição estimada de apoio indireto na SEMANA: Σ séries dos sinergiaLogs ×
+// fator do grupo (séries ponderadas, não séries biológicas equivalentes). É só
+// informação — não soma em `series` nem abate `faltam`, porque a meta é de
+// estímulo direto (o apoio já aparece na recuperação).
 function seriesIndiretasSemana(muscle, logsSemana) {
     const cfg = SINERGIA[normalizeMuscle(muscle)];
     if (!cfg) return 0;
