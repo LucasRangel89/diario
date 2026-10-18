@@ -1,21 +1,23 @@
-# Artes ThunderCats e The Office — primeiro lote (preparação editorial)
+# Artes ThunderCats e The Office — produção individual (preparação editorial)
 
 Sessão Arena `arena/dc4e2d49-diario` · 18/10/2026 · base `e66cec5` (main) · nenhuma alteração preexistente no checkout.
 
-Aprovações registradas nesta sessão (antes da produção em lote): lote completo das 10 chamadas **sem** etapa intermediária de direção; linguagem visual **pixel art** para os dois temas (uma só linguagem, sem misturar); **listas do plano editorial aprovadas como escritas** (contagem real: **98 peças** — ver §5). Nenhum tema foi cadastrado e nenhuma interface foi alterada.
+Aprovações registradas nesta sessão (antes da produção em lote): lote completo das 10 chamadas **sem** etapa intermediária de direção; linguagem visual **pixel art** para os dois temas (uma só linguagem, sem misturar); **listas do plano editorial aprovadas como escritas** (contagem real: **98 peças** — ver §5). Depois da confirmação de que a ferramenta não gera cartelas, a produção segue por **peças individuais** (lote 2 em diante). Nenhum tema foi cadastrado e nenhuma interface foi alterada.
 
 ## 1. Capacidade da ferramenta de geração
 
 - **1 chamada = 1 imagem única e independente.** O contrato da ferramenta proíbe grade, colagem, contact sheet, montagem ou várias peças/variações numa mesma imagem: **cartelas com múltiplos assets não são geráveis** e não foram simuladas como imagem única.
 - `offer_options` serve para escolher entre 2 candidatos **da mesma peça**, não para empacotar peças.
 - Saída `.jpg/.jpeg/.png`, resolução definida pelo modelo (1024×1024 aqui; molduras saíram 768×1376), **sem garantia de canal alfa**.
-- Orçamento inicial de 10 chamadas consumido por inteiro: **10/10 peças geradas**. Não há como produzir 94–98 peças em 10 chamadas; a cartela passa a ser **montagem por código** (§3) ou cartela externa fornecida pelo usuário para recorte pelo `scripts/prepare-art.py`.
+- Orçamento inicial de 10 chamadas consumido no lote 1; o lote 2 (chamadas 11–20) foi autorizado para geração individual. Cada chamada = 1 peça. Não há como produzir 94–98 peças em poucas chamadas; a cartela passa a ser **montagem por código** (§3) ou cartela externa fornecida pelo usuário para recorte pelo `scripts/prepare-art.py`.
 
 ## 2. Inventário do lote — separação por origem
 
-### 2.1 Imagens realmente geradas (10 originais, **fora do Git**)
+### 2.1 Imagens realmente geradas (20 originais, **fora do Git**)
 
-Originais grandes em `.cache/artes-originais/lote1-*.png` (≈18 MB; `.cache/` é ignorado). SHA-256 de cada um no manifesto. Reprodução futura: manter os originais fora do Git ou reenviar.
+Originais grandes em `.cache/artes-originais/lote*.png` (≈2 MB cada; `.cache/` é ignorado **e volátil** — entre turnos do sandbox os originais do lote 1 deixaram de existir; o registro durável são os SHA-256 no manifesto e os derivados versionados). Reprodução futura: conservar os originais externamente ou reenviar.
+
+**Lote 1 (chamadas 1–10):**
 
 | # | Peça | Original (cache) | Conteúdo revisado |
 |---|---|---|---|
@@ -30,15 +32,30 @@ Originais grandes em `.cache/artes-originais/lote1-*.png` (≈18 MB; `.cache/` �
 | 9 | Moldura ThunderCats | `lote1-moldura-thundercats.png` | Moldura de ferro com rubis nos cantos e espada no topo |
 | 10 | Moldura The Office | `lote1-moldura-office.png` | Moldura de papel/caderno com grampeador e anel de café |
 
+**Lote 2 (chamadas 11–20) — chefões ThunderCats, cartela 1 em ordem editorial:**
+
+| # | Peça | Original (cache) | Conteúdo revisado |
+|---|---|---|---|
+| 11 | Jackalman | `lote2-jackalman.png` | Canídeo saqueador agachado, armadura improvisada, clava |
+| 12 | Monkian | `lote2-monkian.png` | Bruto símio com clava de pedra e escudo |
+| 13 | Vultureman | `lote2-vultureman.png` | Inventor abutre com óculos e asas mecânicas, oficina |
+| 14 | Slithe | `lote2-slithe.png` | Comandante reptiliano verde com machado |
+| 15 | Ratar-O | `lote2-ratar-o.png` | Senhor da guerra murino com manoplas de poder |
+| 16 | Grune | `lote2-grune.png` | Guerreiro felino de presas com maça; **borda decorativa interna** divergente dos demais (registrada; invisível no enquadramento circular do card) |
+| 17 | Safari Joe | `lote2-safari-joe.png` | Caçador de alto tecnologismo com viseira e blaster |
+| 18 | Captain Shiner | `lote2-captain-shiner.png` | Capitão espacial em uniforme naval escuro, corredor de nave |
+| 19 | Hammerhand | `lote2-hammerhand.png` | Pirata ciborgue com antebraço-martelo, convés com correntes |
+| 20 | The Driller | `lote2-the-driller.png` | Fera subterrânea com chifre-furadeira rompendo parede de pedra |
+
 Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, números ou legendas legíveis** (conforme especificação).
 
 ### 2.2 Imagens fornecidas pelo usuário
 
 **Nenhuma nesta sessão.** (Uma cartela externa sua pode acelerar as 88 peças pendentes: recorte/otimização seguem pelo `scripts/prepare-art.py`, com caixas manuais revisadas.)
 
-### 2.3 Recortes/derivados versionados (10 WebP + 1 registro por moldura)
+### 2.3 Recortes/derivados versionados (20 WebP)
 
-`images/artes/candidatos/` — **candidatos, fora do CORE do service worker, não carregados pela UI** (cache offline não cresce). Total **456 KB**. Campos completos (id, tema/categoria, origem, fonte, sha256, recorte, dimensões, formato, transparência, local de uso futuro, estado, notas de revisão) em [`manifesto-artes.json`](manifesto-artes.json).
+`images/artes/candidatos/` — **candidatos, fora do CORE do service worker, não carregados pela UI** (cache offline não cresce). Total **≈970 KB**. Campos completos (id, tema/categoria, origem, fonte, sha256, recorte, dimensões, formato, transparência, local de uso futuro, estado, notas de revisão) em [`manifesto-artes.json`](manifesto-artes.json).
 
 | Derivado | Alvo | Método | Estado | Uso futuro (ao cadastrar o tema) |
 |---|---|---|---|---|
@@ -53,19 +70,21 @@ Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, núme
 | `thundercats/molduras/moldura-thundercats.webp` | 768×1376 | keying + mediana | candidato | overlay do Card (referência 1080×1920) |
 | `office/molduras/moldura-office.webp` | 768×1376 | keying + mediana | candidato | overlay do Card (referência 1080×1920) |
 
+**Lote 2 (chefões ThunderCats; todos 512×512 NEAREST 2:1, `candidato`, uso futuro `images/bosses/<arquivo>.webp`):** `thundercats/bosses/jackalman.webp` (36 KB) · `monkian.webp` (43 KB) · `vultureman.webp` (59 KB) · `slithe.webp` (67 KB) · `ratar-o.webp` (53 KB) · `grune.webp` (55 KB) · `safari-joe.webp` (42 KB) · `captain-shiner.webp` (42 KB) · `hammerhand.webp` (74 KB) · `the-driller.webp` (57 KB). Detalhes por peça em `docs/manifesto-artes.json`.
+
 **Método de redução por alvo (revisado peça a peça):** a arte gerada combina blocos pixelados com brilhos suaves — não é pixel grid nativo estrito. NEAREST só onde a escala é exata 2:1 (512); LANCZOS onde a escala é não inteira (192) para não granular os brilhos (comparação NEAREST×LANCZOS com leitura a 28 px na prova). Nada foi esticado.
 
 **Molduras — transparência (decisão crítica):** as duas vieram **RGB com xadrez desenhado pintado no fundo — xadrez não é alfa**. O alfa foi obtido por *keying* (flood-fill dos neutros em faixas de luminância + mediana 3 no alfa), **revisado visualmente** sobre card real: janelas limpas, arte íntegra (espada, rubis, grampeador, anel do café), halo leve nas bordas internas aceito e registrado. Mestres PNG sem perda ficam em `.cache/artes-originais/derivados/` (fora do Git; o script regenera). **Nenhuma moldura está em uso**: antes de qualquer overlay real, falta testar nos canvases (Story 1080×1920; Card do Chefão 1080×1080; moldura desenhada hoje em código em `js/cartoes.js` com quadro de referência 1080×1920) e as áreas de texto (x≥70 px), retrato circular e foto full-bleed.
 
 ### 2.4 Artes ainda pendentes
 
-**92 peças do plano editorial** (98 − 6 concluídas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). ThunderCats tem 4/24; The Office tem 4/24 — **nenhum tema entra na galeria nesta PR**. As duas molduras são infraestrutura fora da contagem; os dois fundos também (completude de tema, não constavam nas 98).
+**82 peças do plano editorial** (98 − 16 concluídas como candidatas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). ThunderCats tem **14/24** (11 retratos, 1 patente, selo e fundo); The Office tem **4/24** — **nenhum tema entra na galeria nesta PR**. As duas molduras são infraestrutura fora da contagem; os dois fundos também (completude de tema, não constavam nas 98).
 
 ## 3. Provas visuais (`docs/provas-lote1/`, montadas por código)
 
 | Arquivo | O que mostra |
 |---|---|
-| `cartela-lote1.webp` | Cartela 5×2 montada por código com as 10 peças — grade regular, margens generosas, sem legendas, nenhuma peça encostando na vizinha |
+| `cartela-candidatos.webp` | Cartela 6×4 montada por código com os **22 candidatos** — grade regular, margens generosas, sem legendas, nenhuma peça encostando na vizinha (é a "cartela" no seu sentido: imagem única com várias peças; a ferramenta de geração não produz isso, a montagem é por código) |
 | `leitura-patentes-28px.webp` | Patentes e selos a 80/28/56 px (linhas). Patentes legíveis a 28 px; **selo ThunderCats lê-se fraco em tamanho pequeno** (fundo escuro sobre escuro) — pendência de contraste registrada |
 | `moldura-thundercats-sobre-card.webp` | Keying da moldura TC sobre `images/cards/classico.webp` |
 | `moldura-office-sobre-card.webp` | Keying da moldura Office sobre o mesmo card (anel do café limpo) |
@@ -80,7 +99,7 @@ python3 -m venv .venv-artes          # Pillow fora do repositório
 .venv-artes/bin/python scripts/prepare-art-lote1.py .cache/artes-originais
 ```
 
-O script (`scripts/prepare-art-lote1.py`) regenera derivados, provas e `docs/manifesto-artes.json`. Pillow é ferramenta editorial opcional — **não** é dependência de produção e não entra em `package.json`. Para as cartelas externas futuras, o recorte por caixas manuais continua em `scripts/prepare-art.py`.
+O script (`scripts/prepare-art-lote1.py`) regenera derivados, provas e `docs/manifesto-artes.json` (mesclando por id: sem o original no ambiente, o registro anterior é preservado e o derivado no disco não é tocado — o `.cache/` é volátil). Pillow é ferramenta editorial opcional — **não** é dependência de produção e não entra em `package.json`. Para as cartelas externas futuras, o recorte por caixas manuais continua em `scripts/prepare-art.py`.
 
 ## 5. Plano editorial — 10 cartelas, 98 peças (nomes aprovados como escritos)
 
@@ -88,7 +107,7 @@ As listas enviadas somam **98** (o rótulo "94" do pedido não fecha com as list
 
 | # | Cartela | Peças | Concluídas (candidatas) | Pendentes |
 |---|---|---:|---:|---:|
-| 1 | ThunderCats — Bosses | 12 | 1 (Mumm-Ra poderosa) | 11 |
+| 1 | ThunderCats — Bosses | 12 | 11 (falta só Mumm-Ra, forma mumificada) | 1 |
 | 2 | ThunderCats — Patentes | 10 | 1 (Lenda de Thundera) | 9 |
 | 3 | ThunderCats — Identidade | 6 | 1 (Selo) | 5 (troféu, espada, olho, fortaleza, símbolo) |
 | 4 | The Office — Desafios | 12 | 1 (Impressora em pane) | 11 |
@@ -110,4 +129,4 @@ Notas editoriais mantidas do pedido: The Office trata situações como **desafio
 
 ## 7. O que esta PR não contém
 
-Sem originais pesados (só derivados ≤117 KB e provas leves), sem mudanças em fórmulas de treino/XP/dano/PR/histórico, sem temas na galeria, sem alteração de UI, sem dependência nova de produção, sem crescimento do cache offline (candidatos fora do CORE; `sw.js` sobe v58→v59 apenas pela regra de versão para diff em `images/**`).
+Sem originais pesados (só derivados ≤117 KB e provas leves ≤173 KB), sem mudanças em fórmulas de treino/XP/dano/PR/histórico, sem temas na galeria, sem alteração de UI, sem dependência nova de produção, sem crescimento do cache offline (candidatos fora do CORE; `sw.js` sobe v58→v59 apenas pela regra de versão para diff em `images/**`).

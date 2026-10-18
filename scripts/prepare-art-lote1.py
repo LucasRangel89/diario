@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
-"""Deriva o primeiro lote de artes ThunderCats e The Office (10 geradas).
+"""Deriva as artes ThunderCats e The Office (lotes individuais; sem cartelas).
 
 Uso: python3 prepare-art-lote1.py [DIRETORIO_DOS_ORIGINAIS]
-Padrão: .cache/artes-originais (originais grandes FORA do Git; .cache/ é ignorado).
+Padrão: .cache/artes-originais (originais grandes FORA do Git; .cache/ é volátil
+e ignorado — o registro durável é o manifesto + derivados versionados).
 
 Ferramenta editorial opcional: Pillow (venv próprio). Não é dependência do
 app/build e não entra em package.json.
+
+O manifesto docs/manifesto-artes.json é mesclado por id: peças cujo original já
+não existe no ambiente mantêm o registro anterior (e o derivado no disco não é
+tocado). As gerações são individuais — a ferramenta NÃO produz cartelas; as
+cartelas de revisão são montadas aqui por código apenas para conferência.
 
 Regras aplicadas por peça (decisões revisadas uma a uma, não grade automática):
 - Bosses 512×512: NEAREST (2:1 exato; a arte é pixel art com brilhos).
@@ -16,11 +22,10 @@ Regras aplicadas por peça (decisões revisadas uma a uma, não grade automátic
   é removido por flood-fill de neutros em faixas de luminância + mediana 3 no
   alfa, COM revisão visual das provas em docs/provas-lote1/. Qualquer resíduo
   fica documentado no manifesto; nada é apresentado como alfa nativo.
-
-Regenera também docs/manifesto-artes.json (dimensões/bytes reais por peça).
 """
 import hashlib
 import json
+import math
 import os
 import sys
 from collections import deque
@@ -32,6 +37,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / '.cache' / 'artes-originais'
 OUT_CAND = ROOT / 'images' / 'artes' / 'candidatos'
 OUT_PROVAS = ROOT / 'docs' / 'provas-lote1'
+MANIFESTO = ROOT / 'docs' / 'manifesto-artes.json'
 
 # id, peça, tema, categoria, arquivo-fonte, saída relativa, alvo, método, uso futuro
 PECAS = [
@@ -59,6 +65,37 @@ PECAS = [
     ('to-fundo', 'Fundo The Office', 'office', 'cards',
      'lote1-fundo-office.png', 'office/cards/office.webp',
      (1024, 1024), 'none', 'images/cards/office.webp (fundo do Story/Card do Chefão ao cadastrar o tema)'),
+    # Lote 2 — chefões ThunderCats (cartela 1, ordem editorial)
+    ('tc-boss-jackalman', 'Jackalman', 'thundercats', 'bosses',
+     'lote2-jackalman.png', 'thundercats/bosses/jackalman.webp',
+     (512, 512), 'nearest', 'images/bosses/jackalman.webp (retrato do chefe ao cadastrar o tema)'),
+    ('tc-boss-monkian', 'Monkian', 'thundercats', 'bosses',
+     'lote2-monkian.png', 'thundercats/bosses/monkian.webp',
+     (512, 512), 'nearest', 'images/bosses/monkian.webp (retrato do chefe ao cadastrar o tema)'),
+    ('tc-boss-vultureman', 'Vultureman', 'thundercats', 'bosses',
+     'lote2-vultureman.png', 'thundercats/bosses/vultureman.webp',
+     (512, 512), 'nearest', 'images/bosses/vultureman.webp (retrato do chefe ao cadastrar o tema)'),
+    ('tc-boss-slithe', 'Slithe', 'thundercats', 'bosses',
+     'lote2-slithe.png', 'thundercats/bosses/slithe.webp',
+     (512, 512), 'nearest', 'images/bosses/slithe.webp (retrato do chefe ao cadastrar o tema)'),
+    ('tc-boss-ratar-o', 'Ratar-O', 'thundercats', 'bosses',
+     'lote2-ratar-o.png', 'thundercats/bosses/ratar-o.webp',
+     (512, 512), 'nearest', 'images/bosses/ratar-o.webp (retrato do chefe ao cadastrar o tema)'),
+    ('tc-boss-grune', 'Grune', 'thundercats', 'bosses',
+     'lote2-grune.png', 'thundercats/bosses/grune.webp',
+     (512, 512), 'nearest', 'images/bosses/grune.webp (retrato do chefe ao cadastrar o tema)'),
+    ('tc-boss-safari-joe', 'Safari Joe', 'thundercats', 'bosses',
+     'lote2-safari-joe.png', 'thundercats/bosses/safari-joe.webp',
+     (512, 512), 'nearest', 'images/bosses/safari-joe.webp (retrato do chefe ao cadastrar o tema)'),
+    ('tc-boss-captain-shiner', 'Captain Shiner', 'thundercats', 'bosses',
+     'lote2-captain-shiner.png', 'thundercats/bosses/captain-shiner.webp',
+     (512, 512), 'nearest', 'images/bosses/captain-shiner.webp (retrato do chefe ao cadastrar o tema)'),
+    ('tc-boss-hammerhand', 'Hammerhand', 'thundercats', 'bosses',
+     'lote2-hammerhand.png', 'thundercats/bosses/hammerhand.webp',
+     (512, 512), 'nearest', 'images/bosses/hammerhand.webp (retrato do chefe ao cadastrar o tema)'),
+    ('tc-boss-the-driller', 'The Driller', 'thundercats', 'bosses',
+     'lote2-the-driller.png', 'thundercats/bosses/the-driller.webp',
+     (512, 512), 'nearest', 'images/bosses/the-driller.webp (retrato do chefe ao cadastrar o tema)'),
 ]
 
 # Molduras: flood-fill do xadrez pintado. (faixas de luminância de neutros, sementes extras)
@@ -78,6 +115,11 @@ RESAMPLE = {'nearest': Image.Resampling.NEAREST, 'lanczos': Image.Resampling.LAN
 
 def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def rel(p):
+    p = Path(p)
+    return str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p)
 
 
 def key_checker(im, bands, extra_seeds):
@@ -128,29 +170,48 @@ def key_checker(im, bands, extra_seeds):
     return Image.merge('RGBA', (*im.split(), alpha)), sum(mask) / (w * h)
 
 
+# Manifesto anterior, indexado por id (registros sem original no ambiente são preservados)
+antigo = {}
+if MANIFESTO.exists():
+    for r in json.loads(MANIFESTO.read_text()):
+        antigo[r['id']] = r
+
 records = []
+preservados = 0
 
 for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS:
     src = SRC / fname
+    if not src.exists():
+        if pid in antigo:
+            records.append(antigo[pid])
+            preservados += 1
+            print(f'  ⏭️  {pid}: original ausente ({fname}) — registro preservado, derivado não tocado')
+        else:
+            print(f'  ⚠️  {pid}: original ausente e sem registro anterior — pulado')
+        continue
     im = Image.open(src).convert('RGB')
     saida = OUT_CAND / dest
     saida.parent.mkdir(parents=True, exist_ok=True)
-    if metodo == 'none':
-        out = im
-    else:
-        out = im.resize(alvo, RESAMPLE[metodo])
+    out = im if metodo == 'none' else im.resize(alvo, RESAMPLE[metodo])
     out.save(saida, 'WEBP', quality=84, method=6)
     records.append(dict(
         id=pid, peca=peca, tema=tema, categoria=cat, origem='geracao',
-        fonte=str(src.relative_to(ROOT)) if src.is_relative_to(ROOT) else str(src),
-        fonte_sha256=sha256(src), recorte=None,
-        saida=str(saida.relative_to(ROOT)), largura=out.width, altura=out.height,
+        fonte=rel(src), fonte_sha256=sha256(src), recorte=None,
+        saida=rel(saida), largura=out.width, altura=out.height,
         formato='webp', transparencia='opaco', bytes=saida.stat().st_size,
         local_de_uso=uso, estado='candidato',
         notas=f'Redução {metodo} de {im.width}×{im.height} (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente.'))
 
 for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS:
     src = SRC / fname
+    if not src.exists():
+        if pid + '-webp' in antigo:
+            records.append(antigo[pid + '-webp'])
+            preservados += 1
+            print(f'  ⏭️  {pid}: original ausente ({fname}) — registro preservado, derivado não tocado')
+        else:
+            print(f'  ⚠️  {pid}: original ausente e sem registro anterior — pulado')
+        continue
     im = Image.open(src).convert('RGB')
     rgba, pct = key_checker(im, bands, extra)
     # Mestre PNG sem perda fica FORA do Git (cache); só o WebP com alfa é versionado.
@@ -162,22 +223,25 @@ for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS:
     rgba.save(saida, 'WEBP', quality=84, method=6)
     records.append(dict(
         id=f'{pid}-webp', peca=peca, tema=tema, categoria='molduras', origem='derivado',
-        fonte=str(src.relative_to(ROOT)) if src.is_relative_to(ROOT) else str(src),
-        fonte_sha256=sha256(src), recorte=None,
-        saida=str(saida.relative_to(ROOT)), largura=rgba.width, altura=rgba.height,
+        fonte=rel(src), fonte_sha256=sha256(src), recorte=None,
+        saida=rel(saida), largura=rgba.width, altura=rgba.height,
         formato='webp', transparencia=f'alfa por keying do xadrez pintado ({pct:.0%} do quadro; mediana 3 no alfa)',
         bytes=saida.stat().st_size, local_de_uso=uso, estado='candidato',
-        notas='Gerada SEM alfa nativo (RGB com xadrez desenhado — não é transparência). Keying flood-fill revisado em prova sobre card; halo leve nas bordas internas aceito como candidato. Mestre PNG sem perda em ' + str(mestre.relative_to(ROOT)) + ' (fora do Git; o script regenera). Não usar como overlay final sem novo teste nos canvases reais.'))
+        notas='Gerada SEM alfa nativo (RGB com xadrez desenhado — não é transparência). Keying flood-fill revisado em prova sobre card; halo leve nas bordas internas aceito como candidato. Mestre PNG sem perda em ' + rel(mestre) + ' (fora do Git; o script regenera). Não usar como overlay final sem novo teste nos canvases reais.'))
 
 # Provas leves para revisão (montagem por código; fora do cache do app)
 OUT_PROVAS.mkdir(parents=True, exist_ok=True)
-# 1) leitura a 28/56 px: patentes e selos (pares NEAREST|LANCZOS do experimento → aqui só o método final)
+
+# 1) leitura a 28/56 px de patentes e selos (método final)
 faixa = Image.new('RGB', (4 * 90, 200), (24, 24, 28))
 col = 0
 for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS:
     if cat not in ('patentes', 'temas'):
         continue
-    im = Image.open(OUT_CAND / dest)
+    p = OUT_CAND / dest
+    if not p.exists():
+        continue
+    im = Image.open(p)
     faixa.paste(im.resize((80, 80), Image.Resampling.NEAREST), (col * 90 + 5, 5))
     faixa.paste(im.resize((28, 28), Image.Resampling.LANCZOS), (col * 90 + 5, 95))
     faixa.paste(im.resize((56, 56), Image.Resampling.LANCZOS), (col * 90 + 5, 130))
@@ -188,28 +252,34 @@ faixa.save(OUT_PROVAS / 'leitura-patentes-28px.webp', 'WEBP', quality=85, method
 # 2) molduras sobre um card real (halos)
 card = Image.open(ROOT / 'images' / 'cards' / 'classico.webp').convert('RGB')
 for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS:
-    m = Image.open(OUT_CAND / (dest + '.webp'))
+    p = OUT_CAND / (dest + '.webp')
+    if not p.exists():
+        continue
+    m = Image.open(p)
     fundo = card.resize(m.size, Image.LANCZOS)
     fundo.paste(m, (0, 0), m)
     fundo.save(OUT_PROVAS / f'moldura-{tema}-sobre-card.webp', 'WEBP', quality=82, method=6)
 
-# 3) cartela de revisão 5×2 montada por código (grade regular, sem legendas)
-cells = [(pid, dest) for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS]
-cells += [(pid, dest + '.webp') for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS]
-CW, CH, M = 256, 256, 24
-cartela = Image.new('RGB', (5 * CW + 6 * M, 2 * CH + 3 * M), (18, 18, 22))
-for i, (pid, dest) in enumerate(cells):
+# 3) cartela de revisão com TODOS os candidatos (grade regular, sem legendas)
+cells = [dest for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS
+         if (OUT_CAND / dest).exists()]
+cells += [dest + '.webp' for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS
+          if (OUT_CAND / (dest + '.webp')).exists()]
+cols = 6
+rows = max(1, math.ceil(len(cells) / cols))
+CW, CH, M = 200, 200, 20
+cartela = Image.new('RGB', (cols * CW + (cols + 1) * M, rows * CH + (rows + 1) * M), (18, 18, 22))
+for i, dest in enumerate(cells):
     im = Image.open(OUT_CAND / dest)
     im.thumbnail((CW, CH), Image.Resampling.LANCZOS)
-    col, row = i % 5, i // 5
-    x = M + col * (CW + M) + (CW - im.width) // 2
-    y = M + row * (CH + M) + (CH - im.height) // 2
+    x = M + (i % cols) * (CW + M) + (CW - im.width) // 2
+    y = M + (i // cols) * (CH + M) + (CH - im.height) // 2
     if im.mode == 'RGBA':
         cartela.paste(im, (x, y), im)
     else:
         cartela.paste(im, (x, y))
-cartela.save(OUT_PROVAS / 'cartela-lote1.webp', 'WEBP', quality=82, method=6)
+cartela.save(OUT_PROVAS / 'cartela-candidatos.webp', 'WEBP', quality=82, method=6)
 
-(ROOT / 'docs' / 'manifesto-artes.json').write_text(
-    json.dumps(records, ensure_ascii=False, indent=2) + '\n')
-print(f'{len(records)} registros no manifesto; candidatos em {OUT_CAND}; provas em {OUT_PROVAS}')
+MANIFESTO.write_text(json.dumps(records, ensure_ascii=False, indent=2) + '\n')
+print(f'{len(records)} registros no manifesto ({preservados} preservados); '
+      f'candidatos em {OUT_CAND}; provas em {OUT_PROVAS}')
