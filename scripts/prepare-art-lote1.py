@@ -291,6 +291,40 @@ PECAS = [
     ('eq-polia', 'Polia', 'cardio-equipamentos', 'equipamentos',
      'lote8-polia.png', 'equipamentos/polia.webp',
      (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/polia.webp (cartela 8; sem vínculo com UI)'),
+
+    # Lote 9 — fecha a cartela 8 (Banco, Barra com anilhas, Halteres, Argolas)
+    # e abre a cartela 9 (Troféus dos temas existentes, 6 de 10; lista:
+    # um troféu por tema original, na ordem de THEME_IDS_LIST).
+    ('eq-banco', 'Banco', 'cardio-equipamentos', 'equipamentos',
+     'lote9-banco.png', 'equipamentos/banco.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/banco.webp (cartela 8 completa; sem vínculo com UI)'),
+    ('eq-barra-com-anilhas', 'Barra com anilhas', 'cardio-equipamentos', 'equipamentos',
+     'lote9-barra-anilhas.png', 'equipamentos/barra-com-anilhas.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/barra-com-anilhas.webp (cartela 8 completa; sem vínculo com UI)'),
+    ('eq-halteres', 'Halteres', 'cardio-equipamentos', 'equipamentos',
+     'lote9-halteres.png', 'equipamentos/halteres.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/halteres.webp (cartela 8 completa; sem vínculo com UI)'),
+    ('eq-argolas', 'Argolas', 'cardio-equipamentos', 'equipamentos',
+     'lote9-argolas.png', 'equipamentos/argolas.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/argolas.webp (cartela 8 completa; sem vínculo com UI)'),
+    ('tf-classico', 'Troféu Berzerker (clássico)', 'classico', 'trofeus',
+     'lote9-trofeu-classico.png', 'trofeus/trofeu-classico.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/trofeus/trofeu-classico.webp (cartela 9; sem vínculo com UI nem conquista nova)'),
+    ('tf-zodiaco', 'Troféu Cavaleiros do Zodíaco', 'zodiaco', 'trofeus',
+     'lote9-trofeu-zodiaco.png', 'trofeus/trofeu-zodiaco.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/trofeus/trofeu-zodiaco.webp (cartela 9; sem vínculo com UI nem conquista nova)'),
+    ('tf-hercules', 'Troféu 12 Trabalhos de Hércules', 'hercules', 'trofeus',
+     'lote9-trofeu-hercules.png', 'trofeus/trofeu-hercules.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/trofeus/trofeu-hercules.webp (cartela 9; sem vínculo com UI nem conquista nova)'),
+    ('tf-acao', 'Troféu Filmes de Ação', 'acao', 'trofeus',
+     'lote9-trofeu-acao.png', 'trofeus/trofeu-acao.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/trofeus/trofeu-acao.webp (cartela 9; sem vínculo com UI nem conquista nova)'),
+    ('tf-folclore', 'Troféu Folclore Brasileiro', 'folclore', 'trofeus',
+     'lote9-trofeu-folclore.png', 'trofeus/trofeu-folclore.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/trofeus/trofeu-folclore.webp (cartela 9; sem vínculo com UI nem conquista nova)'),
+    ('tf-nordica', 'Troféu Mitologia Nórdica', 'nordica', 'trofeus',
+     'lote9-trofeu-nordica.png', 'trofeus/trofeu-nordica.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/trofeus/trofeu-nordica.webp (cartela 9; sem vínculo com UI nem conquista nova)'),
 ]
 
 # Notas de revisão peça a peça que complementam a nota genérica do método
@@ -300,6 +334,14 @@ NOTAS_EXTRA = {
     'tc-id-simbolo-central': ' Divergência registrada: silhueta felina assimétrica, com bigodes apenas à esquerda; leitura a 28 px conferida na prova de leitura.',
     'to-id-trofeu-dundie': ' Divergência registrada: fundo claro tipo folha/cortina de papel atrás da estatueta; placa da base em branco, sem texto.',
     'to-id-caneca': ' Divergência registrada: post-its ao fundo com rabiscos abstratos ilegíveis (sem texto legível); caneca em branco, sem logo.',
+    'eq-banco': ' Divergência registrada: composição escura com moldura interna; banco bem legível no centro.',
+    'eq-halteres': ' Divergência registrada: moldura cinza decorativa em volta de todo o quadro.',
+    'eq-argolas': ' Divergência registrada: margem cinza em volta do quadro e argolas sobrepostas no centro (leitura OO).',
+    'tf-classico': ' Divergência registrada: moldura metálica decorativa em volta de todo o quadro.',
+    'tf-zodiaco': ' Divergência registrada: roda do zodíaco com glifos/constelações abstratos ilegíveis nos segmentos.',
+    'tf-hercules': ' Divergência registrada: moldura escura arredondada com cantos externos claros.',
+    'tf-acao': ' Divergência registrada: estatueta (não taça) com estrela e rolo de filme; neon ao fundo com rabiscos pseudo-texto ilegíveis.',
+    'tf-nordica': ' Divergência registrada: marcas rúnicas decorativas na base (glifos, sem palavra em alfabeto latino).',
     'tr-fim-do-treino': ' Divergência registrada: moldura fina decorativa em volta de todo o quadro.',
     'eq-esteira': ' Divergência registrada: contorno claro tipo adesivo e painel retangular escuro atrás do console.',
     'eq-eliptico': ' Divergência registrada: contorno claro tipo adesivo em volta da máquina e do quadro.',
@@ -458,7 +500,7 @@ def arquivo_peca(dest, uso):
 
 # 1) leitura a 28/56 px de patentes, selos e identidade (método final)
 alvos_leitura = [(pid, dest, uso) for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS
-                 if cat in ('patentes', 'temas', 'identidade', 'treino', 'equipamentos') and arquivo_peca(dest, uso).exists()]
+                 if cat in ('patentes', 'temas', 'identidade', 'treino', 'equipamentos', 'trofeus') and arquivo_peca(dest, uso).exists()]
 faixa = Image.new('RGB', (max(1, len(alvos_leitura)) * 90, 200), (24, 24, 28))
 col = 0
 for pid, dest, uso in alvos_leitura:

@@ -113,6 +113,8 @@ Originais grandes em `.cache/artes-originais/lote*.png` (≈2 MB cada; `.cache/`
 
 **Lote 8 (chamadas 71–80) — fecha a cartela 7 e abre a cartela 8:** Repetir série e Fim do treino (cartela 7 completa, 12/12); Esteira, Bicicleta ergométrica, Elíptico, Remo, Escada ergométrica, Corda de pular, Kettlebell e Polia (cartela 8, 8/12; lista adotada de 12, faltam Banco, Barra com anilhas, Halteres e Argolas). Derivados 512×512 NEAREST em `images/artes/candidatos/treino/` e `.../equipamentos/`; divergências por peça no manifesto (molduras/contornos de adesivo em Fim do treino, Esteira, Elíptico e Kettlebell; marca abstrata ilegível na Polia).
 
+**Lote 9 (chamadas 81–90) — fecha a cartela 8 e abre a cartela 9:** Banco, Barra com anilhas, Halteres e Argolas (cartela 8 completa, 12/12); Troféu Berzerker (clássico), Troféu Cavaleiros do Zodíaco, Troféu 12 Trabalhos de Hércules, Troféu Filmes de Ação, Troféu Folclore Brasileiro e Troféu Mitologia Nórdica (cartela 9, 6/10; faltam Roma, RPG, Galáctica e Anéis). Troféus são apenas arte candidata — **nenhuma conquista, desbloqueio ou regra nova** associada. Divergências por peça no manifesto (molduras decorativas recorrentes, glifos abstratos, neon pseudo-texto ilegível no troféu de Ação).
+
 Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, números ou legendas legíveis** (conforme especificação).
 
 ### 2.2 Imagens fornecidas pelo usuário
@@ -152,7 +154,7 @@ Nos lotes 1–5, os derivados nasceram em `images/artes/candidatos/` (fora do CO
 
 ### 2.4 Artes ainda pendentes
 
-**22 peças do plano editorial** (98 − 76 concluídas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats (24/24) e The Office (24/24) foram cadastrados na galeria nesta PR** com aprovação explícita do usuário (§6): os 48 arquivos saíram de `images/artes/candidatos/` para os caminhos finais e os registros correspondentes do manifesto estão `em uso` (ids preservados). Restam como candidatos as 10 peças de identidade do lote 6, as 12 peças de treino (cartela 7 completa), as 8 de cardio/equipamentos do lote 8 e as 2 molduras (infraestrutura fora da contagem; os fundos são completude de tema, não constavam nas 98).
+**12 peças do plano editorial** (98 − 86 concluídas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats (24/24) e The Office (24/24) foram cadastrados na galeria nesta PR** com aprovação explícita do usuário (§6): os 48 arquivos saíram de `images/artes/candidatos/` para os caminhos finais e os registros correspondentes do manifesto estão `em uso` (ids preservados). Restam como candidatos as 10 peças de identidade do lote 6, as 12 de treino (cartela 7), as 12 de cardio/equipamentos (cartela 8), os 6 troféus do lote 9 e as 2 molduras (infraestrutura fora da contagem; os fundos são completude de tema, não constavam nas 98).
 
 ## 3. Provas visuais (`docs/provas-lote1/`, montadas por código)
 
@@ -188,8 +190,8 @@ As listas enviadas somam **98** (o rótulo "94" do pedido não fecha com as list
 | 5 | The Office — Patentes | 10 | **10 (completa)** | 0 |
 | 6 | The Office — Identidade | 6 | **6 (completa: Selo + lote 6)** | 0 |
 | 7 | Treino — séries e descanso | 12 | **12 (completa)** | 0 |
-| 8 | Cardio e equipamentos | 12 | 8 (lote 8) | 4 (Banco, Barra com anilhas, Halteres, Argolas) |
-| 9 | Troféus dos temas existentes | 10 | 0 | 10 |
+| 8 | Cardio e equipamentos | 12 | **12 (completa)** | 0 |
+| 9 | Troféus dos temas existentes | 10 | 6 (lote 9) | 4 (Roma, RPG, Galáctica, Anéis) |
 | 10 | Estados vazios e utilitários | 8 | 0 | 8 |
 
 Notas editoriais mantidas do pedido: The Office trata situações como **desafios** (não personagens como vilões), sem violência gráfica; linguagem do tema proposta (Arena: Filial de Scranton; Boss: Desafio do expediente; Vitória: Problema resolvido; Patentes: Carreira na filial) foi **aprovada e aplicada no cadastro** (§6). Cartela 10: ilustrações de backup/restauração **nunca** podem sugerir que a operação aconteceu sem confirmação do sistema. Cartelas 7–8: o usuário decidiu **gerar tudo novo, sem reuso** dos ícones existentes (a contagem "94" fica superada; valem as 98 gerações). Os símbolos cíclicos `simbolo-ciclo-01/02` continuam ambíguos e **não** equivalem a bi-set/drop-set. Nada de regra nova de classificação de séries, conquistas ou condições de desbloqueio por causa de imagens.
