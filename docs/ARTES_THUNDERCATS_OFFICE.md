@@ -9,11 +9,11 @@ Aprovações registradas nesta sessão (antes da produção em lote): lote compl
 - **1 chamada = 1 imagem única e independente.** O contrato da ferramenta proíbe grade, colagem, contact sheet, montagem ou várias peças/variações numa mesma imagem: **cartelas com múltiplos assets não são geráveis** e não foram simuladas como imagem única.
 - `offer_options` serve para escolher entre 2 candidatos **da mesma peça**, não para empacotar peças.
 - Saída `.jpg/.jpeg/.png`, resolução definida pelo modelo (1024×1024 aqui; molduras saíram 768×1376), **sem garantia de canal alfa**.
-- Orçamento inicial de 10 chamadas consumido no lote 1; o lote 2 (chamadas 11–20) foi autorizado para geração individual. Cada chamada = 1 peça. Não há como produzir 94–98 peças em poucas chamadas; a cartela passa a ser **montagem por código** (§3) ou cartela externa fornecida pelo usuário para recorte pelo `scripts/prepare-art.py`.
+- Orçamento inicial de 10 chamadas consumido no lote 1; lotes 2 e 3 (chamadas 11–30) autorizados para geração individual. Cada chamada = 1 peça. Não há como produzir 94–98 peças em poucas chamadas; a cartela passa a ser **montagem por código** (§3) ou cartela externa fornecida pelo usuário para recorte pelo `scripts/prepare-art.py`.
 
 ## 2. Inventário do lote — separação por origem
 
-### 2.1 Imagens realmente geradas (20 originais, **fora do Git**)
+### 2.1 Imagens realmente geradas (30 originais, **fora do Git**)
 
 Originais grandes em `.cache/artes-originais/lote*.png` (≈2 MB cada; `.cache/` é ignorado **e volátil** — entre turnos do sandbox os originais do lote 1 deixaram de existir; o registro durável são os SHA-256 no manifesto e os derivados versionados). Reprodução futura: conservar os originais externamente ou reenviar.
 
@@ -47,15 +47,30 @@ Originais grandes em `.cache/artes-originais/lote*.png` (≈2 MB cada; `.cache/`
 | 19 | Hammerhand | `lote2-hammerhand.png` | Pirata ciborgue com antebraço-martelo, convés com correntes |
 | 20 | The Driller | `lote2-the-driller.png` | Fera subterrânea com chifre-furadeira rompendo parede de pedra |
 
+**Lote 3 (chamadas 21–30) — fecha as cartelas 1 e 2 do ThunderCats:**
+
+| # | Peça | Original (cache) | Conteúdo revisado |
+|---|---|---|---|
+| 21 | Mumm-Ra, forma mumificada | `lote3-mumm-ra-mumificada.png` | Múmia feiticeira mirrada com cajado e facho vermelho, câmara de sarcófago (composição distinta da forma poderosa) |
+| 22 | Patente Sobrevivente de Thundera | `lote3-patente-01.png` | Fragmento de cristal vermelho em anel de ferro simples (**plaqueta quadrada** — progressão do fragmento ao brasão) |
+| 23 | Patente Aprendiz da Terceira Terra | `lote3-patente-02.png` | Insígnia felina em medalhão de bronze |
+| 24 | Patente Explorador da Terceira Terra | `lote3-patente-03.png` | Bússola tecnológica com marcas de garras |
+| 25 | Patente Sentinela da Toca dos Gatos | `lote3-patente-04.png` | Silhueta de fortaleza em relevo |
+| 26 | Patente Guerreiro de Thundera | `lote3-patente-05.png` | Escudo com duas lâminas cruzadas e rubis |
+| 27 | Patente Guardião do Código | `lote3-patente-06.png` | Medalhão luminoso com glifo espiral abstrato (sem letras) |
+| 28 | Patente Portador da Espada Justiceira | `lote3-patente-07.png` | Espada ereta com raios e rubi no punho |
+| 29 | Patente Protetor do Olho de Thundera | `lote3-patente-08.png` | Olho de metal ornamentado com íris de rubi |
+| 30 | Patente Senhor dos ThunderCats | `lote3-patente-09.png` | Brasão felino com espadas e energia vermelha |
+
 Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, números ou legendas legíveis** (conforme especificação).
 
 ### 2.2 Imagens fornecidas pelo usuário
 
 **Nenhuma nesta sessão.** (Uma cartela externa sua pode acelerar as 88 peças pendentes: recorte/otimização seguem pelo `scripts/prepare-art.py`, com caixas manuais revisadas.)
 
-### 2.3 Recortes/derivados versionados (20 WebP)
+### 2.3 Recortes/derivados versionados (30 WebP)
 
-`images/artes/candidatos/` — **candidatos, fora do CORE do service worker, não carregados pela UI** (cache offline não cresce). Total **≈970 KB**. Campos completos (id, tema/categoria, origem, fonte, sha256, recorte, dimensões, formato, transparência, local de uso futuro, estado, notas de revisão) em [`manifesto-artes.json`](manifesto-artes.json).
+`images/artes/candidatos/` — **candidatos, fora do CORE do service worker, não carregados pela UI** (cache offline não cresce). Total **≈1,1 MB**. Campos completos (id, tema/categoria, origem, fonte, sha256, recorte, dimensões, formato, transparência, local de uso futuro, estado, notas de revisão) em [`manifesto-artes.json`](manifesto-artes.json).
 
 | Derivado | Alvo | Método | Estado | Uso futuro (ao cadastrar o tema) |
 |---|---|---|---|---|
@@ -70,7 +85,9 @@ Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, núme
 | `thundercats/molduras/moldura-thundercats.webp` | 768×1376 | keying + mediana | candidato | overlay do Card (referência 1080×1920) |
 | `office/molduras/moldura-office.webp` | 768×1376 | keying + mediana | candidato | overlay do Card (referência 1080×1920) |
 
-**Lote 2 (chefões ThunderCats; todos 512×512 NEAREST 2:1, `candidato`, uso futuro `images/bosses/<arquivo>.webp`):** `thundercats/bosses/jackalman.webp` (36 KB) · `monkian.webp` (43 KB) · `vultureman.webp` (59 KB) · `slithe.webp` (67 KB) · `ratar-o.webp` (53 KB) · `grune.webp` (55 KB) · `safari-joe.webp` (42 KB) · `captain-shiner.webp` (42 KB) · `hammerhand.webp` (74 KB) · `the-driller.webp` (57 KB). Detalhes por peça em `docs/manifesto-artes.json`.
+**Lote 2 (chefões ThunderCats; todos 512×512 NEAREST 2:1, `candidato`, uso futuro `images/bosses/<arquivo>.webp`):** `thundercats/bosses/jackalman.webp` (36 KB) · `monkian.webp` (43 KB) · `vultureman.webp` (59 KB) · `slithe.webp` (67 KB) · `ratar-o.webp` (53 KB) · `grune.webp` (55 KB) · `safari-joe.webp` (42 KB) · `captain-shiner.webp` (42 KB) · `hammerhand.webp` (74 KB) · `the-driller.webp` (57 KB).
+
+**Lote 3 (fecha as cartelas 1–2 do ThunderCats):** `thundercats/bosses/mumm-ra-mumificada.webp` (512×512 NEAREST) · `thundercats/patentes/thundercats-01…09.webp` (192×192 LANCZOS; 01 em plaqueta quadrada, 02–09 em medalhão). Detalhes por peça em `docs/manifesto-artes.json` (30 registros).
 
 **Método de redução por alvo (revisado peça a peça):** a arte gerada combina blocos pixelados com brilhos suaves — não é pixel grid nativo estrito. NEAREST só onde a escala é exata 2:1 (512); LANCZOS onde a escala é não inteira (192) para não granular os brilhos (comparação NEAREST×LANCZOS com leitura a 28 px na prova). Nada foi esticado.
 
@@ -78,14 +95,14 @@ Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, núme
 
 ### 2.4 Artes ainda pendentes
 
-**82 peças do plano editorial** (98 − 16 concluídas como candidatas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). ThunderCats tem **14/24** (11 retratos, 1 patente, selo e fundo); The Office tem **4/24** — **nenhum tema entra na galeria nesta PR**. As duas molduras são infraestrutura fora da contagem; os dois fundos também (completude de tema, não constavam nas 98).
+**72 peças do plano editorial** (98 − 26 concluídas como candidatas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats está com 24/24 completos** (12/12 retratos, 10/10 patentes, selo e fundo — mais a moldura como infraestrutura); **The Office tem 4/24**. Ainda assim, **nenhum tema entra na galeria nesta PR**: o cadastro em `THEMES`/UI exige sua aprovação (§6). As duas molduras são infraestrutura fora da contagem; os dois fundos também (completude de tema, não constavam nas 98).
 
 ## 3. Provas visuais (`docs/provas-lote1/`, montadas por código)
 
 | Arquivo | O que mostra |
 |---|---|
-| `cartela-candidatos.webp` | Cartela 6×4 montada por código com os **22 candidatos** — grade regular, margens generosas, sem legendas, nenhuma peça encostando na vizinha (é a "cartela" no seu sentido: imagem única com várias peças; a ferramenta de geração não produz isso, a montagem é por código) |
-| `leitura-patentes-28px.webp` | Patentes e selos a 80/28/56 px (linhas). Patentes legíveis a 28 px; **selo ThunderCats lê-se fraco em tamanho pequeno** (fundo escuro sobre escuro) — pendência de contraste registrada |
+| `cartela-candidatos.webp` | Cartela montada por código com **todos os candidatos** — grade regular, margens generosas, sem legendas, nenhuma peça encostando na vizinha (é a "cartela" no seu sentido: imagem única com várias peças; a ferramenta de geração não produz isso, a montagem é por código) |
+| `leitura-patentes-28px.webp` | Patentes e selos a 80/28/56 px (linhas). Patentes 02–10 legíveis a 28 px; **selo ThunderCats e patente 03 (Explorador) leem-se escuros em tamanho pequeno** — pendência de contraste registrada |
 | `moldura-thundercats-sobre-card.webp` | Keying da moldura TC sobre `images/cards/classico.webp` |
 | `moldura-office-sobre-card.webp` | Keying da moldura Office sobre o mesmo card (anel do café limpo) |
 
@@ -107,8 +124,8 @@ As listas enviadas somam **98** (o rótulo "94" do pedido não fecha com as list
 
 | # | Cartela | Peças | Concluídas (candidatas) | Pendentes |
 |---|---|---:|---:|---:|
-| 1 | ThunderCats — Bosses | 12 | 11 (falta só Mumm-Ra, forma mumificada) | 1 |
-| 2 | ThunderCats — Patentes | 10 | 1 (Lenda de Thundera) | 9 |
+| 1 | ThunderCats — Bosses | 12 | **12 (completa)** | 0 |
+| 2 | ThunderCats — Patentes | 10 | **10 (completa)** | 0 |
 | 3 | ThunderCats — Identidade | 6 | 1 (Selo) | 5 (troféu, espada, olho, fortaleza, símbolo) |
 | 4 | The Office — Desafios | 12 | 1 (Impressora em pane) | 11 |
 | 5 | The Office — Patentes | 10 | 1 (Lenda de Scranton) | 9 |
@@ -122,11 +139,12 @@ Notas editoriais mantidas do pedido: The Office trata situações como **desafio
 
 ## 6. Integração futura (não feita nesta PR)
 
+- **ThunderCats está com os 24/24 arquivos prontos** (12 retratos + 10 patentes + selo + fundo, todos candidatos versionados). O passo de cadastro (`THEMES`, galeria, testes) é mudança de interface e **aguarda sua aprovação explícita**.
 - **IDs estáveis provisórios:** `thundercats`, `office` (definitivos só no cadastro aprovado). Nada de remapear progresso por posição de array; IDs de temas/bosses existentes intocados.
-- Cadastro completo de um tema exige: entrada em `THEMES` (`js/gamificacao.js`, com ranks, chefões e grupos fracos mapeados aos grupos reais do app), `THEME_IDS_LIST` (`js/app.js`), retratos em `DEFAULT_BOSS_PORTRAITS` (`js/boss.js`), arquivos nos caminhos finais do manifesto, CORE do `sw.js` + bump de versão, e atualização do teste `tests/engine/40_arte_jogo.js` (120→144 retratos, lista de temas) — **com aprovação sua**.
+- Cadastro completo de um tema exige: entrada em `THEMES` (`js/gamificacao.js`, com ranks, chefões e grupos fracos mapeados aos grupos reais do app — os nomes de patente/chefão já aprovados), `THEME_IDS_LIST` (`js/app.js`), retratos em `DEFAULT_BOSS_PORTRAITS` (`js/boss.js`), arquivos nos caminhos finais do manifesto, CORE do `sw.js` + bump de versão, e atualização do teste `tests/engine/40_arte_jogo.js` (120→144 retratos, lista de temas) — **com aprovação sua**.
 - Fallback de imagem (onerror → emoji/texto), `alt=""` em decoração, descrição em imagem informativa, legibilidade de dados e fotos sob fundos/molduras, validação offline: verificação obrigatória antes de virar "em uso".
 - **Licença:** ThunderCats e The Office são propriedades de terceiros; a geração de imagem **não confere licença comercial**. Uso editorial/interno é decisão sua; registrado aqui e no manifesto.
 
 ## 7. O que esta PR não contém
 
-Sem originais pesados (só derivados ≤117 KB e provas leves ≤173 KB), sem mudanças em fórmulas de treino/XP/dano/PR/histórico, sem temas na galeria, sem alteração de UI, sem dependência nova de produção, sem crescimento do cache offline (candidatos fora do CORE; `sw.js` sobe v58→v59 apenas pela regra de versão para diff em `images/**`).
+Sem originais pesados (só derivados ≤117 KB e provas leves ≤300 KB), sem mudanças em fórmulas de treino/XP/dano/PR/histórico, sem temas na galeria, sem alteração de UI, sem dependência nova de produção, sem crescimento do cache offline (candidatos fora do CORE; `sw.js` sobe v58→v59 apenas pela regra de versão para diff em `images/**`).

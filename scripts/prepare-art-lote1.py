@@ -96,6 +96,37 @@ PECAS = [
     ('tc-boss-the-driller', 'The Driller', 'thundercats', 'bosses',
      'lote2-the-driller.png', 'thundercats/bosses/the-driller.webp',
      (512, 512), 'nearest', 'images/bosses/the-driller.webp (retrato do chefe ao cadastrar o tema)'),
+    # Lote 3 — fecha a cartela 1 (Mumm-Ra mumificada) e a cartela 2 (patentes 01–09)
+    ('tc-boss-mumm-ra-mumificada', 'Mumm-Ra, forma mumificada', 'thundercats', 'bosses',
+     'lote3-mumm-ra-mumificada.png', 'thundercats/bosses/mumm-ra-mumificada.webp',
+     (512, 512), 'nearest', 'images/bosses/mumm-ra-mumificada.webp (retrato do chefe ao cadastrar o tema)'),
+    ('tc-patente-sobrevivente-de-thundera', 'Patente Sobrevivente de Thundera', 'thundercats', 'patentes',
+     'lote3-patente-01.png', 'thundercats/patentes/thundercats-01.webp',
+     (192, 192), 'lanczos', 'images/patentes/thundercats-01.webp (patente 1/10 ao cadastrar o tema)'),
+    ('tc-patente-aprendiz-terceira-terra', 'Patente Aprendiz da Terceira Terra', 'thundercats', 'patentes',
+     'lote3-patente-02.png', 'thundercats/patentes/thundercats-02.webp',
+     (192, 192), 'lanczos', 'images/patentes/thundercats-02.webp (patente 2/10 ao cadastrar o tema)'),
+    ('tc-patente-explorador-terceira-terra', 'Patente Explorador da Terceira Terra', 'thundercats', 'patentes',
+     'lote3-patente-03.png', 'thundercats/patentes/thundercats-03.webp',
+     (192, 192), 'lanczos', 'images/patentes/thundercats-03.webp (patente 3/10 ao cadastrar o tema)'),
+    ('tc-patente-sentinela-toca-dos-gatos', 'Patente Sentinela da Toca dos Gatos', 'thundercats', 'patentes',
+     'lote3-patente-04.png', 'thundercats/patentes/thundercats-04.webp',
+     (192, 192), 'lanczos', 'images/patentes/thundercats-04.webp (patente 4/10 ao cadastrar o tema)'),
+    ('tc-patente-guerreiro-de-thundera', 'Patente Guerreiro de Thundera', 'thundercats', 'patentes',
+     'lote3-patente-05.png', 'thundercats/patentes/thundercats-05.webp',
+     (192, 192), 'lanczos', 'images/patentes/thundercats-05.webp (patente 5/10 ao cadastrar o tema)'),
+    ('tc-patente-guardiao-do-codigo', 'Patente Guardião do Código', 'thundercats', 'patentes',
+     'lote3-patente-06.png', 'thundercats/patentes/thundercats-06.webp',
+     (192, 192), 'lanczos', 'images/patentes/thundercats-06.webp (patente 6/10 ao cadastrar o tema)'),
+    ('tc-patente-portador-da-espada', 'Patente Portador da Espada Justiceira', 'thundercats', 'patentes',
+     'lote3-patente-07.png', 'thundercats/patentes/thundercats-07.webp',
+     (192, 192), 'lanczos', 'images/patentes/thundercats-07.webp (patente 7/10 ao cadastrar o tema)'),
+    ('tc-patente-protetor-do-olho', 'Patente Protetor do Olho de Thundera', 'thundercats', 'patentes',
+     'lote3-patente-08.png', 'thundercats/patentes/thundercats-08.webp',
+     (192, 192), 'lanczos', 'images/patentes/thundercats-08.webp (patente 8/10 ao cadastrar o tema)'),
+    ('tc-patente-senor-dos-thundercats', 'Patente Senhor dos ThunderCats', 'thundercats', 'patentes',
+     'lote3-patente-09.png', 'thundercats/patentes/thundercats-09.webp',
+     (192, 192), 'lanczos', 'images/patentes/thundercats-09.webp (patente 9/10 ao cadastrar o tema)'),
 ]
 
 # Molduras: flood-fill do xadrez pintado. (faixas de luminância de neutros, sementes extras)
@@ -233,15 +264,12 @@ for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS:
 OUT_PROVAS.mkdir(parents=True, exist_ok=True)
 
 # 1) leitura a 28/56 px de patentes e selos (método final)
-faixa = Image.new('RGB', (4 * 90, 200), (24, 24, 28))
+alvos_leitura = [(pid, dest) for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS
+                 if cat in ('patentes', 'temas') and (OUT_CAND / dest).exists()]
+faixa = Image.new('RGB', (max(1, len(alvos_leitura)) * 90, 200), (24, 24, 28))
 col = 0
-for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS:
-    if cat not in ('patentes', 'temas'):
-        continue
-    p = OUT_CAND / dest
-    if not p.exists():
-        continue
-    im = Image.open(p)
+for pid, dest in alvos_leitura:
+    im = Image.open(OUT_CAND / dest)
     faixa.paste(im.resize((80, 80), Image.Resampling.NEAREST), (col * 90 + 5, 5))
     faixa.paste(im.resize((28, 28), Image.Resampling.LANCZOS), (col * 90 + 5, 95))
     faixa.paste(im.resize((56, 56), Image.Resampling.LANCZOS), (col * 90 + 5, 130))
