@@ -9,11 +9,11 @@ Aprovações registradas nesta sessão (antes da produção em lote): lote compl
 - **1 chamada = 1 imagem única e independente.** O contrato da ferramenta proíbe grade, colagem, contact sheet, montagem ou várias peças/variações numa mesma imagem: **cartelas com múltiplos assets não são geráveis** e não foram simuladas como imagem única.
 - `offer_options` serve para escolher entre 2 candidatos **da mesma peça**, não para empacotar peças.
 - Saída `.jpg/.jpeg/.png`, resolução definida pelo modelo (1024×1024 aqui; molduras saíram 768×1376), **sem garantia de canal alfa**.
-- Orçamento inicial de 10 chamadas consumido no lote 1; lotes 2 a 4 (chamadas 11–40) autorizados para geração individual. Cada chamada = 1 peça. Não há como produzir 94–98 peças em poucas chamadas; a cartela passa a ser **montagem por código** (§3) ou cartela externa fornecida pelo usuário para recorte pelo `scripts/prepare-art.py`.
+- Orçamento inicial de 10 chamadas consumido no lote 1; lotes 2 a 5 (chamadas 11–50) autorizados para geração individual. Cada chamada = 1 peça. Não há como produzir 94–98 peças em poucas chamadas; a cartela passa a ser **montagem por código** (§3) ou cartela externa fornecida pelo usuário para recorte pelo `scripts/prepare-art.py`.
 
 ## 2. Inventário do lote — separação por origem
 
-### 2.1 Imagens realmente geradas (40 originais, **fora do Git**)
+### 2.1 Imagens realmente geradas (50 originais, **fora do Git**)
 
 Originais grandes em `.cache/artes-originais/lote*.png` (≈2 MB cada; `.cache/` é ignorado **e volátil** — entre turnos do sandbox os originais do lote 1 deixaram de existir; o registro durável são os SHA-256 no manifesto e os derivados versionados). Reprodução futura: conservar os originais externamente ou reenviar.
 
@@ -77,15 +77,30 @@ Originais grandes em `.cache/artes-originais/lote*.png` (≈2 MB cada; `.cache/`
 | 39 | Crise da marca-d’água | `lote4-crise-da-marca-dagua.png` | Pôster arruinado por borrão de marca-d’água gigante |
 | 40 | Premiação dos Dundies | `lote4-premiacao-dos-dundies.png` | Troféu dourado em mesa com cortina de papel; **borda clara tipo moldura de foto** divergente (registrada; invisível no enquadramento circular do card) |
 
+**Lote 5 (chamadas 41–50) — fecha as cartelas 4 e 5 do The Office:**
+
+| # | Peça | Original (cache) | Conteúdo revisado |
+|---|---|---|---|
+| 41 | Último expediente | `lote5-ultimo-expediente.png` | Escritório noturno com uma luminária acesa e rodo à porta |
+| 42 | Patente Recém-contratado | `lote5-patente-01.png` | Crachá em branco em anel de bronze simples |
+| 43 | Patente Assistente Administrativo | `lote5-patente-02.png` | Clipe sobre bloco em medalhão de corda |
+| 44 | Patente Representante de Vendas | `lote5-patente-03.png` | Telefone de mesa clássico em **plaqueta quadrada** (variação da família, registrada) |
+| 45 | Patente Vendedor do Mês | `lote5-patente-04.png` | Medalha sobre pergaminho com fitas (**moldura decorativa** divergente, registrada) |
+| 46 | Patente Supervisor da Filial | `lote5-patente-05.png` | Prancheta e chaveiro em medalhão dourado/marinho |
+| 47 | Patente Assistente do Gerente Regional | `lote5-patente-06.png` | Crachá e beterraba com louros (a piada correndo) |
+| 48 | Patente Assistente Gerente Regional | `lote5-patente-07.png` | Brasão/placa de mesa **em branco** (sem letras), distinto do item 47 |
+| 49 | Patente Gerente Regional | `lote5-patente-08.png` | Caneca fumegante diante de cadeira executiva |
+| 50 | Patente Diretor do Corporativo | `lote5-patente-09.png` | Pasta diante de torre corporativa em medalhão ornado |
+
 Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, números ou legendas legíveis** (conforme especificação).
 
 ### 2.2 Imagens fornecidas pelo usuário
 
 **Nenhuma nesta sessão.** (Uma cartela externa sua pode acelerar as 88 peças pendentes: recorte/otimização seguem pelo `scripts/prepare-art.py`, com caixas manuais revisadas.)
 
-### 2.3 Recortes/derivados versionados (40 WebP)
+### 2.3 Recortes/derivados versionados (50 WebP)
 
-`images/artes/candidatos/` — **candidatos, fora do CORE do service worker, não carregados pela UI** (cache offline não cresce). Total **≈1,5 MB**. Campos completos (id, tema/categoria, origem, fonte, sha256, recorte, dimensões, formato, transparência, local de uso futuro, estado, notas de revisão) em [`manifesto-artes.json`](manifesto-artes.json).
+`images/artes/candidatos/` — **candidatos, fora do CORE do service worker, não carregados pela UI** (cache offline não cresce). Total **≈1,6 MB**. Campos completos (id, tema/categoria, origem, fonte, sha256, recorte, dimensões, formato, transparência, local de uso futuro, estado, notas de revisão) em [`manifesto-artes.json`](manifesto-artes.json).
 
 | Derivado | Alvo | Método | Estado | Uso futuro (ao cadastrar o tema) |
 |---|---|---|---|---|
@@ -104,7 +119,9 @@ Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, núme
 
 **Lote 3 (fecha as cartelas 1–2 do ThunderCats):** `thundercats/bosses/mumm-ra-mumificada.webp` (512×512 NEAREST) · `thundercats/patentes/thundercats-01…09.webp` (192×192 LANCZOS; 01 em plaqueta quadrada, 02–09 em medalhão).
 
-**Lote 4 (desafios The Office; 512×512 NEAREST 2:1, `candidato`, uso futuro `images/bosses/<arquivo>.webp`):** `office/bosses/reuniao-que-poderia-ser-um-email.webp` · `grampeador-na-gelatina.webp` · `inventario-do-deposito.webp` · `guerra-das-vendas.webp` · `comite-de-festas.webp` · `olimpiadas-do-escritorio.webp` · `simulado-de-incendio-do-dwight.webp` · `visita-do-corporativo.webp` · `crise-da-marca-dagua.webp` · `premiacao-dos-dundies.webp`. Detalhes por peça em `docs/manifesto-artes.json` (40 registros).
+**Lote 4 (desafios The Office; 512×512 NEAREST 2:1, `candidato`, uso futuro `images/bosses/<arquivo>.webp`):** `office/bosses/reuniao-que-poderia-ser-um-email.webp` · `grampeador-na-gelatina.webp` · `inventario-do-deposito.webp` · `guerra-das-vendas.webp` · `comite-de-festas.webp` · `olimpiadas-do-escritorio.webp` · `simulado-de-incendio-do-dwight.webp` · `visita-do-corporativo.webp` · `crise-da-marca-dagua.webp` · `premiacao-dos-dundies.webp`.
+
+**Lote 5 (fecha as cartelas 4–5 do The Office):** `office/bosses/ultimo-expediente.webp` (512×512 NEAREST) · `office/patentes/office-01…09.webp` (192×192 LANCZOS; família de medalhões dourado/marinho, 03 em plaqueta quadrada). Detalhes por peça em `docs/manifesto-artes.json` (50 registros).
 
 **Método de redução por alvo (revisado peça a peça):** a arte gerada combina blocos pixelados com brilhos suaves — não é pixel grid nativo estrito. NEAREST só onde a escala é exata 2:1 (512); LANCZOS onde a escala é não inteira (192) para não granular os brilhos (comparação NEAREST×LANCZOS com leitura a 28 px na prova). Nada foi esticado.
 
@@ -112,7 +129,7 @@ Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, núme
 
 ### 2.4 Artes ainda pendentes
 
-**62 peças do plano editorial** (98 − 36 concluídas como candidatas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats está com 24/24 completos** (12/12 retratos, 10/10 patentes, selo e fundo — mais a moldura como infraestrutura); **The Office tem 13/24** (11 desafios, 1 patente, selo e fundo — falta 1 desafio e 9 patentes). Ainda assim, **nenhum tema entra na galeria nesta PR**: o cadastro em `THEMES`/UI exige sua aprovação (§6). As duas molduras são infraestrutura fora da contagem; os dois fundos também (completude de tema, não constavam nas 98).
+**52 peças do plano editorial** (98 − 46 concluídas como candidatas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats (24/24) e The Office (24/24) estão com os arquivos completos** (mais uma moldura cada como infraestrutura). Ainda assim, **nenhum tema entra na galeria nesta PR**: o cadastro em `THEMES`/UI exige sua aprovação (§6). As molduras são infraestrutura fora da contagem; os fundos também (completude de tema, não constavam nas 98).
 
 ## 3. Provas visuais (`docs/provas-lote1/`, montadas por código)
 
@@ -144,8 +161,8 @@ As listas enviadas somam **98** (o rótulo "94" do pedido não fecha com as list
 | 1 | ThunderCats — Bosses | 12 | **12 (completa)** | 0 |
 | 2 | ThunderCats — Patentes | 10 | **10 (completa)** | 0 |
 | 3 | ThunderCats — Identidade | 6 | 1 (Selo) | 5 (troféu, espada, olho, fortaleza, símbolo) |
-| 4 | The Office — Desafios | 12 | 11 (falta Último expediente) | 1 |
-| 5 | The Office — Patentes | 10 | 1 (Lenda de Scranton) | 9 |
+| 4 | The Office — Desafios | 12 | **12 (completa)** | 0 |
+| 5 | The Office — Patentes | 10 | **10 (completa)** | 0 |
 | 6 | The Office — Identidade | 6 | 1 (Selo) | 5 (troféu Dundie, caneca, beterraba, grampeador na gelatina, cadeira) |
 | 7 | Treino — séries e descanso | 12 | 0 | 12 |
 | 8 | Cardio e equipamentos | 12 | 0 | 12 |
@@ -156,7 +173,7 @@ Notas editoriais mantidas do pedido: The Office trata situações como **desafio
 
 ## 6. Integração futura (não feita nesta PR)
 
-- **ThunderCats está com os 24/24 arquivos prontos** (12 retratos + 10 patentes + selo + fundo, todos candidatos versionados). O passo de cadastro (`THEMES`, galeria, testes) é mudança de interface e **aguarda sua aprovação explícita**.
+- **ThunderCats e The Office estão com os 24/24 arquivos prontos** (12 retratos + 10 patentes + selo + fundo cada; todos candidatos versionados). O passo de cadastro (`THEMES`, galeria, testes) é mudança de interface e **aguarda sua aprovação explícita**.
 - **IDs estáveis provisórios:** `thundercats`, `office` (definitivos só no cadastro aprovado). Nada de remapear progresso por posição de array; IDs de temas/bosses existentes intocados.
 - Cadastro completo de um tema exige: entrada em `THEMES` (`js/gamificacao.js`, com ranks, chefões e grupos fracos mapeados aos grupos reais do app — os nomes de patente/chefão já aprovados), `THEME_IDS_LIST` (`js/app.js`), retratos em `DEFAULT_BOSS_PORTRAITS` (`js/boss.js`), arquivos nos caminhos finais do manifesto, CORE do `sw.js` + bump de versão, e atualização do teste `tests/engine/40_arte_jogo.js` (120→144 retratos, lista de temas) — **com aprovação sua**.
 - Fallback de imagem (onerror → emoji/texto), `alt=""` em decoração, descrição em imagem informativa, legibilidade de dados e fotos sob fundos/molduras, validação offline: verificação obrigatória antes de virar "em uso".
@@ -164,4 +181,4 @@ Notas editoriais mantidas do pedido: The Office trata situações como **desafio
 
 ## 7. O que esta PR não contém
 
-Sem originais pesados (só derivados ≤117 KB e provas leves ≤356 KB), sem mudanças em fórmulas de treino/XP/dano/PR/histórico, sem temas na galeria, sem alteração de UI, sem dependência nova de produção, sem crescimento do cache offline (candidatos fora do CORE; `sw.js` sobe v58→v59 apenas pela regra de versão para diff em `images/**`).
+Sem originais pesados (só derivados ≤117 KB e provas leves ≤433 KB), sem mudanças em fórmulas de treino/XP/dano/PR/histórico, sem temas na galeria, sem alteração de UI, sem dependência nova de produção, sem crescimento do cache offline (candidatos fora do CORE; `sw.js` sobe v58→v59 apenas pela regra de versão para diff em `images/**`).
