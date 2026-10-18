@@ -9,11 +9,11 @@ Aprovações registradas nesta sessão (antes da produção em lote): lote compl
 - **1 chamada = 1 imagem única e independente.** O contrato da ferramenta proíbe grade, colagem, contact sheet, montagem ou várias peças/variações numa mesma imagem: **cartelas com múltiplos assets não são geráveis** e não foram simuladas como imagem única.
 - `offer_options` serve para escolher entre 2 candidatos **da mesma peça**, não para empacotar peças.
 - Saída `.jpg/.jpeg/.png`, resolução definida pelo modelo (1024×1024 aqui; molduras saíram 768×1376), **sem garantia de canal alfa**.
-- Orçamento inicial de 10 chamadas consumido no lote 1; lotes 2 e 3 (chamadas 11–30) autorizados para geração individual. Cada chamada = 1 peça. Não há como produzir 94–98 peças em poucas chamadas; a cartela passa a ser **montagem por código** (§3) ou cartela externa fornecida pelo usuário para recorte pelo `scripts/prepare-art.py`.
+- Orçamento inicial de 10 chamadas consumido no lote 1; lotes 2 a 4 (chamadas 11–40) autorizados para geração individual. Cada chamada = 1 peça. Não há como produzir 94–98 peças em poucas chamadas; a cartela passa a ser **montagem por código** (§3) ou cartela externa fornecida pelo usuário para recorte pelo `scripts/prepare-art.py`.
 
 ## 2. Inventário do lote — separação por origem
 
-### 2.1 Imagens realmente geradas (30 originais, **fora do Git**)
+### 2.1 Imagens realmente geradas (40 originais, **fora do Git**)
 
 Originais grandes em `.cache/artes-originais/lote*.png` (≈2 MB cada; `.cache/` é ignorado **e volátil** — entre turnos do sandbox os originais do lote 1 deixaram de existir; o registro durável são os SHA-256 no manifesto e os derivados versionados). Reprodução futura: conservar os originais externamente ou reenviar.
 
@@ -62,15 +62,30 @@ Originais grandes em `.cache/artes-originais/lote*.png` (≈2 MB cada; `.cache/`
 | 29 | Patente Protetor do Olho de Thundera | `lote3-patente-08.png` | Olho de metal ornamentado com íris de rubi |
 | 30 | Patente Senhor dos ThunderCats | `lote3-patente-09.png` | Brasão felino com espadas e energia vermelha |
 
+**Lote 4 (chamadas 31–40) — cartela 4: desafios The Office (itens 2–11; falta Último expediente):**
+
+| # | Peça | Original (cache) | Conteúdo revisado |
+|---|---|---|---|
+| 31 | Reunião que poderia ser um e-mail | `lote4-reuniao-que-poderia-ser-um-email.png` | Sala de reunião vazia, quadro de rabiscos, tela em branco |
+| 32 | Grampeador na gelatina | `lote4-grampeador-na-gelatina.png` | Grampeador preso em gelatina verde na mesa (clássico reconhecível) |
+| 33 | Inventário do depósito | `lote4-inventario-do-deposito.png` | Depósito com caixas, prateleiras e carrinho de mão |
+| 34 | Guerra das vendas | `lote4-guerra-das-vendas.png` | Duas mesas frente a frente com fones erguidos como bandeiras |
+| 35 | Comitê de festas | `lote4-comite-de-festas.png` | Mesa de festa com balões, chapéus e bandeirolas sem letras |
+| 36 | Olimpíadas do escritório | `lote4-olimpiadas-do-escritorio.png` | Corredor com fita de chegada de papel e cadeiras de escritório |
+| 37 | Simulado de incêndio do Dwight | `lote4-simulado-de-incendio-do-dwight.png` | Alarme vermelho com fumaça falsa estilizada sobre as mesas (sem violência) |
+| 38 | Visita do corporativo | `lote4-visita-do-corporativo.png` | Crachás de visitante e maletas na recepção |
+| 39 | Crise da marca-d’água | `lote4-crise-da-marca-dagua.png` | Pôster arruinado por borrão de marca-d’água gigante |
+| 40 | Premiação dos Dundies | `lote4-premiacao-dos-dundies.png` | Troféu dourado em mesa com cortina de papel; **borda clara tipo moldura de foto** divergente (registrada; invisível no enquadramento circular do card) |
+
 Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, números ou legendas legíveis** (conforme especificação).
 
 ### 2.2 Imagens fornecidas pelo usuário
 
 **Nenhuma nesta sessão.** (Uma cartela externa sua pode acelerar as 88 peças pendentes: recorte/otimização seguem pelo `scripts/prepare-art.py`, com caixas manuais revisadas.)
 
-### 2.3 Recortes/derivados versionados (30 WebP)
+### 2.3 Recortes/derivados versionados (40 WebP)
 
-`images/artes/candidatos/` — **candidatos, fora do CORE do service worker, não carregados pela UI** (cache offline não cresce). Total **≈1,1 MB**. Campos completos (id, tema/categoria, origem, fonte, sha256, recorte, dimensões, formato, transparência, local de uso futuro, estado, notas de revisão) em [`manifesto-artes.json`](manifesto-artes.json).
+`images/artes/candidatos/` — **candidatos, fora do CORE do service worker, não carregados pela UI** (cache offline não cresce). Total **≈1,5 MB**. Campos completos (id, tema/categoria, origem, fonte, sha256, recorte, dimensões, formato, transparência, local de uso futuro, estado, notas de revisão) em [`manifesto-artes.json`](manifesto-artes.json).
 
 | Derivado | Alvo | Método | Estado | Uso futuro (ao cadastrar o tema) |
 |---|---|---|---|---|
@@ -87,7 +102,9 @@ Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, núme
 
 **Lote 2 (chefões ThunderCats; todos 512×512 NEAREST 2:1, `candidato`, uso futuro `images/bosses/<arquivo>.webp`):** `thundercats/bosses/jackalman.webp` (36 KB) · `monkian.webp` (43 KB) · `vultureman.webp` (59 KB) · `slithe.webp` (67 KB) · `ratar-o.webp` (53 KB) · `grune.webp` (55 KB) · `safari-joe.webp` (42 KB) · `captain-shiner.webp` (42 KB) · `hammerhand.webp` (74 KB) · `the-driller.webp` (57 KB).
 
-**Lote 3 (fecha as cartelas 1–2 do ThunderCats):** `thundercats/bosses/mumm-ra-mumificada.webp` (512×512 NEAREST) · `thundercats/patentes/thundercats-01…09.webp` (192×192 LANCZOS; 01 em plaqueta quadrada, 02–09 em medalhão). Detalhes por peça em `docs/manifesto-artes.json` (30 registros).
+**Lote 3 (fecha as cartelas 1–2 do ThunderCats):** `thundercats/bosses/mumm-ra-mumificada.webp` (512×512 NEAREST) · `thundercats/patentes/thundercats-01…09.webp` (192×192 LANCZOS; 01 em plaqueta quadrada, 02–09 em medalhão).
+
+**Lote 4 (desafios The Office; 512×512 NEAREST 2:1, `candidato`, uso futuro `images/bosses/<arquivo>.webp`):** `office/bosses/reuniao-que-poderia-ser-um-email.webp` · `grampeador-na-gelatina.webp` · `inventario-do-deposito.webp` · `guerra-das-vendas.webp` · `comite-de-festas.webp` · `olimpiadas-do-escritorio.webp` · `simulado-de-incendio-do-dwight.webp` · `visita-do-corporativo.webp` · `crise-da-marca-dagua.webp` · `premiacao-dos-dundies.webp`. Detalhes por peça em `docs/manifesto-artes.json` (40 registros).
 
 **Método de redução por alvo (revisado peça a peça):** a arte gerada combina blocos pixelados com brilhos suaves — não é pixel grid nativo estrito. NEAREST só onde a escala é exata 2:1 (512); LANCZOS onde a escala é não inteira (192) para não granular os brilhos (comparação NEAREST×LANCZOS com leitura a 28 px na prova). Nada foi esticado.
 
@@ -95,7 +112,7 @@ Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, núme
 
 ### 2.4 Artes ainda pendentes
 
-**72 peças do plano editorial** (98 − 26 concluídas como candidatas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats está com 24/24 completos** (12/12 retratos, 10/10 patentes, selo e fundo — mais a moldura como infraestrutura); **The Office tem 4/24**. Ainda assim, **nenhum tema entra na galeria nesta PR**: o cadastro em `THEMES`/UI exige sua aprovação (§6). As duas molduras são infraestrutura fora da contagem; os dois fundos também (completude de tema, não constavam nas 98).
+**62 peças do plano editorial** (98 − 36 concluídas como candidatas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats está com 24/24 completos** (12/12 retratos, 10/10 patentes, selo e fundo — mais a moldura como infraestrutura); **The Office tem 13/24** (11 desafios, 1 patente, selo e fundo — falta 1 desafio e 9 patentes). Ainda assim, **nenhum tema entra na galeria nesta PR**: o cadastro em `THEMES`/UI exige sua aprovação (§6). As duas molduras são infraestrutura fora da contagem; os dois fundos também (completude de tema, não constavam nas 98).
 
 ## 3. Provas visuais (`docs/provas-lote1/`, montadas por código)
 
@@ -127,7 +144,7 @@ As listas enviadas somam **98** (o rótulo "94" do pedido não fecha com as list
 | 1 | ThunderCats — Bosses | 12 | **12 (completa)** | 0 |
 | 2 | ThunderCats — Patentes | 10 | **10 (completa)** | 0 |
 | 3 | ThunderCats — Identidade | 6 | 1 (Selo) | 5 (troféu, espada, olho, fortaleza, símbolo) |
-| 4 | The Office — Desafios | 12 | 1 (Impressora em pane) | 11 |
+| 4 | The Office — Desafios | 12 | 11 (falta Último expediente) | 1 |
 | 5 | The Office — Patentes | 10 | 1 (Lenda de Scranton) | 9 |
 | 6 | The Office — Identidade | 6 | 1 (Selo) | 5 (troféu Dundie, caneca, beterraba, grampeador na gelatina, cadeira) |
 | 7 | Treino — séries e descanso | 12 | 0 | 12 |
@@ -147,4 +164,4 @@ Notas editoriais mantidas do pedido: The Office trata situações como **desafio
 
 ## 7. O que esta PR não contém
 
-Sem originais pesados (só derivados ≤117 KB e provas leves ≤300 KB), sem mudanças em fórmulas de treino/XP/dano/PR/histórico, sem temas na galeria, sem alteração de UI, sem dependência nova de produção, sem crescimento do cache offline (candidatos fora do CORE; `sw.js` sobe v58→v59 apenas pela regra de versão para diff em `images/**`).
+Sem originais pesados (só derivados ≤117 KB e provas leves ≤356 KB), sem mudanças em fórmulas de treino/XP/dano/PR/histórico, sem temas na galeria, sem alteração de UI, sem dependência nova de produção, sem crescimento do cache offline (candidatos fora do CORE; `sw.js` sobe v58→v59 apenas pela regra de versão para diff em `images/**`).
