@@ -222,6 +222,40 @@ PECAS = [
     ('to-id-cadeira', 'Cadeira', 'office', 'identidade',
      'lote6-cadeira.png', 'office/identidade/cadeira.webp',
      (512, 512), 'nearest', 'images/artes/candidatos/office/identidade/cadeira.webp (identidade do tema; sem vínculo com UI)'),
+    # Lote 7 — cartela 7 (Treino: séries e descanso), itens 1-10 de 12.
+    # Lista adotada nesta sessão a partir das funções reais da sessão do app
+    # (a cartela aprovada só trazia título/contagem); sem vínculo com UI e
+    # sem nenhuma regra nova de classificação de séries.
+    ('tr-serie-concluida', 'Série concluída', 'treino', 'treino',
+     'lote7-serie-concluida.png', 'treino/serie-concluida.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/serie-concluida.webp (cartela 7; sem vínculo com UI)'),
+    ('tr-descanso', 'Descanso', 'treino', 'treino',
+     'lote7-descanso.png', 'treino/descanso.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/descanso.webp (cartela 7; sem vínculo com UI)'),
+    ('tr-adicionar-serie', 'Adicionar série', 'treino', 'treino',
+     'lote7-adicionar-serie.png', 'treino/adicionar-serie.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/adicionar-serie.webp (cartela 7; sem vínculo com UI)'),
+    ('tr-trofeu-da-sessao', 'Troféu da sessão', 'treino', 'treino',
+     'lote7-trofeu-da-sessao.png', 'treino/trofeu-da-sessao.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/trofeu-da-sessao.webp (cartela 7; sem vínculo com UI)'),
+    ('tr-alerta', 'Alerta', 'treino', 'treino',
+     'lote7-alerta.png', 'treino/alerta.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/alerta.webp (cartela 7; sem vínculo com UI)'),
+    ('tr-proxima-serie', 'Próxima série', 'treino', 'treino',
+     'lote7-proxima-serie.png', 'treino/proxima-serie.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/proxima-serie.webp (cartela 7; sem vínculo com UI)'),
+    ('tr-aquecimento', 'Aquecimento', 'treino', 'treino',
+     'lote7-aquecimento.png', 'treino/aquecimento.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/aquecimento.webp (cartela 7; sem vínculo com UI)'),
+    ('tr-bi-set', 'Bi-set', 'treino', 'treino',
+     'lote7-bi-set.png', 'treino/bi-set.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/bi-set.webp (cartela 7, apenas arte; sem vínculo com UI nem regra de classificação)'),
+    ('tr-drop-set', 'Drop-set', 'treino', 'treino',
+     'lote7-drop-set.png', 'treino/drop-set.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/drop-set.webp (cartela 7, apenas arte; sem vínculo com UI nem regra de classificação)'),
+    ('tr-pausa', 'Pausa', 'treino', 'treino',
+     'lote7-pausa.png', 'treino/pausa.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/pausa.webp (cartela 7; sem vínculo com UI)'),
 ]
 
 # Notas de revisão peça a peça que complementam a nota genérica do método
@@ -231,6 +265,11 @@ NOTAS_EXTRA = {
     'tc-id-simbolo-central': ' Divergência registrada: silhueta felina assimétrica, com bigodes apenas à esquerda; leitura a 28 px conferida na prova de leitura.',
     'to-id-trofeu-dundie': ' Divergência registrada: fundo claro tipo folha/cortina de papel atrás da estatueta; placa da base em branco, sem texto.',
     'to-id-caneca': ' Divergência registrada: post-its ao fundo com rabiscos abstratos ilegíveis (sem texto legível); caneca em branco, sem logo.',
+    'tr-descanso': ' Divergência registrada: margem cinza uniforme em volta de todo o quadro.',
+    'tr-adicionar-serie': ' Divergência registrada: o sinal de adição verde lê-se também como cruz; o banco vazio sustenta o sentido de nova série.',
+    'tr-proxima-serie': ' Divergência registrada: pictograma extra de anilhas com seta no canto inferior direito.',
+    'tr-bi-set': ' Divergência registrada: lê-se como dois cabos de halter ligados por um elo luminoso, não como dois halteres distintos lado a lado.',
+    'tr-aquecimento': ' Divergência registrada: halteres leves cruzados e sobrepostos diante da chama.',
     'to-id-cadeira': ' Divergência registrada: cena noturna escura; cadeira preta sobre fundo escuro com contraste moderado, realçada pela luminária. Leitura fraca a 28 px (prova de leitura do lote 6): preferir exibição maior ou revisão de contraste antes de uso como ícone pequeno.',
 }
 
@@ -379,7 +418,7 @@ def arquivo_peca(dest, uso):
 
 # 1) leitura a 28/56 px de patentes, selos e identidade (método final)
 alvos_leitura = [(pid, dest, uso) for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS
-                 if cat in ('patentes', 'temas', 'identidade') and arquivo_peca(dest, uso).exists()]
+                 if cat in ('patentes', 'temas', 'identidade', 'treino') and arquivo_peca(dest, uso).exists()]
 faixa = Image.new('RGB', (max(1, len(alvos_leitura)) * 90, 200), (24, 24, 28))
 col = 0
 for pid, dest, uso in alvos_leitura:

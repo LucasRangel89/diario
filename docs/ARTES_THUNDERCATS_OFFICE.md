@@ -109,6 +109,8 @@ Originais grandes em `.cache/artes-originais/lote*.png` (≈2 MB cada; `.cache/`
 | 59 | Grampeador na gelatina (identidade) | `lote6-grampeador-na-gelatina-identidade.png` | Close do grampeador vermelho na gelatina verde em prato (distinto da cena-desafio do lote 4) |
 | 60 | Cadeira | `lote6-cadeira.png` | Cadeira de escritório preta sob luminária à noite; **leitura fraca a 28 px** registrada no manifesto |
 
+**Lote 7 (chamadas 61–70) — cartela 7 (Treino: séries e descanso), itens 1–10:** Série concluída, Descanso, Adicionar série, Troféu da sessão, Alerta, Próxima série, Aquecimento, Bi-set, Drop-set e Pausa. A cartela aprovada só trazia título/contagem no repo; a lista de 12 foi adotada nesta sessão a partir das funções reais da sessão (faltam Repetir série e Fim do treino), **sem vínculo com UI e sem nenhuma regra nova** de classificação de séries — Bi-set/Drop-set são apenas arte candidata. Derivados 512×512 NEAREST em `images/artes/candidatos/treino/`; divergências registradas por peça no manifesto (margem cinza do Descanso, cruz verde ambígua do Adicionar série, pictograma extra na Próxima série, Bi-set como halter ligado por elo, halteres cruzados do Aquecimento). Modo de trabalho ajustado a pedido do usuário: lotes em sequência na mesma PR, com revisão visual + pipeline por lote e **validação completa só no fechamento da PR**.
+
 Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, números ou legendas legíveis** (conforme especificação).
 
 ### 2.2 Imagens fornecidas pelo usuário
@@ -148,7 +150,7 @@ Nos lotes 1–5, os derivados nasceram em `images/artes/candidatos/` (fora do CO
 
 ### 2.4 Artes ainda pendentes
 
-**42 peças do plano editorial** (98 − 56 concluídas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats (24/24) e The Office (24/24) foram cadastrados na galeria nesta PR** com aprovação explícita do usuário (§6): os 48 arquivos saíram de `images/artes/candidatos/` para os caminhos finais e os registros correspondentes do manifesto estão `em uso` (ids preservados). Restam como candidatos apenas as 10 peças de identidade do lote 6 e as 2 molduras (infraestrutura fora da contagem; os fundos são completude de tema, não constavam nas 98).
+**32 peças do plano editorial** (98 − 66 concluídas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats (24/24) e The Office (24/24) foram cadastrados na galeria nesta PR** com aprovação explícita do usuário (§6): os 48 arquivos saíram de `images/artes/candidatos/` para os caminhos finais e os registros correspondentes do manifesto estão `em uso` (ids preservados). Restam como candidatos as 10 peças de identidade do lote 6, as 10 peças de treino do lote 7 e as 2 molduras (infraestrutura fora da contagem; os fundos são completude de tema, não constavam nas 98).
 
 ## 3. Provas visuais (`docs/provas-lote1/`, montadas por código)
 
@@ -183,7 +185,7 @@ As listas enviadas somam **98** (o rótulo "94" do pedido não fecha com as list
 | 4 | The Office — Desafios | 12 | **12 (completa)** | 0 |
 | 5 | The Office — Patentes | 10 | **10 (completa)** | 0 |
 | 6 | The Office — Identidade | 6 | **6 (completa: Selo + lote 6)** | 0 |
-| 7 | Treino — séries e descanso | 12 | 0 | 12 |
+| 7 | Treino — séries e descanso | 12 | 10 (lote 7) | 2 (Repetir série, Fim do treino) |
 | 8 | Cardio e equipamentos | 12 | 0 | 12 |
 | 9 | Troféus dos temas existentes | 10 | 0 | 10 |
 | 10 | Estados vazios e utilitários | 8 | 0 | 8 |
