@@ -2,6 +2,13 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Não lançado] — preparação de artes ThunderCats e The Office (lote 1; somente candidatos e docs)
+
+- Primeiro lote de artes para os temas futuros ThunderCats e The Office: **10 peças geradas** em pixel art (aprovadas na sessão) — retratos Mumm-Ra (forma poderosa) e Impressora em pane; patentes Lenda de Thundera e Lenda de Scranton; selos dos dois temas; fundos de card dos dois temas; duas molduras de overlay. **Nenhum tema é cadastrado e nada entra na galeria** (cada tema exige 24 arquivos; ambos têm 4/24).
+- Derivados WebP em `images/artes/candidatos/**` (456 KB, fora do CORE do service worker e fora da UI); originais ≈18 MB fora do Git em `.cache/`. Manifesto `docs/manifesto-artes.json` (id, tema, origem, fonte, sha256, recorte, dimensões, transparência, uso futuro, estado, notas); script reproduzível `scripts/prepare-art-lote1.py` (Pillow editorial em venv próprio; não é dependência); provas em `docs/provas-lote1/` (cartela 5×2 montada por código, leitura de patentes a 28 px, molduras sobre card); relatório completo em `docs/ARTES_THUNDERCATS_OFFICE.md`.
+- Molduras vieram sem alfa nativo (RGB com xadrez pintado — não é transparência); alfa obtido por *keying* de flood-fill com revisão visual de halos, mestres PNG fora do Git. Pendências registradas: halo leve nas bordas internas, selo ThunderCats de baixa leitura a 28 px, teste das molduras nos canvases 1080×1920/1080×1080 antes de qualquer uso.
+- Nenhuma mudança em UI, `THEMES`, XP, chefões, PR, fórmulas, histórico, backup ou cache offline. `sw.js` v58 → v59 (regra de versão para diffs em `images/**`). Plano editorial restante documentado: 92 peças pendentes das 98 aprovadas.
+
 ## [Não lançado] — faixa semanal editável por grupo
 
 - Metas pessoais de séries registradas por grupo editáveis ao lado do mapa. Defaults preservados: 10–20 nos nove grupos restantes e 4–10 em Antebraço; rótulos “abaixo da meta / na faixa / acima da faixa” continuam iguais sem configuração. Campo opcional `settings.weeklySeriesRanges` no armazenamento e backup JSON formato 6; faixa inválida cai no padrão do grupo; backup antigo sem campo restaura os padrões.
