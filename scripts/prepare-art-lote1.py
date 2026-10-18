@@ -256,6 +256,41 @@ PECAS = [
     ('tr-pausa', 'Pausa', 'treino', 'treino',
      'lote7-pausa.png', 'treino/pausa.webp',
      (512, 512), 'nearest', 'images/artes/candidatos/treino/pausa.webp (cartela 7; sem vínculo com UI)'),
+    # Lote 8 — fecha a cartela 7 (Repetir série, Fim do treino) e abre a
+    # cartela 8 (Cardio e equipamentos, itens 1-8 de 12; lista adotada:
+    # Esteira, Bicicleta ergométrica, Elíptico, Remo, Escada ergométrica,
+    # Corda de pular, Kettlebell, Polia, Banco, Barra com anilhas, Halteres,
+    # Argolas). Apenas arte candidata, sem vínculo com UI.
+    ('tr-repetir-serie', 'Repetir série', 'treino', 'treino',
+     'lote8-repetir-serie.png', 'treino/repetir-serie.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/repetir-serie.webp (cartela 7 completa; sem vínculo com UI)'),
+    ('tr-fim-do-treino', 'Fim do treino', 'treino', 'treino',
+     'lote8-fim-do-treino.png', 'treino/fim-do-treino.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/treino/fim-do-treino.webp (cartela 7 completa; sem vínculo com UI)'),
+    ('eq-esteira', 'Esteira', 'cardio-equipamentos', 'equipamentos',
+     'lote8-esteira.png', 'equipamentos/esteira.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/esteira.webp (cartela 8; sem vínculo com UI)'),
+    ('eq-bicicleta-ergometrica', 'Bicicleta ergométrica', 'cardio-equipamentos', 'equipamentos',
+     'lote8-bicicleta.png', 'equipamentos/bicicleta-ergometrica.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/bicicleta-ergometrica.webp (cartela 8; sem vínculo com UI)'),
+    ('eq-eliptico', 'Elíptico', 'cardio-equipamentos', 'equipamentos',
+     'lote8-eliptico.png', 'equipamentos/eliptico.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/eliptico.webp (cartela 8; sem vínculo com UI)'),
+    ('eq-remo', 'Remo', 'cardio-equipamentos', 'equipamentos',
+     'lote8-remo.png', 'equipamentos/remo.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/remo.webp (cartela 8; sem vínculo com UI)'),
+    ('eq-escada-ergometrica', 'Escada ergométrica', 'cardio-equipamentos', 'equipamentos',
+     'lote8-escada.png', 'equipamentos/escada-ergometrica.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/escada-ergometrica.webp (cartela 8; sem vínculo com UI)'),
+    ('eq-corda-de-pular', 'Corda de pular', 'cardio-equipamentos', 'equipamentos',
+     'lote8-corda.png', 'equipamentos/corda-de-pular.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/corda-de-pular.webp (cartela 8; sem vínculo com UI)'),
+    ('eq-kettlebell', 'Kettlebell', 'cardio-equipamentos', 'equipamentos',
+     'lote8-kettlebell.png', 'equipamentos/kettlebell.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/kettlebell.webp (cartela 8; sem vínculo com UI)'),
+    ('eq-polia', 'Polia', 'cardio-equipamentos', 'equipamentos',
+     'lote8-polia.png', 'equipamentos/polia.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/equipamentos/polia.webp (cartela 8; sem vínculo com UI)'),
 ]
 
 # Notas de revisão peça a peça que complementam a nota genérica do método
@@ -265,6 +300,11 @@ NOTAS_EXTRA = {
     'tc-id-simbolo-central': ' Divergência registrada: silhueta felina assimétrica, com bigodes apenas à esquerda; leitura a 28 px conferida na prova de leitura.',
     'to-id-trofeu-dundie': ' Divergência registrada: fundo claro tipo folha/cortina de papel atrás da estatueta; placa da base em branco, sem texto.',
     'to-id-caneca': ' Divergência registrada: post-its ao fundo com rabiscos abstratos ilegíveis (sem texto legível); caneca em branco, sem logo.',
+    'tr-fim-do-treino': ' Divergência registrada: moldura fina decorativa em volta de todo o quadro.',
+    'eq-esteira': ' Divergência registrada: contorno claro tipo adesivo e painel retangular escuro atrás do console.',
+    'eq-eliptico': ' Divergência registrada: contorno claro tipo adesivo em volta da máquina e do quadro.',
+    'eq-kettlebell': ' Divergência registrada: moldura cinza decorativa em volta de todo o quadro.',
+    'eq-polia': ' Divergência registrada: marca abstrata ilegível (sem texto) na travessa central da máquina.',
     'tr-descanso': ' Divergência registrada: margem cinza uniforme em volta de todo o quadro.',
     'tr-adicionar-serie': ' Divergência registrada: o sinal de adição verde lê-se também como cruz; o banco vazio sustenta o sentido de nova série.',
     'tr-proxima-serie': ' Divergência registrada: pictograma extra de anilhas com seta no canto inferior direito.',
@@ -418,7 +458,7 @@ def arquivo_peca(dest, uso):
 
 # 1) leitura a 28/56 px de patentes, selos e identidade (método final)
 alvos_leitura = [(pid, dest, uso) for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS
-                 if cat in ('patentes', 'temas', 'identidade', 'treino') and arquivo_peca(dest, uso).exists()]
+                 if cat in ('patentes', 'temas', 'identidade', 'treino', 'equipamentos') and arquivo_peca(dest, uso).exists()]
 faixa = Image.new('RGB', (max(1, len(alvos_leitura)) * 90, 200), (24, 24, 28))
 col = 0
 for pid, dest, uso in alvos_leitura:
