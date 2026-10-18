@@ -195,11 +195,13 @@ let activeNavGroup = 'treino';
 let activeTab = 'diario';
 const THEME_ICONS = Object.freeze({
     classico: '🦍', zodiaco: '♈', hercules: '🦁', acao: '🎬', folclore: '🌴',
-    nordica: '🛡️', roma: '🏛️', rpg: '🐉', galactica: '🚀', aneis: '💍'
+    nordica: '🛡️', roma: '🏛️', rpg: '🐉', galactica: '🚀', aneis: '💍',
+    thundercats: '🐱', office: '🏢'
 });
 
-// Arte própria dos temas: ícone (selo) e fundo dos cards. Patente = 10 níveis × 10 temas.
-const THEME_IDS_LIST = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica', 'aneis'];
+// Arte própria dos temas: ícone (selo) e fundo dos cards. Patente = 10 níveis × 12 temas.
+// IDs novos ao fim da lista: IDs existentes e o progresso salvo nunca são remapeados.
+const THEME_IDS_LIST = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica', 'aneis', 'thundercats', 'office'];
 const THEME_ICON_IMGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/temas/${id}.webp`])));
 const THEME_CARD_BGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/cards/${id}.webp`])));
 
@@ -251,6 +253,14 @@ const STORY_CARD_STYLES = Object.freeze({
     aneis: {
         palette: { bgStart: '#06120a', bgEnd: '#1d2410', cardBg: 'rgba(11,27,15,.9)', cardBorder: 'rgba(226,196,110,.22)', borderPrimary: '#c9a227', titleColor: '#f7f2dd', accentColor: '#e2c46e', textDim: '#adb8a3', prColor: '#7dd3a0', badgeBg: '#122114' },
         fonts: { display: 'Georgia, serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    thundercats: {
+        palette: { bgStart: '#0d0505', bgEnd: '#2a0d0d', cardBg: 'rgba(26,12,12,.9)', cardBorder: 'rgba(248,113,113,.22)', borderPrimary: '#dc2626', titleColor: '#fff1e6', accentColor: '#f59e0b', textDim: '#c9a689', prColor: '#6ee7b7', badgeBg: '#1f0d0d' },
+        fonts: { display: '"Oswald", sans-serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    office: {
+        palette: { bgStart: '#0b1220', bgEnd: '#1c2a44', cardBg: 'rgba(16,24,40,.92)', cardBorder: 'rgba(212,175,55,.22)', borderPrimary: '#d4af37', titleColor: '#fdf6e3', accentColor: '#fbbf24', textDim: '#aebdd2', prColor: '#6ee7b7', badgeBg: '#141f31' },
+        fonts: { display: '"Inter", sans-serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
     }
 });
 

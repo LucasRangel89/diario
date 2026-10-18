@@ -324,6 +324,55 @@ function drawThemedFrameArt(ctx, palette) {
             ctx.strokeStyle = '#8a1f1f'; ctx.lineWidth = 4;
         });
         ctx.restore();
+    } else if (frame === 'garra') {
+        // ThunderCats: ferro escuro com filete vermelho e marcas de garra nos cantos
+        const g = ctx.createLinearGradient(0, 0, 1080, 1920);
+        g.addColorStop(0, '#171114'); g.addColorStop(0.5, '#4a2326'); g.addColorStop(1, '#171114');
+        ctx.strokeStyle = g; ctx.lineWidth = 20; ctx.strokeRect(21, 21, 1038, 1878);
+        ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3; ctx.strokeRect(46, 46, 988, 1828);
+        ctx.save();
+        ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+        [[84, 84, 1, 1], [996, 84, -1, 1], [84, 1836, 1, -1], [996, 1836, -1, -1]].forEach(([x, y, dx, dy]) => {
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(x + dx * i * 18, y);
+                ctx.lineTo(x + dx * (i * 18 + 30), y + dy * 46);
+                ctx.stroke();
+            }
+        });
+        ctx.restore();
+        // olho felino no topo
+        ctx.save();
+        ctx.translate(540, 92);
+        ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.fillStyle = '#7f1d1d'; ctx.fill();
+        ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 4; ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(0, 0, 6, 18, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#fecaca'; ctx.fill();
+        ctx.restore();
+    } else if (frame === 'caderno') {
+        // The Office: papel de caderno — borda creme, pauta azul, linha de
+        // margem vermelha e furos de espiral na lateral esquerda
+        ctx.strokeStyle = '#e8dfc8'; ctx.lineWidth = 22; ctx.strokeRect(20, 20, 1040, 1880);
+        ctx.strokeStyle = '#93b8d8'; ctx.lineWidth = 2;
+        for (let y = 120; y < 1840; y += 64) {
+            ctx.beginPath(); ctx.moveTo(44, y); ctx.lineTo(1036, y); ctx.stroke();
+        }
+        ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(96, 32); ctx.lineTo(96, 1888); ctx.stroke();
+        ctx.save();
+        for (let y = 110; y < 1840; y += 150) {
+            ctx.beginPath(); ctx.arc(34, y, 11, 0, Math.PI * 2);
+            ctx.fillStyle = '#0b1220'; ctx.fill();
+            ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 3; ctx.stroke();
+        }
+        ctx.restore();
+        // grampeador simples no topo (retângulo + base, sem texto)
+        ctx.save();
+        ctx.translate(540, 88);
+        ctx.fillStyle = '#b91c1c'; ctx.fillRect(-52, -14, 104, 18);
+        ctx.fillStyle = '#6b7280'; ctx.fillRect(-52, 10, 104, 8);
+        ctx.restore();
     } else {
         ctx.strokeStyle = palette.borderPrimary;
         ctx.lineWidth = 10;

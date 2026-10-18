@@ -4,6 +4,8 @@ Sessão Arena `arena/dc4e2d49-diario` · 18/10/2026 · base `e66cec5` (main) · 
 
 Aprovações registradas nesta sessão (antes da produção em lote): lote completo das 10 chamadas **sem** etapa intermediária de direção; linguagem visual **pixel art** para os dois temas (uma só linguagem, sem misturar); **listas do plano editorial aprovadas como escritas** (contagem real: **98 peças** — ver §5). Depois da confirmação de que a ferramenta não gera cartelas, a produção segue por **peças individuais** (lote 2 em diante). Nenhum tema foi cadastrado e nenhuma interface foi alterada.
 
+**Continuação — sessão `arena/9470848b-diario` (a partir do merge `8376f01`, PR #32):** o usuário autorizou explicitamente, nesta PR, (1) o **Lote 6** (10 chamadas: cartelas 3 e 6 completas), (2) o **cadastro dos dois temas na galeria** (§6) e (3) que as cartelas 7 e 8 sejam **geração nova, sem reuso** de ícones existentes (decisão registrada; a produção dessas cartelas aguarda os próximos lotes autorizados).
+
 ## 1. Capacidade da ferramenta de geração
 
 - **1 chamada = 1 imagem única e independente.** O contrato da ferramenta proíbe grade, colagem, contact sheet, montagem ou várias peças/variações numa mesma imagem: **cartelas com múltiplos assets não são geráveis** e não foram simuladas como imagem única.
@@ -92,15 +94,30 @@ Originais grandes em `.cache/artes-originais/lote*.png` (≈2 MB cada; `.cache/`
 | 49 | Patente Gerente Regional | `lote5-patente-08.png` | Caneca fumegante diante de cadeira executiva |
 | 50 | Patente Diretor do Corporativo | `lote5-patente-09.png` | Pasta diante de torre corporativa em medalhão ornado |
 
+**Lote 6 (chamadas 51–60) — fecha as cartelas 3 (ThunderCats/Identidade) e 6 (The Office/Identidade):**
+
+| # | Peça | Original (cache) | Conteúdo revisado |
+|---|---|---|---|
+| 51 | Troféu da Jornada | `lote6-trofeu-da-jornada.png` | Taça dourada alada com olho felino vermelho na haste, em pedestal de pedra |
+| 52 | Espada do Trovão | `lote6-espada-do-trovao.png` | Espada ereta com olho vermelho na guarda e raios vermelhos; **borda decorativa interna** divergente (registrada) |
+| 53 | Olho de Thundera | `lote6-olho-de-thundera.png` | Amuleto-olho ornado de ouro/ferro com íris felina vermelha sobre altar |
+| 54 | Fortaleza de Thundera | `lote6-fortaleza-de-thundera.png` | Fortaleza de pedra em forma de gato agachado, bandeiras e janelas vermelhas ao entardecer |
+| 55 | Símbolo central | `lote6-simbolo-central.png` | Cabeça felina preta em anel vermelho sobre placa de ferro; **silhueta assimétrica** (bigodes só à esquerda, registrada) |
+| 56 | Troféu Dundie | `lote6-trofeu-dundie.png` | Estatueta dourada de terno em base com placa em branco; **fundo claro tipo papel** divergente (registrado) |
+| 57 | Caneca | `lote6-caneca.png` | Caneca branca fumegante em mesa de escritório; **post-its com rabiscos abstratos ilegíveis** ao fundo (registrado) |
+| 58 | Beterraba | `lote6-beterraba.png` | Beterraba roxa com folhas em caixote de fazenda sob luminária |
+| 59 | Grampeador na gelatina (identidade) | `lote6-grampeador-na-gelatina-identidade.png` | Close do grampeador vermelho na gelatina verde em prato (distinto da cena-desafio do lote 4) |
+| 60 | Cadeira | `lote6-cadeira.png` | Cadeira de escritório preta sob luminária à noite; **leitura fraca a 28 px** registrada no manifesto |
+
 Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, números ou legendas legíveis** (conforme especificação).
 
 ### 2.2 Imagens fornecidas pelo usuário
 
-**Nenhuma nesta sessão.** (Uma cartela externa sua pode acelerar as 88 peças pendentes: recorte/otimização seguem pelo `scripts/prepare-art.py`, com caixas manuais revisadas.)
+**Nenhuma nesta sessão.** (Uma cartela externa sua pode acelerar as 42 peças pendentes: recorte/otimização seguem pelo `scripts/prepare-art.py`, com caixas manuais revisadas.)
 
-### 2.3 Recortes/derivados versionados (50 WebP)
+### 2.3 Recortes/derivados versionados (60 WebP)
 
-`images/artes/candidatos/` — **candidatos, fora do CORE do service worker, não carregados pela UI** (cache offline não cresce). Total **≈1,6 MB**. Campos completos (id, tema/categoria, origem, fonte, sha256, recorte, dimensões, formato, transparência, local de uso futuro, estado, notas de revisão) em [`manifesto-artes.json`](manifesto-artes.json).
+Nos lotes 1–5, os derivados nasceram em `images/artes/candidatos/` (fora do CORE, não carregados pela UI). **Nesta PR, com o cadastro aprovado, os 48 arquivos de tema (24 + 24) foram movidos para os caminhos finais** (`images/bosses|patentes|temas|cards`, ≈1,5 MB, agora no CORE v60) e estão `em uso` no manifesto; restam em `images/artes/candidatos/` apenas as 10 peças de identidade do lote 6 e as 2 molduras (≈337 KB, fora do CORE). Campos completos (id, tema/categoria, origem, fonte, sha256, recorte, dimensões, formato, transparência, local de uso, estado, notas de revisão) em [`manifesto-artes.json`](manifesto-artes.json). A tabela abaixo é o registro histórico do lote 1 (o estado atual de cada peça está no manifesto).
 
 | Derivado | Alvo | Método | Estado | Uso futuro (ao cadastrar o tema) |
 |---|---|---|---|---|
@@ -127,20 +144,22 @@ Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, núme
 
 **Molduras — transparência (decisão crítica):** as duas vieram **RGB com xadrez desenhado pintado no fundo — xadrez não é alfa**. O alfa foi obtido por *keying* (flood-fill dos neutros em faixas de luminância + mediana 3 no alfa), **revisado visualmente** sobre card real: janelas limpas, arte íntegra (espada, rubis, grampeador, anel do café), halo leve nas bordas internas aceito e registrado. Mestres PNG sem perda ficam em `.cache/artes-originais/derivados/` (fora do Git; o script regenera). **Nenhuma moldura está em uso**: antes de qualquer overlay real, falta testar nos canvases (Story 1080×1920; Card do Chefão 1080×1080; moldura desenhada hoje em código em `js/cartoes.js` com quadro de referência 1080×1920) e as áreas de texto (x≥70 px), retrato circular e foto full-bleed.
 
+**Lote 6 (cartelas 3 e 6 — identidade; todos 512×512 NEAREST 2:1, `candidato`, sem vínculo com UI):** `thundercats/identidade/trofeu-da-jornada.webp` · `espada-do-trovao.webp` · `olho-de-thundera.webp` · `fortaleza-de-thundera.webp` · `simbolo-central.webp` · `office/identidade/trofeu-dundie.webp` · `caneca.webp` · `beterraba.webp` · `grampeador-na-gelatina.webp` · `cadeira.webp`. Divergências e a leitura a 28 px (Cadeira fraca em tamanho pequeno) estão nas notas de cada registro do manifesto (60 registros).
+
 ### 2.4 Artes ainda pendentes
 
-**52 peças do plano editorial** (98 − 46 concluídas como candidatas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats (24/24) e The Office (24/24) estão com os arquivos completos** (mais uma moldura cada como infraestrutura). Ainda assim, **nenhum tema entra na galeria nesta PR**: o cadastro em `THEMES`/UI exige sua aprovação (§6). As molduras são infraestrutura fora da contagem; os fundos também (completude de tema, não constavam nas 98).
+**42 peças do plano editorial** (98 − 56 concluídas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats (24/24) e The Office (24/24) foram cadastrados na galeria nesta PR** com aprovação explícita do usuário (§6): os 48 arquivos saíram de `images/artes/candidatos/` para os caminhos finais e os registros correspondentes do manifesto estão `em uso` (ids preservados). Restam como candidatos apenas as 10 peças de identidade do lote 6 e as 2 molduras (infraestrutura fora da contagem; os fundos são completude de tema, não constavam nas 98).
 
 ## 3. Provas visuais (`docs/provas-lote1/`, montadas por código)
 
 | Arquivo | O que mostra |
 |---|---|
-| `cartela-candidatos.webp` | Cartela montada por código com **todos os candidatos** — grade regular, margens generosas, sem legendas, nenhuma peça encostando na vizinha (é a "cartela" no seu sentido: imagem única com várias peças; a ferramenta de geração não produz isso, a montagem é por código) |
-| `leitura-patentes-28px.webp` | Patentes e selos a 80/28/56 px (linhas). Patentes 02–10 legíveis a 28 px; **selo ThunderCats e patente 03 (Explorador) leem-se escuros em tamanho pequeno** — pendência de contraste registrada |
+| `cartela-candidatos.webp` | Cartela montada por código com **todos os derivados** (candidatos + arquivos finais dos temas cadastrados) — grade regular, margens generosas, sem legendas, nenhuma peça encostando na vizinha (é a "cartela" no seu sentido: imagem única com várias peças; a ferramenta de geração não produz isso, a montagem é por código) |
+| `leitura-patentes-28px.webp` | Patentes, selos e peças de identidade a 80/28/56 px (linhas). Patentes 02–10 legíveis a 28 px; **selo ThunderCats e patente 03 (Explorador) leem-se escuros em tamanho pequeno** — pendência de contraste registrada. No lote 6, 9/10 peças leem-se a 28 px; a **Cadeira** (cena noturna) é a exceção registrada |
 | `moldura-thundercats-sobre-card.webp` | Keying da moldura TC sobre `images/cards/classico.webp` |
 | `moldura-office-sobre-card.webp` | Keying da moldura Office sobre o mesmo card (anel do café limpo) |
 
-Não há captura de tela do app porque **nada foi integrado à interface** nesta PR.
+A integração dos temas nesta PR é validada pela suíte de UI (jsdom) e pela validação em navegador real do CI; a galeria passa a listar 12 temas.
 
 ## 4. Como reproduzir o processamento editorial
 
@@ -160,25 +179,24 @@ As listas enviadas somam **98** (o rótulo "94" do pedido não fecha com as list
 |---|---|---:|---:|---:|
 | 1 | ThunderCats — Bosses | 12 | **12 (completa)** | 0 |
 | 2 | ThunderCats — Patentes | 10 | **10 (completa)** | 0 |
-| 3 | ThunderCats — Identidade | 6 | 1 (Selo) | 5 (troféu, espada, olho, fortaleza, símbolo) |
+| 3 | ThunderCats — Identidade | 6 | **6 (completa: Selo + lote 6)** | 0 |
 | 4 | The Office — Desafios | 12 | **12 (completa)** | 0 |
 | 5 | The Office — Patentes | 10 | **10 (completa)** | 0 |
-| 6 | The Office — Identidade | 6 | 1 (Selo) | 5 (troféu Dundie, caneca, beterraba, grampeador na gelatina, cadeira) |
+| 6 | The Office — Identidade | 6 | **6 (completa: Selo + lote 6)** | 0 |
 | 7 | Treino — séries e descanso | 12 | 0 | 12 |
 | 8 | Cardio e equipamentos | 12 | 0 | 12 |
 | 9 | Troféus dos temas existentes | 10 | 0 | 10 |
 | 10 | Estados vazios e utilitários | 8 | 0 | 8 |
 
-Notas editoriais mantidas do pedido: The Office trata situações como **desafios** (não personagens como vilões), sem violência gráfica; linguagem do tema proposta (Arena: Filial de Scranton; Boss: Desafio do expediente; Vitória: Problema resolvido; Patentes: Carreira na filial) segue para aprovação no cadastro. Cartela 10: ilustrações de backup/restauração **nunca** podem sugerir que a operação aconteceu sem confirmação do sistema. Cartelas 7–8 podem **reaproveitar** ícones existentes (`images/artes/icones/sessao/`: check, cronômetro, adicionar, troféu; `icones/equipamentos/`: esteira, polia…), o que explicaria a contagem "94" do pedido — confirmar quais itens seriam reutilizações antes da produção. Os símbolos cíclicos `simbolo-ciclo-01/02` continuam ambíguos e **não** equivalem a bi-set/drop-set. Nada de regra nova de classificação de séries, conquistas ou condições de desbloqueio por causa de imagens.
+Notas editoriais mantidas do pedido: The Office trata situações como **desafios** (não personagens como vilões), sem violência gráfica; linguagem do tema proposta (Arena: Filial de Scranton; Boss: Desafio do expediente; Vitória: Problema resolvido; Patentes: Carreira na filial) foi **aprovada e aplicada no cadastro** (§6). Cartela 10: ilustrações de backup/restauração **nunca** podem sugerir que a operação aconteceu sem confirmação do sistema. Cartelas 7–8: o usuário decidiu **gerar tudo novo, sem reuso** dos ícones existentes (a contagem "94" fica superada; valem as 98 gerações). Os símbolos cíclicos `simbolo-ciclo-01/02` continuam ambíguos e **não** equivalem a bi-set/drop-set. Nada de regra nova de classificação de séries, conquistas ou condições de desbloqueio por causa de imagens.
 
-## 6. Integração futura (não feita nesta PR)
+## 6. Integração na galeria (feita nesta PR, com aprovação explícita)
 
-- **ThunderCats e The Office estão com os 24/24 arquivos prontos** (12 retratos + 10 patentes + selo + fundo cada; todos candidatos versionados). O passo de cadastro (`THEMES`, galeria, testes) é mudança de interface e **aguarda sua aprovação explícita**.
-- **IDs estáveis provisórios:** `thundercats`, `office` (definitivos só no cadastro aprovado). Nada de remapear progresso por posição de array; IDs de temas/bosses existentes intocados.
-- Cadastro completo de um tema exige: entrada em `THEMES` (`js/gamificacao.js`, com ranks, chefões e grupos fracos mapeados aos grupos reais do app — os nomes de patente/chefão já aprovados), `THEME_IDS_LIST` (`js/app.js`), retratos em `DEFAULT_BOSS_PORTRAITS` (`js/boss.js`), arquivos nos caminhos finais do manifesto, CORE do `sw.js` + bump de versão, e atualização do teste `tests/engine/40_arte_jogo.js` (120→144 retratos, lista de temas) — **com aprovação sua**.
-- Fallback de imagem (onerror → emoji/texto), `alt=""` em decoração, descrição em imagem informativa, legibilidade de dados e fotos sob fundos/molduras, validação offline: verificação obrigatória antes de virar "em uso".
+- **ThunderCats e The Office cadastrados** (`thundercats`, `office` — IDs novos acrescentados ao fim das listas; nenhum ID existente foi alterado nem progresso salvo é remapeado por posição): `THEMES` em `js/gamificacao.js` (10 patentes + 12 chefões/desafios por tema, fraquezas mapeadas aos grupos reais do app, HP na curva compartilhada `100+18i` via `mkBosses`), `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES` em `js/app.js`, 24 retratos em `DEFAULT_BOSS_PORTRAITS` (`js/boss.js`, 120→144), molduras de canvas novas `garra`/`caderno` em `js/cartoes.js` (nenhum tema cai no `else` genérico), arquivos nos caminhos finais (`images/bosses|patentes|temas|cards`), CORE do `sw.js` + bump **v59→v60** e testes atualizados (`tests/engine/40_arte_jogo.js` 120→144, `tests/engine/20_recuperacao_temas.js` 10→12 temas, `tests/ui/10_boot_navegacao.js`, `test_sw.js` 110→132 imagens de patentes/cards). O CORE offline cresce ≈1,5 MB (48 arquivos dos dois temas) — consequência esperada e aprovada do cadastro.
+- **Linguagem do Office aplicada como aprovada:** Arena "Filial de Scranton", Boss (`bossLabel`) "Desafio do expediente", Patentes = carreira na filial (Recém-contratado → Lenda de Scranton); "Problema resolvido" é a linguagem de vitória do tema (registrada na descrição da Premiação dos Dundies; não há campo de "vitória" por tema no motor — o selo de derrota segue o padrão global da UI).
+- Fallback de imagem preservado (retrato ausente → emoji do chefão; selo ausente → emoji do tema), `alt` descritivo nos retratos e vazio na decoração, validação offline pelo CORE do SW (testes B5 do `test_sw.js` cobrem as 132 imagens).
 - **Licença:** ThunderCats e The Office são propriedades de terceiros; a geração de imagem **não confere licença comercial**. Uso editorial/interno é decisão sua; registrado aqui e no manifesto.
 
 ## 7. O que esta PR não contém
 
-Sem originais pesados (só derivados ≤117 KB e provas leves ≤433 KB), sem mudanças em fórmulas de treino/XP/dano/PR/histórico, sem temas na galeria, sem alteração de UI, sem dependência nova de produção, sem crescimento do cache offline (candidatos fora do CORE; `sw.js` sobe v58→v59 apenas pela regra de versão para diff em `images/**`).
+Sem originais pesados (originais do lote 6 fora do Git em `.cache/`), sem mudanças em fórmulas de treino/XP/dano/PR/histórico (os chefões novos usam a mesma curva de HP e as mesmas regras de dano/XP de todos os temas), sem regra nova de classificação de séries/conquistas/desbloqueio por causa de arte, sem dependência nova de produção. As peças de identidade do lote 6 e as molduras seguem **candidatas fora do CORE** e sem vínculo com a UI; as cartelas 7–10 (42 peças) aguardam os próximos lotes autorizados de 10 chamadas.

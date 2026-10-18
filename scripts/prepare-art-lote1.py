@@ -189,7 +189,50 @@ PECAS = [
     ('to-patente-diretor-do-corporativo', 'Patente Diretor do Corporativo', 'office', 'patentes',
      'lote5-patente-09.png', 'office/patentes/office-09.webp',
      (192, 192), 'lanczos', 'images/patentes/office-09.webp (patente 9/10 ao cadastrar o tema)'),
+    # Lote 6 — cartela 3 (ThunderCats/Identidade) e cartela 6 (The Office/Identidade).
+    # Peças de identidade: objetos centrais opacos, 512×512 NEAREST (2:1 exato).
+    # Sem uso na UI por ora: candidatos para revisão/futuro vínculo editorial.
+    ('tc-id-trofeu-da-jornada', 'Troféu da Jornada', 'thundercats', 'identidade',
+     'lote6-trofeu-da-jornada.png', 'thundercats/identidade/trofeu-da-jornada.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/thundercats/identidade/trofeu-da-jornada.webp (identidade do tema; sem vínculo com UI)'),
+    ('tc-id-espada-do-trovao', 'Espada do Trovão', 'thundercats', 'identidade',
+     'lote6-espada-do-trovao.png', 'thundercats/identidade/espada-do-trovao.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/thundercats/identidade/espada-do-trovao.webp (identidade do tema; sem vínculo com UI)'),
+    ('tc-id-olho-de-thundera', 'Olho de Thundera', 'thundercats', 'identidade',
+     'lote6-olho-de-thundera.png', 'thundercats/identidade/olho-de-thundera.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/thundercats/identidade/olho-de-thundera.webp (identidade do tema; sem vínculo com UI)'),
+    ('tc-id-fortaleza-de-thundera', 'Fortaleza de Thundera', 'thundercats', 'identidade',
+     'lote6-fortaleza-de-thundera.png', 'thundercats/identidade/fortaleza-de-thundera.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/thundercats/identidade/fortaleza-de-thundera.webp (identidade do tema; sem vínculo com UI)'),
+    ('tc-id-simbolo-central', 'Símbolo central', 'thundercats', 'identidade',
+     'lote6-simbolo-central.png', 'thundercats/identidade/simbolo-central.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/thundercats/identidade/simbolo-central.webp (identidade do tema; sem vínculo com UI)'),
+    ('to-id-trofeu-dundie', 'Troféu Dundie', 'office', 'identidade',
+     'lote6-trofeu-dundie.png', 'office/identidade/trofeu-dundie.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/office/identidade/trofeu-dundie.webp (identidade do tema; sem vínculo com UI)'),
+    ('to-id-caneca', 'Caneca', 'office', 'identidade',
+     'lote6-caneca.png', 'office/identidade/caneca.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/office/identidade/caneca.webp (identidade do tema; sem vínculo com UI)'),
+    ('to-id-beterraba', 'Beterraba', 'office', 'identidade',
+     'lote6-beterraba.png', 'office/identidade/beterraba.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/office/identidade/beterraba.webp (identidade do tema; sem vínculo com UI)'),
+    ('to-id-grampeador-na-gelatina', 'Grampeador na gelatina', 'office', 'identidade',
+     'lote6-grampeador-na-gelatina-identidade.png', 'office/identidade/grampeador-na-gelatina.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/office/identidade/grampeador-na-gelatina.webp (identidade do tema, close do objeto; sem vínculo com UI)'),
+    ('to-id-cadeira', 'Cadeira', 'office', 'identidade',
+     'lote6-cadeira.png', 'office/identidade/cadeira.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/office/identidade/cadeira.webp (identidade do tema; sem vínculo com UI)'),
 ]
+
+# Notas de revisão peça a peça que complementam a nota genérica do método
+# (divergências registradas na revisão visual, como nas bordas dos lotes 2/4).
+NOTAS_EXTRA = {
+    'tc-id-espada-do-trovao': ' Divergência registrada: borda decorativa interna marrom em todo o quadro (como a borda do Grune no lote 2).',
+    'tc-id-simbolo-central': ' Divergência registrada: silhueta felina assimétrica, com bigodes apenas à esquerda; leitura a 28 px conferida na prova de leitura.',
+    'to-id-trofeu-dundie': ' Divergência registrada: fundo claro tipo folha/cortina de papel atrás da estatueta; placa da base em branco, sem texto.',
+    'to-id-caneca': ' Divergência registrada: post-its ao fundo com rabiscos abstratos ilegíveis (sem texto legível); caneca em branco, sem logo.',
+    'to-id-cadeira': ' Divergência registrada: cena noturna escura; cadeira preta sobre fundo escuro com contraste moderado, realçada pela luminária. Leitura fraca a 28 px (prova de leitura do lote 6): preferir exibição maior ou revisão de contraste antes de uso como ícone pequeno.',
+}
 
 # Molduras: flood-fill do xadrez pintado. (faixas de luminância de neutros, sementes extras)
 MOLDURAS = [
@@ -293,7 +336,7 @@ for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS:
         saida=rel(saida), largura=out.width, altura=out.height,
         formato='webp', transparencia='opaco', bytes=saida.stat().st_size,
         local_de_uso=uso, estado='candidato',
-        notas=f'Redução {metodo} de {im.width}×{im.height} (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente.'))
+        notas=f'Redução {metodo} de {im.width}×{im.height} (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente.' + NOTAS_EXTRA.get(pid, '')))
 
 for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS:
     src = SRC / fname
@@ -325,13 +368,22 @@ for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS:
 # Provas leves para revisão (montagem por código; fora do cache do app)
 OUT_PROVAS.mkdir(parents=True, exist_ok=True)
 
-# 1) leitura a 28/56 px de patentes e selos (método final)
-alvos_leitura = [(pid, dest) for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS
-                 if cat in ('patentes', 'temas') and (OUT_CAND / dest).exists()]
+def arquivo_peca(dest, uso):
+    """Derivado no candidato; após o cadastro do tema, no caminho final."""
+    cand = OUT_CAND / dest
+    if cand.exists():
+        return cand
+    final = ROOT / uso.split(' ')[0]
+    return final if final.exists() else cand
+
+
+# 1) leitura a 28/56 px de patentes, selos e identidade (método final)
+alvos_leitura = [(pid, dest, uso) for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS
+                 if cat in ('patentes', 'temas', 'identidade') and arquivo_peca(dest, uso).exists()]
 faixa = Image.new('RGB', (max(1, len(alvos_leitura)) * 90, 200), (24, 24, 28))
 col = 0
-for pid, dest in alvos_leitura:
-    im = Image.open(OUT_CAND / dest)
+for pid, dest, uso in alvos_leitura:
+    im = Image.open(arquivo_peca(dest, uso))
     faixa.paste(im.resize((80, 80), Image.Resampling.NEAREST), (col * 90 + 5, 5))
     faixa.paste(im.resize((28, 28), Image.Resampling.LANCZOS), (col * 90 + 5, 95))
     faixa.paste(im.resize((56, 56), Image.Resampling.LANCZOS), (col * 90 + 5, 130))
@@ -350,17 +402,18 @@ for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS:
     fundo.paste(m, (0, 0), m)
     fundo.save(OUT_PROVAS / f'moldura-{tema}-sobre-card.webp', 'WEBP', quality=82, method=6)
 
-# 3) cartela de revisão com TODOS os candidatos (grade regular, sem legendas)
-cells = [dest for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS
-         if (OUT_CAND / dest).exists()]
-cells += [dest + '.webp' for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS
+# 3) cartela de revisão com TODOS os derivados (grade regular, sem legendas;
+# candidatos e, após o cadastro dos temas, também os arquivos finais)
+cells = [arquivo_peca(dest, uso) for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS
+         if arquivo_peca(dest, uso).exists()]
+cells += [OUT_CAND / (dest + '.webp') for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS
           if (OUT_CAND / (dest + '.webp')).exists()]
 cols = 6
 rows = max(1, math.ceil(len(cells) / cols))
 CW, CH, M = 200, 200, 20
 cartela = Image.new('RGB', (cols * CW + (cols + 1) * M, rows * CH + (rows + 1) * M), (18, 18, 22))
-for i, dest in enumerate(cells):
-    im = Image.open(OUT_CAND / dest)
+for i, caminho in enumerate(cells):
+    im = Image.open(caminho)
     im.thumbnail((CW, CH), Image.Resampling.LANCZOS)
     x = M + (i % cols) * (CW + M) + (CW - im.width) // 2
     y = M + (i // cols) * (CH + M) + (CH - im.height) // 2

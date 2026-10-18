@@ -165,7 +165,33 @@ const DEFAULT_BOSS_PORTRAITS = {
     'aneis:b8': 'images/bosses/laracna.webp',
     'aneis:b9': 'images/bosses/rei-bruxo-de-angmar.webp',
     'aneis:b10': 'images/bosses/gollum-o-portador-caido.webp',
-    'aneis:b11': 'images/bosses/sauron-o-senhor-do-anel.webp'
+    'aneis:b11': 'images/bosses/sauron-o-senhor-do-anel.webp',
+    // thundercats
+    'thundercats:b0': 'images/bosses/jackalman.webp',
+    'thundercats:b1': 'images/bosses/monkian.webp',
+    'thundercats:b2': 'images/bosses/vultureman.webp',
+    'thundercats:b3': 'images/bosses/slithe.webp',
+    'thundercats:b4': 'images/bosses/ratar-o.webp',
+    'thundercats:b5': 'images/bosses/grune.webp',
+    'thundercats:b6': 'images/bosses/safari-joe.webp',
+    'thundercats:b7': 'images/bosses/captain-shiner.webp',
+    'thundercats:b8': 'images/bosses/hammerhand.webp',
+    'thundercats:b9': 'images/bosses/the-driller.webp',
+    'thundercats:b10': 'images/bosses/mumm-ra-mumificada.webp',
+    'thundercats:b11': 'images/bosses/mumm-ra-poderoso.webp',
+    // office (desafios, não vilões)
+    'office:b0': 'images/bosses/impressora-em-pane.webp',
+    'office:b1': 'images/bosses/reuniao-que-poderia-ser-um-email.webp',
+    'office:b2': 'images/bosses/grampeador-na-gelatina.webp',
+    'office:b3': 'images/bosses/inventario-do-deposito.webp',
+    'office:b4': 'images/bosses/guerra-das-vendas.webp',
+    'office:b5': 'images/bosses/comite-de-festas.webp',
+    'office:b6': 'images/bosses/olimpiadas-do-escritorio.webp',
+    'office:b7': 'images/bosses/simulado-de-incendio-do-dwight.webp',
+    'office:b8': 'images/bosses/visita-do-corporativo.webp',
+    'office:b9': 'images/bosses/crise-da-marca-dagua.webp',
+    'office:b10': 'images/bosses/premiacao-dos-dundies.webp',
+    'office:b11': 'images/bosses/ultimo-expediente.webp'
 };
 
 function bossPortraitSrc(bossId) {
