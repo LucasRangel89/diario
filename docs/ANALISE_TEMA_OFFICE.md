@@ -55,7 +55,7 @@ Duas decisões editoriais explícitas no tema atual: **sem vilões e sem violên
 
 **D. Só vocabulário (mínimo).** Nenhuma arte nova; aplica apenas os rótulos e o tratamento de memorando no card. Custo: 1 sessão curta, sem geração de imagem. É o melhor **custo-benefício** se o objetivo é só “sentir” a proposta.
 
-**Recomendação:** **A**, com o vocabulário de **D** aplicado primeiro. O selo do lote 1 vira a identidade “memorando” do card; os medalhões atuais continuam nas patentes. Se em algum momento você quiser os personagens, o caminho é A com 6 retratos novos, nunca B.
+**DECISÃO DO USUÁRIO (19/10/2026): opção A adotada**, com o vocabulário de D aplicado junto. O `office-us` como tema separado está descartado. O selo do lote 1 vira a identidade “memorando” do card; os medalhões atuais continuam nas patentes. Se em algum momento você quiser os personagens, o caminho é A com 6 retratos novos, nunca B.
 
 ## 5. Se A for aprovada — lista fechada (12 desafios)
 
@@ -78,4 +78,4 @@ Custo de arte de A: **6 retratos** (Angela, Dwight, Toby, Jan, Robert California
 
 ## 6. O que este documento não decide
 
-Nada aqui foi implementado. `THEMES.office`, os 24 arquivos em uso, o vocabulário da UI e o `sw.js` seguem como estavam (exceto o bump de versão do lote 2, por causa de imagens novas em `images/**`). A escolha A/B/C/D fica com você; a opção escolhida entra no lote de implementação final.
+O caminho A foi **aprovado** e entra no lote de implementação final: 6 retratos (Angela, Dwight, Toby, Jan, Robert California, Jo Bennett), moldura `memorando`, vocabulário da §2 e os 12 desafios da §5. Nada foi implementado ainda: `THEMES.office`, os 24 arquivos em uso e o vocabulário da UI seguem como estavam. O `sw.js` só mudou pela regra de versão de `images/**` dos lotes 2 e 3.

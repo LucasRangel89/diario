@@ -6,7 +6,9 @@ Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para a
 
 **Lote 2 (mesma sessão):** as **10 patentes de O Equilíbrio dos Elementos** (`avatar-01…10`), fechando a família de emblemas do tema mais adiantado. Estratégia de lotes definida com o usuário: gerar o máximo por sessão (10 imagens) e deixar revisão longa, cadastro e testes para a sessão final. Ver §8.
 
-**Análise do tema `office` existente × proposta:** `docs/ANALISE_TEMA_OFFICE.md` (recomendação: upgrade no lugar + vocabulário; **não** criar segundo tema).
+**Análise do tema `office` existente × proposta:** `docs/ANALISE_TEMA_OFFICE.md` (recomendação: upgrade no lugar + vocabulário; **não** criar segundo tema). **Decisão do usuário (19/10): adotar o upgrade** — aprovado o caminho A, com a lista de 12 desafios e os 6 retratos de personagem do §5 daquele documento. Nada implementado ainda; ver §10.
+
+**Lote 3 (mesma sessão):** os **10 primeiros retratos de chefão de O Equilíbrio dos Elementos** (Mercador de Repolhos → Homem-Combustão). Ver §8.
 
 ## 1. Capacidade e método
 
@@ -233,35 +235,55 @@ O script só **deriva** (recorte/redução/prova); não gera arte. Se os origina
 
 Total do lote: **10 arquivos, 150.686 bytes**. Todos 192×192, Lanczos, opacos, `estado: candidato`. Prova de leitura em `docs/provas-novos-temas/leitura-patentes-avatar.webp`. O tema `avatar` passa a ter **selo + fundo + 10 patentes** = 12/24 arquivos; faltam os 12 retratos e a moldura.
 
-## 8. Estratégia de lotes (10 imagens por sessão)
+## 8. Lote 3 — retratos de chefão de O Equilíbrio dos Elementos
 
-Peças restantes do plano: **132**. Cada sessão gera **10**. Regra adotada: **fechar um tema por vez**, porque um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem — entrega valor a cada etapa, em vez de 132 peças soltas.
+| # | Retrato | Arquétipo | Fraqueza | Bytes |
+|---:|---|---|---|---:|
+| 01 | Mercador de Repolhos | En | Pernas | 65.294 |
+| 02 | Arqueiras Yuyan | En | Ombros | 52.486 |
+| 03 | Comandante Zhao | Tq | Peito | 61.494 |
+| 04 | Jet | Vl | Pernas | 65.436 |
+| 05 | Príncipe Zuko | Vl | Ombros | 50.174 |
+| 06 | Long Feng | En | Costas | 50.744 |
+| 07 | Koh, o Ladrão de Rostos | Cl | Core | 43.068 |
+| 08 | Wan Shi Tong | Tq | Core | 78.766 |
+| 09 | Hama | Cl | Antebraço | 51.214 |
+| 10 | Homem-Combustão | Cl | Peito | 61.270 |
 
-| Sessão | Lote | Conteúdo | Fecha o quê |
-|---:|---|---|---|
-| 1 | 1–2 | 6 selos + 2 fundos + 10 patentes avatar (20) | identidade de todos os temas + patentes avatar |
-| 2 | 3 | 10 retratos de chefão avatar (1–10) | — |
-| 3 | 4 | 2 retratos avatar (11–12) + moldura `elementos` + 7 patentes vila | **avatar 24/24** |
-| 4 | 5 | 3 patentes vila + 7 retratos vila | — |
-| 5 | 6 | 5 retratos vila + moldura `tv` + 4 patentes esgoto | **vila 24/24** |
-| 6 | 7 | 6 patentes esgoto + 4 retratos esgoto | — |
-| 7 | 8 | 8 retratos esgoto + fundo + moldura esgoto | **esgoto 24/24** |
-| 8 | 9 | 10 patentes springfield | — |
-| 9 | 10 | 10 retratos springfield | — |
-| 10 | 11 | 2 retratos springfield + fundo + moldura + 6 patentes caverna | **springfield 24/24** |
-| 11 | 12 | 4 patentes caverna + 6 retratos caverna | — |
-| 12 | 13 | 6 retratos caverna + fundo + moldura | **caverna 24/24** |
-| 13–14 | 14–15 | patentes, retratos, fundo e moldura `office-us` (24) | **office-us 24/24**, se aprovado |
-| 15 | final | cadastro, testes, validação em navegador, PR | — |
+Total do lote: **10 arquivos, 579.946 bytes**. Todos 512×512, Lanczos 1254→512, opacos, `estado: candidato`. Fundo de pedra azul-escura com a mesma moldura geométrica nos dez, o que mantém a família coesa no card circular. Prova em `docs/provas-novos-temas/retratos-avatar.webp`.
 
-- Sobram **8 imagens de folga** no total — reserva natural para regerar o selo de Springfield, uma patente fraca a 28 px ou um retrato que não agrade.
-- **Caminho enxuto** (se quiser PR menor): parar em **esgoto 24/24** = 3 temas completos, **60 peças**, 6 lotes de geração. É a menor massa que já permite uma galeria com três temas novos testados.
-- Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v60 → v61**), mesmo sem CORE novo.
-- Na sessão final o trabalho pesado é: 6 entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, 6 molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 216, CORE do `sw.js` (~3 MB a mais), testes de arte/tema e validação em navegador real. Por isso ela não deve acumular geração.
+Com o lote 3, o tema `avatar` tem **22/24 arquivos** (selo, fundo, 10 patentes, 10 retratos). Faltam **Azula**, **Ozai**, a moldura `elementos` — o lote 4 fecha o tema.
 
-## 9. Pendências e decisões
+## 9. Estratégia de lotes (10 imagens por sessão)
 
-1. **The Office**: análise completa em `docs/ANALISE_TEMA_OFFICE.md`; quatro caminhos comparados e recomendação (upgrade no lugar + vocabulário; sem segundo tema). O selo `office-us` do lote 1 só entra em uso se a opção A ou B for escolhida.
+Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem; espalhar peças por seis temas deixaria tudo pela metade por muito tempo.
+
+**Decisão do usuário (19/10): Office = upgrade no local**, o que **elimina** o trabalho de um 24/24 para `office-us` (eram ~2,4 sessões) e o reduz a **6 retratos de personagem + 1 moldura de memorando**.
+
+Situação após o lote 3 (avatar 22/24, vila 2/24, demais 1/24) e plano revisado:
+
+| Lote | Conteúdo | Fecha |
+|---:|---|---|
+| 4 | Azula, Ozai + moldura `elementos` + 7 patentes vila | **avatar 24/24** |
+| 5 | 3 patentes vila + 7 retratos vila | — |
+| 6 | 5 retratos vila + moldura `tv` + 4 patentes esgoto | **vila 24/24** |
+| 7 | 6 patentes esgoto + 4 retratos esgoto | — |
+| 8 | 8 retratos esgoto + fundo + moldura esgoto | **esgoto 24/24** |
+| 9 | 10 patentes springfield | — |
+| 10 | 10 retratos springfield | — |
+| 11 | 2 retratos springfield + fundo + moldura + 6 patentes caverna | **springfield 24/24** |
+| 12 | 4 patentes caverna + 6 retratos caverna | — |
+| 13 | 6 retratos caverna + fundo + moldura + 2 retratos Office | **caverna 24/24** |
+| 14 | 4 retratos Office + moldura `memorando` + 5 peças de folga | **Office (upgrade)** |
+
+- Restam **≈101 peças** em **11 lotes**, com **5 de folga** no último para regerar o selo de Springfield, uma patente fraca a 28 px ou um retrato que não agrade.
+- **Caminho enxuto**: parar no lote 8 = **3 temas completos** (Avatar, Vila, Esgoto), **6 lotes de geração** e uma PR bem menor. É a menor massa que já entrega uma galeria com três temas novos testados.
+- Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v61 → v62**), mesmo sem CORE novo.
+- Na sessão final o trabalho pesado é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192 (5 temas × 12 – 12 já existentes do Office), CORE do `sw.js`, testes de arte/tema e validação em navegador real. Ela não deve acumular geração.
+
+## 10. Pendências e decisões
+
+1. **The Office**: **upgrade aprovado pelo usuário em 19/10** (`docs/ANALISE_TEMA_OFFICE.md`, caminho A). Mantém o tema `office`, as 24 artes e a regra “sem vilões”; adota o vocabulário (Vendas, Negócio Fechado, Meta Semanal, Trimestre Fiscal, Festa do Comitê) e os 6 desafios com personagem da §5 daquele documento. O selo `office-us` do lote 1 passa a ser **identidade alternativa** do card, não um tema novo; o `office-us` como tema separado está **descartado**. Implementação fica para a sessão final (lote 14 + código).
 2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).
 3. **Testes de canvas**: os 2 fundos e as molduras propostas ainda não foram testados em 1080×1920/1080×1080 do `js/cartoes.js`. Fica para a sessão final, quando houver moldura implementada.
 4. **Licença**: as seis séries são propriedades de terceiros. A geração de imagem não confere licença comercial; uso editorial/interno é decisão do usuário. Registrado também no manifesto.

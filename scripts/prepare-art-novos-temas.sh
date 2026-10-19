@@ -14,6 +14,8 @@
 # Regras de redução (mesmas do lote ThunderCats/Office):
 #  - selo de tema 192×192: LANCZOS (escala não inteira; não granular brilhos)
 #  - patente 192×192: LANCZOS (idem; lida a 28 px no modal de patentes)
+#  - retrato de chefão 512×512: LANCZOS (a origem é 1254 px, escala não inteira;
+#    o retrato aparece em círculo no card, então detalhe importa mais que grade)
 #  - fundo de card 1024×1024: sem redimensionar, só reempacotar em WebP
 # Nada é esticado; nenhuma peça é gerada aqui (as cartelas de prova são
 # montagem por código, só para conferência).
@@ -94,6 +96,28 @@ for origem in "$SRC"/patente-*.png; do
     echo "ok $destino"
 done
 
+# ---------- retratos de chefão (512×512) ----------
+for origem in "$SRC"/boss-*.png; do
+    [ -f "$origem" ] || continue
+    base="$(basename "$origem" .png)"
+    tema="$(printf '%s' "${base#boss-}" | sed 's/-[0-9]*$//')"
+    sufixo="${base##*-}"
+    case "$tema" in
+        avatar) destino_tema=avatar ;;
+        caverna) destino_tema=caverna ;;
+        scranton) destino_tema=office-us ;;
+        springfield) destino_tema=springfield ;;
+        vila) destino_tema=vila ;;
+        esgoto) destino_tema=esgoto ;;
+        *) echo "AVISO: tema desconhecido em $origem" >&2; continue ;;
+    esac
+    destino="$OUT/$destino_tema/bosses/$destino_tema-b$sufixo.webp"
+    mkdir -p "$(dirname "$destino")"
+    convert "$origem" -filter Lanczos -resize 512x512 -strip \
+        -define webp:method=6 -quality 82 "$destino"
+    echo "ok $destino"
+done
+
 # ---------- provas (montagem por código, nunca arte gerada) ----------
 prova_fila() { # <arquivo-saida> <altura> <arquivos...>
     local saida="$1" tam="$2"; shift 2
@@ -123,6 +147,7 @@ convert "$PROVAS/tmp-selos-192.webp" "$PROVAS/tmp-selos-56.webp" "$PROVAS/tmp-se
     -define webp:method=6 -quality 88 "$PROVAS/leitura-selos.webp"
 
 prova_fila "$PROVAS/leitura-patentes-avatar.webp" 192 "$OUT"/avatar/patentes/avatar-*.webp
+prova_fila "$PROVAS/retratos-avatar.webp" 256 "$OUT"/avatar/bosses/avatar-b*.webp
 
 # Fundos: prova reduzida, com a mesma moldura escura de conferência (não é o card final)
 tmpf=$(mktemp -d)
