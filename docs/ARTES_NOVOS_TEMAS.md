@@ -26,6 +26,8 @@ Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para a
 
 **Lote 11 (mesma sessão):** os 3 retratos finais de Springfield + 7 patentes da Caverna. **Springfield fecha 24/24 — quarto tema completo.** Ver §16.
 
+**Lote 12 (mesma sessão):** patentes **08–10 da Caverna** (10/10 fechadas) + os **7 primeiros monstros**. Ver §17.
+
 **Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**.
 
 ## 1. Capacidade e método
@@ -436,16 +438,35 @@ Total do lote: **10 arquivos, 295.098 bytes**. Todos candidatos.
 - **`caverna` está em 8/24**: selo e 7 patentes. Faltam 3 patentes e 12 retratos.
 - A Caverna ganhou o dialeto pedido: aro de ferro e ocre, pedra violeta, tochas e contorno grosso de desenho dos anos 80.
 
-## 17. Estratégia de lotes (10 imagens por sessão)
+## 17. Lote 12 — patentes da Caverna fechadas; monstros abertos
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Patente 08 — Portador do Arco | `caverna/patentes/caverna-08.webp` | 192×192 | 12.996 |
+| Patente 09 — Herói de Reide | `caverna/patentes/caverna-09.webp` | 192×192 | 13.436 |
+| Patente 10 — De Volta pra Casa | `caverna/patentes/caverna-10.webp` | 192×192 | 15.626 |
+| Retrato — Mímico | `caverna/bosses/caverna-b01.webp` | 512×512 | 56.472 |
+| Retrato — Aranha Gigante | `caverna/bosses/caverna-b02.webp` | 512×512 | 53.122 |
+| Retrato — Cubo Gelatinoso | `caverna/bosses/caverna-b03.webp` | 512×512 | 52.068 |
+| Retrato — Urso-Coruja | `caverna/bosses/caverna-b04.webp` | 512×512 | 51.516 |
+| Retrato — Demônio das Sombras | `caverna/bosses/caverna-b05.webp` | 512×512 | 54.562 |
+| Retrato — Beholder | `caverna/bosses/caverna-b06.webp` | 512×512 | 60.662 |
+| Retrato — Devorador de Mentes | `caverna/bosses/caverna-b07.webp` | 512×512 | 53.036 |
+
+Total do lote: **10 arquivos, 474.614 bytes**. Todos candidatos.
+
+- **`caverna` está em 18/24**: selo, **10/10 patentes** e 7/12 monstros. Faltam Hidra, Lich, Dragão Vermelho, Tiamat, Vingador e o fundo de card.
+- Os monstros seguiram o repertório pedido (mímico, cubo, beholder, devorador) com o traço dos anos 80.
+
+## 18. Estratégia de lotes (10 imagens por sessão)
 
 Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem.
 
-Situação após o lote 11: **avatar, vila, esgoto e springfield 24/24**; **caverna 8/24**; 6 retratos do Office pendentes. Restam **22 peças** em **3 lotes** + **4 molduras**, **2 fundos** e **1 selo** na sessão final:
+Situação após o lote 12: **avatar, vila, esgoto e springfield 24/24**; **caverna 18/24**; 6 retratos do Office pendentes. Restam **12 peças**:
 
 | Lote | Conteúdo | Fecha |
 |---:|---|---|
-| 12 | patentes caverna 08–10 + 7 retratos caverna | caverna 18/24 |
-| 13 | 5 retratos caverna + fundo caverna + 4 retratos Office | **caverna 24/24** |
+| 13 | 5 monstros caverna + fundo caverna + 4 retratos Office | **caverna 24/24** |
 | final | 2 retratos Office + fundo Office + 4 molduras + cadastro e testes | **Office (upgrade)** |
 
 - **Ponto de corte recomendado**: **três temas completos** (Avatar, Vila, Esgoto) já permitem abrir a PR e validar o fluxo de cadastro ponta a ponta. Os lotes 9–13 entram como commits incrementais.
@@ -453,7 +474,7 @@ Situação após o lote 11: **avatar, vila, esgoto e springfield 24/24**; **cave
 - **Molduras** (`elementos`, `tv`, `tocha`, `memorando`, `sitcom`, `bueiro`) e **4 fundos de card** entram na sessão de implementação, junto do código que os usa: precisam de keying de alfa e teste nos canvases. Planejar 1 imagem por moldura **fora dos lotes de 10**.
 - Na sessão final o trabalho é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192, CORE do `sw.js`, testes de arte/tema e validação em navegador real.
 
-## 18. Pendências e decisões
+## 19. Pendências e decisões
 
 1. **The Office**: **upgrade aprovado pelo usuário em 19/10** (`docs/ANALISE_TEMA_OFFICE.md`, caminho A). Mantém o tema `office`, as 24 artes e a regra “sem vilões”; adota o vocabulário (Vendas, Negócio Fechado, Meta Semanal, Trimestre Fiscal, Festa do Comitê) e os 6 desafios com personagem da §5 daquele documento. O selo `office-us` do lote 1 passa a ser **identidade alternativa** do card, não um tema novo; o `office-us` como tema separado está **descartado**. Implementação fica para a sessão final (lote 14 + código).
 2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).
