@@ -20,6 +20,8 @@ Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para a
 
 **Lote 8 (mesma sessão):** 7 retratos finais do Esgoto + 3 patentes de Springfield. **Esgoto de Nova York fecha 24/24 — terceiro tema completo.** Ver §13.
 
+**Lote 9 (mesma sessão):** patentes **04–10 de Springfield** (10/10 fechadas) + retratos de **Nelson** e **Willie**. O retrato do **Trio Bully foi recusado pelo filtro de segurança** da ferramenta e fica para o lote 10 com outra composição. Ver §14.
+
 **Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**.
 
 ## 1. Capacidade e método
@@ -369,16 +371,34 @@ Total do lote: **10 arquivos, 520.308 bytes**. Todos candidatos.
 - **`springfield` está em 4/24**: selo e 3 patentes. Faltam 7 patentes e 12 retratos.
 - Em Springfield, o trefoil de radiação da patente 03 é símbolo genérico, não emblema de marca.
 
-## 14. Estratégia de lotes (10 imagens por sessão)
+## 14. Lote 9 — patentes de Springfield fechadas; 1 recusa de moderação
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Patente 04 — Inspetor 7-G | `springfield/patentes/springfield-04.webp` | 192×192 | 11.490 |
+| Patente 05 — Funcionário do Mês | `springfield/patentes/springfield-05.webp` | 192×192 | 11.582 |
+| Patente 06 — Supervisor de Turno | `springfield/patentes/springfield-06.webp` | 192×192 | 11.640 |
+| Patente 07 — Astronauta | `springfield/patentes/springfield-07.webp` | 192×192 | 12.200 |
+| Patente 08 — Dono da Usina | `springfield/patentes/springfield-08.webp` | 192×192 | 12.610 |
+| Patente 09 — Prefeito de Springfield | `springfield/patentes/springfield-09.webp` | 192×192 | 13.748 |
+| Patente 10 — Jebediah Springfield | `springfield/patentes/springfield-10.webp` | 192×192 | 13.834 |
+| Retrato — Nelson | `springfield/bosses/springfield-b01.webp` | 512×512 | 54.656 |
+| Retrato — Willie | `springfield/bosses/springfield-b03.webp` | 512×512 | 64.860 |
+
+Total do lote: **9 arquivos, 206.620 bytes**. Todos candidatos.
+
+- **`springfield` está em 17/24**: selo, **10/10 patentes** e 3/12 retratos (Nelson, Willie; o trio falta).
+- **Recusa registrada:** a 10ª chamada (retrato do Trio Bully) voltou com `moderation_blocked` do provedor de imagem. A vaga foi consumida; a peça será refeita no lote 10 com composição em pose de fliperama, sem conotação de violência. Não é falha de revisão — é limite externo da ferramenta.
+
+## 15. Estratégia de lotes (10 imagens por sessão)
 
 Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem.
 
-Situação após o lote 8: **avatar 24/24**, **vila 24/24**, **esgoto 24/24**, **springfield 4/24**, caverna 1/24, 6 retratos do Office pendentes. Restam **49 peças** em **5 lotes** + **5 molduras** na sessão final:
+Situação após o lote 9: **avatar, vila e esgoto 24/24**; **springfield 17/24**; caverna 1/24; 6 retratos do Office pendentes. Restam **40 peças** em **4 lotes** + **5 molduras** na sessão final:
 
 | Lote | Conteúdo | Fecha |
 |---:|---|---|
-| 9 | patentes springfield 04–10 + retratos springfield 01–03 | springfield 14/24 |
-| 10 | retratos springfield 04–12 + fundo springfield | **springfield 24/24** |
+| 10 | Trio Bully (retry) + Wiggum, Tony Gordo, Bob, Kang e Kodos, Scorpio, Krusty, Burns + fundo springfield | **springfield 24/24** |
 | 11 | 10 patentes caverna | caverna 11/24 |
 | 12 | 10 retratos caverna | caverna 21/24 |
 | 13 | 2 retratos caverna + fundo caverna + 6 retratos Office + 1 folga | **caverna 24/24** e **Office** |
@@ -388,7 +408,7 @@ Situação após o lote 8: **avatar 24/24**, **vila 24/24**, **esgoto 24/24**, *
 - **Molduras** (`elementos`, `tv`, `tocha`, `memorando`, `sitcom`, `bueiro`) e **4 fundos de card** entram na sessão de implementação, junto do código que os usa: precisam de keying de alfa e teste nos canvases. Planejar 1 imagem por moldura **fora dos lotes de 10**.
 - Na sessão final o trabalho é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192, CORE do `sw.js`, testes de arte/tema e validação em navegador real.
 
-## 15. Pendências e decisões
+## 16. Pendências e decisões
 
 1. **The Office**: **upgrade aprovado pelo usuário em 19/10** (`docs/ANALISE_TEMA_OFFICE.md`, caminho A). Mantém o tema `office`, as 24 artes e a regra “sem vilões”; adota o vocabulário (Vendas, Negócio Fechado, Meta Semanal, Trimestre Fiscal, Festa do Comitê) e os 6 desafios com personagem da §5 daquele documento. O selo `office-us` do lote 1 passa a ser **identidade alternativa** do card, não um tema novo; o `office-us` como tema separado está **descartado**. Implementação fica para a sessão final (lote 14 + código).
 2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).
