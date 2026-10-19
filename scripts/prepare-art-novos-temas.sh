@@ -59,7 +59,7 @@ for tema in "${TEMAS[@]}"; do
 done
 
 # ---------- fundos de card (1024×1024) ----------
-for tema in avatar vila; do
+for tema in "${TEMAS[@]}"; do
     origem="$SRC/fundo-$(prefixo "$tema").png"
     destino="$OUT/$tema/cards/$tema.webp"
     if [ ! -f "$origem" ]; then

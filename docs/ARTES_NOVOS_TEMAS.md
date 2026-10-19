@@ -14,6 +14,8 @@ Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para a
 
 **Lote 5 (mesma sessão):** patentes **09–10 da Vila** e os **8 primeiros retratos** (Quico → Monstros de TV). Ver §10.
 
+**Lote 6 (mesma sessão):** 4 retratos finais da Vila + **fundo do Esgoto** + 5 patentes do Esgoto. **Vila do Barril fecha 24/24.** Ver §11.
+
 **Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**.
 
 ## 1. Capacidade e método
@@ -301,29 +303,49 @@ Total do lote: **10 arquivos, 449.612 bytes**. Todos candidatos.
 - **`vila` está em 22/24**: selo, fundo, **10/10 patentes** e **8/12 retratos**. Faltam Seu Barriga, 14 Meses de Aluguel, Bola de Boliche da Vila e Cópia do Chapolin — o lote 6 fecha o tema.
 - A família de retratos manteve a paleta de vila de TV (amarelo-mostarda, vinho, verde-azulado) com scanlines e granulado, coerente com selo, fundo e patentes.
 
-## 11. Estratégia de lotes (10 imagens por sessão)
+## 11. Lote 6 — Vila do Barril completa; Esgoto abre identidade
+
+| Peça | Arquivo | Dimensões | Bytes | Nota |
+|---|---|---:|---:|---|
+| Retrato — Seu Barriga | `vila/bosses/vila-b09.webp` | 512×512 | 58.488 | Tq · Pernas |
+| Retrato — 14 Meses de Aluguel | `vila/bosses/vila-b10.webp` | 512×512 | 66.194 | Ms · Core |
+| Retrato — Bola de Boliche da Vila | `vila/bosses/vila-b11.webp` | 512×512 | 60.556 | En · Ombros |
+| Retrato — Cópia do Chapolin | `vila/bosses/vila-b12.webp` | 512×512 | 57.248 | Vl · Antebraço |
+| Fundo — Esgoto de Nova York | `esgoto/cards/esgoto.webp` | 1024×1024 | 103.640 | centro aberto, sem pessoas |
+| Patente 01 — Filhote do Esgoto | `esgoto/patentes/esgoto-01.webp` | 192×192 | 10.574 | ovo e grade |
+| Patente 02 — Aprendiz do Mestre | `esgoto/patentes/esgoto-02.webp` | 192×192 | 10.778 | boneco de treino |
+| Patente 03 — Ninja das Galerias | `esgoto/patentes/esgoto-03.webp` | 192×192 | 11.310 | galeria e shuriken |
+| Patente 04 — Vigia dos Telhados | `esgoto/patentes/esgoto-04.webp` | 192×192 | 10.448 | bueiro e skyline |
+| Patente 05 — Bandana Vermelha | `esgoto/patentes/esgoto-05.webp` | 192×192 | 12.022 | sai e casco |
+
+Total do lote: **10 arquivos, 401.238 bytes**. Todos candidatos.
+
+- **`vila` está em 24/24** — selo, fundo, 10 patentes e 12 retratos. **Segundo tema completo.**
+- **`esgoto` está em 8/24**: selo, fundo e 5 patentes. Faltam 5 patentes e 12 retratos.
+- A família do Esgoto ganhou aro de aço com pátina sobre tijolo verde, com os quatro rebites das bandanas — distinta da Vila (dourada) e do Avatar (bronze).
+
+## 12. Estratégia de lotes (10 imagens por sessão)
 
 Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem.
 
-Situação após o lote 5: **avatar 24/24**, **vila 22/24**, esgoto/springfield/caverna 1/24 cada, e 6 retratos a produzir para o upgrade do Office. Restam **79 peças de arte** em **8 lotes** + **5 molduras** na sessão final:
+Situação após o lote 6: **avatar 24/24** e **vila 24/24** — dois temas prontos. **esgoto 8/24**, springfield e caverna 1/24, e 6 retratos a produzir para o Office. Restam **69 peças** em **7 lotes** + **5 molduras** na sessão final:
 
 | Lote | Conteúdo | Fecha |
 |---:|---|---|
-| 6 | 4 retratos vila + fundo esgoto + 5 patentes esgoto | **vila 24/24** |
-| 7 | 5 patentes esgoto + 5 retratos esgoto | esgoto 20/24 |
-| 8 | 7 retratos esgoto + 3 patentes springfield | **esgoto 24/24** |
-| 9 | 7 patentes springfield + 3 retratos springfield | springfield 11/24 |
-| 10 | 9 retratos springfield + fundo springfield | **springfield 24/24** |
+| 7 | patentes esgoto 06–10 + retratos esgoto 01–05 | esgoto 18/24 |
+| 8 | retratos esgoto 06–12 + 3 patentes springfield | **esgoto 24/24** |
+| 9 | patentes springfield 04–10 + retratos springfield 01–03 | springfield 13/24 |
+| 10 | retratos springfield 04–12 + fundo springfield | **springfield 24/24** |
 | 11 | 10 patentes caverna | caverna 11/24 |
 | 12 | 10 retratos caverna | caverna 21/24 |
-| 13 | 2 retratos caverna + fundo caverna + 6 retratos Office + 1 folga | **caverna 24/24** e **Office (upgrade)** |
+| 13 | retratos caverna 11–12 + fundo caverna + 6 retratos Office + folga | **caverna 24/24** e **Office** |
 
-- **Caminho enxuto**: parar no lote 6 = **2 temas completos** (Avatar e Vila), uma PR enxuta. Parar no lote 8 = **3 temas** (Avatar, Vila, Esgoto).
+- **Caminho enxuto**: com Avatar e Vila completos **agora**, a PR já pode ser aberta e revisada; os lotes seguintes entram como commits incrementais. Parar no lote 8 entrega **3 temas** (Avatar, Vila, Esgoto).
 - Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v62 → v63**), mesmo sem CORE novo.
 - **Molduras** (`elementos`, `tv`, `tocha`, `memorando`, `sitcom`, `bueiro`) e **4 fundos de card** entram na sessão de implementação, junto do código que os usa: precisam de keying de alfa e teste nos canvases. Planejar 1 imagem por moldura **fora dos lotes de 10**.
 - Na sessão final o trabalho é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192, CORE do `sw.js`, testes de arte/tema e validação em navegador real.
 
-## 12. Pendências e decisões
+## 13. Pendências e decisões
 
 1. **The Office**: **upgrade aprovado pelo usuário em 19/10** (`docs/ANALISE_TEMA_OFFICE.md`, caminho A). Mantém o tema `office`, as 24 artes e a regra “sem vilões”; adota o vocabulário (Vendas, Negócio Fechado, Meta Semanal, Trimestre Fiscal, Festa do Comitê) e os 6 desafios com personagem da §5 daquele documento. O selo `office-us` do lote 1 passa a ser **identidade alternativa** do card, não um tema novo; o `office-us` como tema separado está **descartado**. Implementação fica para a sessão final (lote 14 + código).
 2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).
