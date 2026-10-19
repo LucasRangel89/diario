@@ -24,6 +24,8 @@ Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para a
 
 **Lote 10 (mesma sessão):** 7 retratos + fundo de Springfield. O trio foi aprovado no terceiro prompt (elenco escolar acenando, sem palavras de conflito). **Springfield fica em 21/24** — faltam 3 retratos. Ver §15.
 
+**Lote 11 (mesma sessão):** os 3 retratos finais de Springfield + 7 patentes da Caverna. **Springfield fecha 24/24 — quarto tema completo.** Ver §16.
+
 **Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**.
 
 ## 1. Capacidade e método
@@ -413,25 +415,45 @@ Total do lote: **8 arquivos, 526.604 bytes**. Todos candidatos.
 
 **Estado real do tema (conferido arquivo por arquivo):** **21/24** — selo, fundo, 10/10 patentes e **9/12 retratos**. Faltam os retratos **09 (Sr. Burns)**, **10 (Bob Sideshow)** e **12 (Multidão de Springfield)**. O tema **não está fechado**.
 
-## 16. Estratégia de lotes (10 imagens por sessão)
+## 16. Lote 11 — Springfield completo; Caverna abre patentes
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Retrato — Sr. Burns | `springfield/bosses/springfield-b09.webp` | 512×512 | 58.174 |
+| Retrato — Bob Sideshow | `springfield/bosses/springfield-b10.webp` | 512×512 | 60.718 |
+| Retrato — Multidão de Springfield | `springfield/bosses/springfield-b12.webp` | 512×512 | 88.168 |
+| Patente 01 — Visitante do Parque | `caverna/patentes/caverna-01.webp` | 192×192 | 12.664 |
+| Patente 02 — Viajante Perdido | `caverna/patentes/caverna-02.webp` | 192×192 | 13.982 |
+| Patente 03 — Portador da Clava | `caverna/patentes/caverna-03.webp` | 192×192 | 12.832 |
+| Patente 04 — Portador da Capa | `caverna/patentes/caverna-04.webp` | 192×192 | 12.152 |
+| Patente 05 — Portador do Chapéu | `caverna/patentes/caverna-05.webp` | 192×192 | 11.872 |
+| Patente 06 — Portador do Bastão | `caverna/patentes/caverna-06.webp` | 192×192 | 12.524 |
+| Patente 07 — Portador do Escudo | `caverna/patentes/caverna-07.webp` | 192×192 | 12.012 |
+
+Total do lote: **10 arquivos, 295.098 bytes**. Todos candidatos.
+
+- **`springfield` está em 24/24** — selo, fundo, 10 patentes e 12 retratos. **Quarto tema completo.**
+- **`caverna` está em 8/24**: selo e 7 patentes. Faltam 3 patentes e 12 retratos.
+- A Caverna ganhou o dialeto pedido: aro de ferro e ocre, pedra violeta, tochas e contorno grosso de desenho dos anos 80.
+
+## 17. Estratégia de lotes (10 imagens por sessão)
 
 Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem.
 
-Situação após o lote 10: **avatar, vila e esgoto 24/24**; **springfield 21/24**; caverna 1/24; 6 retratos do Office pendentes. Restam **32 peças** em **3 lotes** + **4 molduras** e **2 fundos** na sessão final:
+Situação após o lote 11: **avatar, vila, esgoto e springfield 24/24**; **caverna 8/24**; 6 retratos do Office pendentes. Restam **22 peças** em **3 lotes** + **4 molduras**, **2 fundos** e **1 selo** na sessão final:
 
 | Lote | Conteúdo | Fecha |
 |---:|---|---|
-| 11 | Burns, Bob Sideshow, Multidão + 7 patentes caverna | **springfield 24/24** |
-| 12 | 3 patentes caverna + 7 retratos caverna | caverna 11/24 |
+| 12 | patentes caverna 08–10 + 7 retratos caverna | caverna 18/24 |
 | 13 | 5 retratos caverna + fundo caverna + 4 retratos Office | **caverna 24/24** |
-| final | fundo caverna (se não couber), 2 retratos Office, fundo office, 4 molduras + cadastro e testes | **Office (upgrade)** |
+| final | 2 retratos Office + fundo Office + 4 molduras + cadastro e testes | **Office (upgrade)** |
 
 - **Ponto de corte recomendado**: **três temas completos** (Avatar, Vila, Esgoto) já permitem abrir a PR e validar o fluxo de cadastro ponta a ponta. Os lotes 9–13 entram como commits incrementais.
 - Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v62 → v63**), mesmo sem CORE novo.
 - **Molduras** (`elementos`, `tv`, `tocha`, `memorando`, `sitcom`, `bueiro`) e **4 fundos de card** entram na sessão de implementação, junto do código que os usa: precisam de keying de alfa e teste nos canvases. Planejar 1 imagem por moldura **fora dos lotes de 10**.
 - Na sessão final o trabalho é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192, CORE do `sw.js`, testes de arte/tema e validação em navegador real.
 
-## 17. Pendências e decisões
+## 18. Pendências e decisões
 
 1. **The Office**: **upgrade aprovado pelo usuário em 19/10** (`docs/ANALISE_TEMA_OFFICE.md`, caminho A). Mantém o tema `office`, as 24 artes e a regra “sem vilões”; adota o vocabulário (Vendas, Negócio Fechado, Meta Semanal, Trimestre Fiscal, Festa do Comitê) e os 6 desafios com personagem da §5 daquele documento. O selo `office-us` do lote 1 passa a ser **identidade alternativa** do card, não um tema novo; o `office-us` como tema separado está **descartado**. Implementação fica para a sessão final (lote 14 + código).
 2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).
