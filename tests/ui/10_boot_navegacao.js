@@ -14,7 +14,7 @@ check('aba Buscar aparece no grupo Treino', !!$('tab-content-busca') && !!$('nav
 check('navegação tem exatamente quatro grupos, sem trilho horizontal', ['treino', 'jogo', 'voce', 'config'].every(g => !!$(`nav-group-${g}`)) && $('nav-groups').children.length === 4 && !$('group-navigation').className.includes('overflow-x-auto'));
 check('cabeçalho compacto contém título, tema, data e XP', !!$('header-theme-button') && !!$('header-today-date') && !!$('header-xp-display') && document.querySelector('header').querySelectorAll('h1').length === 1);
 check('data curta e XP atualizados no cabeçalho', /^\d{2}\/\d{2}$/.test($('header-today-date').textContent) && $('header-xp-display').textContent.endsWith(' XP'));
-check('Perfil Global soma o XP dos dez temas', !!$('global-profile-xp') && $('global-profile-xp').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP`);
+check('Perfil Global soma o XP dos doze temas', !!$('global-profile-xp') && $('global-profile-xp').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP`);
 navTo('boss');
 check('grupo Jogo preserva Boss e Story Card', !$('tab-content-boss').classList.contains('hidden') && !!$('nav-boss') && !!$('nav-story'));
 check('Boss mostra a fraqueza semanal dinâmica e o multiplicador dobrado', $('active-boss-card').textContent.includes('Fraqueza da semana') && $('active-boss-card').textContent.includes('×2'));
@@ -48,19 +48,19 @@ check('IDs e retratos (webp) dos quatro chefões clássicos preservados', ev("TH
 check('seletor antigo de tema foi removido de Config', !$('game-theme-select') && !$('game-theme-desc'));
 check('Story Card remove paletas antigas', !$('btn-theme-berzerker') && !$('btn-theme-cyberpunk') && !$('btn-theme-minimal') && !/Cyberpunk|Minimalist|Berzerker Red/.test($('tab-content-story').textContent));
 check('Story Card preserva upload e controle de escurecimento', !!$('bg-image-input') && !!$('bg-overlay-opacity') && $('bg-overlay-opacity').type === 'range');
-check('paleta, moldura e fontes estão vinculadas aos dez temas', ev("Object.keys(THEMES).length === 10 && Object.keys(THEMES).every(id => STORY_CARD_STYLES[id] && STORY_CARD_STYLES[id].palette && STORY_CARD_STYLES[id].fonts && THEME_ICONS[id])") && /THEME\.frame/.test(fonteJs()));
+check('paleta, moldura e fontes estão vinculadas aos doze temas', ev("Object.keys(THEMES).length === 12 && Object.keys(THEMES).every(id => STORY_CARD_STYLES[id] && STORY_CARD_STYLES[id].palette && STORY_CARD_STYLES[id].fonts && THEME_ICONS[id])") && /THEME\.frame/.test(fonteJs()));
 let legacyStoryStyleIgnored = true;
 try { ev("safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({ selectedStoryTheme: 'cyberpunk' })); loadStoredData(); generateStoryCard();"); } catch (e) { legacyStoryStyleIgnored = false; }
 check('estilo legado salvo é ignorado sem erro', legacyStoryStyleIgnored);
 check('selo do tema usa a arte própria (não emoji)', !!$('story-theme-icon').querySelector('img'));
 check('emblema de patente aponta para a arte do tema e nível certos', ev("rankEmblemSrc('aneis',10)") === 'images/patentes/aneis-10.webp' && ev("rankEmblemSrc('zodiaco',1)") === 'images/patentes/zodiaco-01.webp' && ev("rankEmblemSrc('tema-inexistente',3)") === 'images/patentes/classico-03.webp');
-check('arte própria dos 10 temas tem ícone e fundo de card', ev("THEME_IDS_LIST.every(id => !!THEME_ICON_IMGS[id] && !!THEME_CARD_BGS[id])") && ev("THEME_IDS_LIST.length") === 10);
+check('arte própria dos 12 temas tem ícone e fundo de card', ev("THEME_IDS_LIST.every(id => !!THEME_ICON_IMGS[id] && !!THEME_CARD_BGS[id])") && ev("THEME_IDS_LIST.length") === 12);
 check('Story Card mostra o tema de jogo atual', $('story-theme-name').textContent === ev('THEME.name') && $('story-theme-icon').querySelector('img').getAttribute('src') === 'images/temas/classico.webp');
 click($('header-theme-button'));
 ev("showRanksModal('classico');");
 check('modal de patentes mostra os dez emblemas próprios', ($('ranks-overlay')?.querySelectorAll('img')?.length || 0) >= 10 && $('ranks-overlay').innerHTML.includes('images/patentes/classico-10.webp'));
 ev("document.getElementById('ranks-overlay')?.remove();");
-check('botão do tema abre dez cartões com ícone, patente e progresso', !!$('theme-gallery-overlay') && $('theme-gallery-overlay').querySelectorAll('[data-theme-id]').length === 10 && $('theme-gallery-overlay').textContent.includes('Patente global') && $('theme-gallery-overlay').textContent.includes('chefões'));
+check('botão do tema abre doze cartões com ícone, patente e progresso', !!$('theme-gallery-overlay') && $('theme-gallery-overlay').querySelectorAll('[data-theme-id]').length === 12 && $('theme-gallery-overlay').textContent.includes('Patente global') && $('theme-gallery-overlay').textContent.includes('chefões'));
 const galleryIds = ev('THEME_IDS_LIST');
 const galleryEmblemSrc = id => ev(`rankEmblemSrc('${id}', rankFromXP(computeGlobalXPCtx().xp, themeRankList(THEMES['${id}'])).level)`);
 check('galeria de temas mostra emblema de patente em vez de emoji residual',
@@ -97,7 +97,7 @@ check('Story Card segue o tema Senhor dos Anéis', $('story-theme-name').textCon
 ev("changeGameTheme('classico');");
 check('histórico renderizado', !!$('history-content'));
 check('CSV multi-aba: Log com 22 colunas v1 + 6 do formato 2 + PR informativo (parser com aspas)', (() => { const r = ev("parseCSVRows(buildPlanilhaCSV().split(/--- Sheet: Log ---/)[1].split(/--- Sheet:/)[0].trim(), ';')"); return r[0].length === 29 && r[1].length === 29; })());
-check('todos os 120 chefões têm retrato padrão (Ação e Anéis inclusive)', ev("Object.keys(THEMES).every(id => THEMES[id].bosses.every(b => !!DEFAULT_BOSS_PORTRAITS[id + ':' + b.id]))"));
+check('todos os 144 chefões têm retrato padrão (Ação, Anéis, ThunderCats e Office inclusive)', ev("Object.keys(THEMES).every(id => THEMES[id].bosses.every(b => !!DEFAULT_BOSS_PORTRAITS[id + ':' + b.id]))"));
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fonteJs()) && /frame === 'espacial'/.test(fonteJs()));
 const appSrcFrames = fonteJs();
 check('molduras de ferro (clássico) e de anel (Senhor dos Anéis) desenhadas à mão', /frame === 'ferro'/.test(appSrcFrames) && /frame === 'anel'/.test(appSrcFrames));
@@ -108,7 +108,7 @@ let framesOk = true, framesErr = '';
 try {
     ev("openBossDefeatCard(); window.__themeBackup = THEME; THEME_IDS_LIST.forEach(id => { THEME = THEMES[id]; drawThemedFrame(document.getElementById('story-canvas').getContext('2d'), STORY_CARD_STYLES[id].palette); drawThemedFrame(document.getElementById('boss-card-canvas').getContext('2d'), { borderPrimary: '#dc2626' }); }); generateStoryCard(); generateBossDefeatCard(); THEME = window.__themeBackup; delete window.__themeBackup; document.getElementById('boss-card-overlay')?.remove();");
 } catch (e) { framesOk = false; framesErr = e.message; }
-check('as dez molduras desenham sem erro (story card + card do chefão)', framesOk && !!ev('THEME'), framesErr);
+check('as doze molduras desenham sem erro (story card + card do chefão)', framesOk && !!ev('THEME'), framesErr);
 
 // ============================ LIGHTBOX DOS CHEFÕES ============================
 console.log('\n== UI 1b. Lightbox dos chefões ==');

@@ -130,9 +130,9 @@ async function disparaFetch(sw, url, { method = 'GET', mode = 'cors' } = {}) {
     const cardsDisco = fs.readdirSync(path.join(REPO, 'images', 'cards')).filter(f => f.endsWith('.webp')).sort().map(f => './images/cards/' + f);
     const b5Disco = [...patentesDisco, ...cardsDisco];
     const b5Bytes = b5Disco.reduce((soma, p) => soma + fs.statSync(path.join(REPO, p.slice(2))).size, 0);
-    check('B5: disco tem 100 patentes + 10 cards = 110 imagens .webp', patentesDisco.length === 100 && cardsDisco.length === 10 && b5Disco.length === 110, [patentesDisco.length, cardsDisco.length]);
-    check('B5: todas as 110 imagens de patentes/cards estão no CORE (sem extras desses diretórios)', b5Disco.every(b => sw.CORE.includes(b)) && sw.CORE.filter(p => /^\.\/images\/(patentes|cards)\//.test(p)).length === 110, sw.CORE.filter(p => /^\.\/images\/(patentes|cards)\//.test(p)).length);
-    check('B5: tamanho total das 110 imagens fica na faixa esperada (~1,2 MB)', b5Bytes > 1_000_000 && b5Bytes < 1_300_000, b5Bytes);
+    check('B5: disco tem 120 patentes + 12 cards = 132 imagens .webp', patentesDisco.length === 120 && cardsDisco.length === 12 && b5Disco.length === 132, [patentesDisco.length, cardsDisco.length]);
+    check('B5: todas as 132 imagens de patentes/cards estão no CORE (sem extras desses diretórios)', b5Disco.every(b => sw.CORE.includes(b)) && sw.CORE.filter(p => /^\.\/images\/(patentes|cards)\//.test(p)).length === 132, sw.CORE.filter(p => /^\.\/images\/(patentes|cards)\//.test(p)).length);
+    check('B5: tamanho total das 132 imagens fica na faixa esperada (~1,5 MB)', b5Bytes > 1_400_000 && b5Bytes < 1_600_000, b5Bytes);
 
     console.log('\n== SW 2. Instalação ==');
     const r1 = await dispararCiclo(sw, 'install');
@@ -170,7 +170,7 @@ async function disparaFetch(sw, url, { method = 'GET', mode = 'cors' } = {}) {
     const rB5ok = await dispararCiclo(swB5, 'install');
     const cacheNovoB5 = await swB5.caches.open(swB5.CACHE);
     check('B5: removida a falha, a instalação completa é aprovada', rB5ok.every(x => x.status === 'fulfilled'), rB5ok.map(x => x.status));
-    check('B5: após a recuperação, todas as 110 imagens estão no cache novo', b5Disco.every(p => cacheNovoB5.m.has(new FakeRequest(p).url)), b5Disco.filter(p => !cacheNovoB5.m.has(new FakeRequest(p).url)).slice(0, 3));
+    check('B5: após a recuperação, todas as 132 imagens estão no cache novo', b5Disco.every(p => cacheNovoB5.m.has(new FakeRequest(p).url)), b5Disco.filter(p => !cacheNovoB5.m.has(new FakeRequest(p).url)).slice(0, 3));
     const rB5ativa = await dispararCiclo(swB5, 'activate');
     const nomesAposAtiva = await swB5.caches.keys();
     check('B5: só após a instalação completa a ativação troca para a nova versão', rB5ativa.every(x => x.status === 'fulfilled') && nomesAposAtiva.includes(swB5.CACHE) && !nomesAposAtiva.includes('berzerker-v46'), nomesAposAtiva);

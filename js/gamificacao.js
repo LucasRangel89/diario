@@ -256,6 +256,48 @@ const THEMES = {
             ['Gollum, o Portador Caído', '💍', 'Sméagol, consumido pelo Anel, guia os hobbits até Mordor.', 'Posterior', 'O impulso agachado na borda do Monte da Perdição.'],
             ['Sauron, o Senhor do Anel', '👁️', 'O poder de Barad-dûr: quem forjou o Um Anel e procura o portador.', 'Antebraço', 'A mão que porta o Um Anel é o elo que sustenta o poder.']
         ])
+    },
+    thundercats: {
+        id: 'thundercats', name: 'ThunderCats',
+        desc: 'Da Terceira Terra à Lenda de Thundera: os inimigos dos ThunderCats e o Olho de Thundera. Patentes originais do app, sem escala canônica da série.',
+        arena: 'Terceira Terra — Toca dos Gatos', bossLabel: 'INIMIGO ATIVO', stageWord: 'DESAFIO',
+        missionWord: 'Missão de Thundera', missionWordPlural: 'Missões de Thundera', frame: 'garra',
+        ranks: [['Sobrevivente de Thundera', '🐾'], ['Aprendiz da Terceira Terra', '🧭'], ['Explorador da Terceira Terra', '🗺️'], ['Sentinela da Toca dos Gatos', '🏰'], ['Guerreiro de Thundera', '⚔️'], ['Guardião do Código', '📜'], ['Portador da Espada Justiceira', '🗡️'], ['Protetor do Olho de Thundera', '👁️'], ['Senhor dos ThunderCats', '🦁'], ['Lenda de Thundera', '👑']],
+        bosses: mkBosses([
+            ['Jackalman', '🐺', 'Canídeo saqueador que ataca agachado e some depressa com o espólio.', 'Pernas', 'A fuga e o ataque agachado dependem das pernas rápidas.'],
+            ['Monkian', '🦍', 'Bruto símio de clava de pedra e escudo improvisado.', 'Ombros', 'A clava pesada gira a partir dos ombros a cada golpe.'],
+            ['Vultureman', '🦅', 'Inventor de asas mecânicas que ataca a partir da oficina voadora.', 'Costas', 'As asas mecânicas se prendem à estrutura das costas.'],
+            ['Slithe', '🦎', 'Comandante reptiliano que avança de machado em punho na linha de frente.', 'Peito', 'A investida frontal expõe o peito quando o machado desce.'],
+            ['Ratar-O', '🐀', 'Senhor da guerra murino com manoplas de poder brilhantes.', 'Bíceps', 'As manoplas canalizam a força dos braços a cada disparo.'],
+            ['Grune', '🦁', 'Guerreiro felino de presas enormes que empunha uma maça brutal.', 'Antebraço', 'A pegada da maça depende da firmeza do antebraço.'],
+            ['Safari Joe', '🎯', 'Caçador de alta tecnologia com viseira de mira e blaster preciso.', 'Antebraço', 'A mira do blaster depende da mão firme que o sustenta.'],
+            ['Captain Shiner', '🚀', 'Capitão espacial de uniforme naval escuro no corredor da nave.', 'Core', 'A postura de comando se sustenta no centro do corpo.'],
+            ['Hammerhand', '🔨', 'Pirata ciborgue cujo antebraço-martelo esmaga o convés.', 'Tríceps', 'O martelo desce pela extensão completa do braço.'],
+            ['The Driller', '🌀', 'Fera subterrânea de chifre-furadeira que rompe paredes de pedra.', 'Posterior', 'O avanço escavando nasce do impulso do quadril.'],
+            ['Mumm-Ra, forma mumificada', '🧟', 'Múmia feiticeira mirrada de cajado e facho vermelho na câmara do sarcófago.', 'Abdômen', 'O corpo mirrado concentra o poder no centro do tronco.'],
+            ['Mumm-Ra, forma poderosa', '💀', 'A forma musculosa do feiticeiro-múmia, de olhos e aura vermelhos. Desafio final do tema.', 'Core', 'A aura vermelha pulsa a partir do centro do corpo.']
+        ])
+    },
+    office: {
+        id: 'office', name: 'The Office',
+        desc: 'Da contratação à Lenda de Scranton: situações do expediente viram desafios, sem vilões e sem violência. Patentes de carreira originais do app.',
+        arena: 'Filial de Scranton', bossLabel: 'Desafio do expediente', stageWord: 'EXPEDIENTE',
+        missionWord: 'Tarefa do expediente', missionWordPlural: 'Tarefas do expediente', frame: 'caderno',
+        ranks: [['Recém-contratado', '🪪'], ['Assistente Administrativo', '📎'], ['Representante de Vendas', '📞'], ['Vendedor do Mês', '🏅'], ['Supervisor da Filial', '🗂️'], ['Assistente do Gerente Regional', '📋'], ['Assistente Gerente Regional', '💼'], ['Gerente Regional', '☕'], ['Diretor do Corporativo', '🏢'], ['Lenda de Scranton', '👑']],
+        bosses: mkBosses([
+            ['Impressora em pane', '🖨️', 'Impressora atolada com folhas voando e fumaça cômica no meio do escritório.', 'Antebraço', 'Desatolar papel e trocar o toner pedem mãos firmes e repetidas.'],
+            ['Reunião que poderia ser um e-mail', '📧', 'Sala de reunião vazia, quadro de rabiscos e uma tela em branco esperando.', 'Core', 'Horas sentado na mesma postura cobram o centro do corpo.'],
+            ['Grampeador na gelatina', '🍮', 'O clássico grampeador preso na gelatina verde sobre a mesa do colega.', 'Antebraço', 'Tirar o grampeador da gelatina pede pegada firme e paciência.'],
+            ['Inventário do depósito', '📦', 'Depósito com caixas, prateleiras e carrinho de mão para conferir tudo.', 'Costas', 'Levantar e empilhar caixas o dia inteiro carrega as costas.'],
+            ['Guerra das vendas', '📞', 'Duas mesas frente a frente com fones erguidos como bandeiras de batalha.', 'Ombros', 'Fone erguido e gestos de comemoração repetem-se nos ombros.'],
+            ['Comitê de festas', '🎉', 'Mesa de festa com balões, chapéus e bandeirolas sem letras na sala.', 'Abdômen', 'Montar, desmontar e rir da festa trabalham o centro do corpo.'],
+            ['Olimpíadas do escritório', '🏅', 'Corredor com fita de chegada de papel e cadeiras prontas para a prova.', 'Pernas', 'Corrida de cadeiras e provas no corredor vivem das pernas.'],
+            ['Simulado de incêndio do Dwight', '🚨', 'Alarme vermelho com fumaça falsa estilizada sobre as mesas, sem violência.', 'Posterior', 'Evacuar depressa, agachando entre as mesas, nasce do quadril.'],
+            ['Visita do corporativo', '🪪', 'Crachás de visitante e maletas alinhadas na recepção para a inspeção.', 'Peito', 'Postura aberta e apresentação firme começam pelo peito.'],
+            ['Crise da marca-d’água', '💧', 'Pôster arruinado por um borrão gigante de marca-d’água no meio da arte.', 'Tríceps', 'Erguer e estender pôsteres novos até o alto da parede.'],
+            ['Premiação dos Dundies', '🏆', 'Troféu dourado em mesa com cortina de papel para a grande noite. Vitória: problema resolvido.', 'Bíceps', 'Erguer o troféu no palco pede o braço inteiro, do ombro à mão.'],
+            ['Último expediente', '🌙', 'Escritório noturno com uma luminária acesa e o rodo encostado à porta.', 'Costas', 'Fechar a filial, arrastar móveis e limpar o salão carregam as costas.']
+        ])
     }
 };
 
