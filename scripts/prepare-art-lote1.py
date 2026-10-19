@@ -363,6 +363,14 @@ PECAS = [
     ('ut-configuracoes', 'Configurações', 'app', 'utilitarios',
      'lote10-configuracoes.png', 'utilitarios/configuracoes.webp',
      (512, 512), 'nearest', 'images/artes/candidatos/utilitarios/configuracoes.webp (cartela 10; sem vínculo com UI)'),
+    # Lote 11 (final) — fecha a cartela 10 (Calculadora de anilhas, Sem
+    # corridas): 98/98 peças do plano editorial. Sem vínculo com UI.
+    ('ut-calculadora-de-anilhas', 'Calculadora de anilhas', 'app', 'utilitarios',
+     'lote11-calculadora-anilhas.png', 'utilitarios/calculadora-de-anilhas.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/utilitarios/calculadora-de-anilhas.webp (cartela 10 completa; sem vínculo com UI)'),
+    ('ut-vazio-corridas', 'Sem corridas', 'app', 'estados-vazios',
+     'lote11-sem-corridas.png', 'utilitarios/vazio-corridas.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/utilitarios/vazio-corridas.webp (cartela 10 completa, estado vazio; sem vínculo com UI)'),
 ]
 
 # Notas de revisão peça a peça que complementam a nota genérica do método
@@ -380,6 +388,9 @@ NOTAS_EXTRA = {
     'ut-backup': ' Divergência registrada: fundo cinza liso (diverge da família escura das demais peças). REGRA CUMPRIDA: caixa fechada com cadeado e seta para cima — sem check nem sinal de conclusão.',
     'ut-restauracao': ' REGRA CUMPRIDA: caixa fechada com cadeado suspensa sobre bandeja vazia e seta para baixo — nada importado, sem check nem sinal de conclusão.',
     'ut-configuracoes': ' Divergência registrada: moldura metálica decorativa em volta de todo o quadro.',
+    'ut-vazio-corridas': ' Divergência registrada: cena emoldurada com margem escura em volta do quadro; marca abstrata laranja nos tênis (sem texto).',
+    'zd-moldura-ouro-webp': ' Divergência registrada: medalhões de canto com glifos zodiacais decorativos; colunas do Santuário nas laterais.',
+    'zd-moldura-cosmo-webp': ' Divergência registrada: primeira geração descartada na revisão (brilho roxo sobre o xadrez deixava resíduo nos cantos após o keying); geração final com bordas sólidas limpas e asas menores nos cantos superiores.',
     'tf-classico': ' Divergência registrada: moldura metálica decorativa em volta de todo o quadro.',
     'tf-zodiaco': ' Divergência registrada: roda do zodíaco com glifos/constelações abstratos ilegíveis nos segmentos.',
     'tf-hercules': ' Divergência registrada: moldura escura arredondada com cantos externos claros.',
@@ -408,6 +419,17 @@ MOLDURAS = [
      'lote1-moldura-office.png', 'office/molduras/moldura-office',
      [(200, 250)], [(118, 108)],  # semente extra: xadrez ilhado dentro do anel do café
      'Overlay de moldura do Card (referência 1080×1920); precisa de alfa confiável + teste nos canvases 1080×1920/1080×1080 antes de virar em uso'),
+    # Lote 11 — novas molduras do Card do tema zodiaco (Cavaleiros do
+    # Zodíaco): duas candidatas geradas; a moldura em uso segue a desenhada
+    # por código ('ouro' em js/cartoes.js) até teste nos canvases reais.
+    ('zd-moldura-ouro', 'Moldura Zodíaco — Ouro do Santuário', 'zodiaco',
+     'lote11-moldura-zodiaco-ouro.png', 'zodiaco/molduras/moldura-zodiaco-ouro',
+     [(170, 255)], [],
+     'Overlay de moldura do Card do tema zodiaco (referência 1080×1920); candidata — precisa de alfa confiável + teste nos canvases 1080×1920/1080×1080 antes de virar em uso'),
+    ('zd-moldura-cosmo', 'Moldura Zodíaco — Cosmo', 'zodiaco',
+     'lote11-moldura-zodiaco-cosmo.png', 'zodiaco/molduras/moldura-zodiaco-cosmo',
+     [(170, 255)], [],
+     'Overlay de moldura do Card do tema zodiaco (referência 1080×1920); candidata — precisa de alfa confiável + teste nos canvases 1080×1920/1080×1080 antes de virar em uso'),
 ]
 
 RESAMPLE = {'nearest': Image.Resampling.NEAREST, 'lanczos': Image.Resampling.LANCZOS}
@@ -428,7 +450,10 @@ def key_checker(im, bands, extra_seeds):
     px = im.load()
 
     def is_checker(r, g, b):
-        if max(r, g, b) - min(r, g, b) > 6:
+        # tolerância 12: o xadrez da moldura Cosmo do Zodíaco (lote 11) veio
+        # com leve tinta azulada (dif. ~10 entre canais); ouro/azul-marinho
+        # da arte têm dif. muito maior e não são atingidos.
+        if max(r, g, b) - min(r, g, b) > 12:
             return False
         y = (r + g + b) / 3
         return any(lo <= y <= hi for lo, hi in bands)
@@ -514,6 +539,24 @@ for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS:
         continue
     im = Image.open(src).convert('RGB')
     rgba, pct = key_checker(im, bands, extra)
+    if pid == 'zd-moldura-cosmo':
+        # Lote 11: o xadrez da Cosmo tem manchas com tinta além da tolerância
+        # do flood-fill e deixava pontilhado residual. A moldura é retangular
+        # regular (medida na fonte: janela 110..657 × 129..1246; borda externa
+        # a partir de x=45/y=60), então a janela e o exterior são limpos por
+        # geometria revisada — só o anel da moldura mantém o alfa do keying.
+        from PIL import ImageDraw
+        alpha = rgba.getchannel('A')
+        d = ImageDraw.Draw(alpha)
+        w, h = alpha.size
+        d.rectangle([0, 0, w, 59], fill=0)
+        d.rectangle([0, 1317, w, h], fill=0)
+        d.rectangle([0, 0, 44, h], fill=0)
+        d.rectangle([724, 0, w, h], fill=0)
+        d.rectangle([109, 128, 658, 1247], fill=0)
+        rgba.putalpha(alpha)
+        hist = alpha.histogram()
+        pct = hist[0] / (w * h)
     # Mestre PNG sem perda fica FORA do Git (cache); só o WebP com alfa é versionado.
     mestre = SRC / 'derivados' / (dest + '.png')
     mestre.parent.mkdir(parents=True, exist_ok=True)
@@ -527,7 +570,7 @@ for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS:
         saida=rel(saida), largura=rgba.width, altura=rgba.height,
         formato='webp', transparencia=f'alfa por keying do xadrez pintado ({pct:.0%} do quadro; mediana 3 no alfa)',
         bytes=saida.stat().st_size, local_de_uso=uso, estado='candidato',
-        notas='Gerada SEM alfa nativo (RGB com xadrez desenhado — não é transparência). Keying flood-fill revisado em prova sobre card; halo leve nas bordas internas aceito como candidato. Mestre PNG sem perda em ' + rel(mestre) + ' (fora do Git; o script regenera). Não usar como overlay final sem novo teste nos canvases reais.'))
+        notas='Gerada SEM alfa nativo (RGB com xadrez desenhado — não é transparência). Keying flood-fill revisado em prova sobre card; halo leve nas bordas internas aceito como candidato. Mestre PNG sem perda em ' + rel(mestre) + ' (fora do Git; o script regenera). Não usar como overlay final sem novo teste nos canvases reais.' + NOTAS_EXTRA.get(f'{pid}-webp', '')))
 
 # Provas leves para revisão (montagem por código; fora do cache do app)
 OUT_PROVAS.mkdir(parents=True, exist_ok=True)
@@ -564,7 +607,7 @@ for pid, peca, tema, fname, dest, bands, extra, uso in MOLDURAS:
     m = Image.open(p)
     fundo = card.resize(m.size, Image.LANCZOS)
     fundo.paste(m, (0, 0), m)
-    fundo.save(OUT_PROVAS / f'moldura-{tema}-sobre-card.webp', 'WEBP', quality=82, method=6)
+    fundo.save(OUT_PROVAS / (Path(dest).name + '-sobre-card.webp'), 'WEBP', quality=82, method=6)
 
 # 3) cartela de revisão com TODOS os derivados (grade regular, sem legendas;
 # candidatos e, após o cadastro dos temas, também os arquivos finais)

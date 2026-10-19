@@ -117,6 +117,10 @@ Originais grandes em `.cache/artes-originais/lote*.png` (≈2 MB cada; `.cache/`
 
 **Lote 10 (chamadas 91–100) — fecha a cartela 9 e abre a cartela 10:** Troféu Gladiadores de Roma, Troféu Fantasia RPG, Troféu Comando Galáctico e Troféu Senhor dos Anéis (cartela 9 completa, 10/10); Diário sem registros, Busca sem resultados, Sem treinos salvos, Backup, Restauração e Configurações (cartela 10, 6/8; lista adotada de 8, faltam Calculadora de anilhas e Sem corridas). **Backup/Restauração revisadas contra a regra dura:** caixas fechadas com cadeado e seta de direção, sem check/abertura/conclusão — a confirmação é do sistema, nunca da ilustração (registrado por peça no manifesto).
 
+**Lote 11 (final, chamadas 101–102 + molduras) — fecha a cartela 10 e o plano editorial (98/98):** Calculadora de anilhas (barra montada no rack com anilhas coloridas ordenadas por tamanho) e Sem corridas (tênis ao lado da pista vazia ao amanhecer, quadro de rota em branco com trajeto pontilhado que se apaga). **Plano editorial completo: 98/98 peças produzidas.**
+
+**Molduras novas do Card — tema Cavaleiros do Zodíaco (lote 11, fora da contagem das 98):** duas candidatas geradas, `zodiaco/molduras/moldura-zodiaco-ouro.webp` (Ouro do Santuário: colunas gregas, medalhões zodiacais nos cantos) e `moldura-zodiaco-cosmo.webp` (Cosmo: azul-meia-noite, constelações, asas douradas). Alfa por keying do xadrez pintado, **revisado nas provas sobre card** (`docs/provas-lote1/moldura-zodiaco-*-sobre-card.webp`): a Ouro saiu limpa de primeira; a Cosmo teve a 1ª geração descartada (brilho roxo sobre o xadrez) e a 2ª precisou de limpeza geométrica da janela/exterior no pipeline (anel da moldura preservado do keying). **Seguem candidatas, fora do CORE e sem vínculo com a UI** — a moldura em uso do tema continua a `ouro` desenhada por código em `js/cartoes.js`; qualquer troca exige teste nos canvases 1080×1920/1080×1080 antes.
+
 Runas/marcas decorativas nos salões e placas são abstratas, **sem nomes, números ou legendas legíveis** (conforme especificação).
 
 ### 2.2 Imagens fornecidas pelo usuário
@@ -156,7 +160,7 @@ Nos lotes 1–5, os derivados nasceram em `images/artes/candidatos/` (fora do CO
 
 ### 2.4 Artes ainda pendentes
 
-**2 peças do plano editorial** (98 − 96 concluídas) + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats (24/24) e The Office (24/24) foram cadastrados na galeria nesta PR** com aprovação explícita do usuário (§6): os 48 arquivos saíram de `images/artes/candidatos/` para os caminhos finais e os registros correspondentes do manifesto estão `em uso` (ids preservados). Restam como candidatos as 10 de identidade, 12 de treino, 12 de cardio/equipamentos, os 10 troféus (cartela 9 completa), as 6 de estados vazios/utilitários do lote 10 e as 2 molduras (infraestrutura fora da contagem; os fundos são completude de tema, não constavam nas 98).
+**0 peças pendentes do plano editorial — 98/98 concluídas (lote 11)** + completude de tema: cada tema novo exige **24 arquivos** para a galeria (12 retratos + 10 patentes + 1 selo + 1 fundo). **ThunderCats (24/24) e The Office (24/24) foram cadastrados na galeria nesta PR** com aprovação explícita do usuário (§6): os 48 arquivos saíram de `images/artes/candidatos/` para os caminhos finais e os registros correspondentes do manifesto estão `em uso` (ids preservados). Restam como candidatos as 10 de identidade, 12 de treino, 12 de cardio/equipamentos, os 10 troféus (cartela 9 completa), as 8 de estados vazios/utilitários (cartela 10 completa) e as 4 molduras (2 TC/Office + 2 novas do Zodíaco; infraestrutura fora da contagem; os fundos são completude de tema, não constavam nas 98).
 
 ## 3. Provas visuais (`docs/provas-lote1/`, montadas por código)
 
@@ -194,7 +198,7 @@ As listas enviadas somam **98** (o rótulo "94" do pedido não fecha com as list
 | 7 | Treino — séries e descanso | 12 | **12 (completa)** | 0 |
 | 8 | Cardio e equipamentos | 12 | **12 (completa)** | 0 |
 | 9 | Troféus dos temas existentes | 10 | **10 (completa)** | 0 |
-| 10 | Estados vazios e utilitários | 8 | 6 (lote 10) | 2 (Calculadora de anilhas, Sem corridas) |
+| 10 | Estados vazios e utilitários | 8 | **8 (completa, lote 11)** | 0 |
 
 Notas editoriais mantidas do pedido: The Office trata situações como **desafios** (não personagens como vilões), sem violência gráfica; linguagem do tema proposta (Arena: Filial de Scranton; Boss: Desafio do expediente; Vitória: Problema resolvido; Patentes: Carreira na filial) foi **aprovada e aplicada no cadastro** (§6). Cartela 10: ilustrações de backup/restauração **nunca** podem sugerir que a operação aconteceu sem confirmação do sistema. Cartelas 7–8: o usuário decidiu **gerar tudo novo, sem reuso** dos ícones existentes (a contagem "94" fica superada; valem as 98 gerações). Os símbolos cíclicos `simbolo-ciclo-01/02` continuam ambíguos e **não** equivalem a bi-set/drop-set. Nada de regra nova de classificação de séries, conquistas ou condições de desbloqueio por causa de imagens.
 

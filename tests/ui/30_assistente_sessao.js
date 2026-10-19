@@ -114,7 +114,10 @@ check('migração do save legado roda sem erro', migrationLoadOk);
 check('logs e progresso antigo migram para o tema que estava ativo', ev("activeGameThemeId === 'roma' && logs.length === 1 && logs[0].xpTheme === 'roma' && missionsXpTotal === 123 && themeGameSaves.roma.missionsClaimed['2026-W41'] === true && themeGameSaves.roma.bossPortraits.b0.includes('roma')"));
 check('testes, peso e deload são carregados como dados compartilhados', ev("tests[0].name === 'Teste compartilhado' && weightLog[0].peso === 94 && deloadWeeks.join() === '2026-W41'"));
 const legacyRomaXP = ev("computeThemeXPCtx('roma').xp");
-check('XP de treino, missão e descanso fica somente no tema migrado', legacyRomaXP > 0 && ev("computeThemeXPCtx('classico').xp === 0") && ev("themeGameSaves.roma.deloadRestDays.length === 7"), legacyRomaXP);
+// Conta só os 7 dias da W41 legada: dias de descanso de semanas de deload
+// automáticas posteriores (conforme a data real da execução) são legítimos
+// e não podem quebrar esta checagem.
+check('XP de treino, missão e descanso fica somente no tema migrado', legacyRomaXP > 0 && ev("computeThemeXPCtx('classico').xp === 0") && ev("themeGameSaves.roma.deloadRestDays.filter(d => d >= '2026-10-05' && d <= '2026-10-11').length === 7"), legacyRomaXP);
 const romaSaveBeforeSwitch = ev('JSON.stringify(themeGameSaves.roma)');
 ev("changeGameTheme('classico'); missionsXpTotal = 999; missionsClaimed = { '2026-W42': true }; seasons = { start: '2026-10-12', completed: [] }; bossPortraits = { classicoOnly: 'classico' }; saveGameState();");
 check('trocar para outro jogo não altera o save de Roma', ev('JSON.stringify(themeGameSaves.roma)') === romaSaveBeforeSwitch);
