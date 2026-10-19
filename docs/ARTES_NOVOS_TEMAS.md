@@ -28,6 +28,8 @@ Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para a
 
 **Lote 12 (mesma sessão):** patentes **08–10 da Caverna** (10/10 fechadas) + os **7 primeiros monstros**. Ver §17.
 
+**Lote 13 (mesma sessão):** 5 monstros finais + **fundo da Caverna** + 4 retratos do upgrade do Office. **Caverna fecha 24/24 — quinto tema completo.** Ver §18.
+
 **Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**.
 
 ## 1. Capacidade e método
@@ -458,23 +460,45 @@ Total do lote: **10 arquivos, 474.614 bytes**. Todos candidatos.
 - **`caverna` está em 18/24**: selo, **10/10 patentes** e 7/12 monstros. Faltam Hidra, Lich, Dragão Vermelho, Tiamat, Vingador e o fundo de card.
 - Os monstros seguiram o repertório pedido (mímico, cubo, beholder, devorador) com o traço dos anos 80.
 
-## 18. Estratégia de lotes (10 imagens por sessão)
+## 18. Lote 13 — Caverna completa e Office em andamento
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Retrato — Hidra | `caverna/bosses/caverna-b08.webp` | 512×512 | 65.932 |
+| Retrato — Lich | `caverna/bosses/caverna-b09.webp` | 512×512 | 66.598 |
+| Retrato — Dragão Vermelho | `caverna/bosses/caverna-b10.webp` | 512×512 | 84.752 |
+| Retrato — Tiamat | `caverna/bosses/caverna-b11.webp` | 512×512 | 80.526 |
+| Retrato — Vingador | `caverna/bosses/caverna-b12.webp` | 512×512 | 77.258 |
+| Fundo — Caverna do Dragão | `caverna/cards/caverna.webp` | 1024×1024 | 130.324 |
+| Retrato — Angela | `office-us/bosses/office-us-b01.webp` | 512×512 | 35.872 |
+| Retrato — Dwight | `office-us/bosses/office-us-b02.webp` | 512×512 | 43.110 |
+| Retrato — Toby | `office-us/bosses/office-us-b03.webp` | 512×512 | 37.692 |
+| Retrato — Jan Levinson | `office-us/bosses/office-us-b04.webp` | 512×512 | 37.060 |
+
+Total do lote: **10 arquivos, 659.124 bytes**. Todos candidatos.
+
+- **`caverna` está em 24/24** — selo, fundo, 10 patentes e 12 monstros. **Quinto tema completo.**
+- **Office (upgrade):** 4 dos 6 retratos prontos (Angela, Dwight, Toby, Jan). Faltam **Robert California** e **Jo Bennett**, além do fundo e da moldura `memorando`.
+- Os quatro retratos usam a paleta de escritório (bege, cinza, azul, acento vermelho) e não a paleta de jogo dos temas novos, como manda o upgrade aprovado.
+- O script passou a mapear o prefixo `office` → `office-us`; antes ele avisava “tema desconhecido” para esses retratos.
+
+## 19. Estratégia de lotes (10 imagens por sessão)
 
 Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem.
 
-Situação após o lote 12: **avatar, vila, esgoto e springfield 24/24**; **caverna 18/24**; 6 retratos do Office pendentes. Restam **12 peças**:
+Situação após o lote 13: **cinco temas 24/24** (avatar, vila, esgoto, springfield, caverna); **Office (upgrade) 4/6 retratos**. Restam **2 peças de arte de jogo** + fundo e moldura:
 
-| Lote | Conteúdo | Fecha |
-|---:|---|---|
-| 13 | 5 monstros caverna + fundo caverna + 4 retratos Office | **caverna 24/24** |
-| final | 2 retratos Office + fundo Office + 4 molduras + cadastro e testes | **Office (upgrade)** |
+| Etapa | Conteúdo | Fecha |
+|---|---|---|
+| lote final | Robert California + Jo Bennett + fundo Office + moldura `memorando` | **Office (upgrade)** |
+| implementação | 5 entradas em `THEMES`, 4 molduras restantes, CORE, testes, navegador | galeria com 5 temas novos |
 
 - **Ponto de corte recomendado**: **três temas completos** (Avatar, Vila, Esgoto) já permitem abrir a PR e validar o fluxo de cadastro ponta a ponta. Os lotes 9–13 entram como commits incrementais.
 - Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v62 → v63**), mesmo sem CORE novo.
 - **Molduras** (`elementos`, `tv`, `tocha`, `memorando`, `sitcom`, `bueiro`) e **4 fundos de card** entram na sessão de implementação, junto do código que os usa: precisam de keying de alfa e teste nos canvases. Planejar 1 imagem por moldura **fora dos lotes de 10**.
 - Na sessão final o trabalho é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192, CORE do `sw.js`, testes de arte/tema e validação em navegador real.
 
-## 19. Pendências e decisões
+## 20. Pendências e decisões
 
 1. **The Office**: **upgrade aprovado pelo usuário em 19/10** (`docs/ANALISE_TEMA_OFFICE.md`, caminho A). Mantém o tema `office`, as 24 artes e a regra “sem vilões”; adota o vocabulário (Vendas, Negócio Fechado, Meta Semanal, Trimestre Fiscal, Festa do Comitê) e os 6 desafios com personagem da §5 daquele documento. O selo `office-us` do lote 1 passa a ser **identidade alternativa** do card, não um tema novo; o `office-us` como tema separado está **descartado**. Implementação fica para a sessão final (lote 14 + código).
 2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).

@@ -83,7 +83,7 @@ for origem in "$SRC"/patente-*.png; do
     case "$tema" in
         avatar) destino_tema=avatar ;;
         caverna) destino_tema=caverna ;;
-        scranton) destino_tema=office-us ;;
+        scranton|office) destino_tema=office-us ;;
         springfield) destino_tema=springfield ;;
         vila) destino_tema=vila ;;
         esgoto) destino_tema=esgoto ;;
@@ -105,7 +105,7 @@ for origem in "$SRC"/boss-*.png; do
     case "$tema" in
         avatar) destino_tema=avatar ;;
         caverna) destino_tema=caverna ;;
-        scranton) destino_tema=office-us ;;
+        scranton|office) destino_tema=office-us ;;
         springfield) destino_tema=springfield ;;
         vila) destino_tema=vila ;;
         esgoto) destino_tema=esgoto ;;
