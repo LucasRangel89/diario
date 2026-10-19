@@ -30,6 +30,8 @@ Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para a
 
 **Lote 13 (mesma sessão):** 5 monstros finais + **fundo da Caverna** + 4 retratos do upgrade do Office. **Caverna fecha 24/24 — quinto tema completo.** Ver §18.
 
+**Lote 14 (mesma sessão, revisão pedida pelo usuário):** **selo e 4 patentes de Springfield regerados**, 2 retratos do Office e **moldura `memorando`**. Ver §19.
+
 **Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**.
 
 ## 1. Capacidade e método
@@ -482,23 +484,50 @@ Total do lote: **10 arquivos, 659.124 bytes**. Todos candidatos.
 - Os quatro retratos usam a paleta de escritório (bege, cinza, azul, acento vermelho) e não a paleta de jogo dos temas novos, como manda o upgrade aprovado.
 - O script passou a mapear o prefixo `office` → `office-us`; antes ele avisava “tema desconhecido” para esses retratos.
 
-## 19. Estratégia de lotes (10 imagens por sessão)
+## 19. Lote 14 — revisão de Springfield + fim dos pendentes
+
+Pedido do usuário: “gerar as pendentes e refazer algumas dos Simpsons que ficaram ruins ou gerar novas alternativas”. Antes de regerar, montei a cartela completa do tema (24 peças) e classifiquei o que estava fraco.
+
+| Peça | Ação | Resultado |
+|---|---|---|
+| Selo de Springfield | **regerado** | v2: disco amarelo com rosquinha ocupando o 1:1, acabaram os **cantos pretos**. Alternativa em escudo (v3) foi gerada e **descartada** — destoa do formato circular dos outros cinco selos |
+| Patente 01 — Aluno de Springfield | regerada | sino grande + giz + maçã, alto contraste (antes: aviãozinho e lápis finos) |
+| Patente 02 — Entregador de Jornal | regerada | jornal enrolado com faixa vermelha e bolsas brancas |
+| Patente 05 — Funcionário do Mês | regerada | medalha grande com laço vermelho e estrela (antes: placa apagada) |
+| Patente 06 — Supervisor de Turno | regerada | apito grande com cordão, relógio e prancheta limpos (antes: três objetos miúdos) |
+| Patente 03 — Estagiário da Usina | tentativa **descartada** | gerei uma banca de frutas por engano — não corresponde à patente. O **original** (capacete, chave e haste) foi mantido |
+| Retratos 13, 15–24 | **mantidos** | passaram na revisão: o que parecia “ruim” era a escala das miniaturas |
+
+Arquivos derivados atualizados: `springfield/temas/springfield.webp` e as patentes 01, 02, 05 e 06. As versões antigas e as tentativas descartadas ficam **fora do Git** em `.cache/artes-originais/novos-temas/descartadas/` (voláteis, como todos os originais).
+
+**Pendentes fechados neste lote**
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Retrato — Robert California | `office-us/bosses/office-us-b05.webp` | 512×512 | 40.996 |
+| Retrato — Jo Bennett | `office-us/bosses/office-us-b06.webp` | 512×512 | 42.388 |
+| Moldura — Memorando | `office-us/molduras/moldura-office-us.webp` | 768×1152 | 27.474 |
+
+- **Office (upgrade) chega a 6/6 retratos.**
+- **Moldura `memorando`:** o gerador devolveu 1024×1536 (2:3), não o quadro 1080×1920 do card. O fundo magenta foi removido por keying, mas ficou **halo rosa fino** nas bordas externas — registrado no manifesto. Precisa de limpeza e recorte antes de uso; **não está aprovada para produção**.
+- Continua valendo: as outras 4 molduras (`elementos`, `tv`, `tocha`, `bueiro`/`sitcom`) não foram geradas.
+
+## 20. Estratégia de lotes (10 imagens por sessão)
 
 Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem.
 
-Situação após o lote 13: **cinco temas 24/24** (avatar, vila, esgoto, springfield, caverna); **Office (upgrade) 4/6 retratos**. Restam **2 peças de arte de jogo** + fundo e moldura:
+Situação após o lote 14: **cinco temas 24/24** (avatar, vila, esgoto, springfield, caverna) e **Office (upgrade) com 6/6 retratos**. Arte de jogo **completa**; o que resta é infraestrutura:
 
-| Etapa | Conteúdo | Fecha |
-|---|---|---|
-| lote final | Robert California + Jo Bennett + fundo Office + moldura `memorando` | **Office (upgrade)** |
-| implementação | 5 entradas em `THEMES`, 4 molduras restantes, CORE, testes, navegador | galeria com 5 temas novos |
+| Etapa | Conteúdo |
+|---|---|
+| geração opcional | 4 molduras (`elementos`, `tv`, `tocha`, `bueiro`) + 1 fundo de card do Office — podem vir na sessão de implementação, junto do código que usa cada uma |
+| implementação | 5 entradas em `THEMES` (ou 6, se o Office virar upgrade de fato), `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, `DEFAULT_BOSS_PORTRAITS` 144 → 204, molduras em `js/cartoes.js`, CORE do `sw.js`, testes e validação no navegador |
 
 - **Ponto de corte recomendado**: **três temas completos** (Avatar, Vila, Esgoto) já permitem abrir a PR e validar o fluxo de cadastro ponta a ponta. Os lotes 9–13 entram como commits incrementais.
 - Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v62 → v63**), mesmo sem CORE novo.
 - **Molduras** (`elementos`, `tv`, `tocha`, `memorando`, `sitcom`, `bueiro`) e **4 fundos de card** entram na sessão de implementação, junto do código que os usa: precisam de keying de alfa e teste nos canvases. Planejar 1 imagem por moldura **fora dos lotes de 10**.
 - Na sessão final o trabalho é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192, CORE do `sw.js`, testes de arte/tema e validação em navegador real.
 
-## 20. Pendências e decisões
+## 21. Pendências e decisões
 
 1. **The Office**: **upgrade aprovado pelo usuário em 19/10** (`docs/ANALISE_TEMA_OFFICE.md`, caminho A). Mantém o tema `office`, as 24 artes e a regra “sem vilões”; adota o vocabulário (Vendas, Negócio Fechado, Meta Semanal, Trimestre Fiscal, Festa do Comitê) e os 6 desafios com personagem da §5 daquele documento. O selo `office-us` do lote 1 passa a ser **identidade alternativa** do card, não um tema novo; o `office-us` como tema separado está **descartado**. Implementação fica para a sessão final (lote 14 + código).
 2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).

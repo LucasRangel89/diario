@@ -118,6 +118,31 @@ for origem in "$SRC"/boss-*.png; do
     echo "ok $destino"
 done
 
+# ---------- molduras (alfa por keying do fundo magenta) ----------
+# A moldura é gerada com fundo magenta chapado; o keying remove o exterior.
+# O centro já vem transparente. Halo residual fica registrado no manifesto.
+for origem in "$SRC"/moldura-*.png; do
+    [ -f "$origem" ] || continue
+    base="$(basename "$origem" .png)"
+    tema="$(printf '%s' "${base#moldura-}" | sed 's/-v[0-9]*$//')"
+    case "$tema" in
+        avatar) destino_tema=avatar ;;
+        caverna) destino_tema=caverna ;;
+        office|scranton) destino_tema=office-us ;;
+        springfield) destino_tema=springfield ;;
+        vila) destino_tema=vila ;;
+        esgoto) destino_tema=esgoto ;;
+        *) echo "AVISO: tema desconhecido em $origem" >&2; continue ;;
+    esac
+    destino="$OUT/$destino_tema/molduras/moldura-$destino_tema.webp"
+    mkdir -p "$(dirname "$destino")"
+    convert "$origem" -alpha set -fuzz 18% -transparent '#ff00ff' \
+        -fuzz 6% -transparent '#ff00ff' \
+        -filter Lanczos -resize 768x1376 -strip \
+        -define webp:method=6 -quality 86 "$destino"
+    echo "ok $destino"
+done
+
 # ---------- provas (montagem por código, nunca arte gerada) ----------
 prova_fila() { # <arquivo-saida> <altura> <arquivos...>
     local saida="$1" tam="$2"; shift 2
@@ -148,6 +173,7 @@ convert "$PROVAS/tmp-selos-192.webp" "$PROVAS/tmp-selos-56.webp" "$PROVAS/tmp-se
 
 prova_fila "$PROVAS/leitura-patentes-avatar.webp" 192 "$OUT"/avatar/patentes/avatar-*.webp
 prova_fila "$PROVAS/retratos-avatar.webp" 256 "$OUT"/avatar/bosses/avatar-b*.webp
+prova_fila "$PROVAS/leitura-patentes-springfield.webp" 192 "$OUT"/springfield/patentes/springfield-*.webp
 
 # Fundos: prova reduzida, com a mesma moldura escura de conferência (não é o card final)
 tmpf=$(mktemp -d)
