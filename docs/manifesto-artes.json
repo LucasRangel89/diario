@@ -129,8 +129,8 @@
     "transparencia": "opaco",
     "bytes": 10914,
     "local_de_uso": "images/temas/office.webp (selo do tema ao cadastrá-lo)",
-    "estado": "em uso",
-    "notas": "Redução lanczos de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado."
+    "estado": "aposentado",
+    "notas": "Redução lanczos de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado. Aposentado na v74: o upgrade aprovado do Office substituiu a arte por ofu-selo/ofu-fundo."
   },
   {
     "id": "to-fundo",
@@ -148,8 +148,8 @@
     "transparencia": "opaco",
     "bytes": 113040,
     "local_de_uso": "images/cards/office.webp (fundo do Story/Card do Chefão ao cadastrar o tema)",
-    "estado": "em uso",
-    "notas": "Redução none de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado."
+    "estado": "aposentado",
+    "notas": "Redução none de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado. Aposentado na v74: o upgrade aprovado do Office substituiu a arte por ofu-selo/ofu-fundo."
   },
   {
     "id": "tc-boss-jackalman",
@@ -585,8 +585,8 @@
     "transparencia": "opaco",
     "bytes": 45340,
     "local_de_uso": "images/bosses/inventario-do-deposito.webp (retrato do desafio ao cadastrar o tema)",
-    "estado": "em uso",
-    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado."
+    "estado": "aposentado",
+    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado. Aposentado na v74: o desafio virou personagem (Angela/Dwight/Toby/Jan/Robert California/Jo Bennett); o retrato de cena fica como arte de reserva, fora do precache."
   },
   {
     "id": "to-boss-guerra-das-vendas",
@@ -604,8 +604,8 @@
     "transparencia": "opaco",
     "bytes": 28666,
     "local_de_uso": "images/bosses/guerra-das-vendas.webp (retrato do desafio ao cadastrar o tema)",
-    "estado": "em uso",
-    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado."
+    "estado": "aposentado",
+    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado. Aposentado na v74: o desafio virou personagem (Angela/Dwight/Toby/Jan/Robert California/Jo Bennett); o retrato de cena fica como arte de reserva, fora do precache."
   },
   {
     "id": "to-boss-comite-de-festas",
@@ -623,8 +623,8 @@
     "transparencia": "opaco",
     "bytes": 35438,
     "local_de_uso": "images/bosses/comite-de-festas.webp (retrato do desafio ao cadastrar o tema)",
-    "estado": "em uso",
-    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado."
+    "estado": "aposentado",
+    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado. Aposentado na v74: o desafio virou personagem (Angela/Dwight/Toby/Jan/Robert California/Jo Bennett); o retrato de cena fica como arte de reserva, fora do precache."
   },
   {
     "id": "to-boss-olimpiadas-do-escritorio",
@@ -661,8 +661,8 @@
     "transparencia": "opaco",
     "bytes": 40076,
     "local_de_uso": "images/bosses/simulado-de-incendio-do-dwight.webp (retrato do desafio ao cadastrar o tema)",
-    "estado": "em uso",
-    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado."
+    "estado": "aposentado",
+    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado. Aposentado na v74: o desafio virou personagem (Angela/Dwight/Toby/Jan/Robert California/Jo Bennett); o retrato de cena fica como arte de reserva, fora do precache."
   },
   {
     "id": "to-boss-visita-do-corporativo",
@@ -680,8 +680,8 @@
     "transparencia": "opaco",
     "bytes": 26000,
     "local_de_uso": "images/bosses/visita-do-corporativo.webp (retrato do desafio ao cadastrar o tema)",
-    "estado": "em uso",
-    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado."
+    "estado": "aposentado",
+    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado. Aposentado na v74: o desafio virou personagem (Angela/Dwight/Toby/Jan/Robert California/Jo Bennett); o retrato de cena fica como arte de reserva, fora do precache."
   },
   {
     "id": "to-boss-crise-da-marca-dagua",
@@ -699,8 +699,8 @@
     "transparencia": "opaco",
     "bytes": 24690,
     "local_de_uso": "images/bosses/crise-da-marca-dagua.webp (retrato do desafio ao cadastrar o tema)",
-    "estado": "em uso",
-    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado."
+    "estado": "aposentado",
+    "notas": "Redução nearest de 1024×1024 (gerada em pixel art com brilhos suaves; sem esticar). Revisada individualmente. Cadastrada na galeria de temas nesta PR (aprovacao explicita do usuario): arquivo movido do candidato para o caminho final; id do manifesto preservado. Aposentado na v74: o desafio virou personagem (Angela/Dwight/Toby/Jan/Robert California/Jo Bennett); o retrato de cena fica como arte de reserva, fora do precache."
   },
   {
     "id": "to-boss-premiacao-dos-dundies",
@@ -1990,8 +1990,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 14534,
-    "local_de_uso": "images/temas/avatar.webp (selo do tema, ao cadastrá-lo)",
-    "estado": "candidato",
+    "local_de_uso": "images/temas/avatar.webp (selo do tema na galeria e no Story Card)",
+    "estado": "em uso",
     "notas": "Mandala de bronze com gases/água, pedra e fogo girando ao redor de um lótus branco; quatro glifos elementais nos pontos cardeais. Gerada sem alfa; fundo de pedra azul-escura faz parte da peça. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 1 dos novos temas (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado nesta PR."
   },
   {
@@ -2009,8 +2009,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 13946,
-    "local_de_uso": "images/temas/caverna.webp (selo do tema, ao cadastrá-lo)",
-    "estado": "candidato",
+    "local_de_uso": "images/temas/caverna.webp (selo do tema na galeria e no Story Card)",
+    "estado": "em uso",
     "notas": "Cabeça de dragão vermelho sobre pentagrama de bronze, dentro de aro de ferro e ouro com tochas; silhueta de d20 no fundo. Gerada sem alfa. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 1 dos novos temas (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado nesta PR."
   },
   {
@@ -2028,9 +2028,9 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 10040,
-    "local_de_uso": "images/temas/office-us.webp (selo do tema, se cadastrado; ver colisão com o tema office existente)",
-    "estado": "candidato",
-    "notas": "Resma de papel com faixa azul, clipe dourado, anel de café e carimbo geométrico vermelho (sem letras). Gerada sem alfa. Redução Lanczos 1254→192; é o selo de leitura mais fraca a 28 px (papel bege sobre fundo claro), silhueta ainda reconhecível. Produzida no lote 1 dos novos temas (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado nesta PR."
+    "local_de_uso": "images/temas/office.webp (identidade memorando do tema office na v74)",
+    "estado": "em uso",
+    "notas": "Resma de papel com faixa azul, clipe dourado, anel de café e carimbo geométrico vermelho (sem letras). Gerada sem alfa. Redução Lanczos 1254→192; é o selo de leitura mais fraca a 28 px (papel bege sobre fundo claro), silhueta ainda reconhecível. Produzida no lote 1 dos novos temas (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado nesta PR. Substituiu o selo antigo (to-selo) no upgrade aprovado do Office (v74)."
   },
   {
     "id": "sp-selo",
@@ -2047,8 +2047,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 15134,
-    "local_de_uso": "images/temas/springfield.webp (selo do tema, ao cadastrá-lo)",
-    "estado": "candidato",
+    "local_de_uso": "images/temas/springfield.webp (selo do tema na galeria e no Story Card)",
+    "estado": "em uso",
     "notas": "Selo regerado no lote 14: disco amarelo com rosquinha, agora em quadro que preenche o 1:1 — elimina os cantos pretos registrados na v1. Alternativa em escudo (selo-springfield-v3) descartada: destoa do formato circular dos demais selos. Original v1 preservado fora do Git em .cache/artes-originais/novos-temas/descartadas/. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px."
   },
   {
@@ -2066,8 +2066,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 11530,
-    "local_de_uso": "images/temas/vila.webp (selo do tema, ao cadastrá-lo)",
-    "estado": "candidato",
+    "local_de_uso": "images/temas/vila.webp (selo do tema na galeria e no Story Card)",
+    "estado": "em uso",
     "notas": "Barril com sanduíche de presunto dentro de moldura de TV de tubo, com scanlines e aberração cromática leve. Gerada sem alfa. Redução Lanczos 1254→192. Produzida no lote 1 dos novos temas (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado nesta PR."
   },
   {
@@ -2085,8 +2085,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12948,
-    "local_de_uso": "images/temas/esgoto.webp (selo do tema, ao cadastrá-lo)",
-    "estado": "candidato",
+    "local_de_uso": "images/temas/esgoto.webp (selo do tema na galeria e no Story Card)",
+    "estado": "em uso",
     "notas": "Tampa de bueiro de aço com pátina e concha em relevo, quatro rebites nas cores das bandanas e vapor verde. Gerada sem alfa. Redução Lanczos 1254→192. Produzida no lote 1 dos novos temas (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado nesta PR."
   },
   {
@@ -2104,8 +2104,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 177730,
-    "local_de_uso": "images/cards/avatar.webp (fundo do Story/Card do tema); candidato — falta teste no canvas 1080×1920/1080×1080 e sob retrato/texto",
-    "estado": "candidato",
+    "local_de_uso": "images/cards/avatar.webp (fundo do Story Card e do Card do Chefão)",
+    "estado": "em uso",
     "notas": "Pátio de templo ao entardecer com quatro santuários elementais e praça central de meditação com lótus pintado; centro calmo e de baixo contraste. Sem pessoas e sem texto. Mantida em 1024×1024, WebP q80 (PSNR ~34 dB contra o PNG de referência). Produzida no lote 1 dos novos temas (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado nesta PR."
   },
   {
@@ -2123,8 +2123,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 223240,
-    "local_de_uso": "images/cards/vila.webp (fundo do Story/Card do tema); candidato — falta teste no canvas 1080×1920/1080×1080 e sob retrato/texto",
-    "estado": "candidato",
+    "local_de_uso": "images/cards/vila.webp (fundo do Story Card e do Card do Chefão)",
+    "estado": "em uso",
     "notas": "Pátio de vila ao entardecer com barril em primeiro plano, vara de roupa, portas coloridas, plantas e granulado de fita; centro aberto. Sem pessoas e sem texto. Mantida em 1024×1024, WebP q80 (PSNR ~29 dB contra o PNG de referência). Produzida no lote 1 dos novos temas (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado nesta PR."
   },
   {
@@ -2142,8 +2142,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 14480,
-    "local_de_uso": "images/patentes/avatar-01.webp (patente 1/10 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/avatar-01.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Tigela de arroz, chapéu de palha e cabana de pedra. Família de medalhões de bronze sobre pedra azul-escura, progressão por elemento até o Avatar. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 2 (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado."
   },
   {
@@ -2161,8 +2161,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 15108,
-    "local_de_uso": "images/patentes/avatar-02.webp (patente 2/10 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/avatar-02.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Contas de oração, sino de bronze e incenso. Família de medalhões de bronze sobre pedra azul-escura, progressão por elemento até o Avatar. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 2 (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado."
   },
   {
@@ -2180,8 +2180,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 15222,
-    "local_de_uso": "images/patentes/avatar-03.webp (patente 3/10 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/avatar-03.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Onda em espiral, lua crescente e tigela de pedra. Família de medalhões de bronze sobre pedra azul-escura, progressão por elemento até o Avatar. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 2 (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado."
   },
   {
@@ -2199,8 +2199,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 13578,
-    "local_de_uso": "images/patentes/avatar-04.webp (patente 4/10 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/avatar-04.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Pilha de pedras musgosas com broto. Família de medalhões de bronze sobre pedra azul-escura, progressão por elemento até o Avatar. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 2 (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado."
   },
   {
@@ -2218,8 +2218,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 13760,
-    "local_de_uso": "images/patentes/avatar-05.webp (patente 5/10 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/avatar-05.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Chama de três línguas em braseiro de bronze. Família de medalhões de bronze sobre pedra azul-escura, progressão por elemento até o Avatar. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 2 (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado."
   },
   {
@@ -2237,8 +2237,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 14650,
-    "local_de_uso": "images/patentes/avatar-06.webp (patente 6/10 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/avatar-06.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Espiral de vento, nuvens e sino de vento. Família de medalhões de bronze sobre pedra azul-escura, progressão por elemento até o Avatar. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 2 (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado."
   },
   {
@@ -2256,8 +2256,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 16208,
-    "local_de_uso": "images/patentes/avatar-07.webp (patente 7/10 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/avatar-07.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Lótus branco flutuando em água escura. Família de medalhões de bronze sobre pedra azul-escura, progressão por elemento até o Avatar. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 2 (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado."
   },
   {
@@ -2275,8 +2275,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 14756,
-    "local_de_uso": "images/patentes/avatar-08.webp (patente 8/10 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/avatar-08.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Quatro símbolos elementais ao redor de um cajado. Família de medalhões de bronze sobre pedra azul-escura, progressão por elemento até o Avatar. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 2 (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado."
   },
   {
@@ -2294,8 +2294,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 16702,
-    "local_de_uso": "images/patentes/avatar-09.webp (patente 9/10 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/avatar-09.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Espírito luminoso em forma de pipa-manta. Família de medalhões de bronze sobre pedra azul-escura, progressão por elemento até o Avatar. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 2 (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado."
   },
   {
@@ -2313,8 +2313,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 16222,
-    "local_de_uso": "images/patentes/avatar-10.webp (patente 10/10 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/avatar-10.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Quatro orbes e lótus branco com motivo de flecha. Família de medalhões de bronze sobre pedra azul-escura, progressão por elemento até o Avatar. Redução Lanczos 1254→192; leitura conferida a 192/56/28 px. Produzida no lote 2 (scripts/prepare-art-novos-temas.sh); nenhum tema cadastrado."
   },
   {
@@ -2332,8 +2332,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 65294,
-    "local_de_uso": "images/bosses/avatar-b01.webp (retrato do chefe 1/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/mercador-de-repolhos.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Comerciante nervoso de chapéu redondo e carroça de repolhos voando; expressão cômica de susto, sem violência. Arquétipo En; fraqueza proposta: Pernas. Fundo de pedra azul-escura com moldura geométrica comum aos dez. Redução Lanczos 1254→512 (escala não inteira); prova em docs/provas-novos-temas/retratos-avatar.webp. Lote 3; nenhum tema cadastrado."
   },
   {
@@ -2351,8 +2351,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 52486,
-    "local_de_uso": "images/bosses/avatar-b02.webp (retrato do chefe 2/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/arqueiras-yuyan.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Arqueira encapuzada de armadura carmesim tensionando o arco; duas silhuetas de arqueiras ao fundo. Arquétipo En; fraqueza proposta: Ombros. Fundo de pedra azul-escura com moldura geométrica comum aos dez. Redução Lanczos 1254→512 (escala não inteira); prova em docs/provas-novos-temas/retratos-avatar.webp. Lote 3; nenhum tema cadastrado."
   },
   {
@@ -2370,8 +2370,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 61494,
-    "local_de_uso": "images/bosses/avatar-b03.webp (retrato do chefe 3/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/comandante-zhao.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Comandante naval arrogante, armadura azul-marinho com gola alta e cicatriz no rosto; punho em chamas. Arquétipo Tq; fraqueza proposta: Peito. Fundo de pedra azul-escura com moldura geométrica comum aos dez. Redução Lanczos 1254→512 (escala não inteira); prova em docs/provas-novos-temas/retratos-avatar.webp. Lote 3; nenhum tema cadastrado."
   },
   {
@@ -2389,8 +2389,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 65436,
-    "local_de_uso": "images/bosses/avatar-b04.webp (retrato do chefe 4/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/jet.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Jovem rebelde com espadas-gancho cruzadas e talo de trigo na boca; copa de árvore desfocada ao fundo. Arquétipo Vl; fraqueza proposta: Pernas. Fundo de pedra azul-escura com moldura geométrica comum aos dez. Redução Lanczos 1254→512 (escala não inteira); prova em docs/provas-novos-temas/retratos-avatar.webp. Lote 3; nenhum tema cadastrado."
   },
   {
@@ -2408,8 +2408,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 50174,
-    "local_de_uso": "images/bosses/avatar-b05.webp (retrato do chefe 5/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/principe-zuko.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Príncipe exilado de topete e cicatriz de queimadura sobre o olho; chama flutuando na palma aberta. Arquétipo Vl; fraqueza proposta: Ombros. Fundo de pedra azul-escura com moldura geométrica comum aos dez. Redução Lanczos 1254→512 (escala não inteira); prova em docs/provas-novos-temas/retratos-avatar.webp. Lote 3; nenhum tema cadastrado."
   },
   {
@@ -2427,8 +2427,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 50744,
-    "local_de_uso": "images/bosses/avatar-b06.webp (retrato do chefe 6/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/long-feng.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Oficial da corte de vestes verde e dourado, cabelo preso e leque fechado ao peito; portão do palácio ao fundo. Arquétipo En; fraqueza proposta: Costas. Fundo de pedra azul-escura com moldura geométrica comum aos dez. Redução Lanczos 1254→512 (escala não inteira); prova em docs/provas-novos-temas/retratos-avatar.webp. Lote 3; nenhum tema cadastrado."
   },
   {
@@ -2446,8 +2446,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 43068,
-    "local_de_uso": "images/bosses/avatar-b07.webp (retrato do chefe 7/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/koh-o-ladrao-de-rostos.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Espírito encapuzado com rosto oval vazio, cercado por cinco máscaras de expressões distintas e fumaça fina. Arquétipo Cl; fraqueza proposta: Core. Fundo de pedra azul-escura com moldura geométrica comum aos dez. Redução Lanczos 1254→512 (escala não inteira); prova em docs/provas-novos-temas/retratos-avatar.webp. Lote 3; nenhum tema cadastrado."
   },
   {
@@ -2465,8 +2465,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 78766,
-    "local_de_uso": "images/bosses/avatar-b08.webp (retrato do chefe 8/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/wan-shi-tong.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Coruja-espírito colossal, disco facial preto e branco, olhos amarelos e pergaminho preso na garra; estantes ao fundo. Arquétipo Tq; fraqueza proposta: Core. Fundo de pedra azul-escura com moldura geométrica comum aos dez. Redução Lanczos 1254→512 (escala não inteira); prova em docs/provas-novos-temas/retratos-avatar.webp. Lote 3; nenhum tema cadastrado."
   },
   {
@@ -2484,8 +2484,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 51214,
-    "local_de_uso": "images/bosses/avatar-b09.webp (retrato do chefe 9/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/hama.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Anciã dobradora de sangue em túnica de prisão, mãos erguidas com dedos curvos e tentáculos finos de água. Arquétipo Cl; fraqueza proposta: Antebraço. Fundo de pedra azul-escura com moldura geométrica comum aos dez. Redução Lanczos 1254→512 (escala não inteira); prova em docs/provas-novos-temas/retratos-avatar.webp. Lote 3; nenhum tema cadastrado."
   },
   {
@@ -2503,8 +2503,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 61270,
-    "local_de_uso": "images/bosses/avatar-b10.webp (retrato do chefe 10/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/homem-combustao.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Assassino de máscara branca de porcelana com terceiro olho pintado e jorro de fogo sob o queixo; telhados em chamas ao fundo. Arquétipo Cl; fraqueza proposta: Peito. Fundo de pedra azul-escura com moldura geométrica comum aos dez. Redução Lanczos 1254→512 (escala não inteira); prova em docs/provas-novos-temas/retratos-avatar.webp. Lote 3; nenhum tema cadastrado."
   },
   {
@@ -2522,8 +2522,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 66240,
-    "local_de_uso": "images/bosses/avatar-b11.webp (retrato do chefe 11/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/azula.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Princesa do fogo, topete com peça dourada, armadura carmesim e chama azul na mão erguida; sorriso confiante. Arquétipo Vl; fraqueza proposta: Ombros. Mesma moldura geométrica e fundo de pedra dos retratos 01–10. Redução Lanczos 1254→512. Lote 4; fecha os 12 retratos do tema avatar."
   },
   {
@@ -2541,8 +2541,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 62282,
-    "local_de_uso": "images/bosses/avatar-b12.webp (retrato do chefe 12/12 do tema avatar, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/ozai-o-senhor-do-fogo.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Senhor do Fogo de coroa dourada em forma de chama, manto carmesim e as duas mãos em chamas; colunas do trono ao fundo. Arquétipo Ms; fraqueza proposta: Peito. Mesma moldura geométrica e fundo de pedra dos retratos 01–10. Redução Lanczos 1254→512. Lote 4; fecha os 12 retratos do tema avatar."
   },
   {
@@ -2560,8 +2560,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 8796,
-    "local_de_uso": "images/patentes/vila-01.webp (patente 1/10 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/vila-01.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Barril de madeira com manta listrada, varal e antena torta. Família de medalhões dourados com fundo verde-azulado, scanlines de TV de tubo e granulado de fita. Redução Lanczos 1254→192; leitura conferida na prova do lote. Lote 4; faltam as patentes 09 e 10."
   },
   {
@@ -2579,8 +2579,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 8510,
-    "local_de_uso": "images/patentes/vila-02.webp (patente 2/10 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/vila-02.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Boné remendado, caneca amassada, calça puída e pião. Família de medalhões dourados com fundo verde-azulado, scanlines de TV de tubo e granulado de fita. Redução Lanczos 1254→192; leitura conferida na prova do lote. Lote 4; faltam as patentes 09 e 10."
   },
   {
@@ -2598,8 +2598,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 9202,
-    "local_de_uso": "images/patentes/vila-03.webp (patente 3/10 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/vila-03.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Balcão de venda com sino, bolsa de moedas e vassoura. Família de medalhões dourados com fundo verde-azulado, scanlines de TV de tubo e granulado de fita. Redução Lanczos 1254→192; leitura conferida na prova do lote. Lote 4; faltam as patentes 09 e 10."
   },
   {
@@ -2617,8 +2617,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 8948,
-    "local_de_uso": "images/patentes/vila-04.webp (patente 4/10 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/vila-04.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Fantasia de herói no cabide com capa vermelha e marreta de brinquedo. Família de medalhões dourados com fundo verde-azulado, scanlines de TV de tubo e granulado de fita. Redução Lanczos 1254→192; leitura conferida na prova do lote. Lote 4; faltam as patentes 09 e 10."
   },
   {
@@ -2636,8 +2636,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 10310,
-    "local_de_uso": "images/patentes/vila-05.webp (patente 5/10 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/vila-05.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Dois discos de vinil com hastes e pontas amarelas, fio de cobre. Família de medalhões dourados com fundo verde-azulado, scanlines de TV de tubo e granulado de fita. Redução Lanczos 1254→192; leitura conferida na prova do lote. Lote 4; faltam as patentes 09 e 10."
   },
   {
@@ -2655,8 +2655,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 9612,
-    "local_de_uso": "images/patentes/vila-06.webp (patente 6/10 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/vila-06.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Marreta de madeira com molas e faísca sobre bancada. Família de medalhões dourados com fundo verde-azulado, scanlines de TV de tubo e granulado de fita. Redução Lanczos 1254→192; leitura conferida na prova do lote. Lote 4; faltam as patentes 09 e 10."
   },
   {
@@ -2674,8 +2674,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 9676,
-    "local_de_uso": "images/patentes/vila-07.webp (patente 7/10 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/vila-07.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Herói de capa vermelha visto de costas, marreta erguida e estrelas. Família de medalhões dourados com fundo verde-azulado, scanlines de TV de tubo e granulado de fita. Redução Lanczos 1254→192; leitura conferida na prova do lote. Lote 4; faltam as patentes 09 e 10."
   },
   {
@@ -2693,8 +2693,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 8714,
-    "local_de_uso": "images/patentes/vila-08.webp (patente 8/10 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/vila-08.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Medalha de bronze com barril em relevo e fita da vila. Família de medalhões dourados com fundo verde-azulado, scanlines de TV de tubo e granulado de fita. Redução Lanczos 1254→192; leitura conferida na prova do lote. Lote 4; faltam as patentes 09 e 10."
   },
   {
@@ -2712,8 +2712,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12128,
-    "local_de_uso": "images/patentes/vila-09.webp (patente 9/10 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/vila-09.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Escudo de madeira com emblema de barril, marreta e capa cruzadas. Família de medalhões dourados com fundo verde-azulado e scanlines. A patente 10 fecha a piada do sanduíche de presunto, como proposto. Redução Lanczos 1254→192. Lote 5; tema vila chega a 12/24."
   },
   {
@@ -2731,8 +2731,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 13748,
-    "local_de_uso": "images/patentes/vila-10.webp (patente 10/10 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/vila-10.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Sanduíche de presunto em tábua, com palito e brilho dourado. Família de medalhões dourados com fundo verde-azulado e scanlines. A patente 10 fecha a piada do sanduíche de presunto, como proposto. Redução Lanczos 1254→192. Lote 5; tema vila chega a 12/24."
   },
   {
@@ -2750,8 +2750,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 58570,
-    "local_de_uso": "images/bosses/vila-b01.webp (retrato da encrenca 1/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/quico.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Menino gordinho de quepe e camisa listrada, braços cruzados e bico de orgulho; varal ao fundo. Arquétipo En; fraqueza proposta: Peito. Paleta saturada de vila de TV com scanlines e granulado de fita. Redução Lanczos 1254→512. Lote 5."
   },
   {
@@ -2769,8 +2769,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 54246,
-    "local_de_uso": "images/bosses/vila-b02.webp (retrato da encrenca 2/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/chiquinha.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Menina de maria-chiquinha e vestido remendado, sorriso matreiro e estilingue atrás do corpo. Arquétipo Vl; fraqueza proposta: Pernas. Paleta saturada de vila de TV com scanlines e granulado de fita. Redução Lanczos 1254→512. Lote 5."
   },
   {
@@ -2788,8 +2788,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 52022,
-    "local_de_uso": "images/bosses/vila-b03.webp (retrato da encrenca 3/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/nhonho.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Menino muito redondo de camisa listrada apertada, sanduíche na mão e olhar culpado; banco de madeira ao fundo. Arquétipo Tq; fraqueza proposta: Abdômen. Paleta saturada de vila de TV com scanlines e granulado de fita. Redução Lanczos 1254→512. Lote 5."
   },
   {
@@ -2807,8 +2807,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 50342,
-    "local_de_uso": "images/bosses/vila-b04.webp (retrato da encrenca 4/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/jaiminho.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Carteiro idoso sorridente de uniforme azul e quepe, bolsa de correspondência atravessada no peito. Arquétipo Vl; fraqueza proposta: Costas. Paleta saturada de vila de TV com scanlines e granulado de fita. Redução Lanczos 1254→512. Lote 5."
   },
   {
@@ -2826,8 +2826,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 49360,
-    "local_de_uso": "images/bosses/vila-b05.webp (retrato da encrenca 5/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/prof-girafales.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Professor alto e esguio de terno marrom, gravata borboleta, bengala e livro; postura formal. Arquétipo Tq; fraqueza proposta: Ombros. Paleta saturada de vila de TV com scanlines e granulado de fita. Redução Lanczos 1254→512. Lote 5."
   },
   {
@@ -2845,8 +2845,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 49514,
-    "local_de_uso": "images/bosses/vila-b06.webp (retrato da encrenca 6/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/dona-florinda.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Viúva elegante de vestido vinho, colar de pérolas e bolsa no braço; queixo erguido em indignação. Arquétipo Cl; fraqueza proposta: Antebraço. Paleta saturada de vila de TV com scanlines e granulado de fita. Redução Lanczos 1254→512. Lote 5."
   },
   {
@@ -2864,8 +2864,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 55680,
-    "local_de_uso": "images/bosses/vila-b07.webp (retrato da encrenca 7/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/bruxa-do-71.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Vizinha feiticeira de chapéu torto remendado, xale puído e vassoura; caldeirão fumegando ao fundo. Arquétipo Cl; fraqueza proposta: Costas. Paleta saturada de vila de TV com scanlines e granulado de fita. Redução Lanczos 1254→512. Lote 5."
   },
   {
@@ -2883,8 +2883,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 54002,
-    "local_de_uso": "images/bosses/vila-b08.webp (retrato da encrenca 8/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/monstros-de-tv.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Três televisões retrô empilhadas com estática e silhuetas de monstros diferentes em cada tela; antenas tortas. Arquétipo En; fraqueza proposta: Core. Paleta saturada de vila de TV com scanlines e granulado de fita. Redução Lanczos 1254→512. Lote 5."
   },
   {
@@ -2902,8 +2902,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 59590,
-    "local_de_uso": "images/bosses/vila-b09.webp (retrato da encrenca 9/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/seu-barriga.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Locador suado de terno amarrotado, livro de recibos e molho de chaves, sorriso nervoso; óculos escorregando. Arquétipo Tq; fraqueza proposta: Pernas. Redução Lanczos 1254→512. Lote 6; fecha os 12 retratos do tema vila."
   },
   {
@@ -2921,8 +2921,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 64648,
-    "local_de_uso": "images/bosses/vila-b10.webp (retrato da encrenca 10/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/catorze-meses-de-aluguel.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Pilha impossível de contas vencidas e envelopes amarelados com carimbos (sem texto legível), amarrada com barbante e cadeado, sobre uma portinha. Arquétipo Ms; fraqueza proposta: Core. Redução Lanczos 1254→512. Lote 6; fecha os 12 retratos do tema vila."
   },
   {
@@ -2940,8 +2940,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 67482,
-    "local_de_uso": "images/bosses/vila-b11.webp (retrato da encrenca 11/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/bola-de-boliche-da-vila.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Bola de boliche enorme com estrelas pintadas e riscos, em pleno ar com linhas de velocidade, pino derrubado e chinelo voando. Arquétipo En; fraqueza proposta: Ombros. Redução Lanczos 1254→512. Lote 6; fecha os 12 retratos do tema vila."
   },
   {
@@ -2959,8 +2959,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 46526,
-    "local_de_uso": "images/bosses/vila-b12.webp (retrato da encrenca 12/12 do tema vila, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/copia-do-chapolin.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Herói impostor de capa vermelha, antenas tortas e bigode falso sob o capuz, marreta segurada ao contrário e olhos arregalados. Arquétipo Vl; fraqueza proposta: Antebraço. Redução Lanczos 1254→512. Lote 6; fecha os 12 retratos do tema vila."
   },
   {
@@ -2978,8 +2978,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 103640,
-    "local_de_uso": "images/cards/esgoto.webp (fundo do Story/Card do tema); candidato — falta teste no canvas 1080×1920/1080×1080",
-    "estado": "candidato",
+    "local_de_uso": "images/cards/esgoto.webp (fundo do Story Card e do Card do Chefão)",
+    "estado": "em uso",
     "notas": "Cruzamento de esgotos de NY à noite: tijolo molhado, canos, limo verde, vapor, escada até um bueiro com luz neon e caixa de pizza. Sem pessoas e sem texto; centro aberto para retrato e texto. 1024×1024, WebP q80. Lote 6."
   },
   {
@@ -2997,8 +2997,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 10574,
-    "local_de_uso": "images/patentes/esgoto-01.webp (patente 1/10 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/esgoto-01.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Ovo rachado, filhote de tartaruga e grade de esgoto. Família de aros de aço com pátina sobre tijolo verde de esgoto, quatro rebites nas cores das bandanas. Redução Lanczos 1254→192. Lote 6; faltam as patentes 06–10."
   },
   {
@@ -3016,8 +3016,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 10778,
-    "local_de_uso": "images/patentes/esgoto-02.webp (patente 2/10 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/esgoto-02.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Boneco de treino com alvo pintado, nunchaku e shuriken. Família de aros de aço com pátina sobre tijolo verde de esgoto, quatro rebites nas cores das bandanas. Redução Lanczos 1254→192. Lote 6; faltam as patentes 06–10."
   },
   {
@@ -3035,8 +3035,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 11310,
-    "local_de_uso": "images/patentes/esgoto-03.webp (patente 3/10 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/esgoto-03.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Galeria de tijolos com canos, shuriken e corda. Família de aros de aço com pátina sobre tijolo verde de esgoto, quatro rebites nas cores das bandanas. Redução Lanczos 1254→192. Lote 6; faltam as patentes 06–10."
   },
   {
@@ -3054,8 +3054,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 10448,
-    "local_de_uso": "images/patentes/esgoto-04.webp (patente 4/10 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/esgoto-04.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Céu noturno de NY visto pelo bueiro com arpéu. Família de aros de aço com pátina sobre tijolo verde de esgoto, quatro rebites nas cores das bandanas. Redução Lanczos 1254→192. Lote 6; faltam as patentes 06–10."
   },
   {
@@ -3073,8 +3073,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12022,
-    "local_de_uso": "images/patentes/esgoto-05.webp (patente 5/10 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/esgoto-05.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Bandana vermelha com sai cruzados e emblema de casco. Família de aros de aço com pátina sobre tijolo verde de esgoto, quatro rebites nas cores das bandanas. Redução Lanczos 1254→192. Lote 6; faltam as patentes 06–10."
   },
   {
@@ -3092,8 +3092,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12696,
-    "local_de_uso": "images/patentes/esgoto-06.webp (patente 6/10 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/esgoto-06.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Bandana azul com katanas cruzadas e emblema de casco. Família de aros de aço com pátina sobre tijolo verde. Redução Lanczos 1254→192. Lote 7; fecha as 10 patentes do tema esgoto."
   },
   {
@@ -3111,8 +3111,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 10976,
-    "local_de_uso": "images/patentes/esgoto-07.webp (patente 7/10 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/esgoto-07.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Bandana roxa com bastão bo, livro aberto e brilho violeta. Família de aros de aço com pátina sobre tijolo verde. Redução Lanczos 1254→192. Lote 7; fecha as 10 patentes do tema esgoto."
   },
   {
@@ -3130,8 +3130,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 14342,
-    "local_de_uso": "images/patentes/esgoto-08.webp (patente 8/10 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/esgoto-08.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Bandana laranja com nunchaku cruzados e estrela cômica. Família de aros de aço com pátina sobre tijolo verde. Redução Lanczos 1254→192. Lote 7; fecha as 10 patentes do tema esgoto."
   },
   {
@@ -3149,8 +3149,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 11702,
-    "local_de_uso": "images/patentes/esgoto-09.webp (patente 9/10 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/esgoto-09.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Cajado de mestre com fita vermelha, pergaminho e vela. Família de aros de aço com pátina sobre tijolo verde. Redução Lanczos 1254→192. Lote 7; fecha as 10 patentes do tema esgoto."
   },
   {
@@ -3168,8 +3168,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 13268,
-    "local_de_uso": "images/patentes/esgoto-10.webp (patente 10/10 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/esgoto-10.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Rato mestre de roupão meditando, com as quatro fitas das bandanas. Família de aros de aço com pátina sobre tijolo verde. Redução Lanczos 1254→192. Lote 7; fecha as 10 patentes do tema esgoto."
   },
   {
@@ -3187,8 +3187,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 51486,
-    "local_de_uso": "images/bosses/esgoto-b01.webp (retrato do vilão 1/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/cla-do-pe.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Esquadrão de ninjas encapuzados de roxo e preto com faixas vermelhas, agachados no esgoto; um à frente com espada e emblema de pé no peito. Arquétipo En; fraqueza proposta: Pernas. Paleta de esgoto (verde, neon, roxo) coerente com selo, fundo e patentes. Redução Lanczos 1254→512. Lote 7."
   },
   {
@@ -3206,8 +3206,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 63466,
-    "local_de_uso": "images/bosses/esgoto-b02.webp (retrato do vilão 2/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/baxter-stockman.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Cientista inventor magricela de jaleco manchado e óculos redondos, controle remoto na mão e drones-inseto flutuando. Arquétipo Vl; fraqueza proposta: Antebraço. Paleta de esgoto (verde, neon, roxo) coerente com selo, fundo e patentes. Redução Lanczos 1254→512. Lote 7."
   },
   {
@@ -3225,8 +3225,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 60958,
-    "local_de_uso": "images/bosses/esgoto-b03.webp (retrato do vilão 3/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/bebop.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Javali mutante de colete roxo, moicano e pulseiras de spikes, segurando corrente e exibindo presas. Arquétipo Tq; fraqueza proposta: Ombros. Paleta de esgoto (verde, neon, roxo) coerente com selo, fundo e patentes. Redução Lanczos 1254→512. Lote 7."
   },
   {
@@ -3244,8 +3244,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 60654,
-    "local_de_uso": "images/bosses/esgoto-b04.webp (retrato do vilão 4/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/rocksteady.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Rinoceronte mutante em placas de armadura cinza e máscara de solda na testa, chifre rachado e braços cruzados. Arquétipo Cl; fraqueza proposta: Abdômen. Paleta de esgoto (verde, neon, roxo) coerente com selo, fundo e patentes. Redução Lanczos 1254→512. Lote 7."
   },
   {
@@ -3263,8 +3263,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 60510,
-    "local_de_uso": "images/bosses/esgoto-b05.webp (retrato do vilão 5/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/rei-dos-ratos.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Figura encapuzada de roxo com máscara óssea coroada, tocando flauta, cercada de ratos e brilho verde doentio. Arquétipo Vl; fraqueza proposta: Core. Paleta de esgoto (verde, neon, roxo) coerente com selo, fundo e patentes. Redução Lanczos 1254→512. Lote 7."
   },
   {
@@ -3282,8 +3282,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 67036,
-    "local_de_uso": "images/bosses/esgoto-b06.webp (retrato do vilão 6/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/slash.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Tartaruga mutante monstruosa de casco rachado, rosto cicatrizado e um olho leitoso, ombreiras com espinhos e cano de metal na mão. Arquétipo Vl; fraqueza proposta: Costas. Redução Lanczos 1254→512. Lote 8; fecha os 12 retratos do tema esgoto."
   },
   {
@@ -3301,8 +3301,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 67342,
-    "local_de_uso": "images/bosses/esgoto-b07.webp (retrato do vilão 7/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/leatherhead.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Jacaré mutante colossal de escamas blindadas, mandíbula enorme e corrente nos pulsos, olhos laranja. Arquétipo Tq; fraqueza proposta: Pernas. Redução Lanczos 1254→512. Lote 8; fecha os 12 retratos do tema esgoto."
   },
   {
@@ -3320,8 +3320,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 65194,
-    "local_de_uso": "images/bosses/esgoto-b08.webp (retrato do vilão 8/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/tokka-e-rahzar.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Dupla mutante: tartaruga espinhosa de casco rachado e lobo esfarrapado de olhos brilhantes, de costas um para o outro. Arquétipo En; fraqueza proposta: Ombros. Redução Lanczos 1254→512. Lote 8; fecha os 12 retratos do tema esgoto."
   },
   {
@@ -3339,8 +3339,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 83782,
-    "local_de_uso": "images/bosses/esgoto-b09.webp (retrato do vilão 9/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/traag-e-granitor.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Dois soldados de pedra gigantescos com placas de rocha e fissuras de lava, punhos enormes e cabeças minúsculas. Arquétipo Cl; fraqueza proposta: Abdômen. Redução Lanczos 1254→512. Lote 8; fecha os 12 retratos do tema esgoto."
   },
   {
@@ -3358,8 +3358,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 61458,
-    "local_de_uso": "images/bosses/esgoto-b10.webp (retrato do vilão 10/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/krang.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Senhor da guerra alienígena: cérebro em cúpula de vidro sobre corpo mecânico baixo com garras, tubos e um olho brilhante. Arquétipo Cl; fraqueza proposta: Core. Redução Lanczos 1254→512. Lote 8; fecha os 12 retratos do tema esgoto."
   },
   {
@@ -3377,8 +3377,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 66942,
-    "local_de_uso": "images/bosses/esgoto-b11.webp (retrato do vilão 11/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/technodrome.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Fortaleza esférica de guerra com placas rebitadas, torres de canhão, antenas e núcleo vermelho brilhante, numa caverna com vapor. Arquétipo Tq; fraqueza proposta: Costas. Redução Lanczos 1254→512. Lote 8; fecha os 12 retratos do tema esgoto."
   },
   {
@@ -3396,8 +3396,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 71214,
-    "local_de_uso": "images/bosses/esgoto-b12.webp (retrato do vilão 12/12 do tema esgoto, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/destruidor.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Senhor da guerra blindado: armadura com lâminas, elmo com chifres, máscara metálica, olhos vermelhos e katana no ombro. Arquétipo Ms; fraqueza proposta: Peito. Redução Lanczos 1254→512. Lote 8; fecha os 12 retratos do tema esgoto."
   },
   {
@@ -3415,8 +3415,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 10774,
-    "local_de_uso": "images/patentes/springfield-01.webp (patente 1/10 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/springfield-01.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Sino escolar, apagador, aviãozinho de papel e lápis. Família de discos amarelos com contorno preto grosso sobre céu azul e nuvens. Redução Lanczos 1254→192. Lote 8; faltam as patentes 04–10. REGERADA no lote 14: a versão anterior foi considerada fraca na revisão do conjunto (baixo contraste/leitura a 28 px). Versão anterior preservada fora do Git em descartadas/."
   },
   {
@@ -3434,8 +3434,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 13336,
-    "local_de_uso": "images/patentes/springfield-02.webp (patente 2/10 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/springfield-02.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Jornal dobrado, mapa de rota, bolsa de entrega e campainha de bicicleta. Família de discos amarelos com contorno preto grosso sobre céu azul e nuvens. Redução Lanczos 1254→192. Lote 8; faltam as patentes 04–10. REGERADA no lote 14: a versão anterior foi considerada fraca na revisão do conjunto (baixo contraste/leitura a 28 px). Versão anterior preservada fora do Git em descartadas/."
   },
   {
@@ -3453,8 +3453,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12206,
-    "local_de_uso": "images/patentes/springfield-03.webp (patente 3/10 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/springfield-03.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Capacete com lanterna, chave inglesa e haste de combustível em canister. Família de discos amarelos com contorno preto grosso sobre céu azul e nuvens. Redução Lanczos 1254→192. Lote 8; faltam as patentes 04–10."
   },
   {
@@ -3472,8 +3472,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 11490,
-    "local_de_uso": "images/patentes/springfield-04.webp (patente 4/10 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/springfield-04.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Prancheta com marcações abstratas, cronômetro e crachá de inspetor. Disco amarelo com contorno preto grosso sobre céu azul e nuvens. Redução Lanczos 1254→192. Lote 9; fecha as 10 patentes do tema springfield."
   },
   {
@@ -3491,8 +3491,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12824,
-    "local_de_uso": "images/patentes/springfield-05.webp (patente 5/10 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/springfield-05.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Placa de parede com medalha em branco e roseta, estrela e confete. Disco amarelo com contorno preto grosso sobre céu azul e nuvens. Redução Lanczos 1254→192. Lote 9; fecha as 10 patentes do tema springfield. REGERADA no lote 14: a versão anterior foi considerada fraca na revisão do conjunto (baixo contraste/leitura a 28 px). Versão anterior preservada fora do Git em descartadas/."
   },
   {
@@ -3510,8 +3510,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 11006,
-    "local_de_uso": "images/patentes/springfield-06.webp (patente 6/10 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/springfield-06.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Apito, relógio de parede e prancheta de escala. Disco amarelo com contorno preto grosso sobre céu azul e nuvens. Redução Lanczos 1254→192. Lote 9; fecha as 10 patentes do tema springfield. REGERADA no lote 14: a versão anterior foi considerada fraca na revisão do conjunto (baixo contraste/leitura a 28 px). Versão anterior preservada fora do Git em descartadas/."
   },
   {
@@ -3529,8 +3529,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12200,
-    "local_de_uso": "images/patentes/springfield-07.webp (patente 7/10 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/springfield-07.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Capacete espacial, foguete retrô e estrelas. Disco amarelo com contorno preto grosso sobre céu azul e nuvens. Redução Lanczos 1254→192. Lote 9; fecha as 10 patentes do tema springfield."
   },
   {
@@ -3548,8 +3548,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12610,
-    "local_de_uso": "images/patentes/springfield-08.webp (patente 8/10 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/springfield-08.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Cartola, saco de dinheiro com cifrão, charuto no cinzeiro e torre de resfriamento. Disco amarelo com contorno preto grosso sobre céu azul e nuvens. Redução Lanczos 1254→192. Lote 9; fecha as 10 patentes do tema springfield."
   },
   {
@@ -3567,8 +3567,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 13748,
-    "local_de_uso": "images/patentes/springfield-09.webp (patente 9/10 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/springfield-09.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Faixa de prefeito, martelo de juiz e cúpula da prefeitura. Disco amarelo com contorno preto grosso sobre céu azul e nuvens. Redução Lanczos 1254→192. Lote 9; fecha as 10 patentes do tema springfield."
   },
   {
@@ -3586,8 +3586,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 13834,
-    "local_de_uso": "images/patentes/springfield-10.webp (patente 10/10 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/springfield-10.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Chapéu de pele, mosquete, machado e pedestal com louros. Disco amarelo com contorno preto grosso sobre céu azul e nuvens. Redução Lanczos 1254→192. Lote 9; fecha as 10 patentes do tema springfield."
   },
   {
@@ -3605,8 +3605,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 54656,
-    "local_de_uso": "images/bosses/springfield-b01.webp (retrato do vilão 1/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/nelson.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Valentão escolar de cabelo raspado e suéter com estrela, boca aberta em riso debochado e punho erguido. Arquétipo Vl; fraqueza proposta: Peito. Redução Lanczos 1254→512. Lote 9. NOTA: o retrato 02 (Trio Bully) foi RECUSADO pelo filtro de segurança da ferramenta de imagem (moderação de saída) e será regerado com outra composição."
   },
   {
@@ -3624,8 +3624,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 64860,
-    "local_de_uso": "images/bosses/springfield-b03.webp (retrato do vilão 3/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/willie.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Zelador mal-humorado, careca e barba ruiva, macacão gasto, ancinho ao ombro e balde de mopa. Arquétipo Cl; fraqueza proposta: Costas. Redução Lanczos 1254→512. Lote 9. NOTA: o retrato 02 (Trio Bully) foi RECUSADO pelo filtro de segurança da ferramenta de imagem (moderação de saída) e será regerado com outra composição."
   },
   {
@@ -3643,8 +3643,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 59446,
-    "local_de_uso": "images/bosses/springfield-b02.webp (retrato do vilão 2/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/trio-do-patio.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Três amigos de escola em pose de elenco: alto de cabelo comprido, baixinho de óculos e o fortinho de gorro, todos acenando. Retry aprovado após duas recusas do filtro de moderação com a descrição anterior (valentões). Arquétipo En; fraqueza proposta: Core. Redução Lanczos 1254→512. Lote 10."
   },
   {
@@ -3662,8 +3662,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 47104,
-    "local_de_uso": "images/bosses/springfield-b04.webp (retrato do vilão 4/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/chefe-wiggum.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Chefete de polícia gordo de uniforme azul e quepe, migalhas de rosquinha no queixo, rádio na mão; viatura e poste ao fundo. Arquétipo En; fraqueza proposta: Abdômen. Redução Lanczos 1254→512. Lote 10."
   },
   {
@@ -3681,8 +3681,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 57344,
-    "local_de_uso": "images/bosses/springfield-b05.webp (retrato do vilão 5/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/tony-gordo.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Chefão da máfia afável de terno creme e rosa na lapela, cabelo engomado e anéis; mesa de restaurante ao fundo. Arquétipo Tq; fraqueza proposta: Ombros. Redução Lanczos 1254→512. Lote 10."
   },
   {
@@ -3700,8 +3700,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 55284,
-    "local_de_uso": "images/bosses/springfield-b06.webp (retrato do vilão 6/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/krusty.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Palhaço de TV: cabelo verde, maquiagem branca com sorriso pintado, terno de bolinhas e microfone. Arquétipo En; fraqueza proposta: Pernas. Redução Lanczos 1254→512. Lote 10. A primeira descrição desta peça (\"palhaço decadente\") foi recusada pelo filtro de moderação; a segunda passou."
   },
   {
@@ -3719,8 +3719,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 55866,
-    "local_de_uso": "images/bosses/springfield-b07.webp (retrato do vilão 7/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/kang-e-kodos.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Dois alienígenas verdes de um olho e tentáculos, com antenas e armas de raio, espiando por uma escotilha de disco voador sobre o subúrbio à noite. Arquétipo Cl; fraqueza proposta: Core. Redução Lanczos 1254→512. Lote 10."
   },
   {
@@ -3738,8 +3738,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 46404,
-    "local_de_uso": "images/bosses/springfield-b08.webp (retrato do vilão 8/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/hank-scorpio.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Executivo carismático de terno cinza, sorriso confiante e gesto de boas-vindas; globo e foguete de mesa ao fundo. Arquétipo Tq; fraqueza proposta: Peito. Redução Lanczos 1254→512. Lote 10."
   },
   {
@@ -3757,8 +3757,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 44444,
-    "local_de_uso": "images/bosses/springfield-b11.webp (retrato do vilão 11/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/loja-de-conveniencia.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Loja de conveniência noturna com letreiro de formas abstratas, vitrines fluorescentes, prateleiras e cachorro-quente giratório; sem pessoas. Arquétipo Tq; fraqueza proposta: Abdômen. Redução Lanczos 1254→512. Lote 10."
   },
   {
@@ -3776,8 +3776,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 160712,
-    "local_de_uso": "images/cards/springfield.webp (fundo do Story/Card do tema); candidato — falta teste no canvas 1080×1920/1080×1080",
-    "estado": "candidato",
+    "local_de_uso": "images/cards/springfield.webp (fundo do Story Card e do Card do Chefão)",
+    "estado": "em uso",
     "notas": "Praça central de subúrbio ao entardecer: prédio cívico com cúpula, estátua, banco, hidrante, caixa de correio e carros. Sem pessoas e sem texto; centro aberto para retrato e texto. 1024×1024, WebP q80. Lote 10."
   },
   {
@@ -3795,8 +3795,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 58174,
-    "local_de_uso": "images/bosses/springfield-b09.webp (retrato do vilão 9/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/sr-burns.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Bilionário ancião e frágil: careca com fios brancos, nariz grande, terno verde e gravata borboleta, mãos sobre a bengala e sorriso fino; escritório sombrio ao fundo. Arquétipo Ms; fraqueza proposta: Costas. Redução Lanczos 1254→512. Lote 11; fecha os 12 retratos do tema springfield."
   },
   {
@@ -3814,8 +3814,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 60718,
-    "local_de_uso": "images/bosses/springfield-b10.webp (retrato do vilão 10/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/bob-sideshow.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Artista de TV teatral de cabelos encaracolados alaranjados, sorriso largo, gravata borboleta e cartola na mão; cortina e refletores ao fundo. Arquétipo Vl; fraqueza proposta: Antebraço. Redução Lanczos 1254→512. Lote 11; fecha os 12 retratos do tema springfield."
   },
   {
@@ -3833,8 +3833,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 88168,
-    "local_de_uso": "images/bosses/springfield-b12.webp (retrato do vilão 12/12 do tema springfield, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/multidao-de-springfield.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Multidão alegre na rua principal ensolarada: cidadãos de formatos e cores variados acenando com cartazes em branco; cachorro pequeno entre eles. Arquétipo Cl; fraqueza proposta: Pernas. Redução Lanczos 1254→512. Lote 11; fecha os 12 retratos do tema springfield."
   },
   {
@@ -3852,8 +3852,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12664,
-    "local_de_uso": "images/patentes/caverna-01.webp (patente 1/10 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/caverna-01.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Ingresso de papel picotado, mapa do parque e montanha-russa ao fundo. Aro de ferro e ocre sobre pedra violeta de masmorra, com tochas nas laterais (dialeto dos anos 80). Redução Lanczos 1254→192. Lote 11; faltam as patentes 08–10."
   },
   {
@@ -3871,8 +3871,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 13982,
-    "local_de_uso": "images/patentes/caverna-02.webp (patente 2/10 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/caverna-02.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Mochila de couro, cajado e mapa gasto sob a lanterna. Aro de ferro e ocre sobre pedra violeta de masmorra, com tochas nas laterais (dialeto dos anos 80). Redução Lanczos 1254→192. Lote 11; faltam as patentes 08–10."
   },
   {
@@ -3890,8 +3890,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12832,
-    "local_de_uso": "images/patentes/caverna-03.webp (patente 3/10 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/caverna-03.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Clava de madeira com anéis de ferro sobre bloco de pedra. Aro de ferro e ocre sobre pedra violeta de masmorra, com tochas nas laterais (dialeto dos anos 80). Redução Lanczos 1254→192. Lote 11; faltam as patentes 08–10."
   },
   {
@@ -3909,8 +3909,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12152,
-    "local_de_uso": "images/patentes/caverna-04.webp (patente 4/10 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/caverna-04.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Capa remendada no gancho com cinto, bolsa e emblema de escudo. Aro de ferro e ocre sobre pedra violeta de masmorra, com tochas nas laterais (dialeto dos anos 80). Redução Lanczos 1254→192. Lote 11; faltam as patentes 08–10."
   },
   {
@@ -3928,8 +3928,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 11872,
-    "local_de_uso": "images/patentes/caverna-05.webp (patente 5/10 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/caverna-05.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Chapéu pontudo de aprendiz com estrela, varinha e pergaminho. Aro de ferro e ocre sobre pedra violeta de masmorra, com tochas nas laterais (dialeto dos anos 80). Redução Lanczos 1254→192. Lote 11; faltam as patentes 08–10."
   },
   {
@@ -3947,8 +3947,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12524,
-    "local_de_uso": "images/patentes/caverna-06.webp (patente 6/10 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/caverna-06.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Cajado com runa brilhante, braçadeiras de couro e tocha. Aro de ferro e ocre sobre pedra violeta de masmorra, com tochas nas laterais (dialeto dos anos 80). Redução Lanczos 1254→192. Lote 11; faltam as patentes 08–10."
   },
   {
@@ -3966,8 +3966,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12012,
-    "local_de_uso": "images/patentes/caverna-07.webp (patente 7/10 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/caverna-07.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Escudo redondo com umbo de ferro e espada curta. Aro de ferro e ocre sobre pedra violeta de masmorra, com tochas nas laterais (dialeto dos anos 80). Redução Lanczos 1254→192. Lote 11; faltam as patentes 08–10."
   },
   {
@@ -3985,8 +3985,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 12996,
-    "local_de_uso": "images/patentes/caverna-08.webp (patente 8/10 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/caverna-08.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Arco longo, aljava com três flechas e tocha lateral. Aro de ferro e ocre sobre pedra violeta, tochas laterais. Redução Lanczos 1254→192. Lote 12; fecha as 10 patentes do tema caverna."
   },
   {
@@ -4004,8 +4004,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 13436,
-    "local_de_uso": "images/patentes/caverna-09.webp (patente 9/10 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/caverna-09.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Medalhão de bronze com cabeça de dragão, cordão de couro e louros de ferro. Aro de ferro e ocre sobre pedra violeta, tochas laterais. Redução Lanczos 1254→192. Lote 12; fecha as 10 patentes do tema caverna."
   },
   {
@@ -4023,8 +4023,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 15626,
-    "local_de_uso": "images/patentes/caverna-10.webp (patente 10/10 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/patentes/caverna-10.webp (emblema da patente na grade e no modal)",
+    "estado": "em uso",
     "notas": "Portal de pedra com luz dourada, carrinho de montanha-russa e dragão-pipa. Aro de ferro e ocre sobre pedra violeta, tochas laterais. Redução Lanczos 1254→192. Lote 12; fecha as 10 patentes do tema caverna."
   },
   {
@@ -4042,8 +4042,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 63330,
-    "local_de_uso": "images/bosses/caverna-b01.webp (retrato do monstro 1/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/mimico.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Baú do tesouro com boca cheia de dentes e língua longa, moedas espalhadas numa alcova iluminada por tocha. Arquétipo En; fraqueza proposta: Peito. Dialeto violeta/ocre com tochas, contorno grosso dos anos 80. Redução Lanczos 1254→512. Lote 12."
   },
   {
@@ -4061,8 +4061,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 66298,
-    "local_de_uso": "images/bosses/caverna-b02.webp (retrato do monstro 2/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/aranha-gigante.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Aranha enorme de oito olhos descendo por um fio de seda do teto abobadado, teia rachada ao fundo. Arquétipo Vl; fraqueza proposta: Pernas. Dialeto violeta/ocre com tochas, contorno grosso dos anos 80. Redução Lanczos 1254→512. Lote 12."
   },
   {
@@ -4080,8 +4080,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 57604,
-    "local_de_uso": "images/bosses/caverna-b03.webp (retrato do monstro 3/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/cubo-gelatinoso.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Cubo translúcido de gelatina verde preenchendo o corredor, com caveira, espada enferrujada e elmo flutuando dentro. Arquétipo Tq; fraqueza proposta: Abdômen. Dialeto violeta/ocre com tochas, contorno grosso dos anos 80. Redução Lanczos 1254→512. Lote 12."
   },
   {
@@ -4099,8 +4099,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 56742,
-    "local_de_uso": "images/bosses/caverna-b04.webp (retrato do monstro 4/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/urso-coruja.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Besta peluda com cabeça de coruja de chifres, olhos redondos brilhantes e bico curvo, corpo de urso com garras pesadas. Arquétipo Cl; fraqueza proposta: Costas. Dialeto violeta/ocre com tochas, contorno grosso dos anos 80. Redução Lanczos 1254→512. Lote 12."
   },
   {
@@ -4118,8 +4118,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 52906,
-    "local_de_uso": "images/bosses/caverna-b05.webp (retrato do monstro 5/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/demonio-das-sombras.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Demônio de escuridão viva com olhos vermelhos e garras, erguendo-se de uma poça de fumaça negra; chamas se curvando ao redor. Arquétipo Vl; fraqueza proposta: Core. Dialeto violeta/ocre com tochas, contorno grosso dos anos 80. Redução Lanczos 1254→512. Lote 12."
   },
   {
@@ -4137,8 +4137,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 60800,
-    "local_de_uso": "images/bosses/caverna-b06.webp (retrato do monstro 6/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/beholder.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Monstro esférico flutuante com um olho gigante, boca dentada e dez pedúnculos oculares retorcidos. Arquétipo En; fraqueza proposta: Ombros. Dialeto violeta/ocre com tochas, contorno grosso dos anos 80. Redução Lanczos 1254→512. Lote 12."
   },
   {
@@ -4156,8 +4156,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 74876,
-    "local_de_uso": "images/bosses/caverna-b07.webp (retrato do monstro 7/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/devorador-de-mentes.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Criatura esquálida de rosto tentacular e olhos roxos brilhantes, garras longas e manto esfarrapado sobre piso com ondulações psíquicas. Arquétipo Vl; fraqueza proposta: Core. Dialeto violeta/ocre com tochas, contorno grosso dos anos 80. Redução Lanczos 1254→512. Lote 12."
   },
   {
@@ -4175,8 +4175,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 65932,
-    "local_de_uso": "images/bosses/caverna-b08.webp (retrato do monstro 8/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/hidra.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Cinco pescoços serpentinos saindo de uma poça de masmorra, cabeças com presas e olhos amarelos, escamas musgosas. Arquétipo Cl; fraqueza proposta: Ombros. Redução Lanczos 1254→512. Lote 13; fecha os 12 monstros do tema caverna."
   },
   {
@@ -4194,8 +4194,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 66598,
-    "local_de_uso": "images/bosses/caverna-b09.webp (retrato do monstro 9/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/lich.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Feiticeiro morto-vivo de rosto cinzento e olhos verdes, coroa irregular, mantos rasgados e cajado com caveira luminosa; cripta com velas. Arquétipo Tq; fraqueza proposta: Abdômen. Redução Lanczos 1254→512. Lote 13; fecha os 12 monstros do tema caverna."
   },
   {
@@ -4213,8 +4213,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 84752,
-    "local_de_uso": "images/bosses/caverna-b10.webp (retrato do monstro 10/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/dragao-vermelho.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Dragão enorme de escamas carmesim, chifres curvos, asas meio abertas e fumaça nas narinas, sobre uma pilha de tesouro. Arquétipo Cl; fraqueza proposta: Peito. Redução Lanczos 1254→512. Lote 13; fecha os 12 monstros do tema caverna."
   },
   {
@@ -4232,8 +4232,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 80526,
-    "local_de_uso": "images/bosses/caverna-b11.webp (retrato do monstro 11/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/tiamat.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Rainha-dragão de cinco cabeças em pescoços longos, escamas vermelhas, azuis, verdes, negras e brancas, asas abertas em câmara carbonizada. Arquétipo Tq; fraqueza proposta: Costas. Redução Lanczos 1254→512. Lote 13; fecha os 12 monstros do tema caverna."
   },
   {
@@ -4251,8 +4251,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 77258,
-    "local_de_uso": "images/bosses/caverna-b12.webp (retrato do monstro 12/12 do tema caverna, se cadastrado)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/vingador.webp (retrato do chefe na batalha e na galeria)",
+    "estado": "em uso",
     "notas": "Senhor da guerra mascarado: elmo com chifres e viseira de caveira, armadura negra e carmesim com espinhos, capa esfarrapada e lâmina rúnica erguida. Arquétipo Ms; fraqueza proposta: Peito. Redução Lanczos 1254→512. Lote 13; fecha os 12 monstros do tema caverna."
   },
   {
@@ -4270,8 +4270,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 130324,
-    "local_de_uso": "images/cards/caverna.webp (fundo do Story/Card do tema); candidato — falta teste no canvas 1080×1920/1080×1080",
-    "estado": "candidato",
+    "local_de_uso": "images/cards/caverna.webp (fundo do Story Card e do Card do Chefão)",
+    "estado": "em uso",
     "notas": "Câmara de masmorra ao estilo anos 80: alvenaria violeta, túnel abobadado, estalagmites, lustre de tochas, ossos, escudo na parede e portal com emblema de dragão. Centro aberto para retrato e texto. 1024×1024, WebP q80. Lote 13."
   },
   {
@@ -4289,8 +4289,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 35872,
-    "local_de_uso": "images/bosses/office-angela.webp (desafio com personagem do upgrade aprovado do tema office)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/angela.webp (desafio com personagem do tema office na v74)",
+    "estado": "em uso",
     "notas": "Funcionária rígida de coque loiro, cardigã bege e colar de cruz, braços cruzados e sobrancelha erguida; armário e pôster de gato ao fundo. Arquétipo Cl; fraqueza proposta: Costas. Paleta bege/cinza de escritório com azul e acento vermelho, luz fluorescente esverdeada. Redução Lanczos 1254→512. Lote 13; parte do upgrade aprovado do tema office (não é tema novo)."
   },
   {
@@ -4308,8 +4308,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 43110,
-    "local_de_uso": "images/bosses/office-dwight.webp (desafio com personagem do upgrade aprovado do tema office)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/dwight.webp (desafio com personagem do tema office na v74)",
+    "estado": "em uso",
     "notas": "Subgerente convencido de camisa mostarda e gravata escura, prancheta e beterraba na mão, crachá no cinto; mesa com boneco de cabeça e luminária. Arquétipo Cl; fraqueza proposta: Ombros. Paleta bege/cinza de escritório com azul e acento vermelho, luz fluorescente esverdeada. Redução Lanczos 1254→512. Lote 13; parte do upgrade aprovado do tema office (não é tema novo)."
   },
   {
@@ -4327,8 +4327,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 37692,
-    "local_de_uso": "images/bosses/office-toby.webp (desafio com personagem do upgrade aprovado do tema office)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/toby.webp (desafio com personagem do tema office na v74)",
+    "estado": "em uso",
     "notas": "Funcionário de RH desanimado, cabelo ralo, camisa bege e gravata, pilha de pastas nos braços; fragmentadora ao fundo. Arquétipo En; fraqueza proposta: Costas. Paleta bege/cinza de escritório com azul e acento vermelho, luz fluorescente esverdeada. Redução Lanczos 1254→512. Lote 13; parte do upgrade aprovado do tema office (não é tema novo)."
   },
   {
@@ -4346,8 +4346,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 37060,
-    "local_de_uso": "images/bosses/office-jan.webp (desafio com personagem do upgrade aprovado do tema office)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/jan-levinson.webp (desafio com personagem do tema office na v74)",
+    "estado": "em uso",
     "notas": "Executiva corporativa impecável de chanel loiro, blazer escuro, batom vermelho e sorriso tenso, pasta de couro na mão; sala de vidro ao fundo. Arquétipo Tq; fraqueza proposta: Peito. Paleta bege/cinza de escritório com azul e acento vermelho, luz fluorescente esverdeada. Redução Lanczos 1254→512. Lote 13; parte do upgrade aprovado do tema office (não é tema novo)."
   },
   {
@@ -4365,8 +4365,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 40996,
-    "local_de_uso": "images/bosses/office-robert.webp (desafio com personagem do upgrade aprovado do tema office)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/robert-california.webp (desafio com personagem do tema office na v74)",
+    "estado": "em uso",
     "notas": "Executivo excêntrico de cabelo prateado, camisa escura sem gravata, colar pesado e olhar magnético, gesticulando; sala com quadro de rabiscos. Arquétipo Cl; fraqueza proposta: Core. Paleta de escritório (bege/cinza, azul, acento vermelho). Redução Lanczos 1254→512. Lote 14; completa os 6 retratos do upgrade aprovado."
   },
   {
@@ -4384,8 +4384,8 @@
     "formato": "webp",
     "transparencia": "opaco",
     "bytes": 42388,
-    "local_de_uso": "images/bosses/office-jo.webp (desafio com personagem do upgrade aprovado do tema office)",
-    "estado": "candidato",
+    "local_de_uso": "images/bosses/jo-bennett.webp (desafio com personagem do tema office na v74)",
+    "estado": "em uso",
     "notas": "Empresária imponente de cabelo loiro volumoso, blazer com ombreiras e joias, sorriso largo e mão estendida para o aperto; escritório corporativo. Arquétipo Ms; fraqueza proposta: Ombros. Paleta de escritório (bege/cinza, azul, acento vermelho). Redução Lanczos 1254→512. Lote 14; completa os 6 retratos do upgrade aprovado."
   },
   {
@@ -4405,6 +4405,120 @@
     "bytes": 27474,
     "local_de_uso": "Overlay de moldura do Card do tema office (referência 1080×1920); candidata — falta teste nos canvases 1080×1920 e 1080×1080 antes de virar uso",
     "estado": "candidato",
-    "notas": "Moldura de papel pautado com clipe, anel de café e marcas de carimbo; centro transparente. Fundo magenta chapado removido por keying (-fuzz 18% e depois 6%); alfa médio ≈69% do quadro. HALO ROSA FINO residual nas bordas externas, visível em prova sobre fundo escuro — precisa de limpeza manual ou de novo keying antes de uso real. Derivada em 768×1152 a partir do original 1024×1536 (proporção 2:3, diferente do quadro 1080×1920 do card): será preciso recortar/estender antes de aplicar. Lote 14."
+    "notas": "Moldura de papel pautado com clipe, anel de café e marcas de carimbo; centro transparente. Fundo magenta chapado removido por keying (-fuzz 18% e depois 6%). Revisão a 1:1 sobre fundo escuro e claro não reproduziu o halo rosa antes anotado. Derivada em 768×1152 a partir do original 1024×1536 (proporção 2:3, diferente do quadro 1080×1920 do card). A moldura do card é desenhada por código em js/cartoes.js (frame `caderno`); esta arte é a referência visual, ainda não é carregada em runtime."
+  },
+  {
+    "id": "av-moldura-elementos",
+    "peca": "Moldura — Mandala dos Elementos (Avatar)",
+    "tema": "avatar",
+    "categoria": "molduras",
+    "origem": "geracao",
+    "fonte": ".cache/artes-originais/novos-temas/moldura-avatar.png",
+    "fonte_sha256": "a0c7153cbfe206b4a19685e7a9292711188d5b314743cf43db683fb120929643",
+    "recorte": null,
+    "saida": "images/artes/candidatos/avatar/molduras/moldura-avatar.webp",
+    "largura": 768,
+    "altura": 1152,
+    "formato": "webp",
+    "transparencia": "alfa por keying do magenta chapado; vão interno transparente",
+    "bytes": 63722,
+    "local_de_uso": "Referência visual da moldura `elementos` em js/cartoes.js (desenhada por código); não é carregada em runtime",
+    "estado": "candidato",
+    "notas": "Lote 15. Gerada em 1024×1536 (2:3) com fundo magenta chapado. Derivada em 768×1152 (mesma proporção do original), não no quadro 1080×1920 do card."
+  },
+  {
+    "id": "vl-moldura-tv",
+    "peca": "Moldura — TV de Tubo (Vila do Barril)",
+    "tema": "vila",
+    "categoria": "molduras",
+    "origem": "geracao",
+    "fonte": ".cache/artes-originais/novos-temas/moldura-vila.png",
+    "fonte_sha256": "8ed0e478aed01fede52ea5aa3d205071867a4db7b427cde1f72144f18f645aae",
+    "recorte": null,
+    "saida": "images/artes/candidatos/vila/molduras/moldura-vila.webp",
+    "largura": 768,
+    "altura": 1152,
+    "formato": "webp",
+    "transparencia": "alfa por keying (magenta externo + vão pintado isolado); centro transparente",
+    "bytes": 48778,
+    "local_de_uso": "Referência visual da moldura `tv` em js/cartoes.js (desenhada por código); não é carregada em runtime",
+    "estado": "candidato",
+    "notas": "Lote 15. Gerada em 1024×1536 (2:3) com fundo magenta chapado e o xadrez de transparência PINTADO dentro do vão. O script remove o magenta e isola o vão pintado por desfoque + floodfill com sementes claras. Derivada em 768×1152 (mesma proporção do original), não no quadro 1080×1920 do card."
+  },
+  {
+    "id": "eg-moldura-bueiro",
+    "peca": "Moldura — Chapa de Bueiro (Esgoto)",
+    "tema": "esgoto",
+    "categoria": "molduras",
+    "origem": "geracao",
+    "fonte": ".cache/artes-originais/novos-temas/moldura-esgoto.png",
+    "fonte_sha256": "663ddf5e24cd8c6ec6cc0117168e6255ffac2ee09fa9ee7fc18345c8c182902f",
+    "recorte": null,
+    "saida": "images/artes/candidatos/esgoto/molduras/moldura-esgoto.webp",
+    "largura": 768,
+    "altura": 1152,
+    "formato": "webp",
+    "transparencia": "alfa por keying (magenta externo + vão pintado isolado); centro transparente",
+    "bytes": 75086,
+    "local_de_uso": "Referência visual da moldura `bueiro` em js/cartoes.js (desenhada por código); não é carregada em runtime",
+    "estado": "candidato",
+    "notas": "Lote 15. Gerada em 1024×1536 (2:3) com fundo magenta chapado e o xadrez de transparência PINTADO dentro do vão. O script remove o magenta e isola o vão pintado por desfoque + floodfill com sementes claras (a corrente do esgoto é preservada pela máscara de claridade). Derivada em 768×1152 (mesma proporção do original), não no quadro 1080×1920 do card."
+  },
+  {
+    "id": "sp-moldura-sitcom",
+    "peca": "Moldura — Sitcom com Rosquinha (Springfield)",
+    "tema": "springfield",
+    "categoria": "molduras",
+    "origem": "geracao",
+    "fonte": ".cache/artes-originais/novos-temas/moldura-springfield.png",
+    "fonte_sha256": "8854a7faa422310f5be00b0f8605c53705fca1d07cc386c2c72bd62e7cf16ec7",
+    "recorte": null,
+    "saida": "images/artes/candidatos/springfield/molduras/moldura-springfield.webp",
+    "largura": 768,
+    "altura": 1152,
+    "formato": "webp",
+    "transparencia": "alfa por keying do magenta chapado; vão interno transparente",
+    "bytes": 27330,
+    "local_de_uso": "Referência visual da moldura `sitcom` em js/cartoes.js (desenhada por código); não é carregada em runtime",
+    "estado": "candidato",
+    "notas": "Lote 15. Gerada em 1024×1536 (2:3) com fundo magenta chapado. Derivada em 768×1152 (mesma proporção do original), não no quadro 1080×1920 do card."
+  },
+  {
+    "id": "cv-moldura-tocha",
+    "peca": "Moldura — Pedra e Tochas (Caverna do Dragão)",
+    "tema": "caverna",
+    "categoria": "molduras",
+    "origem": "geracao",
+    "fonte": ".cache/artes-originais/novos-temas/moldura-caverna.png",
+    "fonte_sha256": "50d189878754884407845550e4a87c2eead172f5eaf18d076bbb3fe17ab23dd4",
+    "recorte": null,
+    "saida": "images/artes/candidatos/caverna/molduras/moldura-caverna.webp",
+    "largura": 768,
+    "altura": 1152,
+    "formato": "webp",
+    "transparencia": "alfa por keying do magenta chapado; vão interno transparente",
+    "bytes": 60812,
+    "local_de_uso": "Referência visual da moldura `tocha` em js/cartoes.js (desenhada por código); não é carregada em runtime",
+    "estado": "candidato",
+    "notas": "Lote 15. Gerada em 1024×1536 (2:3) com fundo magenta chapado. Derivada em 768×1152 (mesma proporção do original), não no quadro 1080×1920 do card."
+  },
+  {
+    "id": "ofu-fundo",
+    "peca": "Fundo — Escritório de Scranton",
+    "tema": "office-us",
+    "categoria": "cards",
+    "origem": "geracao",
+    "fonte": ".cache/artes-originais/novos-temas/fundo-scranton.png",
+    "fonte_sha256": "693c319d6e61e0a87d0bedb7d15d54dce98ff06a75827703537b447bcdc532f9",
+    "recorte": null,
+    "saida": "images/artes/candidatos/office-us/cards/office-us.webp",
+    "largura": 1024,
+    "altura": 1024,
+    "formato": "webp",
+    "transparencia": "opaco",
+    "bytes": 45264,
+    "local_de_uso": "images/cards/office.webp (fundo do Story Card e do Card do Chefão do tema office na v74)",
+    "estado": "em uso",
+    "notas": "Lote 15. Escritório ao anoitecer com baias, bebedouro e vista da cidade; centro calmo para o retrato e o texto. Derivado 1024×1024 em WebP e promovido a images/cards/office.webp no upgrade aprovado do Office."
   }
 ]

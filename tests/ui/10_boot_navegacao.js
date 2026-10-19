@@ -48,19 +48,19 @@ check('IDs e retratos (webp) dos quatro chefões clássicos preservados', ev("TH
 check('seletor antigo de tema foi removido de Config', !$('game-theme-select') && !$('game-theme-desc'));
 check('Story Card remove paletas antigas', !$('btn-theme-berzerker') && !$('btn-theme-cyberpunk') && !$('btn-theme-minimal') && !/Cyberpunk|Minimalist|Berzerker Red/.test($('tab-content-story').textContent));
 check('Story Card preserva upload e controle de escurecimento', !!$('bg-image-input') && !!$('bg-overlay-opacity') && $('bg-overlay-opacity').type === 'range');
-check('paleta, moldura e fontes estão vinculadas aos doze temas', ev("Object.keys(THEMES).length === 12 && Object.keys(THEMES).every(id => STORY_CARD_STYLES[id] && STORY_CARD_STYLES[id].palette && STORY_CARD_STYLES[id].fonts && THEME_ICONS[id])") && /THEME\.frame/.test(fonteJs()));
+check('paleta, moldura e fontes estão vinculadas aos dezessete temas', ev("Object.keys(THEMES).length === 17 && Object.keys(THEMES).every(id => STORY_CARD_STYLES[id] && STORY_CARD_STYLES[id].palette && STORY_CARD_STYLES[id].fonts && THEME_ICONS[id])") && /THEME\.frame/.test(fonteJs()));
 let legacyStoryStyleIgnored = true;
 try { ev("safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({ selectedStoryTheme: 'cyberpunk' })); loadStoredData(); generateStoryCard();"); } catch (e) { legacyStoryStyleIgnored = false; }
 check('estilo legado salvo é ignorado sem erro', legacyStoryStyleIgnored);
 check('selo do tema usa a arte própria (não emoji)', !!$('story-theme-icon').querySelector('img'));
 check('emblema de patente aponta para a arte do tema e nível certos', ev("rankEmblemSrc('aneis',10)") === 'images/patentes/aneis-10.webp' && ev("rankEmblemSrc('zodiaco',1)") === 'images/patentes/zodiaco-01.webp' && ev("rankEmblemSrc('tema-inexistente',3)") === 'images/patentes/classico-03.webp');
-check('arte própria dos 12 temas tem ícone e fundo de card', ev("THEME_IDS_LIST.every(id => !!THEME_ICON_IMGS[id] && !!THEME_CARD_BGS[id])") && ev("THEME_IDS_LIST.length") === 12);
+check('arte própria dos 17 temas tem ícone e fundo de card', ev("THEME_IDS_LIST.every(id => !!THEME_ICON_IMGS[id] && !!THEME_CARD_BGS[id])") && ev("THEME_IDS_LIST.length") === 17);
 check('Story Card mostra o tema de jogo atual', $('story-theme-name').textContent === ev('THEME.name') && $('story-theme-icon').querySelector('img').getAttribute('src') === 'images/temas/classico.webp');
 click($('header-theme-button'));
 ev("showRanksModal('classico');");
 check('modal de patentes mostra os dez emblemas próprios', ($('ranks-overlay')?.querySelectorAll('img')?.length || 0) >= 10 && $('ranks-overlay').innerHTML.includes('images/patentes/classico-10.webp'));
 ev("document.getElementById('ranks-overlay')?.remove();");
-check('botão do tema abre doze cartões com ícone, patente e progresso', !!$('theme-gallery-overlay') && $('theme-gallery-overlay').querySelectorAll('[data-theme-id]').length === 12 && $('theme-gallery-overlay').textContent.includes('Patente global') && $('theme-gallery-overlay').textContent.includes('chefões'));
+check('botão do tema abre dezessete cartões com ícone, patente e progresso', !!$('theme-gallery-overlay') && $('theme-gallery-overlay').querySelectorAll('[data-theme-id]').length === 17 && $('theme-gallery-overlay').textContent.includes('Patente global') && $('theme-gallery-overlay').textContent.includes('chefões'));
 const galleryIds = ev('THEME_IDS_LIST');
 const galleryEmblemSrc = id => ev(`rankEmblemSrc('${id}', rankFromXP(computeGlobalXPCtx().xp, themeRankList(THEMES['${id}'])).level)`);
 check('galeria de temas mostra emblema de patente em vez de emoji residual',
@@ -97,7 +97,7 @@ check('Story Card segue o tema Senhor dos Anéis', $('story-theme-name').textCon
 ev("changeGameTheme('classico');");
 check('histórico renderizado', !!$('history-content'));
 check('CSV multi-aba: Log com 22 colunas v1 + 6 do formato 2 + PR informativo (parser com aspas)', (() => { const r = ev("parseCSVRows(buildPlanilhaCSV().split(/--- Sheet: Log ---/)[1].split(/--- Sheet:/)[0].trim(), ';')"); return r[0].length === 29 && r[1].length === 29; })());
-check('todos os 144 chefões têm retrato padrão (Ação, Anéis, ThunderCats e Office inclusive)', ev("Object.keys(THEMES).every(id => THEMES[id].bosses.every(b => !!DEFAULT_BOSS_PORTRAITS[id + ':' + b.id]))"));
+check('todos os 204 chefões têm retrato padrão (Ação, Anéis, ThunderCats e Office inclusive)', ev("Object.keys(THEMES).every(id => THEMES[id].bosses.every(b => !!DEFAULT_BOSS_PORTRAITS[id + ':' + b.id]))"));
 check('molduras temáticas (runas/espacial) no código', /frame === 'runas'/.test(fonteJs()) && /frame === 'espacial'/.test(fonteJs()));
 const appSrcFrames = fonteJs();
 check('molduras de ferro (clássico) e de anel (Senhor dos Anéis) desenhadas à mão', /frame === 'ferro'/.test(appSrcFrames) && /frame === 'anel'/.test(appSrcFrames));

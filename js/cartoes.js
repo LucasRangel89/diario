@@ -373,6 +373,115 @@ function drawThemedFrameArt(ctx, palette) {
         ctx.fillStyle = '#b91c1c'; ctx.fillRect(-52, -14, 104, 18);
         ctx.fillStyle = '#6b7280'; ctx.fillRect(-52, 10, 104, 8);
         ctx.restore();
+    } else if (frame === 'elementos') {
+        // O Equilíbrio dos Elementos: bronze com quatro gemas e lótus no topo
+        ctx.strokeStyle = '#8a5a2b'; ctx.lineWidth = 20; ctx.strokeRect(22, 22, 1036, 1876);
+        ctx.strokeStyle = '#d9a441'; ctx.lineWidth = 6; ctx.strokeRect(42, 42, 996, 1836);
+        [['#38bdf8', 50, 50], ['#34d399', 1030, 50], ['#f97316', 50, 1870], ['#e2e8f0', 1030, 1870]].forEach(([cor, x, y]) => {
+            ctx.save(); ctx.translate(x, y);
+            ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2);
+            ctx.fillStyle = '#2b1a10'; ctx.fill();
+            ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2);
+            ctx.fillStyle = cor; ctx.fill();
+            ctx.strokeStyle = '#f5d67a'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.stroke();
+            ctx.restore();
+        });
+        ctx.save(); ctx.translate(540, 34);
+        for (let i = 0; i < 4; i++) {
+            ctx.save(); ctx.rotate((Math.PI / 2) * i);
+            ctx.beginPath(); ctx.ellipse(0, -22, 9, 20, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#f8fafc'; ctx.fill();
+            ctx.restore();
+        }
+        ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#d9a441'; ctx.fill();
+        ctx.restore();
+    } else if (frame === 'tv') {
+        // Vila do Barril: TV de tubo com scanlines e botões de sintonia
+        ctx.strokeStyle = '#f5c518'; ctx.lineWidth = 28; ctx.strokeRect(26, 26, 1028, 1868);
+        ctx.strokeStyle = '#b45309'; ctx.lineWidth = 8; ctx.strokeRect(56, 56, 968, 1808);
+        ctx.save();
+        ctx.globalAlpha = 0.10; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+        for (let y = 96; y < 1866; y += 14) {
+            ctx.beginPath(); ctx.moveTo(64, y); ctx.lineTo(1016, y); ctx.stroke();
+        }
+        ctx.restore();
+        [0, 1].forEach(i => {
+            ctx.save(); ctx.translate(1044, 320 + i * 110);
+            ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI * 2);
+            ctx.fillStyle = '#1f2937'; ctx.fill();
+            ctx.strokeStyle = '#f5c518'; ctx.lineWidth = 6; ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -14); ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 3; ctx.stroke();
+            ctx.restore();
+        });
+        ctx.save(); ctx.translate(1044, 600);
+        for (let i = 0; i < 4; i++) {
+            ctx.beginPath(); ctx.moveTo(-16, i * 14); ctx.lineTo(16, i * 14);
+            ctx.strokeStyle = '#b45309'; ctx.lineWidth = 3; ctx.stroke();
+        }
+        ctx.restore();
+    } else if (frame === 'bueiro') {
+        // Esgoto de Nova York: chapa verde com rebites e corrente no topo
+        ctx.strokeStyle = '#2f4f3a'; ctx.lineWidth = 26; ctx.strokeRect(24, 24, 1032, 1872);
+        ctx.strokeStyle = '#7f9c76'; ctx.lineWidth = 4; ctx.strokeRect(46, 46, 988, 1828);
+        ctx.save();
+        ctx.fillStyle = '#9db38f';
+        for (let x = 90; x < 1010; x += 150) {
+            [70, 1850].forEach(y => { ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); });
+        }
+        for (let y = 160; y < 1800; y += 150) {
+            [70, 1010].forEach(x => { ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); });
+        }
+        ctx.restore();
+        ctx.save(); ctx.translate(540, 30);
+        ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 8; ctx.lineCap = 'round';
+        for (let i = -3; i <= 3; i++) {
+            ctx.beginPath(); ctx.ellipse(i * 40, Math.abs(i) * 7, 21, 12, 0, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore();
+    } else if (frame === 'sitcom') {
+        // Springfield: moldura amarela com nuvens e a rosquinha no topo
+        ctx.strokeStyle = '#facc15'; ctx.lineWidth = 30; ctx.strokeRect(26, 26, 1028, 1868);
+        ctx.strokeStyle = '#1e3a8a'; ctx.lineWidth = 4; ctx.strokeRect(58, 58, 964, 1804);
+        [[66, 46], [1000, 46], [66, 1858], [1000, 1858]].forEach(([x, y]) => {
+            ctx.save(); ctx.translate(x, y);
+            ctx.fillStyle = '#e2e8f0';
+            [[0, 0, 26], [-24, 8, 17], [24, 8, 17]].forEach(([dx, dy, r]) => {
+                ctx.beginPath(); ctx.arc(dx, dy, r, 0, Math.PI * 2); ctx.fill();
+            });
+            ctx.restore();
+        });
+        ctx.save(); ctx.translate(540, 32);
+        ctx.beginPath(); ctx.arc(0, 0, 28, 0, Math.PI * 2);
+        ctx.fillStyle = '#d97706'; ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, 19, 0, Math.PI * 2);
+        ctx.fillStyle = '#0b1220'; ctx.fill();
+        ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.arc(0, 0, 24, 0.6, 2.5); ctx.stroke();
+        ctx.restore();
+    } else if (frame === 'tocha') {
+        // Caverna do Dragão: blocos de pedra violeta com tochas nos cantos
+        ctx.strokeStyle = '#3b2a4d'; ctx.lineWidth = 24; ctx.strokeRect(24, 24, 1032, 1872);
+        ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 3;
+        for (let y = 130; y < 1860; y += 150) {
+            ctx.beginPath(); ctx.moveTo(34, y); ctx.lineTo(56, y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(1024, y + 72); ctx.lineTo(1046, y + 72); ctx.stroke();
+        }
+        ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 5; ctx.strokeRect(46, 46, 988, 1828);
+        [[50, 56], [1030, 56], [50, 1852], [1030, 1852]].forEach(([x, y]) => {
+            ctx.save(); ctx.translate(x, y);
+            ctx.fillStyle = '#57534e'; ctx.fillRect(-8, -4, 16, 32);
+            ctx.beginPath(); ctx.moveTo(0, -44);
+            ctx.quadraticCurveTo(21, -15, 0, -5);
+            ctx.quadraticCurveTo(-21, -15, 0, -44);
+            ctx.fillStyle = '#f59e0b'; ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, -28);
+            ctx.quadraticCurveTo(9, -13, 0, -7);
+            ctx.quadraticCurveTo(-9, -13, 0, -28);
+            ctx.fillStyle = '#fde68a'; ctx.fill();
+            ctx.restore();
+        });
     } else {
         ctx.strokeStyle = palette.borderPrimary;
         ctx.lineWidth = 10;

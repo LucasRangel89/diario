@@ -32,7 +32,7 @@ Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para a
 
 **Lote 14 (mesma sessão, revisão pedida pelo usuário):** **selo e 4 patentes de Springfield regerados**, 2 retratos do Office e **moldura `memorando`**. Ver §19.
 
-**Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**.
+**Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**. **Superada no lote 15:** com a arte de jogo fechada, as 5 molduras e o fundo de Scranton foram gerados na sessão de fechamento (ver §20); o card continua desenhado em vetor em `js/cartoes.js`.
 
 ## 1. Capacidade e método
 
@@ -511,25 +511,48 @@ Arquivos derivados atualizados: `springfield/temas/springfield.webp` e as patent
 - **Moldura `memorando`:** o gerador devolveu 1024×1536 (2:3), não o quadro 1080×1920 do card. O fundo magenta foi removido por keying, mas ficou **halo rosa fino** nas bordas externas — registrado no manifesto. Precisa de limpeza e recorte antes de uso; **não está aprovada para produção**.
 - Continua valendo: as outras 4 molduras (`elementos`, `tv`, `tocha`, `bueiro`/`sitcom`) não foram geradas.
 
-## 20. Estratégia de lotes (10 imagens por sessão)
+## 20. Lote 15 — molduras e fundo de Scranton (artes opcionais fechadas)
+
+Pedido do usuário: “gerar as artes opcionais e/ou pendentes. depois fazer as revisões, testes e fechar com o merge dessa PR”. Entraram as **5 molduras de card** que faltavam e o **fundo do Office**:
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Moldura — Mandala dos Elementos (`avatar`) | `avatar/molduras/moldura-avatar.webp` | 768×1152 | 63.722 |
+| Moldura — TV de Tubo (`vila`) | `vila/molduras/moldura-vila.webp` | 768×1152 | 48.778 |
+| Moldura — Chapa de Bueiro (`esgoto`) | `esgoto/molduras/moldura-esgoto.webp` | 768×1152 | 75.086 |
+| Moldura — Sitcom com Rosquinha (`springfield`) | `springfield/molduras/moldura-springfield.webp` | 768×1152 | 27.330 |
+| Moldura — Pedra e Tochas (`caverna`) | `caverna/molduras/moldura-caverna.webp` | 768×1152 | 60.812 |
+| Fundo — Escritório de Scranton (`office`) | `office-us/cards/office-us.webp` | 1024×1024 | 45.264 |
+
+- **Vão pintado:** em `vila` e `esgoto` o gerador desenhou o **xadrez de transparência dentro do quadro** (não é alfa). O `scripts/prepare-art-novos-temas.sh` passou a isolar esse vão por desfoque + floodfill com **sementes claras validadas**, preservando a corrente do esgoto e sem comer o traço da moldura. Os outros quatro vãos já vinham transparentes.
+- **Moldura do Office:** a revisão a 1:1 sobre fundo escuro e claro **não reproduziu o halo rosa** anotado no lote 14 — a nota do manifesto foi corrigida. Continua em **2:3** (768×1152), não no quadro 1080×1920; serve como referência visual, porque a moldura do card é **desenhada por código** (`frame` `caderno` em `js/cartoes.js`).
+- **Nenhuma moldura é carregada em runtime:** as cinco molduras novas viraram ramos vetoriais em `js/cartoes.js` (`elementos`, `tv`, `bueiro`, `sitcom`, `tocha`), e o WebP fica como arte de referência. O mesmo vale para `memorando`.
+- Prova de conferência: `docs/provas-novos-temas/lote15-molduras-fundo.webp` (6 molduras sobre fundo escuro + a do Office sobre papel + o fundo de Scranton).
+- Manifesto: **238 registros** (232 + 6), com estado e uso de cada peça atualizados. `sw.js` **v73 → v74**.
+
+**Com este lote a arte dos novos temas está fechada:** cinco temas 24/24 (selo, fundo, 10 patentes, 12 retratos), o Office com identidade nova + 6 personagens + fundo, e as seis molduras de referência geradas.
+
+## 21. Estratégia de lotes (10 imagens por sessão)
 
 Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem.
 
-Situação após o lote 14: **cinco temas 24/24** (avatar, vila, esgoto, springfield, caverna) e **Office (upgrade) com 6/6 retratos**. Arte de jogo **completa**; o que resta é infraestrutura:
+Situação após o lote 15: **cinco temas 24/24** (avatar, vila, esgoto, springfield, caverna), **Office (upgrade) com identidade nova, 6 personagens e fundo**, e as **6 molduras** geradas. **Arte completa e cadastro feito na v74:**
 
-| Etapa | Conteúdo |
+| Etapa | Estado |
 |---|---|
-| geração opcional | 4 molduras (`elementos`, `tv`, `tocha`, `bueiro`) + 1 fundo de card do Office — podem vir na sessão de implementação, junto do código que usa cada uma |
-| implementação | 5 entradas em `THEMES` (ou 6, se o Office virar upgrade de fato), `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, `DEFAULT_BOSS_PORTRAITS` 144 → 204, molduras em `js/cartoes.js`, CORE do `sw.js`, testes e validação no navegador |
+| geração | ✅ fechada — 132 peças nos novos temas (5×24) + 6 retratos, selo, fundo e moldura do Office + 6 molduras de referência |
+| implementação | ✅ 17 entradas em `THEMES` (10 patentes + 12 chefões cada), `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, `DEFAULT_BOSS_PORTRAITS` 144 → 204, 5 molduras vetoriais em `js/cartoes.js`, CORE do `sw.js` e testes |
+| validação | ✅ `npm test`, `check:sw`, `check:docs`, `check:sw-core`, `check:modules` e validação em navegador (`scripts/validacao-navegador.js`, 170 patentes + 17 cards no precache) |
 
 - **Ponto de corte recomendado**: **três temas completos** (Avatar, Vila, Esgoto) já permitem abrir a PR e validar o fluxo de cadastro ponta a ponta. Os lotes 9–13 entram como commits incrementais.
 - Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v62 → v63**), mesmo sem CORE novo.
 - **Molduras** (`elementos`, `tv`, `tocha`, `memorando`, `sitcom`, `bueiro`) e **4 fundos de card** entram na sessão de implementação, junto do código que os usa: precisam de keying de alfa e teste nos canvases. Planejar 1 imagem por moldura **fora dos lotes de 10**.
 - Na sessão final o trabalho é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192, CORE do `sw.js`, testes de arte/tema e validação em navegador real.
 
-## 21. Pendências e decisões
+## 22. Pendências e decisões
 
-1. **The Office**: **upgrade aprovado pelo usuário em 19/10** (`docs/ANALISE_TEMA_OFFICE.md`, caminho A). Mantém o tema `office`, as 24 artes e a regra “sem vilões”; adota o vocabulário (Vendas, Negócio Fechado, Meta Semanal, Trimestre Fiscal, Festa do Comitê) e os 6 desafios com personagem da §5 daquele documento. O selo `office-us` do lote 1 passa a ser **identidade alternativa** do card, não um tema novo; o `office-us` como tema separado está **descartado**. Implementação fica para a sessão final (lote 14 + código).
-2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).
-3. **Testes de canvas**: os 2 fundos e as molduras propostas ainda não foram testados em 1080×1920/1080×1080 do `js/cartoes.js`. Fica para a sessão final, quando houver moldura implementada.
-4. **Licença**: as seis séries são propriedades de terceiros. A geração de imagem não confere licença comercial; uso editorial/interno é decisão do usuário. Registrado também no manifesto.
+1. **The Office — implementado na v74:** o tema `office` mantém as 24 artes e a regra “sem vilões”, troca **6 desafios de cena por personagens** (Angela, Dwight, Toby, Jan, Robert California, Jo Bennett — ids `b3,b4,b5,b7,b8,b9` preservados) e passa a usar o **selo memorando** em `images/temas/office.webp` e o **fundo de Scranton** em `images/cards/office.webp`. Os 6 retratos de cena aposentados ficam como arte de reserva, **fora do precache**. A moldura `memorando` não é carregada: o card usa o vetor `caderno`.
+2. **Vocabulário do Office (dano/crítico/deload):** “Vendas”, “Negócio Fechado” e “Festa do Comitê” **ainda não têm gancho por tema** — o motor não expõe campo de dano/crítico e os rótulos estão fixos em `index.html` e `js/boss.js`. Ficou fora desta PR para não misturar cadastro de temas com mudança de UI; é a próxima melhoria barata do tema.
+3. **Molduras em WebP:** as 6 são **referência visual**; o card desenha as molduras em vetor (`elementos`, `tv`, `bueiro`, `sitcom`, `tocha`, `caderno`). Se um dia forem carregadas, precisam ser reenquadradas de 2:3 para 1080×1920.
+4. **Regerar depois**: leitura do selo de The Office a 28 px (papel bege com pouco contraste) e, se incomodar, a patente 03 do tema.
+5. **Licença**: as seis séries são propriedades de terceiros. A geração de imagem não confere licença comercial; uso editorial/interno é decisão do usuário. Registrado também no manifesto.

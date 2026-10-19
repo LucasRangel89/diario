@@ -299,6 +299,113 @@ const THEMES = {
             ['Último expediente', '🌙', 'Escritório noturno com uma luminária acesa e o rodo encostado à porta.', 'Costas', 'Fechar a filial, arrastar móveis e limpar o salão carregam as costas.']
         ])
     }
+    ,
+    avatar: {
+        id: 'avatar', name: 'O Equilíbrio dos Elementos',
+        desc: 'Do civil da Aldeia ao Avatar: dez patentes de domínio dos quatro elementos e doze adversários no Templo dos Quatro Ventos.',
+        arena: 'Templo dos Quatro Ventos', bossLabel: 'ADVERSÁRIO ATIVO', stageWord: 'CAPÍTULO',
+        missionWord: 'Missão do Equilíbrio', missionWordPlural: 'Missões do Equilíbrio', frame: 'elementos',
+        ranks: [['Civil da Aldeia', '🏘️'], ['Noviço do Templo', '📜'], ['Dobrador de Água', '💧'], ['Dobrador de Terra', '🪨'], ['Dobrador de Fogo', '🔥'], ['Dobrador de Ar', '🌬️'], ['Lótus Branco', '🌸'], ['Mestre Dobrador', '🧘'], ['Espírito de Luz', '✨'], ['AVATAR', '🌟']],
+        bosses: mkBosses([
+            ['Mercador de Repolhos', '🥬', 'Vendedor ambulante cuja carroça de repolhos atravessa o pátio do templo.', 'Pernas', 'A carroça foge do controle e ele tropeça; a base decide a fuga.'],
+            ['Arqueiras Yuyan', '🏹', 'Atiradoras de elite que guardam os telhados do templo em posição de tiro.', 'Ombros', 'A posição de tiro expõe a articulação que sustenta o arco.'],
+            ['Comandante Zhao', '⛵', 'Oficial da Marinha do Fogo que avança com a couraça cerimonial completa.', 'Peito', 'A couraça da Marinha abre no peitoral quando ele avança.'],
+            ['Jet', '🛹', 'Lutador ágil que ataca por ganchos e telhados, sempre em movimento.', 'Pernas', 'Ganchos e telhados dependem de impulso e pouso.'],
+            ['Príncipe Zuko', '🗡️', 'Príncipe exilado que luta com espadas duplas e fogo curto e preciso.', 'Ombros', 'As espadas duplas giram pelo ombro; travar o giro abre a guarda.'],
+            ['Long Feng', '🐍', 'Conselheiro que controla a cidade por dentro e nunca vira as costas.', 'Costas', 'Conselheiro que nunca vira as costas — até precisar fugir.'],
+            ['Koh, o Ladrão de Rostos', '🎭', 'Espírito que rouba a face de quem demonstra medo diante dele.', 'Core', 'A face muda, mas o centro do corpo permanece.'],
+            ['Wan Shi Tong', '🦉', 'Coruja-espírito que guarda a biblioteca proibida do deserto.', 'Core', 'A biblioteca se apoia num eixo; deslocar o centro derruba as estantes.'],
+            ['Hama', '🌊', 'Mestre da dobra de sangue, que precisa de gestos longos e precisos.', 'Antebraço', 'A dobra exige mãos firmes e prolongadas.'],
+            ['Homem-Combustão', '💥', 'Atirador que dispara explosões com a respiração e o tórax.', 'Peito', 'A explosão nasce da respiração e do tórax.'],
+            ['Azula', '⚡', 'Princesa do Fogo que dispara raios com um gesto de ombro.', 'Ombros', 'O raio é disparado pelo ombro; interromper o gesto desvia a descarga.'],
+            ['Ozai, o Senhor do Fogo', '🔥', 'O Senhor do Fogo em pessoa, no auge do poder durante o cometa. Desafio final do tema.', 'Peito', 'O núcleo do poder está no peito; o Estado Avatar atinge o centro.']
+        ])
+    },
+    vila: {
+        id: 'vila', name: 'Vila do Barril',
+        desc: 'Do morador do barril ao Sanduíche Supremo: dez patentes de vizinhança e doze encrencas da vila mais famosa da TV.',
+        arena: 'Vila do Barril', bossLabel: 'ENCRENCA ATIVA', stageWord: 'ANO LETIVO',
+        missionWord: 'Plano do Chapolin', missionWordPlural: 'Planos do Chapolin', frame: 'tv',
+        ranks: [['Morador do Barril', '🛢️'], ['Órfão da Vila', '🧒'], ['Freguês da Vila', '🛒'], ['Fã do Chapolin', '📺'], ['Portador das Antenas de Vinil', '📡'], ['Portador da Marreta Biônica', '🔨'], ['Chapolin Colorado', '🦗'], ['Herói da Vila', '🦸'], ['Defensor dos Fracos', '🛡️'], ['Sanduíche Supremo', '🥪']],
+        bosses: mkBosses([
+            ['Quico', '🪣', 'O menino do barril que transforma qualquer desaforo em chilique.', 'Peito', 'O orgulho estufa o peito antes do chilique.'],
+            ['Chiquinha', '😈', 'Esperta da vila, sempre com um plano para escapar da lição.', 'Pernas', 'A esperteza foge pelas pernas quando dá errado.'],
+            ['Nhonho', '🍰', 'Filho do Seu Barriga, dono de um apetite lendário.', 'Abdômen', 'O peso concentra tudo no centro.'],
+            ['Jaiminho', '✉️', 'Carteiro que carrega a mala cheia e evita a fadiga.', 'Costas', 'O carteiro carrega a mala nas costas.'],
+            ['Prof. Girafales', '☂️', 'Professor de postura ereta, chapéu e guarda-chuva sempre impecáveis.', 'Ombros', 'A postura ereta e o chapéu dependem dos ombros.'],
+            ['Dona Florinda', '👛', 'Mãe do Quico e dona de uma bolsa que pesa como um tijolo.', 'Antebraço', 'A bolsa e a mão pesada vivem do antebraço.'],
+            ['Bruxa do 71', '🧹', 'Vizinha que ronda o barril com vassoura e maldições de brincadeira.', 'Costas', 'A vassoura e o balcão exigem dorsais.'],
+            ['Monstros de TV', '📺', 'Criaturas de programa de terror que assustam a vila na hora da novela.', 'Core', 'O susto passa pelo centro antes de virar coragem.'],
+            ['Seu Barriga', '🔑', 'Locador que sobe escadas cobrando aluguel atrás de aluguel.', 'Pernas', 'Subir escadas cobrando aluguel é trabalho de pernas.'],
+            ['14 Meses de Aluguel', '📄', 'A dívida acumulada do Chapolin vira desafio físico na porta da vila.', 'Core', 'A dívida imobiliza o centro; o herói precisa de base para carregar o peso.'],
+            ['Bola de Boliche da Vila', '🎳', 'Bola desgovernada que rola pela vila derrubando tudo na frente.', 'Ombros', 'O arremesso gira pelo ombro.'],
+            ['Cópia do Chapolin', '🦗', 'Sósia atrapalhado que tenta imitar a marreta e erra o golpe.', 'Antebraço', 'O sósia erra a marreta por falta de pulso.']
+        ])
+    },
+    esgoto: {
+        id: 'esgoto', name: 'Esgoto de Nova York',
+        desc: 'Do filhote do esgoto ao Mestre Splinter: dez patentes de ninjutsu e doze vilões das galerias e dos telhados.',
+        arena: 'Esgoto de Nova York', bossLabel: 'VILÃO ATIVO', stageWord: 'TEMPORADA',
+        missionWord: 'Missão do Esgoto', missionWordPlural: 'Missões do Esgoto', frame: 'bueiro',
+        ranks: [['Filhote do Esgoto', '🐢'], ['Aprendiz do Mestre', '🥋'], ['Ninja das Galerias', '🥷'], ['Vigia dos Telhados', '👀'], ['Bandana Vermelha', '🧣'], ['Bandana Azul', '🧣'], ['Bandana Roxa', '🧣'], ['Bandana Laranja', '🧣'], ['Sensei do Esgoto', '🧘'], ['Mestre Splinter', '🐀']],
+        bosses: mkBosses([
+            ['Clã do Pé', '🥷', 'Ninjas de rua que atacam em silêncio nos becos e nas galerias.', 'Pernas', 'O ninjutsu de rua depende de passos silenciosos.'],
+            ['Baxter Stockman', '🪰', 'Cientista que controla máquinas e moscas mecânicas pela luva.', 'Antebraço', 'O controle das máquinas passa pelas mãos.'],
+            ['Bebop', '🐗', 'Mutante javali de visual punk que carrega o próprio peso no ataque.', 'Ombros', 'O mutante carrega o peso do corpo nos ombros.'],
+            ['Rocksteady', '🦏', 'Rinoceronte mutante com couraça pesada e investida teimosa.', 'Abdômen', 'A couraça de rinoceronte deixa o centro exposto.'],
+            ['Rei dos Ratos', '🐀', 'Flautista que comanda o enxame com uma cadência hipnótica.', 'Core', 'O flautista controla pelo centro; quebrar a cadência desorganiza o enxame.'],
+            ['Slash', '🐢', 'Tartaruga sombria de casco rachado e força desmedida.', 'Costas', 'O casco rachado expõe o dorso na investida.'],
+            ['Leatherhead', '🐊', 'Jacaré mutante que luta corpo a corpo com cauda e força bruta.', 'Pernas', 'O jacaré apoia o corpo nas pernas curtas.'],
+            ['Tokka e Rahzar', '🐢', 'A dupla de mutantes que ataca em pinça, um pela frente e outro por trás.', 'Ombros', 'A dupla ataca em pinça; os ombros coordenam o bote.'],
+            ['Traag e Granitor', '🪨', 'Gigantes de pedra que avançam devagar e não sentem os golpes.', 'Abdômen', 'Os gigantes de pedra têm o núcleo no tronco.'],
+            ['Krang', '🧠', 'Cérebro alienígena que pilota um corpo-robô a partir do Technodrome.', 'Core', 'O cérebro-robô depende de um único centro.'],
+            ['Technodrome', '🛸', 'Fortaleza móvel do esgoto, com canhões e um ponto cego atrás.', 'Costas', 'A fortaleza móvel tem o ponto cego atrás.'],
+            ['Destruidor', '⚔️', 'Líder do Clã do Pé com armadura completa e lâminas retráteis. Desafio final do tema.', 'Peito', 'A armadura do Destruidor abre no peitoral sob o ímpeto.']
+        ])
+    },
+    springfield: {
+        id: 'springfield', name: 'Springfield',
+        desc: 'Do aluno da escola ao Jebediah: dez patentes da cidade amarela e doze confusões que sempre acabam no sofá.',
+        arena: 'Praça de Springfield', bossLabel: 'VILÃO DE SPRINGFIELD', stageWord: 'TEMPORADA',
+        missionWord: 'Missão do Dia', missionWordPlural: 'Missões do Dia', frame: 'sitcom',
+        ranks: [['Aluno de Springfield', '🎒'], ['Entregador de Jornal', '🚲'], ['Estagiário da Usina', '⚡'], ['Inspetor 7-G', '📋'], ['Funcionário do Mês', '🏅'], ['Supervisor de Turno', '⏰'], ['Astronauta', '🚀'], ['Dono da Usina', '💼'], ['Prefeito de Springfield', '🎩'], ['Jebediah Springfield', '🗿']],
+        bosses: mkBosses([
+            ['Nelson', '🥊', 'Menino de riso debochado que aponta o dedo para todo mundo.', 'Peito', 'O riso debochado expõe o peito antes do soco.'],
+            ['Trio do Pátio', '🚲', 'Três garotos de bicicleta que perseguem qualquer um pelo pátio.', 'Pernas', 'A perseguição de bicicleta vive das pernas.'],
+            ['Willie', '🧹', 'Zelador da escola com ancinho e sotaque carregado.', 'Costas', 'O ancinho puxa pelas costas; o zelador vira junto.'],
+            ['Chefe Wiggum', '🚓', 'Chefe de polícia que corre atrás do crime — quando o fôlego deixa.', 'Abdômen', 'A farda aperta o centro; o fôlego acaba antes da corrida.'],
+            ['Tony Gordo', '🕴️', 'Chefe do crime de terno largo e sotaque de Chicago.', 'Ombros', 'O terno largo carrega a autoridade nos ombros.'],
+            ['Krusty', '🤡', 'Palhaço de TV que vive da pose de palco e de um cigarro apagado.', 'Ombros', 'A pose de palco se sustenta nos ombros.'],
+            ['Kang e Kodos', '👽', 'Irmãos alienígenas que chegam com tecnologia e planos de dominação.', 'Core', 'A tecnologia alienígena se equilibra num núcleo único.'],
+            ['Hank Scorpio', '🌴', 'Empresário carismático que discursa enquanto o mundo pega fogo.', 'Peito', 'O chefe carismático abre a guarda ao discursar.'],
+            ['Sr. Burns', '💰', 'Bilionário dono da usina, de coluna frágil e coração mais frágil ainda.', 'Costas', 'A coluna frágil é o ponto do bilionário.'],
+            ['Bob Sideshow', '🎪', 'Palhaço invejoso que arma laços e truques contra o rival.', 'Antebraço', 'O laço e os truques dependem de pulsos treinados.'],
+            ['Loja de Conveniência', '🏪', 'A loja que engole o cliente e não deixa ninguém sair sem comprar.', 'Abdômen', 'O caixa trava o centro de quem tenta sair.'],
+            ['Multidão de Springfield', '👥', 'A cidade inteira em marcha, com tochas e pressa. Desafio final do tema.', 'Pernas', 'A turba se move pelas pernas; parar a marcha dispersa o grupo.']
+        ])
+    },
+    caverna: {
+        id: 'caverna', name: 'Caverna do Dragão',
+        desc: 'Do visitante do parque a De Volta pra Casa: dez patentes de herói de reide e doze monstros da masmorra.',
+        arena: 'Masmorra de Reide', bossLabel: 'MONSTRO ATIVO', stageWord: 'SALA',
+        missionWord: 'Quest do Mestre', missionWordPlural: 'Quests do Mestre', frame: 'tocha',
+        ranks: [['Visitante do Parque', '🎟️'], ['Viajante Perdido', '🧭'], ['Portador da Clava', '🪵'], ['Portador da Capa', '🧥'], ['Portador do Chapéu', '🎩'], ['Portador do Bastão', '🪄'], ['Portador do Escudo', '🛡️'], ['Portador do Arco', '🏹'], ['Herói de Reide', '⚔️'], ['De Volta pra Casa', '🏠']],
+        bosses: mkBosses([
+            ['Mímico', '🧰', 'Baú de tesouro que se fecha sobre a mão de quem o abre.', 'Peito', 'A tampa-tórax abre para morder; acertar a abertura encerra o disfarce.'],
+            ['Aranha Gigante', '🕷️', 'Aranha do tamanho de um cavalo que tece teias entre as estalagmites.', 'Pernas', 'A teia depende das oito bases; cortar o apoio derruba o corpo.'],
+            ['Cubo Gelatinoso', '🟩', 'Massa translúcida que absorve golpes e engole o que encontra.', 'Abdômen', 'A massa absorve golpes, mas o núcleo no centro é instável.'],
+            ['Urso-Coruja', '🦉', 'Fera de penas e garras que vira devagar por causa do peso.', 'Costas', 'O corpo pesado vira devagar; o dorso fica exposto na curva.'],
+            ['Demônio das Sombras', '👤', 'Sombra viva que se refaz enquanto tiver um centro ao qual voltar.', 'Core', 'A sombra se refaz enquanto tiver um centro ao qual retornar.'],
+            ['Beholder', '👁️', 'Olho flutuante de pedúnculos mágicos que disparam em todas as direções.', 'Ombros', 'Os olhos-tentáculo se articulam pelos ombros; travar a base dos pedúnculos cega o conjunto.'],
+            ['Devorador de Mentes', '🧠', 'Criatura que ataca a mente e depende de concentração para existir.', 'Core', 'A mente devorada exige concentração; o centro do corpo paga o preço.'],
+            ['Hidra', '🐍', 'Serpente de várias cabeças sobre um tronco comum.', 'Ombros', 'Cada cabeça nasce de um tronco comum; cansar a base dos pescoços limita os ataques.'],
+            ['Lich', '💀', 'Mago morto-vivo que guarda a filactéria no tronco.', 'Abdômen', 'A filactéria fica no tronco; o centro sustenta a magia.'],
+            ['Dragão Vermelho', '🐲', 'Dragão de escamas vermelhas que ergue o corpo antes do sopro.', 'Peito', 'As escamas do peitoral abrem quando ele ergue o corpo para o sopro.'],
+            ['Tiamat', '🐉', 'Rainha dos dragões, com cinco cabeças e um dorso sempre acessível.', 'Costas', 'As cinco cabeças protegem a frente; o dorso permanece acessível.'],
+            ['Vingador', '⚔️', 'O vilão final da masmorra, com poder concentrado no tórax. Desafio final do tema.', 'Peito', 'O Vingador concentra o poder no tórax; o 20 natural encontra a fenda.']
+        ])
+    }
+
 };
 
 // ============================================================
