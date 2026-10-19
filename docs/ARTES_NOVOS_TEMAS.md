@@ -4,6 +4,10 @@ Sessão `arena/a088cf10-diario` · 19/10/2026 · base `7a6b218` (main) · nenhum
 
 Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para alguns temas (ignore a numeração). Tenha liberdade criativa para alterar nomes e itens.” Foram produzidas **8 peças** (6 selos + 2 fundos de card) em **10 chamadas de geração** (o limite por turno da ferramenta é 10; duas chamadas extras foram revisões). Nenhum tema foi cadastrado no app, nenhuma fórmula/regra foi alterada.
 
+**Lote 2 (mesma sessão):** as **10 patentes de O Equilíbrio dos Elementos** (`avatar-01…10`), fechando a família de emblemas do tema mais adiantado. Estratégia de lotes definida com o usuário: gerar o máximo por sessão (10 imagens) e deixar revisão longa, cadastro e testes para a sessão final. Ver §8.
+
+**Análise do tema `office` existente × proposta:** `docs/ANALISE_TEMA_OFFICE.md` (recomendação: upgrade no lugar + vocabulário; **não** criar segundo tema).
+
 ## 1. Capacidade e método
 
 - **1 chamada = 1 imagem única.** A ferramenta não produz cartelas; as provas deste lote são montagens por código (`scripts/prepare-art-novos-temas.sh`).
@@ -212,9 +216,52 @@ O script só **deriva** (recorte/redução/prova); não gera arte. Se os origina
 - Nenhuma regra de XP, dano, PR, temporada, deload ou conquista foi alterada. As fraquezas e os nomes de “dano/crítico” acima são vocabulário de apresentação, não mecânica.
 - Nenhum retrato de chefão, patente ou fundo pendente foi gerado ainda (§7).
 
-## 7. Pendências e decisões
+## 7. Lote 2 — patentes de O Equilíbrio dos Elementos
 
-1. **The Office já existe no app** (`office`, cadastrado na PR #32, 24 artes em uso). O quarto item do pedido colide com ele. Três saídas possíveis: (a) tratar este lote como **pacote de upgrade** do tema existente; (b) cadastrar um tema separado `office-us` (“The Office EUA — Segundo Turno”); (c) descartar o tema. O selo `office-us` foi produzido para viabilizar (a) ou (b).
-2. **Completar a identidade** dos seis temas: faltam 4 fundos de card (`caverna`, `office-us`, `springfield`, `esgoto`) e 6 molduras de canvas (`elementos`, `tocha`, `memorando`, `sitcom`, `tv`, `bueiro`).
-3. **Retratos de chefão:** 6 × 12 = **72 peças**; **patentes:** 6 × 10 = **60 peças**. No limite de 10 imagens por turno, são **14 lotes** só de retratos + patentes, sem contar extras. Vale escolher a ordem (um tema completo por vez ou uma família por vez em todos os temas).
-4. **Licença:** as seis séries são propriedades de terceiros. A geração de imagem não confere licença comercial; uso editorial/interno é decisão do usuário. Registrado também no manifesto.
+| # | Patente | Motivo do emblema | Bytes |
+|---:|---|---|---:|
+| 01 | Civil da Aldeia | tigela de arroz, chapéu de palha e cabana de pedra | 14.480 |
+| 02 | Noviço do Templo | contas de oração, sino e incenso | 15.108 |
+| 03 | Dobrador de Água | onda em espiral, lua crescente | 15.222 |
+| 04 | Dobrador de Terra | pilha de pedras com broto | 13.578 |
+| 05 | Dobrador de Fogo | chama de três línguas em braseiro | 13.760 |
+| 06 | Dobrador de Ar | espiral de vento e sino de vento | 14.650 |
+| 07 | Lótus Branco | lótus branco em água escura | 16.208 |
+| 08 | Mestre Dobrador | quatro símbolos ao redor do cajado | 14.756 |
+| 09 | Espírito de Luz | espírito luminoso em forma de pipa-manta | 16.702 |
+| 10 | AVATAR | quatro orbes e lótus com motivo de flecha | 16.222 |
+
+Total do lote: **10 arquivos, 150.686 bytes**. Todos 192×192, Lanczos, opacos, `estado: candidato`. Prova de leitura em `docs/provas-novos-temas/leitura-patentes-avatar.webp`. O tema `avatar` passa a ter **selo + fundo + 10 patentes** = 12/24 arquivos; faltam os 12 retratos e a moldura.
+
+## 8. Estratégia de lotes (10 imagens por sessão)
+
+Peças restantes do plano: **132**. Cada sessão gera **10**. Regra adotada: **fechar um tema por vez**, porque um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem — entrega valor a cada etapa, em vez de 132 peças soltas.
+
+| Sessão | Lote | Conteúdo | Fecha o quê |
+|---:|---|---|---|
+| 1 | 1–2 | 6 selos + 2 fundos + 10 patentes avatar (20) | identidade de todos os temas + patentes avatar |
+| 2 | 3 | 10 retratos de chefão avatar (1–10) | — |
+| 3 | 4 | 2 retratos avatar (11–12) + moldura `elementos` + 7 patentes vila | **avatar 24/24** |
+| 4 | 5 | 3 patentes vila + 7 retratos vila | — |
+| 5 | 6 | 5 retratos vila + moldura `tv` + 4 patentes esgoto | **vila 24/24** |
+| 6 | 7 | 6 patentes esgoto + 4 retratos esgoto | — |
+| 7 | 8 | 8 retratos esgoto + fundo + moldura esgoto | **esgoto 24/24** |
+| 8 | 9 | 10 patentes springfield | — |
+| 9 | 10 | 10 retratos springfield | — |
+| 10 | 11 | 2 retratos springfield + fundo + moldura + 6 patentes caverna | **springfield 24/24** |
+| 11 | 12 | 4 patentes caverna + 6 retratos caverna | — |
+| 12 | 13 | 6 retratos caverna + fundo + moldura | **caverna 24/24** |
+| 13–14 | 14–15 | patentes, retratos, fundo e moldura `office-us` (24) | **office-us 24/24**, se aprovado |
+| 15 | final | cadastro, testes, validação em navegador, PR | — |
+
+- Sobram **8 imagens de folga** no total — reserva natural para regerar o selo de Springfield, uma patente fraca a 28 px ou um retrato que não agrade.
+- **Caminho enxuto** (se quiser PR menor): parar em **esgoto 24/24** = 3 temas completos, **60 peças**, 6 lotes de geração. É a menor massa que já permite uma galeria com três temas novos testados.
+- Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v60 → v61**), mesmo sem CORE novo.
+- Na sessão final o trabalho pesado é: 6 entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, 6 molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 216, CORE do `sw.js` (~3 MB a mais), testes de arte/tema e validação em navegador real. Por isso ela não deve acumular geração.
+
+## 9. Pendências e decisões
+
+1. **The Office**: análise completa em `docs/ANALISE_TEMA_OFFICE.md`; quatro caminhos comparados e recomendação (upgrade no lugar + vocabulário; sem segundo tema). O selo `office-us` do lote 1 só entra em uso se a opção A ou B for escolhida.
+2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).
+3. **Testes de canvas**: os 2 fundos e as molduras propostas ainda não foram testados em 1080×1920/1080×1080 do `js/cartoes.js`. Fica para a sessão final, quando houver moldura implementada.
+4. **Licença**: as seis séries são propriedades de terceiros. A geração de imagem não confere licença comercial; uso editorial/interno é decisão do usuário. Registrado também no manifesto.

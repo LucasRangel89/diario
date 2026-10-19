@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Deriva as artes dos NOVOS TEMAS (lote 1: selos + fundos de card).
+# Deriva as artes dos NOVOS TEMAS (lotes 1–2: selos, fundos e patentes).
 # ------------------------------------------------------------
 # Ferramenta editorial opcional. Não participa de npm/build/CI e não é
 # dependência de produção: usa ImageMagick (convert/montage), não Pillow.
@@ -13,6 +13,7 @@
 #
 # Regras de redução (mesmas do lote ThunderCats/Office):
 #  - selo de tema 192×192: LANCZOS (escala não inteira; não granular brilhos)
+#  - patente 192×192: LANCZOS (idem; lida a 28 px no modal de patentes)
 #  - fundo de card 1024×1024: sem redimensionar, só reempacotar em WebP
 # Nada é esticado; nenhuma peça é gerada aqui (as cartelas de prova são
 # montagem por código, só para conferência).
@@ -29,78 +30,113 @@ if [ ! -d "$SRC" ]; then
     echo "Os originais não ficam no Git; reenvie/regere as peças antes de rodar." >&2
     exit 1
 fi
-
 mkdir -p "$PROVAS"
 
-# tema:peça — a peça é o sufixo do arquivo de origem e do caminho de destino.
-PECAS=(
-    "avatar:selo"
-    "caverna:selo"
-    "office-us:selo"
-    "springfield:selo"
-    "vila:selo"
-    "esgoto:selo"
-    "avatar:fundo"
-    "vila:fundo"
-)
-
-for item in "${PECAS[@]}"; do
-    tema="${item%%:*}"
-    peca="${item##*:}"
-    origem="$SRC/$peca-${tema}.png"
-    # os arquivos de origem usam o nome curto do tema; mapa explícito
-    case "$tema" in
-        avatar)      origem="$SRC/$peca-aang.png" ;;
-        caverna)     origem="$SRC/$peca-caverna.png" ;;
-        office-us)   origem="$SRC/$peca-scranton.png" ;;
-        springfield) origem="$SRC/$peca-springfield.png" ;;
-        vila)        origem="$SRC/$peca-vila.png" ;;
-        esgoto)      origem="$SRC/$peca-esgoto.png" ;;
+# id do tema (destino) ↔ prefixo do arquivo de origem
+TEMAS=(avatar caverna office-us springfield vila esgoto)
+prefixo() {
+    case "$1" in
+        avatar) echo aang ;;
+        office-us) echo scranton ;;
+        *) echo "$1" ;;
     esac
+}
+
+# ---------- selos (192×192) ----------
+for tema in "${TEMAS[@]}"; do
+    origem="$SRC/selo-$(prefixo "$tema").png"
+    destino="$OUT/$tema/temas/$tema.webp"
     if [ ! -f "$origem" ]; then
-        echo "AVISO: peça ausente, mantendo derivado existente: $origem" >&2
+        echo "AVISO: selo ausente, mantendo derivado existente: $origem" >&2
         continue
     fi
-    if [ "$peca" = "selo" ]; then
-        destino="$OUT/$tema/temas/$tema.webp"
-        mkdir -p "$(dirname "$destino")"
-        convert "$origem" -filter Lanczos -resize 192x192 -strip \
-            -define webp:method=6 -quality 84 "$destino"
-    else
-        destino="$OUT/$tema/cards/$tema.webp"
-        mkdir -p "$(dirname "$destino")"
-        convert "$origem" -resize 1024x1024 -strip \
-            -define webp:method=6 -quality 80 "$destino"
+    mkdir -p "$(dirname "$destino")"
+    convert "$origem" -filter Lanczos -resize 192x192 -strip \
+        -define webp:method=6 -quality 84 "$destino"
+    echo "ok $destino"
+done
+
+# ---------- fundos de card (1024×1024) ----------
+for tema in avatar vila; do
+    origem="$SRC/fundo-$(prefixo "$tema").png"
+    destino="$OUT/$tema/cards/$tema.webp"
+    if [ ! -f "$origem" ]; then
+        echo "AVISO: fundo ausente, mantendo derivado existente: $origem" >&2
+        continue
     fi
+    mkdir -p "$(dirname "$destino")"
+    convert "$origem" -resize 1024x1024 -strip \
+        -define webp:method=6 -quality 80 "$destino"
+    echo "ok $destino"
+done
+
+# ---------- patentes (192×192) ----------
+# Formato de origem: patente-<tema>-NN.png; destino: <tema>/patentes/<tema>-NN.webp
+for origem in "$SRC"/patente-*.png; do
+    [ -f "$origem" ] || continue
+    base="$(basename "$origem" .png)"
+    tema_curto="${base#patente-}"      # ex.: avatar-03
+    tema="${tema_curto%-*}"            # ex.: avatar
+    sufixo="${tema_curto##*-}"         # ex.: 03
+    case "$tema" in
+        avatar) destino_tema=avatar ;;
+        caverna) destino_tema=caverna ;;
+        scranton) destino_tema=office-us ;;
+        springfield) destino_tema=springfield ;;
+        vila) destino_tema=vila ;;
+        esgoto) destino_tema=esgoto ;;
+        *) echo "AVISO: tema desconhecido em $origem" >&2; continue ;;
+    esac
+    destino="$OUT/$destino_tema/patentes/$destino_tema-$sufixo.webp"
+    mkdir -p "$(dirname "$destino")"
+    convert "$origem" -filter Lanczos -resize 192x192 -strip \
+        -define webp:method=6 -quality 84 "$destino"
     echo "ok $destino"
 done
 
 # ---------- provas (montagem por código, nunca arte gerada) ----------
-SELOS=("avatar" "caverna" "office-us" "springfield" "vila" "esgoto")
-sizes=(192 56 28)
-for s in "${sizes[@]}"; do
-    tmp=$(mktemp -d)
-    for t in "${SELOS[@]}"; do
-        f="$OUT/$t/temas/$t.webp"
-        [ -f "$f" ] && convert "$f" -filter Lanczos -resize "${s}x${s}" "$tmp/$t.png"
+prova_fila() { # <arquivo-saida> <altura> <arquivos...>
+    local saida="$1" tam="$2"; shift 2
+    local tmp; tmp=$(mktemp -d)
+    local i=0
+    for f in "$@"; do
+        [ -f "$f" ] || continue
+        i=$((i + 1))
+        convert "$f" -filter Lanczos -resize "${tam}x${tam}" "$tmp/$(printf '%02d' "$i").png"
     done
+    [ "$i" -gt 0 ] || { rm -rf "$tmp"; return; }
     montage -background '#15171c' -fill '#c9ccd4' -font DejaVu-Sans -pointsize 14 \
-        -label '%t' "$tmp"/*.png -tile 6x1 -geometry "${s}x${s}+12+12" -gravity center \
-        "$PROVAS/leitura-selos-${s}px.png"
+        -label '%t' "$tmp"/*.png -tile "${i}x1" -geometry "${tam}x${tam}+10+10" \
+        -gravity center \
+        -define webp:method=6 -quality 88 "$saida"
     rm -rf "$tmp"
-done
+}
 
-convert "$PROVAS/leitura-selos-192px.png" \
-    "$PROVAS/leitura-selos-56px.png" \
-    "$PROVAS/leitura-selos-28px.png" \
+for tam in 192 56 28; do
+    prova_fila "$PROVAS/tmp-selos-$tam.webp" "$tam" \
+        "$OUT"/avatar/temas/avatar.webp "$OUT"/caverna/temas/caverna.webp \
+        "$OUT"/office-us/temas/office-us.webp "$OUT"/springfield/temas/springfield.webp \
+        "$OUT"/vila/temas/vila.webp "$OUT"/esgoto/temas/esgoto.webp
+done
+convert "$PROVAS/tmp-selos-192.webp" "$PROVAS/tmp-selos-56.webp" "$PROVAS/tmp-selos-28.webp" \
     -background '#15171c' -gravity west -append \
     -define webp:method=6 -quality 88 "$PROVAS/leitura-selos.webp"
 
-# Fundos com a mesma moldura escura de conferência (não é o card final)
-montage -background '#15171c' -fill '#c9ccd4' -font DejaVu-Sans -pointsize 16 \
-    -label '%t' "$OUT/avatar/cards/avatar.webp" "$OUT/vila/cards/vila.webp" \
-    -tile 2x1 -geometry 512x512+14+14 -gravity center \
-    -define webp:method=6 -quality 86 "$PROVAS/fundos-cards.webp"
+prova_fila "$PROVAS/leitura-patentes-avatar.webp" 192 "$OUT"/avatar/patentes/avatar-*.webp
 
-rm -f "$PROVAS"/leitura-selos-*px.png
+# Fundos: prova reduzida, com a mesma moldura escura de conferência (não é o card final)
+tmpf=$(mktemp -d)
+i=0
+for f in "$OUT"/*/cards/*.webp; do
+    [ -f "$f" ] || continue
+    i=$((i + 1))
+    convert "$f" -resize 384x384 "$tmpf/$(printf '%02d' "$i").png"
+done
+if [ "$i" -gt 0 ]; then
+    montage -background '#15171c' -fill '#c9ccd4' -font DejaVu-Sans -pointsize 16 \
+        -label '%t' "$tmpf"/*.png -tile "${i}x1" -geometry 384x384+14+14 -gravity center \
+        -define webp:method=6 -quality 86 "$PROVAS/fundos-cards.webp"
+fi
+rm -rf "$tmpf" "$PROVAS"/tmp-selos-*.webp
+
 echo "provas em $PROVAS"
