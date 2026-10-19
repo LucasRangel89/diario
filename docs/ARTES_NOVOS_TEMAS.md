@@ -10,6 +10,10 @@ Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para a
 
 **Lote 3 (mesma sessão):** os **10 primeiros retratos de chefão de O Equilíbrio dos Elementos** (Mercador de Repolhos → Homem-Combustão). Ver §8.
 
+**Lote 4 (mesma sessão):** **Azula, Ozai** e as **8 primeiras patentes da Vila do Barril**. Ver §9.
+
+**Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**.
+
 ## 1. Capacidade e método
 
 - **1 chamada = 1 imagem única.** A ferramenta não produz cartelas; as provas deste lote são montagens por código (`scripts/prepare-art-novos-temas.sh`).
@@ -254,34 +258,53 @@ Total do lote: **10 arquivos, 579.946 bytes**. Todos 512×512, Lanczos 1254→51
 
 Com o lote 3, o tema `avatar` tem **22/24 arquivos** (selo, fundo, 10 patentes, 10 retratos). Faltam **Azula**, **Ozai**, a moldura `elementos` — o lote 4 fecha o tema.
 
-## 9. Estratégia de lotes (10 imagens por sessão)
+## 9. Lote 4 — fecha os retratos de Avatar e abre as patentes da Vila
 
-Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem; espalhar peças por seis temas deixaria tudo pela metade por muito tempo.
+| Peça | Arquivo | Dimensões | Bytes | Fraqueza/observação |
+|---|---|---:|---:|---|
+| Azula | `avatar/bosses/avatar-b11.webp` | 512×512 | 66.240 | Ombros |
+| Ozai, o Senhor do Fogo | `avatar/bosses/avatar-b12.webp` | 512×512 | 62.282 | Peito (chefe Ms) |
+| Patente 01 — Morador do Barril | `vila/patentes/vila-01.webp` | 192×192 | 8.796 | barril, varal e antena |
+| Patente 02 — Órfão da Vila | `vila/patentes/vila-02.webp` | 192×192 | 8.510 | boné remendado e caneca |
+| Patente 03 — Freguês da Vila | `vila/patentes/vila-03.webp` | 192×192 | 9.202 | balcão, sino e moedas |
+| Patente 04 — Fã do Chapolin | `vila/patentes/vila-04.webp` | 192×192 | 8.948 | fantasia no cabide |
+| Patente 05 — Antenas de Vinil | `vila/patentes/vila-05.webp` | 192×192 | 10.310 | discos e hastes |
+| Patente 06 — Marreta Biônica | `vila/patentes/vila-06.webp` | 192×192 | 9.612 | marreta com molas |
+| Patente 07 — Chapolin Colorado | `vila/patentes/vila-07.webp` | 192×192 | 9.676 | herói de costas |
+| Patente 08 — Herói da Vila | `vila/patentes/vila-08.webp` | 192×192 | 8.714 | medalha com barril |
 
-**Decisão do usuário (19/10): Office = upgrade no local**, o que **elimina** o trabalho de um 24/24 para `office-us` (eram ~2,4 sessões) e o reduz a **6 retratos de personagem + 1 moldura de memorando**.
+Total do lote: **10 arquivos, 102.290 bytes**. Todos candidatos.
 
-Situação após o lote 3 (avatar 22/24, vila 2/24, demais 1/24) e plano revisado:
+- **`avatar` chega a 24/24** (selo, fundo, 10 patentes, 12 retratos) e fica pronto para cadastro na sessão final.
+- **`vila` está em 10/24** (selo, fundo, 8 patentes); faltam 2 patentes e 12 retratos.
+- A família da Vila ganhou identidade própria: medalhões dourados, fundo verde-azulado, scanlines de TV de tubo e granulado de fita — distinta dos selos e do fundo já aprovados no lote 1, mas da mesma paleta.
+
+## 10. Estratégia de lotes (10 imagens por sessão)
+
+Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem.
+
+Situação após o lote 4: **avatar 24/24**, vila 10/24, esgoto/springfield/caverna 1/24 cada, e 6 retratos novos para o upgrade do Office. Restam **89 peças de arte** em **9 lotes de 10** (1 imagem de folga) + **5 molduras** na sessão final:
 
 | Lote | Conteúdo | Fecha |
 |---:|---|---|
-| 4 | Azula, Ozai + moldura `elementos` + 7 patentes vila | **avatar 24/24** |
-| 5 | 3 patentes vila + 7 retratos vila | — |
-| 6 | 5 retratos vila + moldura `tv` + 4 patentes esgoto | **vila 24/24** |
-| 7 | 6 patentes esgoto + 4 retratos esgoto | — |
-| 8 | 8 retratos esgoto + fundo + moldura esgoto | **esgoto 24/24** |
-| 9 | 10 patentes springfield | — |
-| 10 | 10 retratos springfield | — |
-| 11 | 2 retratos springfield + fundo + moldura + 6 patentes caverna | **springfield 24/24** |
-| 12 | 4 patentes caverna + 6 retratos caverna | — |
-| 13 | 6 retratos caverna + fundo + moldura + 2 retratos Office | **caverna 24/24** |
-| 14 | 4 retratos Office + moldura `memorando` + 5 peças de folga | **Office (upgrade)** |
+| 5 | patentes vila 09–10 + retratos vila 01–08 | vila 20/24 |
+| 6 | retratos vila 09–12 + fundo esgoto + 5 patentes esgoto | **vila 24/24** |
+| 7 | patentes esgoto 06–10 + retratos esgoto 01–05 | esgoto 16/24 |
+| 8 | retratos esgoto 06–12 + 3 patentes springfield | **esgoto 24/24** |
+| 9 | patentes springfield 04–10 + retratos springfield 01–03 | springfield 14/24 |
+| 10 | retratos springfield 04–12 + fundo springfield | **springfield 24/24** |
+| 11 | 10 patentes caverna | caverna 11/24 |
+| 12 | 10 retratos caverna | caverna 21/24 |
+| 13 | retratos caverna 11–12 + fundo caverna + 6 retratos Office + 1 folga | **caverna 24/24** e **Office (upgrade)** |
 
-- Restam **≈101 peças** em **11 lotes**, com **5 de folga** no último para regerar o selo de Springfield, uma patente fraca a 28 px ou um retrato que não agrade.
-- **Caminho enxuto**: parar no lote 8 = **3 temas completos** (Avatar, Vila, Esgoto), **6 lotes de geração** e uma PR bem menor. É a menor massa que já entrega uma galeria com três temas novos testados.
-- Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v61 → v62**), mesmo sem CORE novo.
-- Na sessão final o trabalho pesado é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192 (5 temas × 12 – 12 já existentes do Office), CORE do `sw.js`, testes de arte/tema e validação em navegador real. Ela não deve acumular geração.
+Assim, **Avatar fica pronto hoje** e a Vila fecha no lote 6 — dois temas completos em três lotes de geração.
 
-## 10. Pendências e decisões
+- **Caminho enxuto**: parar no lote 8 = **3 temas completos** (Avatar, Vila, Esgoto), 4 lotes de geração e uma PR bem menor. Parar no lote 6 já entrega **2 temas** (Avatar e Vila) em 2 lotes.
+- Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v62 → v63**), mesmo sem CORE novo.
+- **Molduras** (`elementos`, `tv`, `tocha`, `memorando`, `sitcom`, `bueiro`) e **4 fundos de card** entram na sessão de implementação, junto do código que os usa: precisam de keying de alfa e teste nos canvases. Planejar 1 imagem por moldura **fora dos lotes de 10**.
+- Na sessão final o trabalho é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192, CORE do `sw.js`, testes de arte/tema e validação em navegador real.
+
+## 11. Pendências e decisões
 
 1. **The Office**: **upgrade aprovado pelo usuário em 19/10** (`docs/ANALISE_TEMA_OFFICE.md`, caminho A). Mantém o tema `office`, as 24 artes e a regra “sem vilões”; adota o vocabulário (Vendas, Negócio Fechado, Meta Semanal, Trimestre Fiscal, Festa do Comitê) e os 6 desafios com personagem da §5 daquele documento. O selo `office-us` do lote 1 passa a ser **identidade alternativa** do card, não um tema novo; o `office-us` como tema separado está **descartado**. Implementação fica para a sessão final (lote 14 + código).
 2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).
