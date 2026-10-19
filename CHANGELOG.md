@@ -17,6 +17,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - **Lote 7 (chamadas 61–70):** cartela 7 (Treino: séries e descanso) com 10 peças candidatas em `images/artes/candidatos/treino/` (Série concluída a Pausa; faltam 2) — lista adotada das funções reais da sessão, sem vínculo com UI e sem regra nova de classificação. Manifesto com **70 registros**; plano **66/98, 32 pendentes**. Validação completa fica para o fechamento da PR (modo de trabalho ajustado a pedido do usuário).
 - **Lote 8 (chamadas 71–80):** fecha a cartela 7 (Repetir série, Fim do treino — 12/12) e abre a cartela 8 com 8 equipamentos (Esteira a Polia; faltam 4). Manifesto com **80 registros**; plano **76/98, 22 pendentes**. Sem vínculo com UI; validação completa no fechamento da PR.
 - **Lote 9 (chamadas 81–90):** fecha a cartela 8 (Banco, Barra com anilhas, Halteres, Argolas — 12/12) e abre a cartela 9 com 6 troféus de temas (clássico a nórdica; faltam 4). Manifesto com **90 registros**; plano **86/98, 12 pendentes**. Troféus sem vínculo com conquistas/regras; validação completa no fechamento da PR.
+- **Lote 10 (chamadas 91–100):** fecha a cartela 9 (Roma, RPG, Galáctica, Anéis — 10/10) e abre a cartela 10 com 6 peças (Diário sem registros a Configurações; faltam 2). Backup/Restauração como pacotes fechados com seta, sem sinal de conclusão (regra da cartela 10). Manifesto com **100 registros**; plano **96/98, 2 pendentes**. Validação completa no fechamento da PR.
 
 ## [Não lançado] — faixa semanal editável por grupo
 

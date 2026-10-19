@@ -325,6 +325,44 @@ PECAS = [
     ('tf-nordica', 'Troféu Mitologia Nórdica', 'nordica', 'trofeus',
      'lote9-trofeu-nordica.png', 'trofeus/trofeu-nordica.webp',
      (512, 512), 'nearest', 'images/artes/candidatos/trofeus/trofeu-nordica.webp (cartela 9; sem vínculo com UI nem conquista nova)'),
+
+    # Lote 10 — fecha a cartela 9 (Roma, RPG, Galáctica, Anéis) e abre a
+    # cartela 10 (Estados vazios e utilitários, 6 de 8; lista adotada:
+    # Diário sem registros, Busca sem resultados, Sem treinos salvos,
+    # Backup, Restauração, Configurações, Calculadora de anilhas, Sem
+    # corridas). REGRA: backup/restauração são pacotes FECHADOS com seta
+    # de direção — sem check, sem abertura, sem sinal de operação feita;
+    # a confirmação é sempre do sistema, nunca da ilustração.
+    ('tf-roma', 'Troféu Gladiadores de Roma', 'roma', 'trofeus',
+     'lote10-trofeu-roma.png', 'trofeus/trofeu-roma.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/trofeus/trofeu-roma.webp (cartela 9 completa; sem vínculo com UI nem conquista nova)'),
+    ('tf-rpg', 'Troféu Fantasia RPG', 'rpg', 'trofeus',
+     'lote10-trofeu-rpg.png', 'trofeus/trofeu-rpg.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/trofeus/trofeu-rpg.webp (cartela 9 completa; sem vínculo com UI nem conquista nova)'),
+    ('tf-galactica', 'Troféu Comando Galáctico', 'galactica', 'trofeus',
+     'lote10-trofeu-galactica.png', 'trofeus/trofeu-galactica.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/trofeus/trofeu-galactica.webp (cartela 9 completa; sem vínculo com UI nem conquista nova)'),
+    ('tf-aneis', 'Troféu Senhor dos Anéis', 'aneis', 'trofeus',
+     'lote10-trofeu-aneis.png', 'trofeus/trofeu-aneis.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/trofeus/trofeu-aneis.webp (cartela 9 completa; sem vínculo com UI nem conquista nova)'),
+    ('ut-vazio-diario', 'Diário sem registros', 'app', 'estados-vazios',
+     'lote10-vazio-diario.png', 'utilitarios/vazio-diario.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/utilitarios/vazio-diario.webp (cartela 10, estado vazio; sem vínculo com UI)'),
+    ('ut-vazio-busca', 'Busca sem resultados', 'app', 'estados-vazios',
+     'lote10-vazio-busca.png', 'utilitarios/vazio-busca.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/utilitarios/vazio-busca.webp (cartela 10, estado vazio; sem vínculo com UI)'),
+    ('ut-vazio-treinos', 'Sem treinos salvos', 'app', 'estados-vazios',
+     'lote10-vazio-treinos.png', 'utilitarios/vazio-treinos.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/utilitarios/vazio-treinos.webp (cartela 10, estado vazio; sem vínculo com UI)'),
+    ('ut-backup', 'Backup', 'app', 'utilitarios',
+     'lote10-backup.png', 'utilitarios/backup.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/utilitarios/backup.webp (cartela 10; ilustração neutra pré-ação — nunca indica backup concluído; sem vínculo com UI)'),
+    ('ut-restauracao', 'Restauração', 'app', 'utilitarios',
+     'lote10-restauracao.png', 'utilitarios/restauracao.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/utilitarios/restauracao.webp (cartela 10; ilustração neutra pré-ação — nunca indica restauração concluída; sem vínculo com UI)'),
+    ('ut-configuracoes', 'Configurações', 'app', 'utilitarios',
+     'lote10-configuracoes.png', 'utilitarios/configuracoes.webp',
+     (512, 512), 'nearest', 'images/artes/candidatos/utilitarios/configuracoes.webp (cartela 10; sem vínculo com UI)'),
 ]
 
 # Notas de revisão peça a peça que complementam a nota genérica do método
@@ -337,6 +375,11 @@ NOTAS_EXTRA = {
     'eq-banco': ' Divergência registrada: composição escura com moldura interna; banco bem legível no centro.',
     'eq-halteres': ' Divergência registrada: moldura cinza decorativa em volta de todo o quadro.',
     'eq-argolas': ' Divergência registrada: margem cinza em volta do quadro e argolas sobrepostas no centro (leitura OO).',
+    'tf-galactica': ' Divergência registrada: janela da nave em quadro arredondado com cantos externos claros.',
+    'ut-vazio-busca': ' Divergência registrada: folha em branco bem clara, em perspectiva sob a lupa.',
+    'ut-backup': ' Divergência registrada: fundo cinza liso (diverge da família escura das demais peças). REGRA CUMPRIDA: caixa fechada com cadeado e seta para cima — sem check nem sinal de conclusão.',
+    'ut-restauracao': ' REGRA CUMPRIDA: caixa fechada com cadeado suspensa sobre bandeja vazia e seta para baixo — nada importado, sem check nem sinal de conclusão.',
+    'ut-configuracoes': ' Divergência registrada: moldura metálica decorativa em volta de todo o quadro.',
     'tf-classico': ' Divergência registrada: moldura metálica decorativa em volta de todo o quadro.',
     'tf-zodiaco': ' Divergência registrada: roda do zodíaco com glifos/constelações abstratos ilegíveis nos segmentos.',
     'tf-hercules': ' Divergência registrada: moldura escura arredondada com cantos externos claros.',
@@ -500,7 +543,7 @@ def arquivo_peca(dest, uso):
 
 # 1) leitura a 28/56 px de patentes, selos e identidade (método final)
 alvos_leitura = [(pid, dest, uso) for pid, peca, tema, cat, fname, dest, alvo, metodo, uso in PECAS
-                 if cat in ('patentes', 'temas', 'identidade', 'treino', 'equipamentos', 'trofeus') and arquivo_peca(dest, uso).exists()]
+                 if cat in ('patentes', 'temas', 'identidade', 'treino', 'equipamentos', 'trofeus', 'estados-vazios', 'utilitarios') and arquivo_peca(dest, uso).exists()]
 faixa = Image.new('RGB', (max(1, len(alvos_leitura)) * 90, 200), (24, 24, 28))
 col = 0
 for pid, dest, uso in alvos_leitura:
