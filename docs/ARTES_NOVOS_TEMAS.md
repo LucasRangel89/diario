@@ -22,6 +22,8 @@ Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para a
 
 **Lote 9 (mesma sessão):** patentes **04–10 de Springfield** (10/10 fechadas) + retratos de **Nelson** e **Willie**. O retrato do **Trio Bully foi recusado pelo filtro de segurança** da ferramenta e fica para o lote 10 com outra composição. Ver §14.
 
+**Lote 10 (mesma sessão):** 7 retratos + fundo de Springfield. O trio foi aprovado no terceiro prompt (elenco escolar acenando, sem palavras de conflito). **Springfield fica em 21/24** — faltam 3 retratos. Ver §15.
+
 **Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**.
 
 ## 1. Capacidade e método
@@ -390,25 +392,46 @@ Total do lote: **9 arquivos, 206.620 bytes**. Todos candidatos.
 - **`springfield` está em 17/24**: selo, **10/10 patentes** e 3/12 retratos (Nelson, Willie; o trio falta).
 - **Recusa registrada:** a 10ª chamada (retrato do Trio Bully) voltou com `moderation_blocked` do provedor de imagem. A vaga foi consumida; a peça será refeita no lote 10 com composição em pose de fliperama, sem conotação de violência. Não é falha de revisão — é limite externo da ferramenta.
 
-## 15. Estratégia de lotes (10 imagens por sessão)
+## 15. Lote 10 — Springfield em 21/24 (duas recusas de moderação)
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Retrato — Trio do Pátio | `springfield/bosses/springfield-b02.webp` | 512×512 | 59.446 |
+| Retrato — Chefe Wiggum | `springfield/bosses/springfield-b04.webp` | 512×512 | 47.104 |
+| Retrato — Tony Gordo | `springfield/bosses/springfield-b05.webp` | 512×512 | 57.344 |
+| Retrato — Krusty | `springfield/bosses/springfield-b06.webp` | 512×512 | 55.284 |
+| Retrato — Kang e Kodos | `springfield/bosses/springfield-b07.webp` | 512×512 | 55.866 |
+| Retrato — Hank Scorpio | `springfield/bosses/springfield-b08.webp` | 512×512 | 46.404 |
+| Retrato — Loja de Conveniência | `springfield/bosses/springfield-b11.webp` | 512×512 | 44.444 |
+| Fundo — Springfield | `springfield/cards/springfield.webp` | 1024×1024 | 160.712 |
+
+Total do lote: **8 arquivos, 526.604 bytes**. Todos candidatos.
+
+**Recusas de moderação (filtro do provedor, na saída — não é revisão de estilo):**
+- **Trio do Pátio**: 3 tentativas. As duas primeiras descrições (“valentões”, depois nomes próprios) foram recusadas. Passou ao descrever **três amigos de escola acenando**, como cartão de elenco. A peça foi renomeada para **Trio do Pátio** no catálogo.
+- Uma segunda chamada do lote também voltou recusada e foi refeita com sucesso; as 8 peças acima existem e foram conferidas no disco (dimensões e bytes no manifesto).
+
+**Estado real do tema (conferido arquivo por arquivo):** **21/24** — selo, fundo, 10/10 patentes e **9/12 retratos**. Faltam os retratos **09 (Sr. Burns)**, **10 (Bob Sideshow)** e **12 (Multidão de Springfield)**. O tema **não está fechado**.
+
+## 16. Estratégia de lotes (10 imagens por sessão)
 
 Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem.
 
-Situação após o lote 9: **avatar, vila e esgoto 24/24**; **springfield 17/24**; caverna 1/24; 6 retratos do Office pendentes. Restam **40 peças** em **4 lotes** + **5 molduras** na sessão final:
+Situação após o lote 10: **avatar, vila e esgoto 24/24**; **springfield 21/24**; caverna 1/24; 6 retratos do Office pendentes. Restam **32 peças** em **3 lotes** + **4 molduras** e **2 fundos** na sessão final:
 
 | Lote | Conteúdo | Fecha |
 |---:|---|---|
-| 10 | Trio Bully (retry) + Wiggum, Tony Gordo, Bob, Kang e Kodos, Scorpio, Krusty, Burns + fundo springfield | **springfield 24/24** |
-| 11 | 10 patentes caverna | caverna 11/24 |
-| 12 | 10 retratos caverna | caverna 21/24 |
-| 13 | 2 retratos caverna + fundo caverna + 6 retratos Office + 1 folga | **caverna 24/24** e **Office** |
+| 11 | Burns, Bob Sideshow, Multidão + 7 patentes caverna | **springfield 24/24** |
+| 12 | 3 patentes caverna + 7 retratos caverna | caverna 11/24 |
+| 13 | 5 retratos caverna + fundo caverna + 4 retratos Office | **caverna 24/24** |
+| final | fundo caverna (se não couber), 2 retratos Office, fundo office, 4 molduras + cadastro e testes | **Office (upgrade)** |
 
 - **Ponto de corte recomendado**: **três temas completos** (Avatar, Vila, Esgoto) já permitem abrir a PR e validar o fluxo de cadastro ponta a ponta. Os lotes 9–13 entram como commits incrementais.
 - Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v62 → v63**), mesmo sem CORE novo.
 - **Molduras** (`elementos`, `tv`, `tocha`, `memorando`, `sitcom`, `bueiro`) e **4 fundos de card** entram na sessão de implementação, junto do código que os usa: precisam de keying de alfa e teste nos canvases. Planejar 1 imagem por moldura **fora dos lotes de 10**.
 - Na sessão final o trabalho é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192, CORE do `sw.js`, testes de arte/tema e validação em navegador real.
 
-## 16. Pendências e decisões
+## 17. Pendências e decisões
 
 1. **The Office**: **upgrade aprovado pelo usuário em 19/10** (`docs/ANALISE_TEMA_OFFICE.md`, caminho A). Mantém o tema `office`, as 24 artes e a regra “sem vilões”; adota o vocabulário (Vendas, Negócio Fechado, Meta Semanal, Trimestre Fiscal, Festa do Comitê) e os 6 desafios com personagem da §5 daquele documento. O selo `office-us` do lote 1 passa a ser **identidade alternativa** do card, não um tema novo; o `office-us` como tema separado está **descartado**. Implementação fica para a sessão final (lote 14 + código).
 2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).
