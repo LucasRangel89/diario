@@ -2,6 +2,13 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Não lançado] — novos temas: direção de arte e lote 1 (selos + 2 fundos)
+
+- Seis temas futuros receberam **direção de arte e catálogo adaptado** em `docs/ARTES_NOVOS_TEMAS.md`: O Equilíbrio dos Elementos (`avatar`), Caverna do Dragão (`caverna`), The Office EUA (`office-us`), Springfield (`springfield`), Vila do Barril (`vila`) e Esgoto de Nova York (`esgoto`). Nomes, patentes, chefões (fechados em 12 na curva `100+18i`), fraquezas nos grupos reais, vocabulário de missão/deload/crítico e molduras propostas; tudo é **proposta editorial**, nada cadastrado.
+- **Lote 1: 8 peças** em pixel art (6 selos 192×192 + 2 fundos de card 1024×1024, 477 KB) em `images/artes/candidatos/<tema>/temas|cards/`, fora do CORE do SW e sem vínculo com a UI; originais fora do Git em `.cache/artes-originais/novos-temas/`. Manifesto `docs/manifesto-artes.json` vai a **112 registros** e `scripts/prepare-art-novos-temas.sh` (ImageMagick editorial, sem dependência de produção) reproduz recorte, redução e provas.
+- Revisão registrada: selos legíveis a 28 px com ressalva para The Office (papel bege) e Avatar (denso); o selo de Springfield veio com cantos pretos fora do disco, divergência anotada para regerar se o tema for aprovado. Fundos ainda **não** testados no canvas 1080×1920/1080×1080.
+- Pendências e colisão explícitas: `office` já existe no app (PR #32), então o quarto pedido precisa virar upgrade do tema, tema separado ou ser descartado; faltam 4 fundos, 6 molduras e 132 retratos/patentes (6×12 + 6×10). Nenhuma mudança em `THEMES`, XP, dano, PR, temporadas, backup ou `sw.js`; limites de propriedade intelectual dos seis seriados registrados.
+
 ## [Não lançado] — artes ThunderCats e The Office (lotes 1–6) + cadastro dos dois temas na galeria
 
 - Primeiro lote de artes para os temas futuros ThunderCats e The Office: **10 peças geradas** em pixel art (aprovadas na sessão) — retratos Mumm-Ra (forma poderosa) e Impressora em pane; patentes Lenda de Thundera e Lenda de Scranton; selos dos dois temas; fundos de card dos dois temas; duas molduras de overlay. **Nenhum tema é cadastrado e nada entra na galeria** (cada tema exige 24 arquivos; ambos têm 4/24).
