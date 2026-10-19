@@ -12,6 +12,8 @@ Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para a
 
 **Lote 4 (mesma sessão):** **Azula, Ozai** e as **8 primeiras patentes da Vila do Barril**. Ver §9.
 
+**Lote 5 (mesma sessão):** patentes **09–10 da Vila** e os **8 primeiros retratos** (Quico → Monstros de TV). Ver §10.
+
 **Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**.
 
 ## 1. Capacidade e método
@@ -279,32 +281,49 @@ Total do lote: **10 arquivos, 102.290 bytes**. Todos candidatos.
 - **`vila` está em 10/24** (selo, fundo, 8 patentes); faltam 2 patentes e 12 retratos.
 - A família da Vila ganhou identidade própria: medalhões dourados, fundo verde-azulado, scanlines de TV de tubo e granulado de fita — distinta dos selos e do fundo já aprovados no lote 1, mas da mesma paleta.
 
-## 10. Estratégia de lotes (10 imagens por sessão)
+## 10. Lote 5 — Vila do Barril: patentes fechadas, retratos pela metade
+
+| Peça | Arquivo | Dimensões | Bytes | Nota |
+|---|---|---:|---:|---|
+| Patente 09 — Defensor dos Fracos | `vila/patentes/vila-09.webp` | 192×192 | 12.128 | escudo, marreta e capa cruzadas |
+| Patente 10 — Sanduíche Supremo | `vila/patentes/vila-10.webp` | 192×192 | 13.748 | a piada que nunca se resolve |
+| Retrato — Quico | `vila/bosses/vila-b01.webp` | 512×512 | 58.570 | En · Peito |
+| Retrato — Chiquinha | `vila/bosses/vila-b02.webp` | 512×512 | 54.246 | Vl · Pernas |
+| Retrato — Nhonho | `vila/bosses/vila-b03.webp` | 512×512 | 52.022 | Tq · Abdômen |
+| Retrato — Jaiminho | `vila/bosses/vila-b04.webp` | 512×512 | 50.342 | Vl · Costas |
+| Retrato — Prof. Girafales | `vila/bosses/vila-b05.webp` | 512×512 | 49.360 | Tq · Ombros |
+| Retrato — Dona Florinda | `vila/bosses/vila-b06.webp` | 512×512 | 49.514 | Cl · Antebraço |
+| Retrato — Bruxa do 71 | `vila/bosses/vila-b07.webp` | 512×512 | 55.680 | Cl · Costas |
+| Retrato — Monstros de TV | `vila/bosses/vila-b08.webp` | 512×512 | 54.002 | En · Core |
+
+Total do lote: **10 arquivos, 449.612 bytes**. Todos candidatos.
+
+- **`vila` está em 22/24**: selo, fundo, **10/10 patentes** e **8/12 retratos**. Faltam Seu Barriga, 14 Meses de Aluguel, Bola de Boliche da Vila e Cópia do Chapolin — o lote 6 fecha o tema.
+- A família de retratos manteve a paleta de vila de TV (amarelo-mostarda, vinho, verde-azulado) com scanlines e granulado, coerente com selo, fundo e patentes.
+
+## 11. Estratégia de lotes (10 imagens por sessão)
 
 Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem.
 
-Situação após o lote 4: **avatar 24/24**, vila 10/24, esgoto/springfield/caverna 1/24 cada, e 6 retratos novos para o upgrade do Office. Restam **89 peças de arte** em **9 lotes de 10** (1 imagem de folga) + **5 molduras** na sessão final:
+Situação após o lote 5: **avatar 24/24**, **vila 22/24**, esgoto/springfield/caverna 1/24 cada, e 6 retratos a produzir para o upgrade do Office. Restam **79 peças de arte** em **8 lotes** + **5 molduras** na sessão final:
 
 | Lote | Conteúdo | Fecha |
 |---:|---|---|
-| 5 | patentes vila 09–10 + retratos vila 01–08 | vila 20/24 |
-| 6 | retratos vila 09–12 + fundo esgoto + 5 patentes esgoto | **vila 24/24** |
-| 7 | patentes esgoto 06–10 + retratos esgoto 01–05 | esgoto 16/24 |
-| 8 | retratos esgoto 06–12 + 3 patentes springfield | **esgoto 24/24** |
-| 9 | patentes springfield 04–10 + retratos springfield 01–03 | springfield 14/24 |
-| 10 | retratos springfield 04–12 + fundo springfield | **springfield 24/24** |
+| 6 | 4 retratos vila + fundo esgoto + 5 patentes esgoto | **vila 24/24** |
+| 7 | 5 patentes esgoto + 5 retratos esgoto | esgoto 20/24 |
+| 8 | 7 retratos esgoto + 3 patentes springfield | **esgoto 24/24** |
+| 9 | 7 patentes springfield + 3 retratos springfield | springfield 11/24 |
+| 10 | 9 retratos springfield + fundo springfield | **springfield 24/24** |
 | 11 | 10 patentes caverna | caverna 11/24 |
 | 12 | 10 retratos caverna | caverna 21/24 |
-| 13 | retratos caverna 11–12 + fundo caverna + 6 retratos Office + 1 folga | **caverna 24/24** e **Office (upgrade)** |
+| 13 | 2 retratos caverna + fundo caverna + 6 retratos Office + 1 folga | **caverna 24/24** e **Office (upgrade)** |
 
-Assim, **Avatar fica pronto hoje** e a Vila fecha no lote 6 — dois temas completos em três lotes de geração.
-
-- **Caminho enxuto**: parar no lote 8 = **3 temas completos** (Avatar, Vila, Esgoto), 4 lotes de geração e uma PR bem menor. Parar no lote 6 já entrega **2 temas** (Avatar e Vila) em 2 lotes.
+- **Caminho enxuto**: parar no lote 6 = **2 temas completos** (Avatar e Vila), uma PR enxuta. Parar no lote 8 = **3 temas** (Avatar, Vila, Esgoto).
 - Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v62 → v63**), mesmo sem CORE novo.
 - **Molduras** (`elementos`, `tv`, `tocha`, `memorando`, `sitcom`, `bueiro`) e **4 fundos de card** entram na sessão de implementação, junto do código que os usa: precisam de keying de alfa e teste nos canvases. Planejar 1 imagem por moldura **fora dos lotes de 10**.
 - Na sessão final o trabalho é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192, CORE do `sw.js`, testes de arte/tema e validação em navegador real.
 
-## 11. Pendências e decisões
+## 12. Pendências e decisões
 
 1. **The Office**: **upgrade aprovado pelo usuário em 19/10** (`docs/ANALISE_TEMA_OFFICE.md`, caminho A). Mantém o tema `office`, as 24 artes e a regra “sem vilões”; adota o vocabulário (Vendas, Negócio Fechado, Meta Semanal, Trimestre Fiscal, Festa do Comitê) e os 6 desafios com personagem da §5 daquele documento. O selo `office-us` do lote 1 passa a ser **identidade alternativa** do card, não um tema novo; o `office-us` como tema separado está **descartado**. Implementação fica para a sessão final (lote 14 + código).
 2. **Regerar depois**: cantos pretos do selo de Springfield e, se a leitura a 28 px incomodar, o selo de The Office (papel bege com pouco contraste).
