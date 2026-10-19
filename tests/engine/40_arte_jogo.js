@@ -7,7 +7,7 @@
 
 console.log('\n== 22. Arte própria: emblemas de patente, selos, cards e retratos ==');
 {
-    const THEME_IDS = ['classico','zodiaco','hercules','acao','folclore','nordica','roma','rpg','galactica','aneis','thundercats','office'];
+    const THEME_IDS = ['classico','zodiaco','hercules','acao','folclore','nordica','roma','rpg','galactica','aneis','thundercats','office','avatar','vila','esgoto','springfield','caverna'];
     const missing = [];
     let heavy = [];
     for (const t of THEME_IDS) {
@@ -18,14 +18,14 @@ console.log('\n== 22. Arte própria: emblemas de patente, selos, cards e retrato
         }
         for (const f of [`images/temas/${t}.webp`, `images/cards/${t}.webp`]) if (!fs.existsSync(f)) missing.push(f);
     }
-    check('120 emblemas de patente + 12 selos + 12 fundos de card existem', missing.length === 0, missing.slice(0, 6));
+    check('170 emblemas de patente + 17 selos + 17 fundos de card existem', missing.length === 0, missing.slice(0, 6));
     check('emblemas de patente ficam leves (<= 60 KB cada)', heavy.length === 0, heavy.slice(0, 4));
     const appSrc = fonteJs();
     const s0 = appSrc.indexOf('const DEFAULT_BOSS_PORTRAITS');
     const block = appSrc.slice(s0, appSrc.indexOf('};', s0));
     const entries = [...block.matchAll(/'([a-z]+):([a-zA-Z0-9]+)':\s*'([^']+)'/g)];
-    check('144 retratos mapeados, um por chefão, e todos existem no disco',
-        entries.length === 144 && entries.every(([, t, id, file]) => !!api.THEMES[t] && !!api.THEMES[t].bosses.find(b => b.id === id) && fs.existsSync(file)),
+    check('204 retratos mapeados, um por chefão, e todos existem no disco',
+        entries.length === 204 && entries.every(([, t, id, file]) => !!api.THEMES[t] && !!api.THEMES[t].bosses.find(b => b.id === id) && fs.existsSync(file)),
         { encontrados: entries.length });
     check('cada tema cobre os 12 chefões com retrato próprio',
         THEME_IDS.every(t => entries.filter(([, th]) => th === t).length === 12),

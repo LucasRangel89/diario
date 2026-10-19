@@ -196,12 +196,13 @@ let activeTab = 'diario';
 const THEME_ICONS = Object.freeze({
     classico: '🦍', zodiaco: '♈', hercules: '🦁', acao: '🎬', folclore: '🌴',
     nordica: '🛡️', roma: '🏛️', rpg: '🐉', galactica: '🚀', aneis: '💍',
-    thundercats: '🐱', office: '🏢'
+    thundercats: '🐱', office: '🏢', avatar: '🌀', vila: '📺', esgoto: '🐢',
+    springfield: '🍩', caverna: '🐉'
 });
 
 // Arte própria dos temas: ícone (selo) e fundo dos cards. Patente = 10 níveis × 12 temas.
 // IDs novos ao fim da lista: IDs existentes e o progresso salvo nunca são remapeados.
-const THEME_IDS_LIST = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica', 'aneis', 'thundercats', 'office'];
+const THEME_IDS_LIST = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica', 'aneis', 'thundercats', 'office', 'avatar', 'vila', 'esgoto', 'springfield', 'caverna'];
 const THEME_ICON_IMGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/temas/${id}.webp`])));
 const THEME_CARD_BGS = Object.freeze(Object.fromEntries(THEME_IDS_LIST.map(id => [id, `images/cards/${id}.webp`])));
 
@@ -261,6 +262,26 @@ const STORY_CARD_STYLES = Object.freeze({
     office: {
         palette: { bgStart: '#0b1220', bgEnd: '#1c2a44', cardBg: 'rgba(16,24,40,.92)', cardBorder: 'rgba(212,175,55,.22)', borderPrimary: '#d4af37', titleColor: '#fdf6e3', accentColor: '#fbbf24', textDim: '#aebdd2', prColor: '#6ee7b7', badgeBg: '#141f31' },
         fonts: { display: '"Inter", sans-serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    avatar: {
+        palette: { bgStart: '#07161a', bgEnd: '#123033', cardBg: 'rgba(10,32,36,.9)', cardBorder: 'rgba(217,164,65,.22)', borderPrimary: '#d9a441', titleColor: '#eefdfb', accentColor: '#5eead4', textDim: '#a8c3c2', prColor: '#86efac', badgeBg: '#0c2427' },
+        fonts: { display: 'Georgia, serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    vila: {
+        palette: { bgStart: '#1a0d12', bgEnd: '#3a1720', cardBg: 'rgba(42,18,24,.9)', cardBorder: 'rgba(245,158,11,.22)', borderPrimary: '#f59e0b', titleColor: '#fff7ed', accentColor: '#ef4444', textDim: '#d8b9a8', prColor: '#34d399', badgeBg: '#2a1218' },
+        fonts: { display: '"Oswald", sans-serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    esgoto: {
+        palette: { bgStart: '#05130d', bgEnd: '#0f2a1c', cardBg: 'rgba(10,32,22,.9)', cardBorder: 'rgba(34,197,94,.2)', borderPrimary: '#22c55e', titleColor: '#eafff2', accentColor: '#a3e635', textDim: '#9fbfae', prColor: '#fbbf24', badgeBg: '#0b2016' },
+        fonts: { display: '"Oswald", sans-serif', accent: 'monospace', body: '"Inter", sans-serif', numeric: 'monospace' }
+    },
+    springfield: {
+        palette: { bgStart: '#0b1220', bgEnd: '#16294a', cardBg: 'rgba(14,28,48,.9)', cardBorder: 'rgba(250,204,21,.22)', borderPrimary: '#facc15', titleColor: '#fffbe6', accentColor: '#38bdf8', textDim: '#c3cede', prColor: '#f472b6', badgeBg: '#122036' },
+        fonts: { display: '"Oswald", sans-serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
+    },
+    caverna: {
+        palette: { bgStart: '#150b1f', bgEnd: '#2a1533', cardBg: 'rgba(33,18,43,.9)', cardBorder: 'rgba(168,85,247,.22)', borderPrimary: '#a855f7', titleColor: '#f6ecff', accentColor: '#f59e0b', textDim: '#c0aed4', prColor: '#86efac', badgeBg: '#21122b' },
+        fonts: { display: 'Georgia, serif', accent: '"Teko", sans-serif', body: '"Inter", sans-serif', numeric: '"Oswald", sans-serif' }
     }
 });
 

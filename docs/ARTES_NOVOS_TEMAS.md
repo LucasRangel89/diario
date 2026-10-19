@@ -1,0 +1,558 @@
+# Novos temas — direção de arte e catálogo adaptado (lote 1)
+
+Sessão `arena/a088cf10-diario` · 19/10/2026 · base `7a6b218` (main) · nenhuma alteração preexistente no checkout.
+
+Lote 1 autorizado pelo pedido do usuário: “gerar algumas novas imagens para alguns temas (ignore a numeração). Tenha liberdade criativa para alterar nomes e itens.” Foram produzidas **8 peças** (6 selos + 2 fundos de card) em **10 chamadas de geração** (o limite por turno da ferramenta é 10; duas chamadas extras foram revisões). Nenhum tema foi cadastrado no app, nenhuma fórmula/regra foi alterada.
+
+**Lote 2 (mesma sessão):** as **10 patentes de O Equilíbrio dos Elementos** (`avatar-01…10`), fechando a família de emblemas do tema mais adiantado. Estratégia de lotes definida com o usuário: gerar o máximo por sessão (10 imagens) e deixar revisão longa, cadastro e testes para a sessão final. Ver §8.
+
+**Análise do tema `office` existente × proposta:** `docs/ANALISE_TEMA_OFFICE.md` (recomendação: upgrade no lugar + vocabulário; **não** criar segundo tema). **Decisão do usuário (19/10): adotar o upgrade** — aprovado o caminho A, com a lista de 12 desafios e os 6 retratos de personagem do §5 daquele documento. Nada implementado ainda; ver §10.
+
+**Lote 3 (mesma sessão):** os **10 primeiros retratos de chefão de O Equilíbrio dos Elementos** (Mercador de Repolhos → Homem-Combustão). Ver §8.
+
+**Lote 4 (mesma sessão):** **Azula, Ozai** e as **8 primeiras patentes da Vila do Barril**. Ver §9.
+
+**Lote 5 (mesma sessão):** patentes **09–10 da Vila** e os **8 primeiros retratos** (Quico → Monstros de TV). Ver §10.
+
+**Lote 6 (mesma sessão):** 4 retratos finais da Vila + **fundo do Esgoto** + 5 patentes do Esgoto. **Vila do Barril fecha 24/24.** Ver §11.
+
+**Lote 7 (mesma sessão):** patentes **06–10 do Esgoto** e os **5 primeiros retratos** (Clã do Pé → Rei dos Ratos). Ver §12.
+
+**Lote 8 (mesma sessão):** 7 retratos finais do Esgoto + 3 patentes de Springfield. **Esgoto de Nova York fecha 24/24 — terceiro tema completo.** Ver §13.
+
+**Lote 9 (mesma sessão):** patentes **04–10 de Springfield** (10/10 fechadas) + retratos de **Nelson** e **Willie**. O retrato do **Trio Bully foi recusado pelo filtro de segurança** da ferramenta e fica para o lote 10 com outra composição. Ver §14.
+
+**Lote 10 (mesma sessão):** 7 retratos + fundo de Springfield. O trio foi aprovado no terceiro prompt (elenco escolar acenando, sem palavras de conflito). **Springfield fica em 21/24** — faltam 3 retratos. Ver §15.
+
+**Lote 11 (mesma sessão):** os 3 retratos finais de Springfield + 7 patentes da Caverna. **Springfield fecha 24/24 — quarto tema completo.** Ver §16.
+
+**Lote 12 (mesma sessão):** patentes **08–10 da Caverna** (10/10 fechadas) + os **7 primeiros monstros**. Ver §17.
+
+**Lote 13 (mesma sessão):** 5 monstros finais + **fundo da Caverna** + 4 retratos do upgrade do Office. **Caverna fecha 24/24 — quinto tema completo.** Ver §18.
+
+**Lote 14 (mesma sessão, revisão pedida pelo usuário):** **selo e 4 patentes de Springfield regerados**, 2 retratos do Office e **moldura `memorando`**. Ver §19.
+
+**Decisão de engenharia (19/10):** as **molduras saem da fila de geração** e vão para a sessão de implementação. Motivo: moldura exige alfa por *keying* do xadrez pintado, revisão de halo e teste nos canvases 1080×1920/1080×1080 — trabalho que só faz sentido junto do código que vai desenhá-la. Isso libera as 10 imagens de cada sessão para arte de jogo (retratos e patentes) e **elimina ~6 imagens do plano**. **Superada no lote 15:** com a arte de jogo fechada, as 5 molduras e o fundo de Scranton foram gerados na sessão de fechamento (ver §20); o card continua desenhado em vetor em `js/cartoes.js`.
+
+## 1. Capacidade e método
+
+- **1 chamada = 1 imagem única.** A ferramenta não produz cartelas; as provas deste lote são montagens por código (`scripts/prepare-art-novos-temas.sh`).
+- Saída revisada: 1254×1254, RGB **sem alfa**. Selos reduzidos a **192×192** (LANCZOS) e fundos mantidos em **1024×1024**, ambos em WebP qualidade 84/80, método 6.
+- Originais grandes ficam fora do Git (`.cache/artes-originais/novos-temas/`, ignorado e volátil). O registro durável são os derivados versionados + `docs/manifesto-artes.json` (8 registros novos, `estado: candidato`).
+- Linguagem única da casa: **pixel art** com contorno grosso, como nas famílias ThunderCats/Office, mas cada tema tem seu dialeto (paleta, traço e motivo).
+
+## 2. Identidade visual por tema
+
+| Tema (id proposto) | Nome proposto | Selo | Fundo de card | Dialeto |
+|---|---|---|---|---|
+| `avatar` | **O Equilíbrio dos Elementos** | Mandala de bronze com quatro elementos girando ao redor de um lótus branco | Pátio de templo ao entardecer, quatro santuários elementais e praça de meditação | Azul-gelo, verde-terra, laranja-fogo, branco-ar; traço limpo de animação convertido em pixel |
+| `caverna` | **Caverna do Dragão** | Cabeça de dragão vermelho sobre pentagrama de bronze, com d20 | Câmara de masmorra violeta com tochas, estalagmites e portal do dragão | Violeta e ocre de masmorra, luz de tocha, contorno grosso dos anos 80 |
+| `office-us` | **The Office (EUA)** — ver §7 | Resma de papel com faixa azul, clipe, anel de café e carimbo geométrico | (pendente) | Bege e cinza de escritório, azul-Dunder Mifflin, luz fluorescente esverdeada |
+| `springfield` | **Springfield** | Rosquinha dourada com cobertura rosa sobre sofá e TV, em disco amarelo | (pendente) | Amarelo-Simpson, céu azul com nuvens, contorno preto grosso, estilo beat ’em up |
+| `vila` | **Vila do Barril** | Barril com sanduíche de presunto dentro de moldura de TV de tubo | Pátio da vila ao entardecer, barril, vara de roupa, portas coloridas | Cores saturadas de vila de TV, granulado de fita e scanlines |
+| `esgoto` | **Esgoto de Nova York** | Tampa de bueiro com concha, quatro rebites nas cores das bandanas | (pendente) | Verde-esgoto, neon e vapor, quatro cores de bandana, beat ’em up |
+
+Nomes, arenas e rótulos ficam como **proposta** até aprovação; nada foi ligado ao motor.
+
+## 3. Catálogo adaptado (vocabulário do app)
+
+O motor usa sempre **10 patentes**, **12 chefões** na curva `100 + 18i`, **12 semanas** por temporada e os mesmos grupos musculares (`Peito, Costas, Pernas, Posterior, Ombros, Bíceps, Tríceps, Abdômen, Core, Antebraço`). Por isso as listas abaixo fecham em 12 chefões (as do pedido tinham 10–11) e mantêm as 10 patentes. **A ordem é editorial, não escala canônica de força.**
+
+### 3.1 O Equilíbrio dos Elementos (`avatar`)
+
+- Arena: **Templo dos Quatro Ventos** · Chefão: **ADVERSÁRIO ATIVO** · Estágio: **CAPÍTULO** · Missão: **Missão do Equilíbrio** / **Missões do Equilíbrio**
+- Deload: **Meditação no Templo** · Crítico (PR): **Estado Avatar** · Conquistas: **Peças de Pai Sho**
+- Missão fixa: **Equilíbrio dos Quatro Elementos**
+- Moldura de card: `elementos` (mandala de quatro cores nos cantos) — a implementar em `js/cartoes.js`
+- **Famílias de grupo por elemento:** Terra = pernas; Água = costas; Fogo = peito/ombros; Ar = core/cardio (usado como fraqueza dos chefões)
+
+| # | Patente | | # | Chefão (arquétipo) | Fraqueza | Justificativa |
+|---:|---|---|---:|---|---|---|
+| 1 | Civil da Aldeia | | 1 | Mercador de Repolhos (En) | Pernas | A carroça foge do controle e ele tropeça; a base decide a fuga. |
+| 2 | Noviço do Templo | | 2 | Arqueiras Yuyan (En) | Ombros | A posição de tiro expõe a articulação que sustenta o arco. |
+| 3 | Dobrador de Água | | 3 | Comandante Zhao (Tq) | Peito | A couraça da Marinha abre no peitoral quando ele avança. |
+| 4 | Dobrador de Terra | | 4 | Jet (Vl) | Pernas | Ganchos e telhados dependem de impulso e pouso. |
+| 5 | Dobrador de Fogo | | 5 | Príncipe Zuko (Vl) | Ombros | As espadas duplas giram pelo ombro; travar o giro abre a guarda. |
+| 6 | Dobrador de Ar | | 6 | Long Feng (En) | Costas | Conselheiro que nunca vira as costas — até precisar fugir. |
+| 7 | Lótus Branco | | 7 | Koh, o Ladrão de Rostos (Cl) | Core | A face muda, mas o centro do corpo permanece. |
+| 8 | Mestre Dobrador | | 8 | Wan Shi Tong (Tq) | Core | A biblioteca se apoia num eixo; deslocar o centro derruba as estantes. |
+| 9 | Espírito de Luz | | 9 | Hama (Cl) | Antebraço | A dobra de sangue exige mãos firmes e prolongadas. |
+| 10 | **AVATAR** | | 10 | Homem-Combustão (Cl) | Peito | A explosão nasce da respiração e do tórax. |
+| | | | 11 | Azula (Vl) | Ombros | O raio é disparado pelo ombro; interromper o gesto desvia a descarga. |
+| | | | 12 | Ozai, o Senhor do Fogo (Ms) | Peito | O núcleo do poder está no peito; o Estado Avatar atinge o centro. |
+
+*Mudanças criativas:* “Espírito Raava” virou **Espírito de Luz** (evita nome próprio literal); entraram **Arqueiras Yuyan** para fechar 12. O Estado Avatar é o PR crítico (o “crítico” dispara o efeito, não uma regra nova de dano).
+
+### 3.2 Caverna do Dragão (`caverna`)
+
+- Arena: **Masmorra de Reide** · Chefão: **MONSTRO ATIVO** · Estágio: **SALA** · Missão: **Quest do Mestre** / **Quests do Mestre**
+- Deload: **Descanso na Taverna** · Crítico: **20 natural** · Conquistas: **Itens Mágicos**
+- NPC de missão: **Mestre dos Magos**; mascote do deload: **Uni**
+- Moldura de card: `tocha`
+- **Detalhe:** o PR dispara animação de d20; a escolha de classe muda só o avatar e o item de patente.
+
+| # | Patente | | # | Monstro (arquétipo) | Fraqueza | Justificativa |
+|---:|---|---|---:|---|---|---|
+| 1 | Visitante do Parque | | 1 | Mímico (En) | Peito | A tampa-tórax abre para morder; acertar a abertura encerra o disfarce. |
+| 2 | Viajante Perdido | | 2 | Aranha Gigante (Vl) | Pernas | A teia depende das oito bases; cortar o apoio derruba o corpo. |
+| 3 | Portador da Clava | | 3 | Cubo Gelatinoso (Tq) | Abdômen | A massa absorve golpes, mas o núcleo no centro é instável. |
+| 4 | Portador da Capa | | 4 | Urso-Coruja (Cl) | Costas | O corpo pesado vira devagar; o dorso fica exposto na curva. |
+| 5 | Portador do Chapéu | | 5 | Demônio das Sombras (Vl) | Core | A sombra se refaz enquanto tiver um centro ao qual retornar. |
+| 6 | Portador do Bastão | | 6 | Beholder (En) | Ombros | Os olhos-tentáculo se articulam pelos ombros; travar a base dos pedúnculos cega o conjunto. |
+| 7 | Portador do Escudo | | 7 | Devorador de Mentes (Vl) | Core | A mente devorada exige concentração; o centro do corpo paga o preço. |
+| 8 | Portador do Arco | | 8 | Hidra (Cl) | Ombros | Cada cabeça nasce de um tronco comum; cansar a base dos pescoços limita os ataques. |
+| 9 | Herói de Reide | | 9 | Lich (Tq) | Abdômen | A filactéria fica no tronco; o centro sustenta a magia. |
+| 10 | **De Volta pra Casa** | | 10 | Dragão Vermelho (Cl) | Peito | As escamas do peitoral abrem quando ele ergue o corpo para o sopro. |
+| | | | 11 | Tiamat (Tq) | Costas | As cinco cabeças protegem a frente; o dorso permanece acessível. |
+| | | | 12 | Vingador (Ms) | Peito | O Vingador concentra o poder no tórax; o 20 natural encontra a fenda. |
+
+*Mudanças criativas:* **Aranha Gigante** entrou para fechar 12; nomes como “Demônio Sombras” foram escritos por extenso.
+
+### 3.3 The Office (EUA) (`office-us`) — ver §7 antes de produzir mais
+
+- Arena: **Filial de Scranton** · Chefão: **CHEFE ATIVO** · Estágio: **TRIMESTRE** · Missão: **Meta Semanal** / **Metas Semanais**
+- Deload: **Festa do Comitê** · Crítico: **Negócio Fechado** · Conquistas: **Prêmios Dundie**
+- Dano = **Vendas**; HP do chefão = **meta do trimestre**
+- Moldura de card: `memorando`
+- **Detalhe:** o trimestre fiscal casa com a temporada de 12 semanas; subir de patente troca o enquadramento como um memorando assinado.
+
+| # | Patente | | # | Chefe (arquétipo) | Fraqueza | Justificativa |
+|---:|---|---|---:|---|---|---|
+| 1 | Estagiário | | 1 | Toby (En) | Costas | RH constrangido trabalha curvado; a postura custa caro. |
+| 2 | Temporário | | 2 | Simulação de Incêndio (Vl) | Core | O pânico desorganiza o centro; respirar fundo organiza a saída. |
+| 3 | Recepcionista | | 3 | Gabe Lewis (En) | Peito | A fala monótona prende a atenção; a guarda frontal cede primeiro. |
+| 4 | Vendedor | | 4 | Todd Packer (Vl) | Abdômen | O riso fácil esconde a falta de base; o centro não sustenta a piada. |
+| 5 | Funcionário do Mês | | 5 | Reunião sem Pauta (Tq) | Core | Sem pauta, o tempo escorre pelo centro da sala. |
+| 6 | Assistente Gerente | | 6 | Angela (Cl) | Costas | O controle rígido das costas alheias ignora as próprias. |
+| 7 | Chefe de Setor | | 7 | Dwight (Cl) | Ombros | A rigidez militar carrega o peso nos ombros. |
+| 8 | Gerente Regional | | 8 | Jan Levinson (Tq) | Peito | A apresentação ensaiada vive do peitoral projetado. |
+| 9 | Vice-Presidente | | 9 | Robert California (Cl) | Core | O discurso hipnótico perde força quando o centro relaxa. |
+| 10 | **Proprietário** | | 10 | Jo Bennett (Ms) | Ombros | A autoridade se impõe pelos ombros; ceder espaço desarma a chefe. |
+| | | | 11 | Auditoria do Corporativo (Tq) | Costas | A auditoria ataca pelas costas do processo. |
+| | | | 12 | Café Acabou (Vl) | Abdômen | A queda de energia do escritório passa pelo estômago. |
+
+*Mudanças criativas:* **Auditoria do Corporativo** e **Café Acabou** completam 12; “Reunião sem Pauta” e “Simulação de Incêndio” foram mantidas como situações, não pessoas.
+
+### 3.4 Springfield (`springfield`)
+
+- Arena: **Praça de Springfield** · Chefão: **VILÃO DE SPRINGFIELD** · Estágio: **TEMPORADA** · Missão: **Missão do Dia** / **Missões do Dia**
+- Deload: **Dia de Sofá** · Crítico: **Rosquinha Dourada** · Conquistas: **Rosquinhas**
+- Moldura de card: `sitcom`
+- **Detalhe:** cada patente mostra uma cena de sofá diferente; o Dia de Sofá é o deload (+25 XP), coerente com o bônus de descanso já existente.
+
+| # | Patente | | # | Vilão (arquétipo) | Fraqueza | Justificativa |
+|---:|---|---|---:|---|---|---|
+| 1 | Aluno de Springfield | | 1 | Nelson (Vl) | Peito | O riso debochado expõe o peito antes do soco. |
+| 2 | Entregador de Jornal | | 2 | Trio Bully (En) | Pernas | A perseguição de bicicleta vive das pernas. |
+| 3 | Estagiário da Usina | | 3 | Willie (Cl) | Costas | O ancinho puxa pelas costas; o zelador vira junto. |
+| 4 | Inspetor 7-G | | 4 | Chefe Wiggum (En) | Abdômen | A farda aperta o centro; o fôlego acaba antes da corrida. |
+| 5 | Funcionário do Mês | | 5 | Tony Gordo (Tq) | Ombros | O terno largo carrega a autoridade nos ombros. |
+| 6 | Supervisor de Turno | | 6 | Bob Sideshow (Vl) | Antebraço | O laço e os truques dependem de pulsos treinados. |
+| 7 | Astronauta | | 7 | Kang e Kodos (Cl) | Core | A tecnologia alienígena se equilibra num núcleo único. |
+| 8 | Dono da Usina | | 8 | Hank Scorpio (Tq) | Peito | O chefe carismático abre a guarda ao discursar. |
+| 9 | Prefeito de Springfield | | 9 | Krusty (En) | Ombros | A pose de palco se sustenta nos ombros. |
+| 10 | **Jebediah Springfield** | | 10 | Sr. Burns (Ms) | Costas | A coluna frágil é o ponto do bilionário. |
+| | | | 11 | Loja de Conveniência (Tq) | Abdômen | O caixa trava o centro de quem tenta sair. |
+| | | | 12 | Multidão de Springfield (Cl) | Pernas | A turba se move pelas pernas; parar a marcha dispersa o grupo. |
+
+*Mudanças criativas:* a lista do pedido tinha 9 nomes (um deles com hífen). Virou 10 patentes com **Estagiário da Usina** separado; **Loja de Conveniência** e **Multidão de Springfield** completam 12 chefões.
+
+### 3.5 Vila do Barril (`vila`)
+
+- Arena: **Vila do Barril** · Chefão: **ENCRENCA ATIVA** · Estágio: **ANO LETIVO** · Missão: **Plano do Chapolin** / **Planos do Chapolin**
+- Deload: **Soneca no Barril** · Crítico: **Astúcia Colorada** · Conquistas: **Medalhas da Vila**
+- Dano = **Marretada**
+- Moldura de card: `tv`
+- **Detalhe:** o sanduíche de presunto é a última patente, referência à piada que nunca se resolve.
+
+| # | Patente | | # | Encrenca (arquétipo) | Fraqueza | Justificativa |
+|---:|---|---|---:|---|---|---|
+| 1 | Morador do Barril | | 1 | Quico (En) | Peito | O orgulho estufa o peito antes do chilique. |
+| 2 | Órfão da Vila | | 2 | Chiquinha (Vl) | Pernas | A esperteza foge pelas pernas quando dá errado. |
+| 3 | Freguês da Vila | | 3 | Nhonho (Tq) | Abdômen | O peso concentra tudo no centro. |
+| 4 | Fã do Chapolin | | 4 | Jaiminho (Vl) | Costas | O carteiro carrega a mala nas costas. |
+| 5 | Portador das Antenas de Vinil | | 5 | Prof. Girafales (Tq) | Ombros | A postura ereta e o chapéu dependem dos ombros. |
+| 6 | Portador da Marreta Biônica | | 6 | Dona Florinda (Cl) | Antebraço | A bolsa e a mão pesada vivem do antebraço. |
+| 7 | Chapolin Colorado | | 7 | Bruxa do 71 (Cl) | Costas | A vassoura e o balcão exigem dorsais. |
+| 8 | Herói da Vila | | 8 | Monstros de TV (En) | Core | O susto passa pelo centro antes de virar coragem. |
+| 9 | Defensor dos Fracos | | 9 | Seu Barriga (Tq) | Pernas | Subir escadas cobrando aluguel é trabalho de pernas. |
+| 10 | **Sanduíche Supremo** | | 10 | 14 Meses de Aluguel (Ms) | Core | A dívida imobiliza o centro; o herói precisa de base para carregar o peso. |
+| | | | 11 | Bola de Boliche da Vila (En) | Ombros | O arremesso gira pelo ombro. |
+| | | | 12 | Cópia do Chapolin (Vl) | Antebraço | O sósia erra a marreta por falta de pulso. |
+
+*Mudanças criativas:* “Pastilha Encolhedora” e “Antenas de Vinil” viraram **Freguês da Vila** e **Portador das Antenas de Vinil** (objetos não funcionam bem como patente); **Bola de Boliche da Vila** e **Cópia do Chapolin** completam 12.
+
+### 3.6 Esgoto de Nova York (`esgoto`)
+
+- Arena: **Esgoto de Nova York** · Chefão: **VILÃO ATIVO** · Estágio: **TEMPORADA** · Missão: **Missão do Esgoto** / **Missões do Esgoto**
+- Deload: **Dia de Pizza** · Crítico: **Cowabunga!** · Conquistas: **Fatias de Pizza**
+- Moldura de card: `bueiro`
+- **Detalhe:** a escolha da tartaruga muda só a cor da bandana e a arma do avatar.
+
+| # | Patente | | # | Vilão (arquétipo) | Fraqueza | Justificativa |
+|---:|---|---|---:|---|---|---|
+| 1 | Filhote do Esgoto | | 1 | Clã do Pé (En) | Pernas | O ninjutsu de rua depende de passos silenciosos. |
+| 2 | Aprendiz do Mestre | | 2 | Baxter Stockman (Vl) | Antebraço | O controle das máquinas passa pelas mãos. |
+| 3 | Ninja das Galerias | | 3 | Bebop (Tq) | Ombros | Omutante carrega o peso do corpo nos ombros. |
+| 4 | Vigia dos Telhados | | 4 | Rocksteady (Cl) | Abdômen | A couraça de rinoceronte deixa o centro exposto. |
+| 5 | Bandana Vermelha | | 5 | Rei dos Ratos (Vl) | Core | O flautista controla pelo centro; quebrar a cadência desorganiza o enxame. |
+| 6 | Bandana Azul | | 6 | Slash (Vl) | Costas | O casco rachado expõe o dorso na investida. |
+| 7 | Bandana Roxa | | 7 | Leatherhead (Tq) | Pernas | O jacaré apoia o corpo nas pernas curtas. |
+| 8 | Bandana Laranja | | 8 | Tokka e Rahzar (En) | Ombros | A dupla ataca em pinça; os ombros coordenam o bote. |
+| 9 | Sensei do Esgoto | | 9 | Traag e Granitor (Cl) | Abdômen | Os gigantes de pedra têm o núcleo no tronco. |
+| 10 | **Mestre Splinter** | | 10 | Krang (Cl) | Core | O cérebro-robô depende de um único centro. |
+| | | | 11 | Technodrome (Tq) | Costas | A fortaleza móvel tem o ponto cego atrás. |
+| | | | 12 | Destruidor (Ms) | Peito | A armadura do Destruidor abre no peitoral sob o ímpeto. |
+
+*Mudanças criativas:* “Genin/Chunin” (termos de outra franquia) viraram **Ninja das Galerias** e **Vigia dos Telhados**; **Rei dos Ratos** completa 12. As quatro bandanas continuam sendo as patentes 5–8.
+
+## 4. Peças produzidas (lote 1)
+
+| Peça | Origem (fora do Git) | Derivado (versionado) | Dimensões | Bytes | Estado |
+|---|---|---|---|---:|---|
+| Selo O Equilíbrio dos Elementos | `selo-aang.png` | `images/artes/candidatos/avatar/temas/avatar.webp` | 192×192 | 14.534 | candidato |
+| Selo Caverna do Dragão | `selo-caverna.png` | `images/artes/candidatos/caverna/temas/caverna.webp` | 192×192 | 13.946 | candidato |
+| Selo The Office (EUA) | `selo-scranton.png` | `images/artes/candidatos/office-us/temas/office-us.webp` | 192×192 | 10.040 | candidato |
+| Selo Springfield | `selo-springfield.png` | `images/artes/candidatos/springfield/temas/springfield.webp` | 192×192 | 12.600 | candidato |
+| Selo Vila do Barril | `selo-vila.png` | `images/artes/candidatos/vila/temas/vila.webp` | 192×192 | 11.530 | candidato |
+| Selo Esgoto de Nova York | `selo-esgoto.png` | `images/artes/candidatos/esgoto/temas/esgoto.webp` | 192×192 | 12.948 | candidato |
+| Fundo O Equilíbrio dos Elementos | `fundo-aang.png` | `images/artes/candidatos/avatar/cards/avatar.webp` | 1024×1024 | 177.730 | candidato |
+| Fundo Vila do Barril | `fundo-vila.png` | `images/artes/candidatos/vila/cards/vila.webp` | 1024×1024 | 223.240 | candidato |
+
+Total derivado: **8 arquivos, 476.568 bytes** (0 bytes no CORE do SW — nada está em uso).
+
+### Revisão visual
+
+- Selos legíveis a **192, 56 e 28 px** (`docs/provas-novos-temas/leitura-selos.webp`). A 28 px o selo de **The Office** é o mais fraco (papel bege sobre fundo claro) e o de **Avatar** o mais denso; ambos continuam reconhecíveis pela silhueta. Nenhum foi alterado por isso.
+- **Divergência registrada:** o selo de Springfield veio com cantos pretos fora do disco amarelo. Em 192 px com `rounded-lg` sobre fundo escuro o efeito é aceitável, mas não é o mesmo enquadramento dos demais; pode ser regerado com fundo que preencha o quadrado se você preferir.
+- Fundos conferidos em prova 512×512 (`docs/provas-novos-temas/fundos-cards.webp`): centro calmo, sem texto, sem pessoas, compatível com retrato circular + texto do Story/Card. Ainda **não** foram testados no canvas real 1080×1920/1080×1080 do `js/cartoes.js`.
+- A moldura escura das provas é só de conferência; não faz parte do derivado.
+
+## 5. Como reproduzir
+
+```bash
+scripts/prepare-art-novos-temas.sh            # lê .cache/artes-originais/novos-temas
+```
+
+O script só **deriva** (recorte/redução/prova); não gera arte. Se os originais não existirem mais no sandbox, ele avisa e preserva os derivados existentes. ImageMagick é ferramenta editorial opcional — não entra em `package.json` e não é requisitada pelo app.
+
+## 6. O que este lote não contém
+
+- Nenhum tema cadastrado: `THEMES`, `THEME_IDS_LIST`, `THEME_ICONS`, `STORY_CARD_STYLES`, `DEFAULT_BOSS_PORTRAITS`, molduras novas e CORE do `sw.js` seguem intocados.
+- Nenhuma regra de XP, dano, PR, temporada, deload ou conquista foi alterada. As fraquezas e os nomes de “dano/crítico” acima são vocabulário de apresentação, não mecânica.
+- Nenhum retrato de chefão, patente ou fundo pendente foi gerado ainda (§7).
+
+## 7. Lote 2 — patentes de O Equilíbrio dos Elementos
+
+| # | Patente | Motivo do emblema | Bytes |
+|---:|---|---|---:|
+| 01 | Civil da Aldeia | tigela de arroz, chapéu de palha e cabana de pedra | 14.480 |
+| 02 | Noviço do Templo | contas de oração, sino e incenso | 15.108 |
+| 03 | Dobrador de Água | onda em espiral, lua crescente | 15.222 |
+| 04 | Dobrador de Terra | pilha de pedras com broto | 13.578 |
+| 05 | Dobrador de Fogo | chama de três línguas em braseiro | 13.760 |
+| 06 | Dobrador de Ar | espiral de vento e sino de vento | 14.650 |
+| 07 | Lótus Branco | lótus branco em água escura | 16.208 |
+| 08 | Mestre Dobrador | quatro símbolos ao redor do cajado | 14.756 |
+| 09 | Espírito de Luz | espírito luminoso em forma de pipa-manta | 16.702 |
+| 10 | AVATAR | quatro orbes e lótus com motivo de flecha | 16.222 |
+
+Total do lote: **10 arquivos, 150.686 bytes**. Todos 192×192, Lanczos, opacos, `estado: candidato`. Prova de leitura em `docs/provas-novos-temas/leitura-patentes-avatar.webp`. O tema `avatar` passa a ter **selo + fundo + 10 patentes** = 12/24 arquivos; faltam os 12 retratos e a moldura.
+
+## 8. Lote 3 — retratos de chefão de O Equilíbrio dos Elementos
+
+| # | Retrato | Arquétipo | Fraqueza | Bytes |
+|---:|---|---|---|---:|
+| 01 | Mercador de Repolhos | En | Pernas | 65.294 |
+| 02 | Arqueiras Yuyan | En | Ombros | 52.486 |
+| 03 | Comandante Zhao | Tq | Peito | 61.494 |
+| 04 | Jet | Vl | Pernas | 65.436 |
+| 05 | Príncipe Zuko | Vl | Ombros | 50.174 |
+| 06 | Long Feng | En | Costas | 50.744 |
+| 07 | Koh, o Ladrão de Rostos | Cl | Core | 43.068 |
+| 08 | Wan Shi Tong | Tq | Core | 78.766 |
+| 09 | Hama | Cl | Antebraço | 51.214 |
+| 10 | Homem-Combustão | Cl | Peito | 61.270 |
+
+Total do lote: **10 arquivos, 579.946 bytes**. Todos 512×512, Lanczos 1254→512, opacos, `estado: candidato`. Fundo de pedra azul-escura com a mesma moldura geométrica nos dez, o que mantém a família coesa no card circular. Prova em `docs/provas-novos-temas/retratos-avatar.webp`.
+
+Com o lote 3, o tema `avatar` tem **22/24 arquivos** (selo, fundo, 10 patentes, 10 retratos). Faltam **Azula**, **Ozai**, a moldura `elementos` — o lote 4 fecha o tema.
+
+## 9. Lote 4 — fecha os retratos de Avatar e abre as patentes da Vila
+
+| Peça | Arquivo | Dimensões | Bytes | Fraqueza/observação |
+|---|---|---:|---:|---|
+| Azula | `avatar/bosses/avatar-b11.webp` | 512×512 | 66.240 | Ombros |
+| Ozai, o Senhor do Fogo | `avatar/bosses/avatar-b12.webp` | 512×512 | 62.282 | Peito (chefe Ms) |
+| Patente 01 — Morador do Barril | `vila/patentes/vila-01.webp` | 192×192 | 8.796 | barril, varal e antena |
+| Patente 02 — Órfão da Vila | `vila/patentes/vila-02.webp` | 192×192 | 8.510 | boné remendado e caneca |
+| Patente 03 — Freguês da Vila | `vila/patentes/vila-03.webp` | 192×192 | 9.202 | balcão, sino e moedas |
+| Patente 04 — Fã do Chapolin | `vila/patentes/vila-04.webp` | 192×192 | 8.948 | fantasia no cabide |
+| Patente 05 — Antenas de Vinil | `vila/patentes/vila-05.webp` | 192×192 | 10.310 | discos e hastes |
+| Patente 06 — Marreta Biônica | `vila/patentes/vila-06.webp` | 192×192 | 9.612 | marreta com molas |
+| Patente 07 — Chapolin Colorado | `vila/patentes/vila-07.webp` | 192×192 | 9.676 | herói de costas |
+| Patente 08 — Herói da Vila | `vila/patentes/vila-08.webp` | 192×192 | 8.714 | medalha com barril |
+
+Total do lote: **10 arquivos, 102.290 bytes**. Todos candidatos.
+
+- **`avatar` chega a 24/24** (selo, fundo, 10 patentes, 12 retratos) e fica pronto para cadastro na sessão final.
+- **`vila` está em 10/24** (selo, fundo, 8 patentes); faltam 2 patentes e 12 retratos.
+- A família da Vila ganhou identidade própria: medalhões dourados, fundo verde-azulado, scanlines de TV de tubo e granulado de fita — distinta dos selos e do fundo já aprovados no lote 1, mas da mesma paleta.
+
+## 10. Lote 5 — Vila do Barril: patentes fechadas, retratos pela metade
+
+| Peça | Arquivo | Dimensões | Bytes | Nota |
+|---|---|---:|---:|---|
+| Patente 09 — Defensor dos Fracos | `vila/patentes/vila-09.webp` | 192×192 | 12.128 | escudo, marreta e capa cruzadas |
+| Patente 10 — Sanduíche Supremo | `vila/patentes/vila-10.webp` | 192×192 | 13.748 | a piada que nunca se resolve |
+| Retrato — Quico | `vila/bosses/vila-b01.webp` | 512×512 | 58.570 | En · Peito |
+| Retrato — Chiquinha | `vila/bosses/vila-b02.webp` | 512×512 | 54.246 | Vl · Pernas |
+| Retrato — Nhonho | `vila/bosses/vila-b03.webp` | 512×512 | 52.022 | Tq · Abdômen |
+| Retrato — Jaiminho | `vila/bosses/vila-b04.webp` | 512×512 | 50.342 | Vl · Costas |
+| Retrato — Prof. Girafales | `vila/bosses/vila-b05.webp` | 512×512 | 49.360 | Tq · Ombros |
+| Retrato — Dona Florinda | `vila/bosses/vila-b06.webp` | 512×512 | 49.514 | Cl · Antebraço |
+| Retrato — Bruxa do 71 | `vila/bosses/vila-b07.webp` | 512×512 | 55.680 | Cl · Costas |
+| Retrato — Monstros de TV | `vila/bosses/vila-b08.webp` | 512×512 | 54.002 | En · Core |
+
+Total do lote: **10 arquivos, 449.612 bytes**. Todos candidatos.
+
+- **`vila` está em 22/24**: selo, fundo, **10/10 patentes** e **8/12 retratos**. Faltam Seu Barriga, 14 Meses de Aluguel, Bola de Boliche da Vila e Cópia do Chapolin — o lote 6 fecha o tema.
+- A família de retratos manteve a paleta de vila de TV (amarelo-mostarda, vinho, verde-azulado) com scanlines e granulado, coerente com selo, fundo e patentes.
+
+## 11. Lote 6 — Vila do Barril completa; Esgoto abre identidade
+
+| Peça | Arquivo | Dimensões | Bytes | Nota |
+|---|---|---:|---:|---|
+| Retrato — Seu Barriga | `vila/bosses/vila-b09.webp` | 512×512 | 58.488 | Tq · Pernas |
+| Retrato — 14 Meses de Aluguel | `vila/bosses/vila-b10.webp` | 512×512 | 66.194 | Ms · Core |
+| Retrato — Bola de Boliche da Vila | `vila/bosses/vila-b11.webp` | 512×512 | 60.556 | En · Ombros |
+| Retrato — Cópia do Chapolin | `vila/bosses/vila-b12.webp` | 512×512 | 57.248 | Vl · Antebraço |
+| Fundo — Esgoto de Nova York | `esgoto/cards/esgoto.webp` | 1024×1024 | 103.640 | centro aberto, sem pessoas |
+| Patente 01 — Filhote do Esgoto | `esgoto/patentes/esgoto-01.webp` | 192×192 | 10.574 | ovo e grade |
+| Patente 02 — Aprendiz do Mestre | `esgoto/patentes/esgoto-02.webp` | 192×192 | 10.778 | boneco de treino |
+| Patente 03 — Ninja das Galerias | `esgoto/patentes/esgoto-03.webp` | 192×192 | 11.310 | galeria e shuriken |
+| Patente 04 — Vigia dos Telhados | `esgoto/patentes/esgoto-04.webp` | 192×192 | 10.448 | bueiro e skyline |
+| Patente 05 — Bandana Vermelha | `esgoto/patentes/esgoto-05.webp` | 192×192 | 12.022 | sai e casco |
+
+Total do lote: **10 arquivos, 401.238 bytes**. Todos candidatos.
+
+- **`vila` está em 24/24** — selo, fundo, 10 patentes e 12 retratos. **Segundo tema completo.**
+- **`esgoto` está em 8/24**: selo, fundo e 5 patentes. Faltam 5 patentes e 12 retratos.
+- A família do Esgoto ganhou aro de aço com pátina sobre tijolo verde, com os quatro rebites das bandanas — distinta da Vila (dourada) e do Avatar (bronze).
+
+## 12. Lote 7 — patentes do Esgoto fechadas, retratos abertos
+
+| Peça | Arquivo | Dimensões | Bytes | Nota |
+|---|---|---:|---:|---|
+| Patente 06 — Bandana Azul | `esgoto/patentes/esgoto-06.webp` | 192×192 | 12.696 | katanas |
+| Patente 07 — Bandana Roxa | `esgoto/patentes/esgoto-07.webp` | 192×192 | 10.976 | bastão bo |
+| Patente 08 — Bandana Laranja | `esgoto/patentes/esgoto-08.webp` | 192×192 | 14.342 | nunchaku |
+| Patente 09 — Sensei do Esgoto | `esgoto/patentes/esgoto-09.webp` | 192×192 | 11.702 | cajado e vela |
+| Patente 10 — Mestre Splinter | `esgoto/patentes/esgoto-10.webp` | 192×192 | 13.268 | meditação e as 4 fitas |
+| Retrato — Clã do Pé | `esgoto/bosses/esgoto-b01.webp` | 512×512 | 51.486 | En · Pernas |
+| Retrato — Baxter Stockman | `esgoto/bosses/esgoto-b02.webp` | 512×512 | 63.466 | Vl · Antebraço |
+| Retrato — Bebop | `esgoto/bosses/esgoto-b03.webp` | 512×512 | 60.958 | Tq · Ombros |
+| Retrato — Rocksteady | `esgoto/bosses/esgoto-b04.webp` | 512×512 | 60.654 | Cl · Abdômen |
+| Retrato — Rei dos Ratos | `esgoto/bosses/esgoto-b05.webp` | 512×512 | 60.510 | Vl · Core |
+
+Total do lote: **10 arquivos, 360.058 bytes**. Todos candidatos.
+
+- **`esgoto` está em 18/24**: selo, fundo, **10/10 patentes** e **5/12 retratos**. Faltam 7 retratos (Slash, Leatherhead, Tokka e Rahzar, Traag e Granitor, Krang, Technodrome, Destruidor).
+- As quatro bandanas (05–08) já estão todas no jogo, na ordem vermelha → azul → roxa → laranja.
+
+## 13. Lote 8 — Esgoto completo; Springfield abre patentes
+
+| Peça | Arquivo | Dimensões | Bytes | Nota |
+|---|---|---:|---:|---|
+| Retrato — Slash | `esgoto/bosses/esgoto-b06.webp` | 512×512 | 67.036 | Vl · Costas |
+| Retrato — Leatherhead | `esgoto/bosses/esgoto-b07.webp` | 512×512 | 67.342 | Tq · Pernas |
+| Retrato — Tokka e Rahzar | `esgoto/bosses/esgoto-b08.webp` | 512×512 | 65.194 | En · Ombros |
+| Retrato — Traag e Granitor | `esgoto/bosses/esgoto-b09.webp` | 512×512 | 83.782 | Cl · Abdômen |
+| Retrato — Krang | `esgoto/bosses/esgoto-b10.webp` | 512×512 | 61.458 | Cl · Core |
+| Retrato — Technodrome | `esgoto/bosses/esgoto-b11.webp` | 512×512 | 66.942 | Tq · Costas |
+| Retrato — Destruidor | `esgoto/bosses/esgoto-b12.webp` | 512×512 | 71.214 | Ms · Peito |
+| Patente 01 — Aluno de Springfield | `springfield/patentes/springfield-01.webp` | 192×192 | 11.084 | sino e aviãozinho |
+| Patente 02 — Entregador de Jornal | `springfield/patentes/springfield-02.webp` | 192×192 | 14.050 | jornal e bolsa |
+| Patente 03 — Estagiário da Usina | `springfield/patentes/springfield-03.webp` | 192×192 | 12.206 | capacete e haste |
+
+Total do lote: **10 arquivos, 520.308 bytes**. Todos candidatos.
+
+- **`esgoto` está em 24/24** — selo, fundo, 10 patentes e 12 retratos. **Terceiro tema completo**, ao lado de Avatar e Vila.
+- **`springfield` está em 4/24**: selo e 3 patentes. Faltam 7 patentes e 12 retratos.
+- Em Springfield, o trefoil de radiação da patente 03 é símbolo genérico, não emblema de marca.
+
+## 14. Lote 9 — patentes de Springfield fechadas; 1 recusa de moderação
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Patente 04 — Inspetor 7-G | `springfield/patentes/springfield-04.webp` | 192×192 | 11.490 |
+| Patente 05 — Funcionário do Mês | `springfield/patentes/springfield-05.webp` | 192×192 | 11.582 |
+| Patente 06 — Supervisor de Turno | `springfield/patentes/springfield-06.webp` | 192×192 | 11.640 |
+| Patente 07 — Astronauta | `springfield/patentes/springfield-07.webp` | 192×192 | 12.200 |
+| Patente 08 — Dono da Usina | `springfield/patentes/springfield-08.webp` | 192×192 | 12.610 |
+| Patente 09 — Prefeito de Springfield | `springfield/patentes/springfield-09.webp` | 192×192 | 13.748 |
+| Patente 10 — Jebediah Springfield | `springfield/patentes/springfield-10.webp` | 192×192 | 13.834 |
+| Retrato — Nelson | `springfield/bosses/springfield-b01.webp` | 512×512 | 54.656 |
+| Retrato — Willie | `springfield/bosses/springfield-b03.webp` | 512×512 | 64.860 |
+
+Total do lote: **9 arquivos, 206.620 bytes**. Todos candidatos.
+
+- **`springfield` está em 17/24**: selo, **10/10 patentes** e 3/12 retratos (Nelson, Willie; o trio falta).
+- **Recusa registrada:** a 10ª chamada (retrato do Trio Bully) voltou com `moderation_blocked` do provedor de imagem. A vaga foi consumida; a peça será refeita no lote 10 com composição em pose de fliperama, sem conotação de violência. Não é falha de revisão — é limite externo da ferramenta.
+
+## 15. Lote 10 — Springfield em 21/24 (duas recusas de moderação)
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Retrato — Trio do Pátio | `springfield/bosses/springfield-b02.webp` | 512×512 | 59.446 |
+| Retrato — Chefe Wiggum | `springfield/bosses/springfield-b04.webp` | 512×512 | 47.104 |
+| Retrato — Tony Gordo | `springfield/bosses/springfield-b05.webp` | 512×512 | 57.344 |
+| Retrato — Krusty | `springfield/bosses/springfield-b06.webp` | 512×512 | 55.284 |
+| Retrato — Kang e Kodos | `springfield/bosses/springfield-b07.webp` | 512×512 | 55.866 |
+| Retrato — Hank Scorpio | `springfield/bosses/springfield-b08.webp` | 512×512 | 46.404 |
+| Retrato — Loja de Conveniência | `springfield/bosses/springfield-b11.webp` | 512×512 | 44.444 |
+| Fundo — Springfield | `springfield/cards/springfield.webp` | 1024×1024 | 160.712 |
+
+Total do lote: **8 arquivos, 526.604 bytes**. Todos candidatos.
+
+**Recusas de moderação (filtro do provedor, na saída — não é revisão de estilo):**
+- **Trio do Pátio**: 3 tentativas. As duas primeiras descrições (“valentões”, depois nomes próprios) foram recusadas. Passou ao descrever **três amigos de escola acenando**, como cartão de elenco. A peça foi renomeada para **Trio do Pátio** no catálogo.
+- Uma segunda chamada do lote também voltou recusada e foi refeita com sucesso; as 8 peças acima existem e foram conferidas no disco (dimensões e bytes no manifesto).
+
+**Estado real do tema (conferido arquivo por arquivo):** **21/24** — selo, fundo, 10/10 patentes e **9/12 retratos**. Faltam os retratos **09 (Sr. Burns)**, **10 (Bob Sideshow)** e **12 (Multidão de Springfield)**. O tema **não está fechado**.
+
+## 16. Lote 11 — Springfield completo; Caverna abre patentes
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Retrato — Sr. Burns | `springfield/bosses/springfield-b09.webp` | 512×512 | 58.174 |
+| Retrato — Bob Sideshow | `springfield/bosses/springfield-b10.webp` | 512×512 | 60.718 |
+| Retrato — Multidão de Springfield | `springfield/bosses/springfield-b12.webp` | 512×512 | 88.168 |
+| Patente 01 — Visitante do Parque | `caverna/patentes/caverna-01.webp` | 192×192 | 12.664 |
+| Patente 02 — Viajante Perdido | `caverna/patentes/caverna-02.webp` | 192×192 | 13.982 |
+| Patente 03 — Portador da Clava | `caverna/patentes/caverna-03.webp` | 192×192 | 12.832 |
+| Patente 04 — Portador da Capa | `caverna/patentes/caverna-04.webp` | 192×192 | 12.152 |
+| Patente 05 — Portador do Chapéu | `caverna/patentes/caverna-05.webp` | 192×192 | 11.872 |
+| Patente 06 — Portador do Bastão | `caverna/patentes/caverna-06.webp` | 192×192 | 12.524 |
+| Patente 07 — Portador do Escudo | `caverna/patentes/caverna-07.webp` | 192×192 | 12.012 |
+
+Total do lote: **10 arquivos, 295.098 bytes**. Todos candidatos.
+
+- **`springfield` está em 24/24** — selo, fundo, 10 patentes e 12 retratos. **Quarto tema completo.**
+- **`caverna` está em 8/24**: selo e 7 patentes. Faltam 3 patentes e 12 retratos.
+- A Caverna ganhou o dialeto pedido: aro de ferro e ocre, pedra violeta, tochas e contorno grosso de desenho dos anos 80.
+
+## 17. Lote 12 — patentes da Caverna fechadas; monstros abertos
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Patente 08 — Portador do Arco | `caverna/patentes/caverna-08.webp` | 192×192 | 12.996 |
+| Patente 09 — Herói de Reide | `caverna/patentes/caverna-09.webp` | 192×192 | 13.436 |
+| Patente 10 — De Volta pra Casa | `caverna/patentes/caverna-10.webp` | 192×192 | 15.626 |
+| Retrato — Mímico | `caverna/bosses/caverna-b01.webp` | 512×512 | 56.472 |
+| Retrato — Aranha Gigante | `caverna/bosses/caverna-b02.webp` | 512×512 | 53.122 |
+| Retrato — Cubo Gelatinoso | `caverna/bosses/caverna-b03.webp` | 512×512 | 52.068 |
+| Retrato — Urso-Coruja | `caverna/bosses/caverna-b04.webp` | 512×512 | 51.516 |
+| Retrato — Demônio das Sombras | `caverna/bosses/caverna-b05.webp` | 512×512 | 54.562 |
+| Retrato — Beholder | `caverna/bosses/caverna-b06.webp` | 512×512 | 60.662 |
+| Retrato — Devorador de Mentes | `caverna/bosses/caverna-b07.webp` | 512×512 | 53.036 |
+
+Total do lote: **10 arquivos, 474.614 bytes**. Todos candidatos.
+
+- **`caverna` está em 18/24**: selo, **10/10 patentes** e 7/12 monstros. Faltam Hidra, Lich, Dragão Vermelho, Tiamat, Vingador e o fundo de card.
+- Os monstros seguiram o repertório pedido (mímico, cubo, beholder, devorador) com o traço dos anos 80.
+
+## 18. Lote 13 — Caverna completa e Office em andamento
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Retrato — Hidra | `caverna/bosses/caverna-b08.webp` | 512×512 | 65.932 |
+| Retrato — Lich | `caverna/bosses/caverna-b09.webp` | 512×512 | 66.598 |
+| Retrato — Dragão Vermelho | `caverna/bosses/caverna-b10.webp` | 512×512 | 84.752 |
+| Retrato — Tiamat | `caverna/bosses/caverna-b11.webp` | 512×512 | 80.526 |
+| Retrato — Vingador | `caverna/bosses/caverna-b12.webp` | 512×512 | 77.258 |
+| Fundo — Caverna do Dragão | `caverna/cards/caverna.webp` | 1024×1024 | 130.324 |
+| Retrato — Angela | `office-us/bosses/office-us-b01.webp` | 512×512 | 35.872 |
+| Retrato — Dwight | `office-us/bosses/office-us-b02.webp` | 512×512 | 43.110 |
+| Retrato — Toby | `office-us/bosses/office-us-b03.webp` | 512×512 | 37.692 |
+| Retrato — Jan Levinson | `office-us/bosses/office-us-b04.webp` | 512×512 | 37.060 |
+
+Total do lote: **10 arquivos, 659.124 bytes**. Todos candidatos.
+
+- **`caverna` está em 24/24** — selo, fundo, 10 patentes e 12 monstros. **Quinto tema completo.**
+- **Office (upgrade):** 4 dos 6 retratos prontos (Angela, Dwight, Toby, Jan). Faltam **Robert California** e **Jo Bennett**, além do fundo e da moldura `memorando`.
+- Os quatro retratos usam a paleta de escritório (bege, cinza, azul, acento vermelho) e não a paleta de jogo dos temas novos, como manda o upgrade aprovado.
+- O script passou a mapear o prefixo `office` → `office-us`; antes ele avisava “tema desconhecido” para esses retratos.
+
+## 19. Lote 14 — revisão de Springfield + fim dos pendentes
+
+Pedido do usuário: “gerar as pendentes e refazer algumas dos Simpsons que ficaram ruins ou gerar novas alternativas”. Antes de regerar, montei a cartela completa do tema (24 peças) e classifiquei o que estava fraco.
+
+| Peça | Ação | Resultado |
+|---|---|---|
+| Selo de Springfield | **regerado** | v2: disco amarelo com rosquinha ocupando o 1:1, acabaram os **cantos pretos**. Alternativa em escudo (v3) foi gerada e **descartada** — destoa do formato circular dos outros cinco selos |
+| Patente 01 — Aluno de Springfield | regerada | sino grande + giz + maçã, alto contraste (antes: aviãozinho e lápis finos) |
+| Patente 02 — Entregador de Jornal | regerada | jornal enrolado com faixa vermelha e bolsas brancas |
+| Patente 05 — Funcionário do Mês | regerada | medalha grande com laço vermelho e estrela (antes: placa apagada) |
+| Patente 06 — Supervisor de Turno | regerada | apito grande com cordão, relógio e prancheta limpos (antes: três objetos miúdos) |
+| Patente 03 — Estagiário da Usina | tentativa **descartada** | gerei uma banca de frutas por engano — não corresponde à patente. O **original** (capacete, chave e haste) foi mantido |
+| Retratos 13, 15–24 | **mantidos** | passaram na revisão: o que parecia “ruim” era a escala das miniaturas |
+
+Arquivos derivados atualizados: `springfield/temas/springfield.webp` e as patentes 01, 02, 05 e 06. As versões antigas e as tentativas descartadas ficam **fora do Git** em `.cache/artes-originais/novos-temas/descartadas/` (voláteis, como todos os originais).
+
+**Pendentes fechados neste lote**
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Retrato — Robert California | `office-us/bosses/office-us-b05.webp` | 512×512 | 40.996 |
+| Retrato — Jo Bennett | `office-us/bosses/office-us-b06.webp` | 512×512 | 42.388 |
+| Moldura — Memorando | `office-us/molduras/moldura-office-us.webp` | 768×1152 | 27.474 |
+
+- **Office (upgrade) chega a 6/6 retratos.**
+- **Moldura `memorando`:** o gerador devolveu 1024×1536 (2:3), não o quadro 1080×1920 do card. O fundo magenta foi removido por keying, mas ficou **halo rosa fino** nas bordas externas — registrado no manifesto. Precisa de limpeza e recorte antes de uso; **não está aprovada para produção**.
+- Continua valendo: as outras 4 molduras (`elementos`, `tv`, `tocha`, `bueiro`/`sitcom`) não foram geradas.
+
+## 20. Lote 15 — molduras e fundo de Scranton (artes opcionais fechadas)
+
+Pedido do usuário: “gerar as artes opcionais e/ou pendentes. depois fazer as revisões, testes e fechar com o merge dessa PR”. Entraram as **5 molduras de card** que faltavam e o **fundo do Office**:
+
+| Peça | Arquivo | Dimensões | Bytes |
+|---|---|---:|---:|
+| Moldura — Mandala dos Elementos (`avatar`) | `avatar/molduras/moldura-avatar.webp` | 768×1152 | 63.722 |
+| Moldura — TV de Tubo (`vila`) | `vila/molduras/moldura-vila.webp` | 768×1152 | 48.778 |
+| Moldura — Chapa de Bueiro (`esgoto`) | `esgoto/molduras/moldura-esgoto.webp` | 768×1152 | 75.086 |
+| Moldura — Sitcom com Rosquinha (`springfield`) | `springfield/molduras/moldura-springfield.webp` | 768×1152 | 27.330 |
+| Moldura — Pedra e Tochas (`caverna`) | `caverna/molduras/moldura-caverna.webp` | 768×1152 | 60.812 |
+| Fundo — Escritório de Scranton (`office`) | `office-us/cards/office-us.webp` | 1024×1024 | 45.264 |
+
+- **Vão pintado:** em `vila` e `esgoto` o gerador desenhou o **xadrez de transparência dentro do quadro** (não é alfa). O `scripts/prepare-art-novos-temas.sh` passou a isolar esse vão por desfoque + floodfill com **sementes claras validadas**, preservando a corrente do esgoto e sem comer o traço da moldura. Os outros quatro vãos já vinham transparentes.
+- **Moldura do Office:** a revisão a 1:1 sobre fundo escuro e claro **não reproduziu o halo rosa** anotado no lote 14 — a nota do manifesto foi corrigida. Continua em **2:3** (768×1152), não no quadro 1080×1920; serve como referência visual, porque a moldura do card é **desenhada por código** (`frame` `caderno` em `js/cartoes.js`).
+- **Nenhuma moldura é carregada em runtime:** as cinco molduras novas viraram ramos vetoriais em `js/cartoes.js` (`elementos`, `tv`, `bueiro`, `sitcom`, `tocha`), e o WebP fica como arte de referência. O mesmo vale para `memorando`.
+- Prova de conferência: `docs/provas-novos-temas/lote15-molduras-fundo.webp` (6 molduras sobre fundo escuro + a do Office sobre papel + o fundo de Scranton).
+- Manifesto: **238 registros** (232 + 6), com estado e uso de cada peça atualizados. `sw.js` **v73 → v74**.
+
+**Com este lote a arte dos novos temas está fechada:** cinco temas 24/24 (selo, fundo, 10 patentes, 12 retratos), o Office com identidade nova + 6 personagens + fundo, e as seis molduras de referência geradas.
+
+## 21. Estratégia de lotes (10 imagens por sessão)
+
+Regra: **fechar um tema por vez**. Um tema completo pode ser cadastrado e testado de ponta a ponta mesmo que os lotes seguintes atrasem.
+
+Situação após o lote 15: **cinco temas 24/24** (avatar, vila, esgoto, springfield, caverna), **Office (upgrade) com identidade nova, 6 personagens e fundo**, e as **6 molduras** geradas. **Arte completa e cadastro feito na v74:**
+
+| Etapa | Estado |
+|---|---|
+| geração | ✅ fechada — 132 peças nos novos temas (5×24) + 6 retratos, selo, fundo e moldura do Office + 6 molduras de referência |
+| implementação | ✅ 17 entradas em `THEMES` (10 patentes + 12 chefões cada), `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, `DEFAULT_BOSS_PORTRAITS` 144 → 204, 5 molduras vetoriais em `js/cartoes.js`, CORE do `sw.js` e testes |
+| validação | ✅ `npm test`, `check:sw`, `check:docs`, `check:sw-core`, `check:modules` e validação em navegador (`scripts/validacao-navegador.js`, 170 patentes + 17 cards no precache) |
+
+- **Ponto de corte recomendado**: **três temas completos** (Avatar, Vila, Esgoto) já permitem abrir a PR e validar o fluxo de cadastro ponta a ponta. Os lotes 9–13 entram como commits incrementais.
+- Cada lote termina com derivação (`scripts/prepare-art-novos-temas.sh`), manifesto e commit; o `sw.js` sobe a cada commit que toca `images/**` (neste lote, **v62 → v63**), mesmo sem CORE novo.
+- **Molduras** (`elementos`, `tv`, `tocha`, `memorando`, `sitcom`, `bueiro`) e **4 fundos de card** entram na sessão de implementação, junto do código que os usa: precisam de keying de alfa e teste nos canvases. Planejar 1 imagem por moldura **fora dos lotes de 10**.
+- Na sessão final o trabalho é: entradas em `THEMES`, `THEME_IDS_LIST`/`THEME_ICONS`/`STORY_CARD_STYLES`, molduras em `js/cartoes.js`, `DEFAULT_BOSS_PORTRAITS` 144 → 192, CORE do `sw.js`, testes de arte/tema e validação em navegador real.
+
+## 22. Pendências e decisões
+
+1. **The Office — implementado na v74:** o tema `office` mantém as 24 artes e a regra “sem vilões”, troca **6 desafios de cena por personagens** (Angela, Dwight, Toby, Jan, Robert California, Jo Bennett — ids `b3,b4,b5,b7,b8,b9` preservados) e passa a usar o **selo memorando** em `images/temas/office.webp` e o **fundo de Scranton** em `images/cards/office.webp`. Os 6 retratos de cena aposentados ficam como arte de reserva, **fora do precache**. A moldura `memorando` não é carregada: o card usa o vetor `caderno`.
+2. **Vocabulário do Office (dano/crítico/deload):** “Vendas”, “Negócio Fechado” e “Festa do Comitê” **ainda não têm gancho por tema** — o motor não expõe campo de dano/crítico e os rótulos estão fixos em `index.html` e `js/boss.js`. Ficou fora desta PR para não misturar cadastro de temas com mudança de UI; é a próxima melhoria barata do tema.
+3. **Molduras em WebP:** as 6 são **referência visual**; o card desenha as molduras em vetor (`elementos`, `tv`, `bueiro`, `sitcom`, `tocha`, `caderno`). Se um dia forem carregadas, precisam ser reenquadradas de 2:3 para 1080×1920.
+4. **Regerar depois**: leitura do selo de The Office a 28 px (papel bege com pouco contraste) e, se incomodar, a patente 03 do tema.
+5. **Licença**: as seis séries são propriedades de terceiros. A geração de imagem não confere licença comercial; uso editorial/interno é decisão do usuário. Registrado também no manifesto.

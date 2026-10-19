@@ -81,10 +81,10 @@ const danoDiretoSinergia = api.logDamageKg(logDiretoPernas, BW, chefaoPosterior,
 const progressoDiretoSinergia = api.computeBossProgress([logDiretoPernas], BW, [chefaoPosterior], { version: 2, baselineById: {}, baselineLogIds: [], assignments: {} });
 check('sinergia não credita séries indiretas nem concede a fraqueza semanal', danoDiretoSinergia === 3 && progressoDiretoSinergia.totalDamage === 3 && progressoDiretoSinergia.weakHits === 0, { danoDiretoSinergia, progressoDiretoSinergia });
 
-console.log('\n== 13. Temas (12) ==');
+console.log('\n== 13. Temas (17) ==');
 const themeIds = Object.keys(api.THEMES);
-const expectedThemeIds = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica', 'aneis', 'thundercats', 'office'];
-check('12 temas carregados (IDs existentes preservados, novos ao fim)', themeIds.length === 12 && expectedThemeIds.every(id => themeIds.includes(id)), themeIds);
+const expectedThemeIds = ['classico', 'zodiaco', 'hercules', 'acao', 'folclore', 'nordica', 'roma', 'rpg', 'galactica', 'aneis', 'thundercats', 'office', 'avatar', 'vila', 'esgoto', 'springfield', 'caverna'];
+check('17 temas carregados (IDs existentes preservados, novos ao fim)', themeIds.length === 17 && expectedThemeIds.every(id => themeIds.includes(id)), themeIds);
 check('curva de patentes preservada', api.XP_MIN.join(',') === '0,150,500,1100,2000,3300,5000,7500,11000,16000', api.XP_MIN);
 const expectedHpCurve = Array.from({ length: 12 }, (_, i) => api.BOSS_HP_BASE + api.BOSS_HP_STEP * i);
 expectedThemeIds.forEach(id => {
@@ -108,7 +108,7 @@ check('Ação: doze vilões em ordem de ameaça, com os ids preservados (b0…b1
 check('Ação: fraqueza de cada vilão', api.THEMES.acao.bosses.map(b => b.weak).join('|') === 'Pernas|Peito|Costas|Core|Posterior|Abdômen|Ombros|Tríceps|Bíceps|Antebraço|Peito|Antebraço', api.THEMES.acao.bosses.map(b => b.weak));
 const todasFraquezas = expectedThemeIds.flatMap(id => api.THEMES[id].bosses.map(b => b.weak));
 const contagemFraquezas = todasFraquezas.reduce((acc, grupo) => (acc[grupo] = (acc[grupo] || 0) + 1, acc), {});
-check('144 chefões mantêm 10 fraquezas distintas (Posterior 11, Pernas 16)', todasFraquezas.length === 144 && Object.keys(contagemFraquezas).length === 10 && contagemFraquezas.Posterior === 11 && contagemFraquezas.Pernas === 16, contagemFraquezas);
+check('204 chefões mantêm 10 fraquezas distintas (Posterior 11, Pernas 25)', todasFraquezas.length === 204 && Object.keys(contagemFraquezas).length === 10 && contagemFraquezas.Posterior === 11 && contagemFraquezas.Pernas === 25, contagemFraquezas);
 const thundercats = api.THEMES.thundercats;
 check('ThunderCats: de Sobrevivente de Thundera à Lenda de Thundera', thundercats.ranks.map(r => r[0]).join('|') === 'Sobrevivente de Thundera|Aprendiz da Terceira Terra|Explorador da Terceira Terra|Sentinela da Toca dos Gatos|Guerreiro de Thundera|Guardião do Código|Portador da Espada Justiceira|Protetor do Olho de Thundera|Senhor dos ThunderCats|Lenda de Thundera', thundercats.ranks.map(r => r[0]));
 check('ThunderCats: chefões abrem em Jackalman e fecham no Mumm-Ra poderoso', thundercats.bosses[0].name === 'Jackalman' && thundercats.bosses[10].name === 'Mumm-Ra, forma mumificada' && thundercats.bosses[11].name === 'Mumm-Ra, forma poderosa' && thundercats.frame === 'garra', thundercats.bosses.map(b => b.name));

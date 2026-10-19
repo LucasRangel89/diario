@@ -459,7 +459,7 @@ const server = http.createServer((req, res) => {
   check('service worker registrado e ativo', sw.temSW, JSON.stringify(sw));
   check('cache offline criado com o CORE', sw.arquivos > 100, sw.arquivos);
   check(`cache da versão ${VERSAO} (lida do sw.js)`, (sw.versao || []).includes('berzerker-' + VERSAO), JSON.stringify(sw.versao));
-  check('B5: 120 imagens de patentes + 12 de cards estão no cache (132 no precache)', sw.patentes === 120 && sw.cards === 12, JSON.stringify(sw));
+  check('B5: 170 imagens de patentes + 17 de cards estão no cache (187 no precache)', sw.patentes === 170 && sw.cards === 17, JSON.stringify(sw));
 
   await context.setOffline(true);
   fase = 'offline';
