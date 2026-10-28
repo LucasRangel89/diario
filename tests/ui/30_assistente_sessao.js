@@ -194,6 +194,11 @@ check('cada pendente é cartão compacto com número, grupo/nome, meta e estado'
     && sessaoHeaders()[0].textContent.includes('Peito') && sessaoHeaders()[0].textContent.includes('Supino Reto com Barra')
     && sessaoHeaders()[0].textContent.includes('🎯') && sessaoHeaders()[0].textContent.includes('Pendente'),
     sessaoHeaders().map(b => b.textContent).join(' | ').slice(0, 160));
+check('nomes das unidades pendentes têm texto completo, sem truncamento e com destaque consistente',
+    sessaoHeaders().every(btn => {
+        const nome = btn.querySelector('.session-exercise-name');
+        return nome && nome.classList.contains('text-base') && nome.classList.contains('break-words') && !nome.classList.contains('truncate');
+    }));
 check('aberta inicialmente só a 1ª unidade pendente (aria-expanded anuncia o estado)',
     sessaoHeaders().filter(b => b.getAttribute('aria-expanded') === 'true').length === 1
     && sessaoHeaders()[0].getAttribute('aria-expanded') === 'true'
@@ -255,6 +260,10 @@ renderSession();`);
 check('bi-set vira UMA unidade expansível com os dois formulários e o rótulo do par',
     sessaoHeaders().length === 2 && !!$('s0-w') && !!$('s1-w') && !!$('s2-w')
     && $('session-exercises-list').textContent.includes('BI-SET') && sessaoHeaders()[0].textContent.includes('1+2'));
+check('cada nome do bi-set permanece visível e associado ao próprio grupo e meta',
+    sessaoHeaders()[0].querySelectorAll('.session-exercise-name').length === 2 &&
+    [...sessaoHeaders()[0].querySelectorAll('.session-exercise-name')].every(nome =>
+        nome.classList.contains('break-words') && nome.parentElement.textContent.includes('🎯')));
 check('registro conjunto do bi-set num só botão',
     !!btnIn($('session-exercises-list'), 'Registrar Bi-set') && ($('session-exercises-list').innerHTML.match(/registerSessionUnit/g) || []).length === 2);
 ev('stopSessionTimer();');
@@ -275,6 +284,9 @@ check('unidade concluída fica compacta (com ✏️ Editar) e a próxima pendent
     $('session-progress-text').textContent === '2 / 3 exercícios' && sessaoHeaders().length === 1
     && sessaoHeaders()[0].textContent.includes('Remada') && sessaoHeaders()[0].getAttribute('aria-expanded') === 'true'
     && ($('session-exercises-list').innerHTML.match(/✏️ Editar/g) || []).length === 2);
+check('nomes concluídos mantêm destaque e podem quebrar em telas estreitas',
+    [...$('session-exercises-list').querySelectorAll('.session-exercise-name')].filter(n => /Supino|Rosca/.test(n.textContent))
+        .every(n => n.classList.contains('text-base') && n.classList.contains('break-words') && !n.classList.contains('truncate')));
 check('o descanso do par começa depois do registro conjunto',
     $('session-timer-display').textContent !== '00:00', $('session-timer-display').textContent);
 $('s2-w').value = '40'; $('s2-r').value = '10, 10';

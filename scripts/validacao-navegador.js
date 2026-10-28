@@ -441,6 +441,60 @@ const server = http.createServer((req, res) => {
     await page.waitForTimeout(200);
   }
 
+  console.log('\n== NAV 2e. Leitura dos nomes na sessão ==');
+  // Treino sintético apenas em memória: cobre nome comprido, palavra sem espaços,
+  // bi-set e exercício concluído, sem alterar os treinos salvos do usuário.
+  const treinosAntesNomes = await page.evaluate(async () => JSON.stringify((await import('./js/app.js')).savedWorkouts));
+  try {
+    await page.evaluate(() => {
+      const ex = window.__diarioExports;
+      ex.setSavedWorkouts([{ id: 987654321, name: 'Leitura de títulos', exercises: [
+        { muscle: 'Peito', exercise: 'Supino Inclinado com Halteres e Pausa Prolongada', weight: 20, repsText: '10, 10', biset: false },
+        { muscle: 'Costas', exercise: 'RemadaUnilateralPersonalizadaComNomeMuitoComprido', weight: 30, repsText: '12, 12', biset: true },
+        { muscle: 'Pernas', exercise: 'Agachamento com Barra e Amplitude Completa', weight: 40, repsText: '8, 8', biset: false }
+      ] }]);
+      ex.startSession(987654321);
+    });
+    const leitura = [];
+    for (const largura of [320, 360, 390, 430, 768]) {
+      await page.setViewportSize({ width: largura, height: 900 });
+      leitura.push(await page.evaluate(() => {
+        const nomes = [...document.querySelectorAll('#session-exercises-list .session-exercise-name')];
+        return { largura: innerWidth, scroll: document.documentElement.scrollWidth, nomes: nomes.map(el => {
+          const css = getComputedStyle(el), r = el.getBoundingClientRect();
+          return { texto: el.textContent, tamanho: parseFloat(css.fontSize), corte: css.textOverflow,
+            largura: el.clientWidth, conteudo: el.scrollWidth, esquerda: r.left, direita: r.right };
+        }) };
+      }));
+    }
+    check('nomes completos do bi-set e exercício individual cabem sem truncamento de 320 a 768 px',
+      leitura.every(l => l.scroll <= l.largura + 2 && l.nomes.length === 3 && l.nomes.every(n =>
+        n.tamanho >= 16 && n.corte !== 'ellipsis' && n.conteudo <= n.largura + 1 && n.esquerda >= 0 && n.direita <= l.largura + 1)), JSON.stringify(leitura));
+    await page.setViewportSize({ width: 320, height: 900 });
+    const concluidos = await page.evaluate(async () => {
+      const app = await import('./js/app.js');
+      app.activeSession.exercises.forEach(e => { e.done = true; });
+      app.renderSession();
+      return [...document.querySelectorAll('#session-exercises-list .session-exercise-name')].map(el => ({
+        texto: el.textContent, tamanho: parseFloat(getComputedStyle(el).fontSize),
+        largura: el.clientWidth, conteudo: el.scrollWidth, corte: getComputedStyle(el).textOverflow
+      }));
+    });
+    check('nomes concluídos também permanecem legíveis e sem truncamento',
+      concluidos.length === 3 && concluidos.every(n => n.tamanho >= 16 && n.corte !== 'ellipsis' && n.conteudo <= n.largura + 1), JSON.stringify(concluidos));
+  } catch (e) {
+    check('leitura dos títulos em navegador real', false, e.stack || e.message);
+  } finally {
+    await page.evaluate(original => {
+      const ex = window.__diarioExports;
+      ex.endSession();
+      document.getElementById('confirm-modal-yes')?.click();
+      ex.setSavedWorkouts(JSON.parse(original));
+      ex.renderSavedWorkouts();
+    }, treinosAntesNomes);
+    await page.setViewportSize({ width: 412, height: 915 });
+  }
+
   console.log('\n== NAV 3. Service Worker + offline ==');
   fase = 'sw';
   await page.evaluate(() => navigator.serviceWorker.ready);
