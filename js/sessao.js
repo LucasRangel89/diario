@@ -103,7 +103,7 @@ function renderSession(opts) {
                 <div class="flex items-center gap-2 flex-wrap min-w-0">
                     <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-emerald-600 text-white">✔</span>
                     <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(e.muscle)}</span>
-                    <span class="font-bold text-white text-sm">${escapeHtml(e.exercise)}</span>
+                    <span class="session-exercise-name font-bold text-white text-base leading-snug break-words min-w-0">${escapeHtml(e.exercise)}</span>
                     ${e.extra ? '<span class="text-xs font-bold px-1.5 py-0.5 bg-violet-950 text-violet-300 border border-violet-600/60 rounded uppercase">Extra</span>' : ''}
                     ${e.loggedPR ? '<span class="text-xs font-bold px-1.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-700 rounded">🏆 PR</span>' : ''}
                 </div>
@@ -153,24 +153,28 @@ function renderSession(opts) {
             </div>`;
         }
         const numero = u.pair ? u.idxs.map(k => k + 1).join('+') : String(u.idxs[0] + 1);
-        const titulos = u.idxs.map(k => `<span class="flex items-center gap-2 min-w-0">
-                        <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase shrink-0">${escapeHtml(ex[k].muscle)}</span>
-                        <span class="font-bold text-white text-sm truncate">${escapeHtml(ex[k].exercise)}</span>
-                    </span>`).join('');
-        const metas = u.idxs.map(k => `<span class="text-xs text-gray-400 font-mono min-w-0 sm:whitespace-nowrap">🎯 ${ex[k].weight > 0 ? ex[k].weight + ' kg' : '—'} × (${escapeHtml(ex[k].repsText || '—')})</span>`).join('');
-        return `<div class="rounded-xl border ${u.pair ? 'border-cyan-500/60 bg-berzerker-dark' : 'border-berzerker-border bg-berzerker-dark'}" data-unit-uid="${u.uid}">
-            <div class="flex items-center gap-1.5 p-2.5">
-                <button type="button" data-action="toggleSessionUnit" data-args='["${u.uid}"]' aria-expanded="${open ? 'true' : 'false'}" aria-controls="sunit-${u.uid}" class="flex-1 min-w-0 flex items-center gap-2 min-h-[44px] text-left rounded-lg px-2 py-1.5 hover:bg-berzerker-border/40">
-                    <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-berzerker-border text-gray-300">${numero}</span>
-                    <span class="flex flex-col sm:flex-row sm:items-center gap-x-2 gap-y-0.5 min-w-0 flex-1">
-                        ${titulos}
-                        <span class="flex flex-wrap items-center gap-x-2 gap-y-0.5">${metas}
-                            <span class="text-xs font-bold text-amber-300 whitespace-nowrap">⏳ Pendente</span>
+        // Em telas estreitas o nome ocupa a largura do cartão e pode quebrar;
+        // grupo e meta ficam associados a cada exercício, inclusive no bi-set.
+        const titulos = u.idxs.map(k => `<span class="block min-w-0">
+                        <span class="session-exercise-name block font-bold text-white text-base leading-snug break-words">${escapeHtml(ex[k].exercise)}</span>
+                        <span class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+                            <span class="text-xs font-bold px-1.5 py-0.5 bg-berzerker-border text-berzerker-500 rounded uppercase">${escapeHtml(ex[k].muscle)}</span>
+                            <span class="text-xs text-gray-400 font-mono break-words">🎯 ${ex[k].weight > 0 ? ex[k].weight + ' kg' : '—'} × (${escapeHtml(ex[k].repsText || '—')})</span>
                         </span>
+                    </span>`).join('');
+        return `<div class="rounded-xl border ${u.pair ? 'border-cyan-500/60 bg-berzerker-dark' : 'border-berzerker-border bg-berzerker-dark'}" data-unit-uid="${u.uid}">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 p-2.5">
+                <button type="button" data-action="toggleSessionUnit" data-args='["${u.uid}"]' aria-expanded="${open ? 'true' : 'false'}" aria-controls="sunit-${u.uid}" class="flex-1 min-w-0 flex items-start gap-2 min-h-[44px] text-left rounded-lg px-2 py-1.5 hover:bg-berzerker-border/40">
+                    <span class="w-6 h-6 flex items-center justify-center rounded-md text-xs font-bold shrink-0 bg-berzerker-border text-gray-300">${numero}</span>
+                    <span class="flex flex-col gap-2 min-w-0 flex-1">
+                        ${titulos}
+                        <span class="text-xs font-bold text-amber-300">⏳ Pendente</span>
                     </span>
                 </button>
-                <button type="button" data-action="moveSessionUnit" data-args="[${u.idxs[0]},-1]" title="Subir na ordem" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▲</button>
-                <button type="button" data-action="moveSessionUnit" data-args="[${u.idxs[0]},1]" title="Descer na ordem" aria-label="Descer exercício na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▼</button>
+                <div class="flex justify-end gap-1.5 shrink-0">
+                    <button type="button" data-action="moveSessionUnit" data-args="[${u.idxs[0]},-1]" title="Subir na ordem" aria-label="Subir exercício na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▲</button>
+                    <button type="button" data-action="moveSessionUnit" data-args="[${u.idxs[0]},1]" title="Descer na ordem" aria-label="Descer exercício na ordem" class="min-h-[44px] min-w-[44px] px-2 py-2 text-sm font-bold bg-berzerker-border text-gray-300 rounded-md hover:bg-gray-700">▼</button>
+                </div>
             </div>
             <div id="sunit-${u.uid}" data-unit-body class="px-2.5 pb-3 space-y-3${open ? '' : ' hidden'}">
                 ${u.pair ? '<div class="text-xs font-bold text-cyan-400 uppercase tracking-wider">🔗 BI-SET — os dois juntos; o descanso começa depois do par</div>' : ''}
