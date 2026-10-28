@@ -347,24 +347,34 @@ function alertModal(msg) {
     setTimeout(() => banner.remove(), 3800);
 }
 
-function confirmModal(msg, onConfirm) {
+function confirmModal(msg, onConfirm, confirmLabel = 'Confirmar') {
     const existing = document.getElementById('confirm-modal-overlay');
     if (existing) existing.remove();
     const overlay = document.createElement('div');
     overlay.id = 'confirm-modal-overlay';
     overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4';
+    const focoAnterior = document.activeElement;
     overlay.innerHTML = `
-        <div class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-2xl">
-            <p class="text-sm text-white font-bold leading-relaxed">${escapeHtml(msg)}</p>
+        <div role="alertdialog" aria-modal="true" aria-labelledby="confirm-modal-message" class="bg-berzerker-card border border-berzerker-border rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-2xl">
+            <p id="confirm-modal-message" class="text-sm text-white font-bold leading-relaxed">${escapeHtml(msg)}</p>
             <div class="flex gap-3 justify-end">
                 <button id="confirm-modal-no" class="px-4 py-2 bg-berzerker-border hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Cancelar</button>
-                <button id="confirm-modal-yes" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Confirmar</button>
+                <button id="confirm-modal-yes" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">${escapeHtml(confirmLabel)}</button>
             </div>
         </div>`;
     document.body.appendChild(overlay);
-    overlay.querySelector('#confirm-modal-no').onclick = () => overlay.remove();
-    overlay.onclick = (ev) => { if (ev.target === overlay) overlay.remove(); };
-    overlay.querySelector('#confirm-modal-yes').onclick = () => { overlay.remove(); onConfirm(); };
+    const no = overlay.querySelector('#confirm-modal-no');
+    const yes = overlay.querySelector('#confirm-modal-yes');
+    const close = () => { overlay.remove(); if (focoAnterior && focoAnterior.isConnected && focoAnterior.focus) focoAnterior.focus(); };
+    no.onclick = close;
+    overlay.onclick = (ev) => { if (ev.target === overlay) close(); };
+    yes.onclick = () => { close(); onConfirm(); };
+    overlay.addEventListener('keydown', ev => {
+        if (ev.key !== 'Tab') return;
+        if (ev.shiftKey && document.activeElement === no) { ev.preventDefault(); yes.focus(); }
+        else if (!ev.shiftKey && document.activeElement === yes) { ev.preventDefault(); no.focus(); }
+    });
+    no.focus();
 }
 
 function shakeElement(el) {
@@ -392,7 +402,7 @@ function ensureThemeGameSave(themeId) {
     return themeGameSaves[id];
 }
 
-function restoreActiveThemeGameSave(themeId) {
+function restoreActiveThemeGameSave(themeId, hydrate = true) {
     activeGameThemeId = THEMES[themeId] ? themeId : 'classico';
     const save = ensureThemeGameSave(activeGameThemeId);
     missionsXpTotal = save.missionsXpTotal;
@@ -400,7 +410,7 @@ function restoreActiveThemeGameSave(themeId) {
     seasons = save.seasons ? JSON.parse(JSON.stringify(save.seasons)) : null;
     bossPortraits = { ...save.bossPortraits };
     // Blobs do IndexedDB: hidrata objectURLs (e migra dataURLs legados) sem bloquear.
-    if (typeof hydratePortraitBlobs === 'function') { try { hydratePortraitBlobs(); } catch (e) { /* noop */ } }
+    if (hydrate && typeof hydratePortraitBlobs === 'function') { try { hydratePortraitBlobs(); } catch (e) { /* noop */ } }
 }
 
 function ensureDeloadRestAwards() {
@@ -1388,7 +1398,7 @@ const OVERLAY_CLOSE_ORDER = [
 function closeTopOverlay() {
     for (const id of OVERLAY_CLOSE_ORDER) {
         const el = document.getElementById(id);
-        if (el) { el.remove(); return id; }
+        if (el) { if (id === 'confirm-modal-overlay') el.querySelector('#confirm-modal-no').click(); else el.remove(); return id; }
     }
     return null;
 }
@@ -1703,10 +1713,20 @@ function deleteTest(testId) {
 // exportCSV/importCSV vivem em js/historico.js (formato multi-aba da planilha).
 // parseCSVRows é compartilhado com o import de CSV.
 
-async function exportJSONBackup() {
-    const backupData = await buildBackupPayload();
+async function exportJSONBackup(parcial = false) {
+    let backupData;
+    try { backupData = await buildBackupPayload(parcial); }
+    catch (e) {
+        if (e.code === 'RETRATO_INDISPONIVEL' && !parcial) {
+            confirmModal('Não foi possível exportar o backup completo: um ou mais retratos não puderam ser lidos. Deseja exportar um backup parcial sem esses retratos? O lembrete de backup completo continuará ativo.', () => exportJSONBackup(true), 'Exportar parcial');
+        } else {
+            alertModal('⚠️ Não foi possível exportar o backup. Verifique o armazenamento e tente novamente. Nenhum arquivo foi exportado.');
+        }
+        return;
+    }
     const jsonStr = JSON.stringify(backupData, null, 2);
-    const fileName = `berzerker-diario-backup-${getTodayLocalISO()}.json`;
+    const incompleto = !!backupData.backupParcial;
+    const fileName = `berzerker-diario-backup${incompleto ? '-parcial' : ''}-${getTodayLocalISO()}.json`;
     const saveViaPicker = async () => {
         if (typeof window.showSaveFilePicker !== 'function') return false;
         try {
@@ -1731,10 +1751,12 @@ async function exportJSONBackup() {
             dlAnchor.click();
             dlAnchor.remove();
         }
-        lastBackupAt = getTodayLocalISO();
-        safeStorage.set(STORAGE_KEY_BACKUP, lastBackupAt);
-        renderBackupReminder();
-        alertModal('📥 Backup exportado (dados, temas e progresso dos jogos)!');
+        if (!incompleto) {
+            lastBackupAt = getTodayLocalISO();
+            safeStorage.set(STORAGE_KEY_BACKUP, lastBackupAt);
+            renderBackupReminder();
+        }
+        alertModal(incompleto ? '⚠️ Backup parcial exportado, sem os retratos indisponíveis.' : '📥 Backup exportado (dados, temas e progresso dos jogos)!');
     })();
 }
 
@@ -1788,41 +1810,44 @@ async function applyImportedBackup(parsed) {
         weightLog = Array.isArray(v.shared.weightLog) ? v.shared.weightLog.map(w => ({ date: w.date, peso: Number(w.peso), obs: w.obs || '' })) : [];
         if (v.custom.presente) setCustomExercisesList(v.custom.lista);
 
-        restoreActiveThemeGameSave(importedThemeId);
+        restoreActiveThemeGameSave(importedThemeId, false);
         applyTheme(importedThemeId);
         lastRankLevel = null; lastBossesDefeated = null;
 
-        // Imagens do backup (dataURL portáteis) → Blob no IndexedDB + marcador no save.
-        // Falha de imagem não cancela a importação dos dados (como antes), mas é CONTADA
-        // e aparece na mensagem final: sem confirmação, nada de "importado com sucesso".
-        try {
-            if (window.storage && typeof window.storage.saveBlob === 'function') {
-                const imgs = isObjetoSimples(parsed.portraitImages) ? parsed.portraitImages : {};
-                for (const [chave, dataURL] of Object.entries(imgs)) {
-                    if (typeof dataURL !== 'string' || !dataURL.startsWith('data:')) continue;
-                    const [tema, ...resto] = chave.split(':');
-                    const bossId = resto.join(':');
-                    if (!THEMES[tema] || !bossId) continue;
-                    const blob = await window.storage.dataURLToBlob(dataURL);
-                    if (!blob) continue;
-                    const key = `portrait:${tema}:${bossId}`;
-                    if (await saveBlobChecked(key, blob, { silencioso: true })) {
-                        const save = ensureThemeGameSave(tema);
-                        save.bossPortraits[bossId] = 'idb:' + key;
-                    } else imagensNaoSalvas++;
+        // Imagens portáteis → Blob. Falhas são contadas sem interromper as demais.
+        const imgs = isObjetoSimples(parsed.portraitImages) ? parsed.portraitImages : {};
+        for (const [chave, dataURL] of Object.entries(imgs)) {
+            const [tema, ...resto] = chave.split(':');
+            const bossId = resto.join(':');
+            try {
+                if (!THEMES[tema] || !bossId || typeof dataURL !== 'string' || !dataURL.startsWith('data:') ||
+                    !window.storage || typeof window.storage.dataURLToBlob !== 'function') throw new Error('imagem inválida');
+                const blob = await window.storage.dataURLToBlob(dataURL);
+                if (!blob) throw new Error('imagem indisponível');
+                const key = `portrait:${tema}:${bossId}`;
+                if (!await saveBlobChecked(key, blob, { silencioso: true })) throw new Error('gravação não confirmada');
+                const marker = 'idb:' + key;
+                if (portraitObjectURLs[marker]) {
+                    URL.revokeObjectURL(portraitObjectURLs[marker]);
+                    delete portraitObjectURLs[marker];
                 }
-                if (parsed.storyBgImageData) {
-                    const blob = await window.storage.dataURLToBlob(parsed.storyBgImageData);
-                    if (blob && await saveBlobChecked(STORY_BG_BLOB_KEY, blob, { silencioso: true })) {
-                        safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({ bgBlob: '1', bgDate: isoDataValida(parsed.storyBgDate) ? parsed.storyBgDate : null, bgImageData: null }));
-                        const img = new Image();
-                        img.storyDate = isoDataValida(parsed.storyBgDate) ? parsed.storyBgDate : null;
-                        img.onload = () => { customBgImageData = img; generateStoryCard(); };
-                        img.src = URL.createObjectURL(blob);
-                    } else if (blob) imagensNaoSalvas++;
-                }
-            }
-        } catch (e) { /* segue sem imagens */ }
+                ensureThemeGameSave(tema).bossPortraits[bossId] = marker;
+                if (tema === activeGameThemeId) bossPortraits[bossId] = marker;
+            } catch (e) { imagensNaoSalvas++; }
+        }
+        if (parsed.storyBgImageData) {
+            try {
+                if (!window.storage || typeof window.storage.dataURLToBlob !== 'function') throw new Error('storage indisponível');
+                const blob = await window.storage.dataURLToBlob(parsed.storyBgImageData);
+                if (!blob || !await saveBlobChecked(STORY_BG_BLOB_KEY, blob, { silencioso: true })) throw new Error('gravação não confirmada');
+                safeStorage.set(STORAGE_KEY_STORY, JSON.stringify({ bgBlob: '1', bgDate: isoDataValida(parsed.storyBgDate) ? parsed.storyBgDate : null, bgImageData: null }));
+                const img = new Image();
+                img.storyDate = isoDataValida(parsed.storyBgDate) ? parsed.storyBgDate : null;
+                img.onload = () => { customBgImageData = img; generateStoryCard(); };
+                img.src = URL.createObjectURL(blob);
+            } catch (e) { imagensNaoSalvas++; }
+        }
+
     } catch (err) {
         // Restaura o estado anterior: nada fica pela metade na memória.
         logs = snapshot.logs; savedWorkouts = snapshot.savedWorkouts; settings = snapshot.settings;
@@ -1842,10 +1867,13 @@ async function applyImportedBackup(parsed) {
         safeStorage.set(STORAGE_KEY_BW, String(userBodyweight)), safeStorage.set(STORAGE_KEY_SEEDED, '1')
     ];
     if (v.custom.presente) saveCustomExercises();
+    await hydratePortraitBlobs();
     refreshAll();
     const conflitos = v.custom.conflitos;
     if (okParts.some(ok => !ok) || imagensNaoSalvas > 0) {
         alertModal(`⚠️ Backup aplicado na tela, mas o navegador ${TEXTO_BLOB_NAO_CONFIRMADO}${imagensNaoSalvas > 0 ? ` (${imagensNaoSalvas} imagem(ns) incluída(s))` : ''}. Exporte um backup agora.`);
+    } else if (isObjetoSimples(parsed.backupParcial) && Array.isArray(parsed.backupParcial.retratosAusentes) && parsed.backupParcial.retratosAusentes.length) {
+        alertModal(`⚠️ Backup parcial importado: ${parsed.backupParcial.retratosAusentes.length} retrato(s) estavam ausentes no arquivo.`);
     } else if (conflitos.length) {
         alertModal(`✅ Backup importado. ${conflitos.length} exercício(s) personalizado(s) não importado(s): ${conflitos[0]}`);
     } else {

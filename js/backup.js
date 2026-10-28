@@ -118,20 +118,36 @@ function validarBackupJSON(parsed) {
 // ponta a ponta: exportar → apagar → importar → comparar). Imagens enviadas
 // pelo usuário entram como dataURL portáteis SÓ no arquivo de backup — no
 // app elas vivem como Blob no IndexedDB, nunca em base64 no localStorage.
-async function buildBackupPayload() {
+async function buildBackupPayload(permitirRetratosAusentes = false) {
     saveGameState();
     const portraitImages = {};
-    try {
-        if (window.storage && typeof window.storage.getBlob === 'function' && typeof window.storage.blobToDataURL === 'function') {
-            for (const [bossId, v] of Object.entries(bossPortraits || {})) {
-                if (typeof v === 'string' && v.startsWith('idb:')) {
-                    const blob = await window.storage.getBlob(v.slice(4));
-                    const dataURL = await window.storage.blobToDataURL(blob);
-                    if (dataURL) portraitImages[`${activeGameThemeId}:${bossId}`] = dataURL;
+    const retratosAusentes = [];
+    // A cópia permite retirar marcadores locais inacessíveis do arquivo parcial
+    // sem alterar os dados em uso no aparelho.
+    const savesExportados = Object.fromEntries(Object.entries(themeGameSaves || {}).map(([id, save]) =>
+        [id, { ...save, bossPortraits: { ...save.bossPortraits } }]));
+    // Marcadores idb: só são válidos neste aparelho. Exporte o Blob de cada
+    // tema, inclusive os inativos, ou recuse o backup incompleto.
+    for (const [themeId, save] of Object.entries(savesExportados)) {
+        for (const [bossId, value] of Object.entries(save.bossPortraits || {})) {
+            if (typeof value !== 'string' || !value.startsWith('idb:')) continue;
+            try {
+                if (!window.storage || typeof window.storage.getBlob !== 'function' || typeof window.storage.blobToDataURL !== 'function') throw new Error('storage indisponível');
+                const blob = await window.storage.getBlob(value.slice(4));
+                const dataURL = blob && await window.storage.blobToDataURL(blob);
+                if (!dataURL || !dataURL.startsWith('data:')) throw new Error('imagem indisponível');
+                portraitImages[`${themeId}:${bossId}`] = dataURL;
+            } catch (e) {
+                if (!permitirRetratosAusentes) {
+                    const erro = new Error('Não foi possível incluir todos os retratos no backup.');
+                    erro.code = 'RETRATO_INDISPONIVEL';
+                    throw erro;
                 }
+                retratosAusentes.push(`${themeId}:${bossId}`);
+                delete save.bossPortraits[bossId];
             }
         }
-    } catch (e) { /* backup segue sem as imagens */ }
+    }
     return {
         version: 6,
         userBodyweight,
@@ -141,13 +157,14 @@ async function buildBackupPayload() {
         // Formato 6: exercícios personalizados (definições completas, sem o catálogo principal).
         customExercises: getCustomExercises(),
         gameTheme: activeGameThemeId,
-        themeGameSaves,
+        themeGameSaves: savesExportados,
+        ...(retratosAusentes.length ? { backupParcial: { retratosAusentes } } : {}),
         sharedGameState: { deloadWeeks, tests, weightLog },
         portraitImages,
         storyBgImageData: snapshotStoryBgDataURL(),
         storyBgDate: customBgImageData?.storyDate || null,
         // Campos legados para que versões antigas ainda consigam importar o backup.
-        deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits, weightLog,
+        deloadWeeks, missionsXpTotal, missionsClaimed, tests, seasons, bossPortraits: savesExportados[activeGameThemeId]?.bossPortraits || {}, weightLog,
         bgImageData: snapshotStoryBgDataURL(),
         exportDate: new Date().toISOString()
     };

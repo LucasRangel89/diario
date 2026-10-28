@@ -82,7 +82,10 @@ Botão 🔎 no registro e no criador de treino abre o seletor rápido com tags.
 - **Backup:** aba ⚙️ Config → **Exportar Backup (.json)** — exporta tudo,
   inclusive suas imagens. Se o navegador tem File System Access API, o
   arquivo é salvo com um toque; senão cai no download normal. O app avisa
-  quando o último backup tem mais de 7 dias. Falhas de gravação no armazenamento
+  quando o último backup tem mais de 7 dias. Retratos de todos os temas são
+  incluídos; se um retrato salvo não puder ser lido, a exportação é interrompida
+  com opção de exportar um arquivo parcial identificado, sem marcar o backup
+  completo como realizado. Falhas de gravação no armazenamento
   deixam um aviso persistente com ação direta de exportar backup JSON.
 - **Restauração:** **Importar Backup (.json)** na mesma aba restaura tudo
   (restauração de ponta a ponta coberta por teste automatizado).
