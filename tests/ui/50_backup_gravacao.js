@@ -363,3 +363,87 @@
         ev("saveGameState(); window.__idbMode = 'ok';");
         limpaBanners();
     }
+/* Backup portátil de retratos do tema ativo e dos demais temas. */
+    console.log('\n== UI. Backup de retratos entre temas ==');
+    const backupAntesRetratos = JSON.stringify(await ev('buildBackupPayload()'));
+    const storageRetratos = window.storage;
+    const metodosRetratos = {
+        getBlob: storageRetratos.getBlob,
+        blobToDataURL: storageRetratos.blobToDataURL,
+        dataURLToBlob: storageRetratos.dataURLToBlob,
+        saveBlob: storageRetratos.saveBlob
+    };
+    const criarURLRetratos = window.URL.createObjectURL;
+    const revogarURLRetratos = window.URL.revokeObjectURL;
+    const arquivosRetratos = new Map([
+        ['portrait:classico:boss1', 'data:image/png;base64,QUFB'],
+        ['portrait:zodiaco:boss1', 'data:image/png;base64,QkJC']
+    ]);
+    try {
+        storageRetratos.getBlob = async key => arquivosRetratos.get(key) || null;
+        storageRetratos.blobToDataURL = async blob => blob;
+        storageRetratos.dataURLToBlob = async data => data;
+        storageRetratos.saveBlob = async (key, blob) => { arquivosRetratos.set(key, blob); return true; };
+        window.URL.createObjectURL = blob => 'blob:teste-' + blob;
+        window.URL.revokeObjectURL = () => {};
+        ev("restoreActiveThemeGameSave('classico'); applyTheme('classico'); bossPortraits.boss1 = 'idb:portrait:classico:boss1'; ensureThemeGameSave('zodiaco').bossPortraits.boss1 = 'idb:portrait:zodiaco:boss1';");
+        const portavel = JSON.parse(JSON.stringify(await ev('buildBackupPayload()')));
+        check('backup inclui dados dos retratos de ambos os temas',
+            portavel.portraitImages['classico:boss1'] === arquivosRetratos.get('portrait:classico:boss1') &&
+            portavel.portraitImages['zodiaco:boss1'] === arquivosRetratos.get('portrait:zodiaco:boss1'));
+        arquivosRetratos.clear();
+        ev("portraitObjectURLs['idb:portrait:classico:boss1'] = 'blob:antigo';");
+        check('backup com retratos é importado', await ev(`applyImportedBackup(${JSON.stringify(portavel)})`) === true);
+        check('restauração grava os dois retratos e mantém o marcador do tema ativo após salvar',
+            arquivosRetratos.get('portrait:classico:boss1') === portavel.portraitImages['classico:boss1'] &&
+            arquivosRetratos.get('portrait:zodiaco:boss1') === portavel.portraitImages['zodiaco:boss1'] &&
+            ev("bossPortraits.boss1 === 'idb:portrait:classico:boss1' && themeGameSaves.classico.bossPortraits.boss1 === bossPortraits.boss1 && themeGameSaves.zodiaco.bossPortraits.boss1 === 'idb:portrait:zodiaco:boss1'"));
+        check('retrato ativo restaurado substitui a URL antiga', ev("portraitObjectURLs['idb:portrait:classico:boss1']") !== 'blob:antigo');
+        storageRetratos.dataURLToBlob = async data => {
+            if (data === portavel.portraitImages['classico:boss1']) throw new Error('leitura recusada');
+            return data;
+        };
+        arquivosRetratos.delete('portrait:zodiaco:boss1');
+        [...document.body.children].filter(d => String(d.className).includes('bottom-5')).forEach(d => d.remove());
+        await ev(`applyImportedBackup(${JSON.stringify(portavel)})`);
+        check('falha em um retrato é avisada e não impede restaurar os demais',
+            arquivosRetratos.get('portrait:zodiaco:boss1') === portavel.portraitImages['zodiaco:boss1'] &&
+            /não confirmou o salvamento/i.test([...document.body.children].filter(d => String(d.className).includes('bottom-5')).map(d => d.textContent).join(' ')));
+        storageRetratos.dataURLToBlob = async data => data;
+        arquivosRetratos.delete('portrait:zodiaco:boss1');
+        let rejeitouRetratoAusente = false;
+        try { await ev('buildBackupPayload()'); } catch (e) { rejeitouRetratoAusente = true; }
+        check('retrato ausente impede gerar backup silenciosamente incompleto', rejeitouRetratoAusente);
+        const downloadsAntesRetratos = [];
+        const cliqueOriginalRetratos = window.HTMLAnchorElement.prototype.click;
+        window.HTMLAnchorElement.prototype.click = function () { downloadsAntesRetratos.push(this.download); };
+        try {
+            const ultimaData = ev('lastBackupAt');
+            await ev('exportJSONBackup()');
+            const dialogoParcial = $('confirm-modal-overlay');
+            check('falha oferece escolha sem baixar nem atualizar data de backup',
+                downloadsAntesRetratos.length === 0 && ev('lastBackupAt') === ultimaData && !!dialogoParcial &&
+                /Não foi possível exportar o backup completo/.test(dialogoParcial.textContent) &&
+                dialogoParcial.querySelector('[role="alertdialog"][aria-modal="true"]') && document.activeElement.id === 'confirm-modal-no');
+            click($('confirm-modal-no'));
+            check('cancelar mantém dados e não gera arquivo', !$('confirm-modal-overlay') && downloadsAntesRetratos.length === 0 && ev('lastBackupAt') === ultimaData);
+            const parcial = JSON.parse(JSON.stringify(await ev('buildBackupPayload(true)')));
+            check('arquivo parcial identifica omissão e remove somente marcador inacessível, sem alterar o estado',
+                parcial.backupParcial.retratosAusentes.includes('zodiaco:boss1') &&
+                !parcial.themeGameSaves.zodiaco.bossPortraits.boss1 &&
+                parcial.portraitImages['classico:boss1'] && ev("themeGameSaves.zodiaco.bossPortraits.boss1") === 'idb:portrait:zodiaco:boss1');
+            await ev('exportJSONBackup()');
+            click($('confirm-modal-yes'));
+            await new Promise(r => setTimeout(r, 50));
+            check('confirmar exporta arquivo parcial sem renovar data do backup completo',
+                downloadsAntesRetratos.some(n => /^berzerker-diario-backup-parcial-/.test(n)) && ev('lastBackupAt') === ultimaData);
+            [...document.body.children].filter(d => String(d.className).includes('bottom-5')).forEach(d => d.remove());
+            await ev(`applyImportedBackup(${JSON.stringify(parcial)})`);
+            check('ao importar, arquivo parcial é identificado para o usuário', /Backup parcial importado/.test(document.body.textContent));
+        } finally { window.HTMLAnchorElement.prototype.click = cliqueOriginalRetratos; }
+    } finally {
+        Object.assign(storageRetratos, metodosRetratos);
+        window.URL.createObjectURL = criarURLRetratos;
+        window.URL.revokeObjectURL = revogarURLRetratos;
+        await ev(`applyImportedBackup(JSON.parse(${JSON.stringify(backupAntesRetratos)}))`);
+    }
