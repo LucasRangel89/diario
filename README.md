@@ -9,6 +9,10 @@ com espelho no `localStorage`, e continuam funcionando **offline na academia**.
 — **fora do ar em manutenção** desde 29/10/2026; ver [docs/MANUTENCAO.md](docs/MANUTENCAO.md)
 **Novidades por versão:** [CHANGELOG.md](CHANGELOG.md)
 
+> **Licença:** proprietária — todos os direitos reservados a Lucas Rangel.
+> É proibida a cópia, a modificação ou a redistribuição, no todo ou em parte, sem
+> autorização por escrito. Texto completo em [LICENSE](LICENSE).
+
 ---
 
 ## O que o app tem

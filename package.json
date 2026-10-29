@@ -3,6 +3,8 @@
   "version": "2.0.0",
   "private": true,
   "description": "Diário de Cargas — Berzerker Mode (PWA 100% local, sem build em produção)",
+  "author": "Lucas Rangel (https://github.com/LucasRangel89)",
+  "license": "UNLICENSED",
   "scripts": {
     "build:css": "tailwindcss -c tailwind.config.js -i src/tailwind.css -o vendor/tailwind.css --minify",
     "watch:css": "tailwindcss -c tailwind.config.js -i src/tailwind.css -o vendor/tailwind.css --watch",
