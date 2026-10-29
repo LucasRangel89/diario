@@ -1,8 +1,9 @@
 MANUTENÇÃO — sinalizador do site publicado
 
 Enquanto este arquivo existir, scripts/build-site.sh publica SOMENTE a página
-manutencao.html (mais ícones e um sw.js de passagem). O app de verdade
-(index.html, js/, images/, vendor/) NÃO entra no artefato do GitHub Pages.
+manutencao.html como 404.html (mais ícones, robots.txt e um sw.js de passagem).
+NÃO existe index.html no artefato: por isso TODA URL do site responde 404.
+O app de verdade (index.html, js/, images/, vendor/) não entra no artefato.
 
 - Para tirar do ar: basta este arquivo existir (nada de código muda).
 - Para religar o site: apague este arquivo, commite e dispare o workflow Pages.

@@ -5,44 +5,48 @@ O app é uma PWA 100% local, mas o **site** que o entrega vive no GitHub Pages
 manual de como tirar esse site do ar e como colocá-lo de volta, sem tocar no
 código do app.
 
-São **dois níveis independentes** — um não substitui o outro:
+São **dois níveis independentes** — o primeiro está no código e é reversível por
+commit; o segundo é configuração do repositório e exige permissão de admin:
 
 | Nível | O que muda | O que o visitante vê | Reversão |
 | --- | --- | --- | --- |
-| **1. Aviso de manutenção** | arquivo `MANUTENCAO` na raiz | a página `manutencao.html` (HTTP 200) | apagar o arquivo e publicar |
-| **2. GitHub Pages desligado** | configuração do repositório | **404** imediato | religar o Pages pelo `gh api` |
+| **1. Site fora do ar** (feito) | arquivo `MANUTENCAO` na raiz | **404** em toda URL, com a página de aviso | apagar o arquivo e publicar |
+| **2. GitHub Pages desligado** (pendente) | configuração do repositório | 404 imediato, sem deploy nenhum | religar o Pages |
 
-O nível 1 protege contra o pior acidente: religar o Pages e o app voltar ao ar
-sem ninguém perceber. O nível 2 é o corte imediato. Os dois juntos deixam o site
-inacessível **e** o repositório "armado" para não republicar o app por engano.
+O nível 1 já deixa o app inacessível: sem `index.html` no artefato, não existe
+ponto de entrada. O nível 2 é o desligamento de fato — para quando não se quer
+nem a página de aviso no ar. Ver §2 para o motivo de ele estar pendente.
 
 ---
 
-## 1. Aviso de manutenção (arquivo `MANUTENCAO`)
+## 1. Site fora do ar (arquivo `MANUTENCAO`)
 
 Enquanto o arquivo `MANUTENCAO` existir na raiz, `scripts/build-site.sh` monta um
 artefato em modo manutenção:
 
 ```
-_site/index.html      <- manutencao.html
-_site/404.html        <- manutencao.html (qualquer URL direta cai no aviso)
-_site/robots.txt      <- Disallow: /  (nada de indexar uma página provisória)
+_site/404.html        <- manutencao.html (página de aviso)
+_site/robots.txt      <- Disallow: /
 _site/sw.js           <- scripts/manutencao-sw.js (versão de passagem)
 _site/icon-192.png, icon-512.png, apple-touch-icon.png
 ```
 
-Nada de `js/`, `images/`, `vendor/` ou do `index.html` do app: o app **não entra**
-no artefato, então não existe caminho pelo qual ele seja publicado enquanto o
-sinalizador estiver lá. O tamanho do artefato cai de ~22 MB para ~465 KB.
+**Não há `index.html` — de propósito.** Sem ponto de entrada, o GitHub Pages
+responde **404 em todas as URLs** (`/`, `/index.html`, `/js/app.js`, qualquer
+caminho), e o visitante vê a página de aviso como 404 personalizado. `js/`,
+`images/` e `vendor/` nem entram no artefato, então não há como o app ser
+publicado por acidente enquanto o sinalizador estiver lá. O artefato cai de
+~22 MB para ~453 KB.
 
 O mesmo script é usado pelo workflow `pages.yml` e pelo job `pages-artefato` da
-CI, que valida `_site` com `node scripts/check-sw.js _site` — nos dois modos.
+CI, que validam `_site` com `node scripts/check-sw.js _site` — nos dois modos.
 
 ### O `sw.js` de manutenção
 
 `scripts/manutencao-sw.js` é publicado **no lugar** do Service Worker do app. Ele
-declara `VERSION` no formato `vNN` e `CORE = ['./']` (o contrato exigido por
-`scripts/check-sw.js`), mas é o oposto do SW real:
+declara `VERSION` no formato `vNN` e `CORE = ['./404.html']` (o único arquivo
+publicado, exigido pelo contrato de `scripts/check-sw.js`), mas é o oposto do SW
+real:
 
 - **não** pré-cacheia nada;
 - **não** responde pelo cache (`fetch()` puro);
@@ -71,39 +75,39 @@ página provisória no Google.
 
 ---
 
-## 2. Desligar o GitHub Pages (404 imediato)
+## 2. Desligar o GitHub Pages — **pendente**
+
+Desligar o Pages de verdade é uma chamada de admin:
 
 ```bash
-# estado atual
-gh api repos/LucasRangel89/diario/pages --jq '{status, html_url, build_type}'
-
-# desligar
-gh api -X DELETE repos/LucasRangel89/diario/pages
-
-# conferir (espera 404)
-curl -s -o /dev/null -w '%{http_code}\n' https://lucasrangel89.github.io/diario/
+gh api -X DELETE repos/LucasRangel89/diario/pages          # unpublish
+gh workflow disable pages.yml                              # opcional
 ```
 
-Efeitos colaterais conhecidos, todos reversíveis:
+**O token do agente não tem essa permissão.** As três chamadas de configuração
+(`DELETE …/pages`, `PUT …/pages` e `…/actions/workflows/pages.yml/disable`)
+devolvem **403 `Resource not accessible by integration`**: a integração tem
+permissão de conteúdo, PR e merge, não de Pages/Actions. Nada disso é erro de
+código — é escopo de credencial.
 
-- A URL passa a responder **404** em alguns minutos (propagação do CDN).
-- As configurações do Pages (origem `workflow`, `https_enforced`) são descartadas
-  e voltam no `POST` de religamento (abaixo).
-- O histórico de deployments e o ambiente `github-pages` continuam existindo.
-- **Enquanto o Pages estiver desligado, todo push na `main` gera uma execução
-  vermelha do workflow `Pages`**: ele falha em `actions/configure-pages`
-  ("Get Pages site failed"), não no código. Para não acumular execuções
-  vermelhas, desabilite o workflow enquanto durar a manutenção:
+Dois caminhos, escolhendo um:
 
-  ```bash
-  gh workflow disable pages.yml
-  ```
+1. **Botão do dono (30 s).** GitHub → repositório → **Settings → Pages →
+   Unpublish**. A URL passa a devolver 404 da plataforma e nenhum deploy roda mais.
+2. **Deixar como está.** O nível 1 já devolve 404 em todas as URLs; a diferença é
+   que o `pages.yml` continua publicando o artefato de manutenção a cada push na
+   `main` (o que mantém o 404 no ar e não gera execução vermelha).
 
-  Os demais workflows (`CI`) seguem normais e continuam sendo o gate dos PRs.
+Se o dono fizer o *Unpublish*, a volta (§4) precisa recriar o site antes de
+publicar:
 
-> **Ordem recomendada ao desligar:** primeiro apague o Pages, **depois** desabilite
-> o workflow — assim o último deploy publicado é o da página de aviso, e quem
-> estiver com a aba aberta ainda vê "em manutenção" antes do 404.
+```bash
+gh api -X POST repos/LucasRangel89/diario/pages -f build_type=workflow
+gh workflow enable pages.yml     # se tiver sido desabilitado
+```
+
+> Token com permissão de Pages (ou o `gh` autenticado pelo dono) faz o §2 inteiro
+> em um comando. Nada de credencial passa por este repositório.
 
 ---
 
@@ -116,8 +120,7 @@ Nada a fazer, e vale entender o porquê:
 - **Sessão aberta**: o app já carregado continua funcionando até ser fechado —
   ele não depende de rede para registrar treino.
 - **App instalado, aberto depois**: o Service Worker antigo usa rede-primeiro para
-  os arquivos do app. Com o site em manutenção, a navegação baixa a página de
-  aviso; com o Pages desligado (404), a resposta não é OK e o SW cai no cache —
+  os arquivos do app. Com o site em 404, a resposta não é OK e o SW cai no cache —
   por isso é normal o app ainda abrir offline por um tempo no aparelho de quem já
   o tinha instalado. **Isso é esperado**: o app é local por decisão de projeto.
 - **Quando o site volta**: a primeira navegação com rede busca o `index.html` novo,
@@ -135,19 +138,16 @@ o caminho é trocar as chaves do repositório/Pages, não este sinalizador.
 # 1) tirar o modo manutenção
 rm MANUTENCAO
 
-# 2) religar o Pages (recria a origem a partir do workflow)
-gh api -X POST repos/LucasRangel89/diario/pages -f build_type=workflow
-
-# 3) reabilitar o workflow, se ele foi desabilitado
-gh workflow enable pages.yml
-
-# 4) publicar
+# 2) publicar
 git add -A && git commit -m "Religa o site"
 git push origin main
 
-# 5) conferir
+# 3) só se o Pages tiver sido despublikado à mão (§2)
+gh api -X POST repos/LucasRangel89/diario/pages -f build_type=workflow
+gh workflow enable pages.yml
+
+# 4) conferir
 gh run watch "$(gh run list --workflow=pages.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
-curl -s -o /dev/null -w '%{http_code}\n' https://lucasrangel89.github.io/diario/   # 200
 ```
 
 Antes de religar, rode o que a CI roda — o site publicado é o mesmo artefato:
@@ -168,8 +168,10 @@ apontar para o site sem a ressalva de manutenção.
 
 ## 5. Estado atual
 
-- **29/10/2026** — site colocado em manutenção: `MANUTENCAO` criado,
+- **29/10/2026** — nível 1 ativo e publicado (PR #37): `MANUTENCAO` criado,
   `manutencao.html` e `scripts/manutencao-sw.js` adicionados, `scripts/build-site.sh`
-  com modo manutenção, GitHub Pages **desligado** (404). O app no repositório não
-  foi alterado — todos os testes seguem passando.
+  com modo manutenção **sem `index.html`** → todas as URLs do site respondem 404
+  com o aviso. Nível 2 **pendente**: o token do agente recebe 403 em
+  `DELETE/PUT /pages` e em `disable` de workflow (§2). O app no repositório não foi
+  alterado — todos os testes seguem passando.
 - Para religar: seção 4 deste documento.
