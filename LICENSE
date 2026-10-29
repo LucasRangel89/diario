@@ -1,21 +1,40 @@
-MIT License
+LICENÇA PROPRIETÁRIA — TODOS OS DIREITOS RESERVADOS
 
-Copyright (c) 2026 Lucas Rangel
+Diário de Cargas // Berzerker Mode
+Copyright (c) 2026 Lucas Rangel. Todos os direitos reservados.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Este repositório, o código-fonte, a documentação, a identidade visual e as artes
+do aplicativo "Diário de Cargas" (doravante "o Software") são obra original de
+Lucas Rangel, protegida pela Lei nº 9.609/1998 (Lei do Software), pela Lei
+nº 9.610/1998 (Direitos Autorais) e pelos tratados internacionais aplicáveis.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+É expressamente proibido, no todo ou em parte, sem autorização prévia e por
+escrito do titular:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+  1. copiar, reproduzir, armazenar ou arquivar o Software;
+  2. modificar, adaptar, traduzir ou criar obras derivadas a partir dele;
+  3. distribuir, publicar, sublicenciar, vender, alugar, emprestar ou ceder o
+     Software a terceiros;
+  4. publicar o Software (ou obra derivada) em lojas de aplicativos, sites,
+     repositórios públicos, redes sociais ou qualquer outro canal de
+     distribuição;
+  5. remover, ocultar ou alterar este aviso de autoria e de titularidade.
+
+Qualquer autorização de uso, quando concedida, será pessoal, intransferível,
+limitada ao escopo nela descrito e revogável a qualquer momento pelo titular.
+
+O Software é fornecido "no estado em que se encontra", sem garantia de qualquer
+natureza, expressa ou implícita. O titular não responde por perdas, danos ou
+prejuízos decorrentes do uso, da impossibilidade de uso ou da cópia não
+autorizada do Software.
+
+Titular e autor: Lucas Rangel
+Contato: perfil GitHub <https://github.com/LucasRangel89>
+
+--------------------------------------------------------------------------
+Histórico de licenciamento
+--------------------------------------------------------------------------
+Até 29/10/2026 este repositório foi distribuído sob a licença MIT. Quem obteve
+uma cópia do Software até essa data conserva, sobre aquela cópia, os direitos
+então concedidos. Esta licença se aplica a todas as cópias obtidas a partir
+desta data e a todas as versões posteriores do Software.
