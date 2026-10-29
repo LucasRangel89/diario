@@ -13,8 +13,10 @@ rm -rf "$OUT"
 mkdir -p "$OUT"
 
 if [ -f MANUTENCAO ]; then
-    cp manutencao.html "$OUT/index.html"
-    # Qualquer URL direta (ex.: /diario/js/app.js) cai no aviso em vez do 404 genérico.
+    # Sem index.html DE PROPÓSITO: sem ponto de entrada, TODA URL do site responde
+    # 404 (com o aviso como 404 personalizado). É o mais perto de "fora do ar" que
+    # dá para fazer pelo artefato — desligar a configuração do Pages exige permissão
+    # de admin que o token do agente não tem (404/403 no DELETE). Ver docs/MANUTENCAO.md.
     cp manutencao.html "$OUT/404.html"
     printf 'User-agent: *\nDisallow: /\n' > "$OUT/robots.txt"
     cp -r icon-192.png icon-512.png apple-touch-icon.png "$OUT/"

@@ -7,10 +7,11 @@
 // app volta, o sw.js de verdade (com VERSION nova) assume e repopula o CORE.
 //
 // Contrato com scripts/check-sw.js: VERSION no formato vNN, CORE como lista de
-// './caminho' e todos os itens existentes no artefato. Aqui o único item é './',
-// que o script resolve para index.html — a própria página de manutenção.
+// './caminho' e todos os itens existentes no artefato. O artefato de manutenção
+// NÃO tem index.html (é o que faz toda URL responder 404), então a lista aponta
+// para o único arquivo publicado. Nada é pré-cacheado: a lista serve à checagem.
 const VERSION = 'v76';
-const CORE = ['./'];
+const CORE = ['./404.html'];
 const EXTERNAL = [];
 
 self.addEventListener('install', () => {
