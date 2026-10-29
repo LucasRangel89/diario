@@ -6,6 +6,7 @@ com tags. Sem backend, sem conta, sem nuvem: os dados vivem no IndexedDB do apar
 com espelho no `localStorage`, e continuam funcionando **offline na academia**.
 
 **App publicado:** <https://lucasrangel89.github.io/diario/> (GitHub Pages, branch `main`)
+— **fora do ar em manutenção** desde 29/10/2026; ver [docs/MANUTENCAO.md](docs/MANUTENCAO.md)
 **Novidades por versão:** [CHANGELOG.md](CHANGELOG.md)
 
 ---

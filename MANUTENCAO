@@ -1,0 +1,11 @@
+MANUTENÇÃO — sinalizador do site publicado
+
+Enquanto este arquivo existir, scripts/build-site.sh publica SOMENTE a página
+manutencao.html (mais ícones e um sw.js de passagem). O app de verdade
+(index.html, js/, images/, vendor/) NÃO entra no artefato do GitHub Pages.
+
+- Para tirar do ar: basta este arquivo existir (nada de código muda).
+- Para religar o site: apague este arquivo, commite e dispare o workflow Pages.
+
+Procedimento completo, inclusive o desligamento do próprio GitHub Pages e o que
+acontece com quem já instalou o PWA: docs/MANUTENCAO.md

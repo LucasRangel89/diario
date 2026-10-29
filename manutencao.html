@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diário de Cargas — em manutenção</title>
+    <meta name="description" content="O Diário de Cargas está temporariamente fora do ar. Seus dados continuam salvos no seu aparelho.">
+    <!-- Página de manutenção: não deve aparecer em buscadores nem ser confundida com o app. -->
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#08080a">
+    <meta name="color-scheme" content="dark">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <!-- Sem CSS/JS externos de propósito: esta página precisa abrir em qualquer rede
+         (inclusive 3G ruim) e não depende de /vendor, /js nem /images. -->
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            margin: 0;
+            min-height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background:
+                radial-gradient(120% 90% at 50% -10%, #1a1206 0%, rgba(8, 8, 10, 0) 60%),
+                #08080a;
+            color: #f3f4f6;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        .cartao {
+            width: 100%;
+            max-width: 560px;
+            padding: 32px 28px 26px;
+            border: 1px solid rgba(245, 158, 11, 0.22);
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(24, 24, 27, 0.92), rgba(9, 9, 11, 0.96));
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+        }
+        .selo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 20px;
+            padding: 6px 12px;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.08);
+            color: #fbbf24;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+        .ponto {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #f59e0b;
+            animation: pulso 2.4s ease-in-out infinite;
+        }
+        @keyframes pulso {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45); }
+            50% { opacity: 0.55; box-shadow: 0 0 0 5px rgba(245, 158, 11, 0); }
+        }
+        h1 {
+            margin: 0 0 14px;
+            font-size: clamp(24px, 5vw, 31px);
+            line-height: 1.2;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        h1 span { display: block; color: #a1a1aa; font-weight: 600; }
+        .linha { margin: 0 0 22px; color: #d4d4d8; font-size: 15px; }
+        .fatos { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+        .fatos li {
+            padding: 14px 16px 14px 44px;
+            position: relative;
+            border: 1px solid rgba(63, 63, 70, 0.55);
+            border-radius: 12px;
+            background: rgba(24, 24, 27, 0.5);
+            font-size: 14px;
+            color: #d4d4d8;
+        }
+        .fatos li strong { display: block; color: #f4f4f5; font-size: 14px; }
+        .fatos svg {
+            position: absolute;
+            left: 14px;
+            top: 15px;
+            width: 18px;
+            height: 18px;
+            color: #34d399;
+        }
+        .rodape {
+            margin: 24px 0 0;
+            padding-top: 16px;
+            border-top: 1px solid rgba(63, 63, 70, 0.4);
+            color: #71717a;
+            font-size: 12.5px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .ponto { animation: none; }
+        }
+    </style>
+</head>
+<body>
+    <main class="cartao">
+        <p class="selo"><span class="ponto" aria-hidden="true"></span> em manutenção</p>
+
+        <h1>O Diário de Cargas está fora do ar por um tempo.<span>Voltamos em breve.</span></h1>
+
+        <p class="linha">
+            Estamos ajustando o app antes de publicá-lo de novo. Você não precisa fazer nada —
+            é só voltar mais tarde.
+        </p>
+
+        <ul class="fatos">
+            <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                <strong>Seus dados estão salvos</strong>
+                Treinos, histórico e progresso ficam gravados no seu próprio aparelho, nunca em um servidor. Nada foi apagado.
+            </li>
+            <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+                <strong>Quem já instalou continua com os dados</strong>
+                O app guarda tudo no aparelho: o que você treinou não depende desta página estar no ar.
+            </li>
+            <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                <strong>A volta é temporária e curta</strong>
+                Assim que o site voltar, o app abre normalmente, com tudo no lugar.
+            </li>
+        </ul>
+
+        <p class="rodape">Esta página é temporária e sai do ar quando a manutenção terminar.</p>
+    </main>
+</body>
+</html>
