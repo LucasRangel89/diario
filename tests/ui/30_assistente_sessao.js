@@ -99,31 +99,53 @@ for (let i = 0; i < window.localStorage.length; i++) {
 }
 window.localStorage.clear();
 window.localStorage.setItem('berzerker_game_theme_v1', 'roma');
+// Datas ancoradas em HOJE, não fixas: a temporada tem 4 semanas e o app a encerra
+// sozinho ao passar de 28 dias (renderSeason -> completeSeason), reescrevendo
+// `seasons.start`. Com datas fixas (01/10/2026) este bloco virou uma bomba-relógio:
+// em 29/10/2026 a temporada era encerrada no load e `seasons.start` deixava de ser
+// 01/10. O layout original é mantido: a temporada começa numa quinta, a semana de
+// deload é a seguinte (segunda a domingo, já passada), o peso cai no sábado do
+// deload e o save do tema "classico" começa na semana depois do deload.
+const isoDe = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const maisDias = (base, dias) => { const d = new Date(base); d.setDate(d.getDate() + dias); return d; };
+const quintaDuasSemanasAtras = (() => {
+    const d = new Date();
+    d.setHours(12, 0, 0, 0);
+    d.setDate(d.getDate() - 14 - ((d.getDay() + 3) % 7)); // quinta da semana de 14 dias atrás
+    return d;
+})();
+const INICIO_TEMPORADA = isoDe(quintaDuasSemanasAtras);              // dia 0 (semana 1 de 4)
+const SEGUNDA_DELOAD = isoDe(maisDias(quintaDuasSemanasAtras, 4));   // semana seguinte = deload
+const SABADO_DELOAD = isoDe(maisDias(quintaDuasSemanasAtras, 9));
+const DOMINGO_DELOAD = isoDe(maisDias(quintaDuasSemanasAtras, 10));
+const INICIO_CLASSICO = isoDe(maisDias(quintaDuasSemanasAtras, 11)); // semana depois do deload
+const SEMANA_DELOAD = ev(`isoWeekKey('${SEGUNDA_DELOAD}')`);
+const SEMANA_CLASSICO = ev(`isoWeekKey('${INICIO_CLASSICO}')`);
 window.localStorage.setItem('berzerker_diario_cargas_logs_v2', JSON.stringify([
-    { id: 91, date: '2026-10-01', kind: 'peso', muscle: 'Peito', exercise: 'Supino', type: 'carga_total', weight: 100, reps: [10], isPR: false }
+    { id: 91, date: INICIO_TEMPORADA, kind: 'peso', muscle: 'Peito', exercise: 'Supino', type: 'carga_total', weight: 100, reps: [10], isPR: false }
 ]));
 window.localStorage.setItem('berzerker_game_state_v1', JSON.stringify({
-    deloadWeeks: ['2026-W41'], missionsXpTotal: 123, missionsClaimed: { '2026-W41': true },
+    deloadWeeks: [SEMANA_DELOAD], missionsXpTotal: 123, missionsClaimed: { [SEMANA_DELOAD]: true },
     tests: [{ id: 'shared-test', name: 'Teste compartilhado', unit: 'kg', goal: 100, records: [] }],
-    seasons: { start: '2026-10-01', completed: [] }, bossPortraits: { b0: 'data:image/jpeg;base64,roma' },
-    weightLog: [{ date: '2026-10-10', peso: 94, obs: 'compartilhado' }]
+    seasons: { start: INICIO_TEMPORADA, completed: [] }, bossPortraits: { b0: 'data:image/jpeg;base64,roma' },
+    weightLog: [{ date: SABADO_DELOAD, peso: 94, obs: 'compartilhado' }]
 }));
 let migrationLoadOk = true;
 try { ev('loadStoredData(); applyTheme(activeGameThemeId);'); } catch (e) { migrationLoadOk = false; }
 check('migração do save legado roda sem erro', migrationLoadOk);
-check('logs e progresso antigo migram para o tema que estava ativo', ev("activeGameThemeId === 'roma' && logs.length === 1 && logs[0].xpTheme === 'roma' && missionsXpTotal === 123 && themeGameSaves.roma.missionsClaimed['2026-W41'] === true && themeGameSaves.roma.bossPortraits.b0.includes('roma')"));
-check('testes, peso e deload são carregados como dados compartilhados', ev("tests[0].name === 'Teste compartilhado' && weightLog[0].peso === 94 && deloadWeeks.join() === '2026-W41'"));
+check('logs e progresso antigo migram para o tema que estava ativo', ev(`activeGameThemeId === 'roma' && logs.length === 1 && logs[0].xpTheme === 'roma' && missionsXpTotal === 123 && themeGameSaves.roma.missionsClaimed['${SEMANA_DELOAD}'] === true && themeGameSaves.roma.bossPortraits.b0.includes('roma')`));
+check('testes, peso e deload são carregados como dados compartilhados', ev(`tests[0].name === 'Teste compartilhado' && weightLog[0].peso === 94 && deloadWeeks.join() === '${SEMANA_DELOAD}'`));
 const legacyRomaXP = ev("computeThemeXPCtx('roma').xp");
-// Conta só os 7 dias da W41 legada: dias de descanso de semanas de deload
-// automáticas posteriores (conforme a data real da execução) são legítimos
-// e não podem quebrar esta checagem.
-check('XP de treino, missão e descanso fica somente no tema migrado', legacyRomaXP > 0 && ev("computeThemeXPCtx('classico').xp === 0") && ev("themeGameSaves.roma.deloadRestDays.filter(d => d >= '2026-10-05' && d <= '2026-10-11').length === 7"), legacyRomaXP);
+// Conta só os 7 dias da semana de deload legada: dias de descanso de semanas de
+// deload automáticas (conforme a data real da execução) são legítimos e não podem
+// quebrar esta checagem.
+check('XP de treino, missão e descanso fica somente no tema migrado', legacyRomaXP > 0 && ev("computeThemeXPCtx('classico').xp === 0") && ev(`themeGameSaves.roma.deloadRestDays.filter(d => d >= '${SEGUNDA_DELOAD}' && d <= '${DOMINGO_DELOAD}').length === 7`), legacyRomaXP);
 const romaSaveBeforeSwitch = ev('JSON.stringify(themeGameSaves.roma)');
-ev("changeGameTheme('classico'); missionsXpTotal = 999; missionsClaimed = { '2026-W42': true }; seasons = { start: '2026-10-12', completed: [] }; bossPortraits = { classicoOnly: 'classico' }; saveGameState();");
+ev(`changeGameTheme('classico'); missionsXpTotal = 999; missionsClaimed = { '${SEMANA_CLASSICO}': true }; seasons = { start: '${INICIO_CLASSICO}', completed: [] }; bossPortraits = { classicoOnly: 'classico' }; saveGameState();`);
 check('trocar para outro jogo não altera o save de Roma', ev('JSON.stringify(themeGameSaves.roma)') === romaSaveBeforeSwitch);
-check('tema novo tem save independente e dados compartilhados intactos', ev("themeGameSaves.classico.missionsXpTotal === 999 && missionsXpTotal === 999 && tests[0].name === 'Teste compartilhado' && weightLog[0].peso === 94 && deloadWeeks.join() === '2026-W41'"));
+check('tema novo tem save independente e dados compartilhados intactos', ev(`themeGameSaves.classico.missionsXpTotal === 999 && missionsXpTotal === 999 && tests[0].name === 'Teste compartilhado' && weightLog[0].peso === 94 && deloadWeeks.join() === '${SEMANA_DELOAD}'`));
 ev("changeGameTheme('roma');");
-check('voltar ao tema restaura XP, missão, temporada e retrato próprios', ev("missionsXpTotal === 123 && missionsClaimed['2026-W41'] === true && seasons.start === '2026-10-01' && bossPortraits.b0.includes('roma')"));
+check('voltar ao tema restaura XP, missão, temporada e retrato próprios', ev(`missionsXpTotal === 123 && missionsClaimed['${SEMANA_DELOAD}'] === true && seasons.start === '${INICIO_TEMPORADA}' && bossPortraits.b0.includes('roma')`));
 check('XP global soma os jogos sem duplicar o save migrado', ev('getGlobalXPTotal() === Object.keys(THEMES).reduce((total, id) => total + computeThemeXPCtx(id).xp, 0)') && $('header-xp-display').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP` && $('global-profile-xp').textContent === `${ev('fmtN(getGlobalXPTotal())')} XP`);
 window.localStorage.clear();
 Object.entries(storedBeforeMigrationTest).forEach(([key, value]) => window.localStorage.setItem(key, value));
