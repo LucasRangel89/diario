@@ -5,17 +5,21 @@ O app é uma PWA 100% local, mas o **site** que o entrega vive no GitHub Pages
 manual de como tirar esse site do ar e como colocá-lo de volta, sem tocar no
 código do app.
 
+> **Estado em 30/10/2026: o site está NO AR.** O modo manutenção (nível 1) foi
+> usado entre 29/10 e 30/10/2026 e depois desligado; o nível 2 nunca foi aplicado,
+> então o GitHub Pages também está publicando normalmente. Ver §5.
+
 São **dois níveis independentes** — o primeiro está no código e é reversível por
 commit; o segundo é configuração do repositório e exige permissão de admin:
 
 | Nível | O que muda | O que o visitante vê | Reversão |
 | --- | --- | --- | --- |
-| **1. Site fora do ar** (feito) | arquivo `MANUTENCAO` na raiz | **404** em toda URL, com a página de aviso | apagar o arquivo e publicar |
-| **2. GitHub Pages desligado** (pendente) | configuração do repositório | 404 imediato, sem deploy nenhum | religar o Pages |
+| **1. Site fora do ar** (desligado) | arquivo `MANUTENCAO` na raiz | **404** em toda URL, com a página de aviso | apagar o arquivo e publicar |
+| **2. GitHub Pages desligado** (nunca usado) | configuração do repositório | 404 imediato, sem deploy nenhum | religar o Pages |
 
 O nível 1 já deixa o app inacessível: sem `index.html` no artefato, não existe
 ponto de entrada. O nível 2 é o desligamento de fato — para quando não se quer
-nem a página de aviso no ar. Ver §2 para o motivo de ele estar pendente.
+nem a página de aviso no ar. Ver §2 para o motivo de ele ficar pendente.
 
 ---
 
@@ -164,6 +168,12 @@ bash scripts/build-site.sh _site && node scripts/check-sw.js _site
 E desfaça o aviso nos textos: a linha **App publicado** do `README.md` volta a
 apontar para o site sem a ressalva de manutenção.
 
+> **Executado em 30/10/2026** para o religamento: `MANUTENCAO` removido, `README.md`
+> e este documento atualizados, `pages.yml` disparado pelo merge na `main`. O Pages
+> nunca foi despublikado, então o passo 3 do checklist não foi necessário. O merge
+> é o que publica — enquanto a mudança estiver só num branch, o site continua em
+> manutenção.
+
 ---
 
 ## 5. Estado atual
@@ -174,4 +184,13 @@ apontar para o site sem a ressalva de manutenção.
   com o aviso. Nível 2 **pendente**: o token do agente recebe 403 em
   `DELETE/PUT /pages` e em `disable` de workflow (§2). O app no repositório não foi
   alterado — todos os testes seguem passando.
+- **30/10/2026 — site religado.** O `MANUTENCAO` da raiz foi apagado, então
+  `scripts/build-site.sh` voltou ao modo normal: o artefato passa a ter `index.html`,
+  `js/`, `images/` e `vendor/` de novo, e o `sw.js` publicado volta a ser o do app
+  (`v77`, com pré-cache do CORE) no lugar do `scripts/manutencao-sw.js` (`v76`).
+  Quem já tinha o app instalado não perde nada: como o conteúdo de `/sw.js` muda, o
+  navegador instala o SW real na primeira visita com rede e repopula o cache offline.
+  Os arquivos de manutenção (`manutencao.html`, `scripts/manutencao-sw.js` e o modo
+  do `build-site.sh`) **continuam no repositório**, prontos para o próximo desligamento —
+  para tirar o site do ar de novo basta recriar o `MANUTENCAO`.
 - Para religar: seção 4 deste documento.
